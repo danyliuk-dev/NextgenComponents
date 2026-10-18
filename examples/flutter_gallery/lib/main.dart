@@ -1,3 +1,4 @@
+import 'manual_previews.g.dart';
 import 'chips_gallery.dart';
 import 'selection_gallery.dart';
 import 'navigation_gallery.dart';
@@ -15,7 +16,10 @@ import 'analytics_gallery.dart';
 import 'workbook_gallery.dart';
 import 'package:nextgen_components/nextgen_components.dart';
 
-void main() => runApp(const Gallery());
+void main() {
+  final preview = Uri.base.queryParameters['preview'];
+  runApp(preview == null ? const Gallery() : ComponentPreview(name: preview));
+}
 
 class Gallery extends StatefulWidget {
   const Gallery({super.key});

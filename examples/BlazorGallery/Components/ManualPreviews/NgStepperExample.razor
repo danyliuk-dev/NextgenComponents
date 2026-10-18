@@ -1,0 +1,7 @@
+@* Generated from scripts/manual_content.py *@
+<NgStepper Items="steps" @bind-Value="current" Linear />
+<p>Current index: @current</p>
+@code {
+ private int current;
+ private NgStep[] steps=[new("Contact"),new("Preferences",Optional:true),new("Review")];
+}

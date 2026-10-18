@@ -6,6 +6,12 @@
 
 Edit a nullable number with range validation.
 
+## Appearance and live example
+
+[Try the Blazor example](http://127.0.0.1:5180/preview/NgNumericTextBox) · [Try the Flutter Web example](http://127.0.0.1:5181/?preview=NgNumericTextBox)
+
+The documentation launcher embeds these running examples here. Choose a framework, interact with the component, and compare it with the exact code below. Use Reload example to restore the initial state. Dialogs and drawers start closed; use their Open button. Tooltips appear on hover or keyboard focus.
+
 ## Behavior and practical rules
 
 Min/Max are inclusive. Invalid text must not silently submit the last valid number: submit through NgForm so the displayed draft is validated. Empty optional input is null. Blazor uses its declared numeric type and InputBase expression binding; Flutter uses double?. Keep storage precision and business rounding in the application. Do not treat a numeric input as a currency or timezone service.

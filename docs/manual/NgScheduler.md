@@ -6,6 +6,12 @@
 
 Show a week of application events and request create/edit actions.
 
+## Appearance and live example
+
+[Try the Blazor example](http://127.0.0.1:5180/preview/NgScheduler) · [Try the Flutter Web example](http://127.0.0.1:5181/?preview=NgScheduler)
+
+The documentation launcher embeds these running examples here. Choose a framework, interact with the component, and compare it with the exact code below. Use Reload example to restore the initial state. Dialogs and drawers start closed; use their Open button. Tooltips appear on hover or keyboard focus.
+
 ## Behavior and practical rules
 
 NgScheduleEvent requires a unique ID, nonempty title and End > Start. Date chooses the displayed week. Store DateChanged/onDateChanged; OnCreate/onCreate identifies a day, while OnEdit/onEdit identifies an event. The application opens its editor and replaces the event collection after saving. Times are local wall-clock values; timezone conversion belongs to the host. Recurrence, drag/resize, resources and multiple calendar views are not implemented.

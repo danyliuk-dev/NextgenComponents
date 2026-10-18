@@ -1,0 +1,11 @@
+@* Generated from scripts/manual_content.py *@
+<NgForm Model="model" OnValidSubmit="Save">
+    <NgTextBox Label="Name" @bind-Value="model.Name"/>
+    <NgButton Type="submit" Primary>Save</NgButton>
+</NgForm>
+<p>@status</p>
+@code {
+ private Draft model=new(); private string? status;
+ private void Save()=>status=$"Saved: {model.Name}";
+ public class Draft { [System.ComponentModel.DataAnnotations.Required] public string? Name {get;set;} }
+}

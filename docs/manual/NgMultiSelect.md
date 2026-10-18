@@ -6,6 +6,12 @@
 
 Select several NgOption keys and remove selected items.
 
+## Appearance and live example
+
+[Try the Blazor example](http://127.0.0.1:5180/preview/NgMultiSelect) · [Try the Flutter Web example](http://127.0.0.1:5181/?preview=NgMultiSelect)
+
+The documentation launcher embeds these running examples here. Choose a framework, interact with the component, and compare it with the exact code below. Use Reload example to restore the initial state. Dialogs and drawers start closed; use their Open button. Tooltips appear on hover or keyboard focus.
+
 ## Behavior and practical rules
 
 Value is a collection of keys, not labels. The callback supplies a new list; replace the parent collection. MaxSelected limits additions while removal remains available. Flutter required demands at least one selection; in Blazor define the rule in the form model. Search is local; large-list virtualization and remote loading are not implemented.

@@ -6,6 +6,12 @@
 
 Combine hierarchical rows with typed columns.
 
+## Appearance and live example
+
+[Try the Blazor example](http://127.0.0.1:5180/preview/NgTreeList) · [Try the Flutter Web example](http://127.0.0.1:5181/?preview=NgTreeList)
+
+The documentation launcher embeds these running examples here. Choose a framework, interact with the component, and compare it with the exact code below. Use Reload example to restore the initial state. Dialogs and drawers start closed; use their Open button. Tooltips appear on hover or keyboard focus.
+
 ## Behavior and practical rules
 
 Use NgTreeNode<T> for hierarchy and NgDataColumn<T> for cells. IDs must be unique across the whole tree. Persist expanded/selected IDs through callbacks; replace collections after data changes. Column accessors return underlying values, while format/cell templates define presentation. Application code owns edits and persistence. See [data workspace](../data-workspace.md) for sorting/filtering scope and omitted server/virtualization features.

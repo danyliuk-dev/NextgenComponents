@@ -6,6 +6,12 @@
 
 Compose a multiline request with explicit submission and cancellation.
 
+## Appearance and live example
+
+[Try the Blazor example](http://127.0.0.1:5180/preview/NgPromptBox) · [Try the Flutter Web example](http://127.0.0.1:5181/?preview=NgPromptBox)
+
+The documentation launcher embeds these running examples here. Choose a framework, interact with the component, and compare it with the exact code below. Use Reload example to restore the initial state. Dialogs and drawers start closed; use their Open button. Tooltips appear on hover or keyboard focus.
+
 ## Behavior and practical rules
 
 Value/value is a controlled draft. Store ValueChanged/onChanged and pass the value back. External value replacement updates the field. MaxLength is 1–8000 UTF-16 code units, default 8000; emoji may occupy two units. Values longer than the limit are rejected. Blank input cannot be submitted. Send trims outer whitespace; Enter inserts a newline. Tab followed by Enter/Space activates buttons; no special submit shortcut is installed.

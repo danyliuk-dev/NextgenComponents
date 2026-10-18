@@ -1,0 +1,20 @@
+@* Generated from scripts/manual_content.py *@
+<NgCheckBox Label="Hide Emphasis" @bind-Value="hideEmphasis" />
+<NgButtonGroup Label="Formatting actions" Items="actions" Value="selected" ValueChanged="Change" Multiple
+    IsCommand="IsCommand" IsVisible="ShowItem" OnClick="Activate"
+    Size="md" Rounded="lg" FillMode="outline" ItemAppearance="Appearance">
+  <LeadingTemplate><span>★</span></LeadingTemplate>
+  <ItemTemplate Context="item"><strong>@item.Label</strong></ItemTemplate>
+</NgButtonGroup>
+<p>Selected: @string.Join(",",selected). @log</p>
+@code {
+    private bool hideEmphasis;
+    private IReadOnlyList<string> selected = ["strong"];
+    private string log = "Ready";
+    private readonly NgOption[] actions = [new("strong","Strong"),new("emphasis","Emphasis"),new("clear","Clear formatting")];
+    private static bool IsCommand(NgOption item) => item.Value=="clear";
+    private bool ShowItem(NgOption item) => !hideEmphasis || item.Value!="emphasis";
+    private static NgButtonAppearance Appearance(NgOption item) => new(ThemeColor:IsCommand(item)?"info":null);
+    private void Change(IReadOnlyList<string> value) { selected=value; log="changed:"+string.Join(",",value); }
+    private void Activate(string id) { log+=" | clicked:"+id; if(id=="clear")selected=[]; }
+}

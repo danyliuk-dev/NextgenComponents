@@ -1,0 +1,14 @@
+@* Generated from scripts/manual_content.py *@
+<NgAIPrompt Label="Assistant" @bind-Value="prompt" Generate="Generate"
+    Suggestions="suggestions" OnCompleted="Completed" OnFeedback="Feedback"/>
+<p>@status</p>
+@code {
+ private string prompt="Draft a meeting agenda",status="";
+ private string[] suggestions=["Draft a meeting agenda","Suggest next steps"];
+ private async Task<string> Generate(string text,CancellationToken cancellation) {
+  await Task.Delay(600,cancellation);
+  return $"Local example response to: {text}"; // Connect your application service here.
+ }
+ private void Completed(NgPromptResponse response){status=$"Response {response.Id} ready";}
+ private void Feedback(NgPromptFeedback feedback){status=$"Response feedback {feedback.Response.Id}: {feedback.Helpful}";}
+}

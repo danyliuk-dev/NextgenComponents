@@ -1,0 +1,3 @@
+@* Generated from scripts/manual_content.py *@
+<NgTreeView TItem="string" Items="nodes" Text="s=>s" @bind-ExpandedIds="expanded" @bind-SelectedId="selected"/>
+@code { private string? selected; private HashSet<string> expanded=["root"]; private NgTreeNode<string>[] nodes=[new("root","Projects",[new("a","Design"),new("b","Engineering")])]; }

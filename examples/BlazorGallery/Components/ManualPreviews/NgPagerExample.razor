@@ -1,0 +1,4 @@
+@* Generated from scripts/manual_content.py *@
+<NgPager Total="items.Length" @bind-Page="page" @bind-PageSize="size"/>
+@foreach(var item in items.Skip((page-1)*size).Take(size)){<p>@item</p>}
+@code { private int page=1,size=5; private string[] items=Enumerable.Range(1,18).Select(i=>$"Row {i}").ToArray(); }

@@ -6,6 +6,12 @@
 
 Aggregate records by row and column dimensions.
 
+## Appearance and live example
+
+[Try the Blazor example](http://127.0.0.1:5180/preview/NgPivotGrid) · [Try the Flutter Web example](http://127.0.0.1:5181/?preview=NgPivotGrid)
+
+The documentation launcher embeds these running examples here. Choose a framework, interact with the component, and compare it with the exact code below. Use Reload example to restore the initial state. Dialogs and drawers start closed; use their Open button. Tooltips appear on hover or keyboard focus.
+
 ## Behavior and practical rules
 
 NgPivotRecord contains a unique ID, string dimensions and one nullable numeric value. Dimensions sort by string keys; a missing key appears as (blank). Sum/Average/Min/Max use numeric values; Count includes source records with null values. Totals are recalculated from source records, so an average is not an average of averages. Cell/total callbacks return the original records; null Row/Column denotes a total, while an empty string denotes a blank dimension. Filter Items/items before passing them in. Multiple grouping levels, measures, OLAP and a drag/drop configurator are not implemented.

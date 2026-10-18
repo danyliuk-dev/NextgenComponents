@@ -6,6 +6,12 @@
 
 Trigger an application action or submit a form.
 
+## Appearance and live example
+
+[Try the Blazor example](http://127.0.0.1:5180/preview/NgButton) · [Try the Flutter Web example](http://127.0.0.1:5181/?preview=NgButton)
+
+The documentation launcher embeds these running examples here. Choose a framework, interact with the component, and compare it with the exact code below. Use Reload example to restore the initial state. Dialogs and drawers start closed; use their Open button. Tooltips appear on hover or keyboard focus.
+
 ## Behavior and practical rules
 
 Use OnClick/onPressed for application actions. In Blazor Type="submit" submits the enclosing form; the default is button. In Flutter a null onPressed disables the button. Disabled actions must also be guarded by your application when starting asynchronous work. Primary uses the shared theme accent. Buttons support Tab and Enter/Space; give icon-only content an accessible name.

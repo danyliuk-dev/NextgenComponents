@@ -1,0 +1,516 @@
+// GENERATED from scripts/manual_content.py. Do not edit.
+import 'package:flutter/material.dart';
+import 'package:nextgen_components/nextgen_components.dart';
+class ComponentPreview extends StatelessWidget {
+  final String name;
+  const ComponentPreview({super.key, required this.name});
+  @override
+  Widget build(BuildContext context) => MaterialApp(
+    title: '$name preview', debugShowCheckedModeBanner: false,
+    theme: NgTheme.light(), home: Scaffold(body: SafeArea(
+      child: SingleChildScrollView(padding: const EdgeInsets.all(24),
+        child: SizedBox(width: double.infinity, child: switch (name) {
+'NgAIPrompt' => const NgAIPromptExample(),
+'NgArcGauge' => const NgArcGaugeExample(),
+'NgAutoComplete' => const NgAutoCompleteExample(),
+'NgBreadcrumb' => const NgBreadcrumbExample(),
+'NgButton' => const NgButtonExample(),
+'NgButtonGroup' => const NgButtonGroupExample(),
+'NgCalendar' => const NgCalendarExample(),
+'NgChart' => const NgChartExample(),
+'NgCheckBox' => const NgCheckBoxExample(),
+'NgChip' => const NgChipExample(),
+'NgChipList' => const NgChipListExample(),
+'NgComboBox' => const NgComboBoxExample(),
+'NgDataGrid' => const NgDataGridExample(),
+'NgDateInput' => const NgDateInputExample(),
+'NgDatePicker' => const NgDatePickerExample(),
+'NgDateRangePicker' => const NgDateRangePickerExample(),
+'NgDateTimePicker' => const NgDateTimePickerExample(),
+'NgDiagram' => const NgDiagramExample(),
+'NgDialog' => const NgDialogExample(),
+'NgDrawer' => const NgDrawerExample(),
+'NgDropDownList' => const NgDropDownListExample(),
+'NgEditor' => const NgEditorExample(),
+'NgForm' => const NgFormExample(),
+'NgLinearGauge' => const NgLinearGaugeExample(),
+'NgMap' => const NgMapExample(),
+'NgMenu' => const NgMenuExample(),
+'NgMultiSelect' => const NgMultiSelectExample(),
+'NgNotification' => const NgNotificationExample(),
+'NgNumericTextBox' => const NgNumericTextBoxExample(),
+'NgPager' => const NgPagerExample(),
+'NgPdfViewer' => const NgPdfViewerExample(),
+'NgPivotGrid' => const NgPivotGridExample(),
+'NgPromptBox' => const NgPromptBoxExample(),
+'NgRadioGroup' => const NgRadioGroupExample(),
+'NgScheduler' => const NgSchedulerExample(),
+'NgSpreadsheet' => const NgSpreadsheetExample(),
+'NgStepper' => const NgStepperExample(),
+'NgSwitch' => const NgSwitchExample(),
+'NgTabs' => const NgTabsExample(),
+'NgTextArea' => const NgTextAreaExample(),
+'NgTextBox' => const NgTextBoxExample(),
+'NgTimePicker' => const NgTimePickerExample(),
+'NgToggleButton' => const NgToggleButtonExample(),
+'NgTooltip' => const NgTooltipExample(),
+'NgTreeList' => const NgTreeListExample(),
+'NgTreeView' => const NgTreeViewExample(),
+'NgWizard' => const NgWizardExample(),_ => const Text('Unknown component.'),
+})),
+)));
+}
+class NgButtonExample extends StatefulWidget { const NgButtonExample({super.key}); @override State<NgButtonExample> createState()=>_NgButtonExampleState(); }
+class _NgButtonExampleState extends State<NgButtonExample> {
+int count = 0;
+Widget build(BuildContext context) => NgButton(primary: true,
+  onPressed: () => setState(() => count++), child: Text('Clicked $count times'));
+}
+class NgTextBoxExample extends StatefulWidget { const NgTextBoxExample({super.key}); @override State<NgTextBoxExample> createState()=>_NgTextBoxExampleState(); }
+class _NgTextBoxExampleState extends State<NgTextBoxExample> {
+final text = TextEditingController(text: 'Initial text');
+@override void dispose() { text.dispose(); super.dispose(); }
+Widget build(BuildContext context) => NgTextBox(label: 'Description',
+  controller: text, validator: (v) => v == null || v.trim().isEmpty ? 'Enter text' : null);
+}
+class NgTextAreaExample extends StatefulWidget { const NgTextAreaExample({super.key}); @override State<NgTextAreaExample> createState()=>_NgTextAreaExampleState(); }
+class _NgTextAreaExampleState extends State<NgTextAreaExample> {
+final text = TextEditingController(text: 'Initial text');
+@override void dispose() { text.dispose(); super.dispose(); }
+Widget build(BuildContext context) => NgTextArea(label: 'Description',
+  controller: text, validator: (v) => v == null || v.trim().isEmpty ? 'Enter text' : null, rows: 4, maxLength: 500);
+}
+class NgNumericTextBoxExample extends StatefulWidget { const NgNumericTextBoxExample({super.key}); @override State<NgNumericTextBoxExample> createState()=>_NgNumericTextBoxExampleState(); }
+class _NgNumericTextBoxExampleState extends State<NgNumericTextBoxExample> {
+double? quantity = 5;
+Widget build(BuildContext context) => NgNumericTextBox(label: 'Quantity',
+  value: quantity, min: 0, max: 100, required: true,
+  onChanged: (v) => setState(() => quantity = v));
+}
+class NgCheckBoxExample extends StatefulWidget { const NgCheckBoxExample({super.key}); @override State<NgCheckBoxExample> createState()=>_NgCheckBoxExampleState(); }
+class _NgCheckBoxExampleState extends State<NgCheckBoxExample> {
+bool enabled = true;
+Widget build(BuildContext context) => NgCheckBox(label: 'Notifications',
+  value: enabled, onChanged: (v) => setState(() => enabled = v));
+}
+class NgSwitchExample extends StatefulWidget { const NgSwitchExample({super.key}); @override State<NgSwitchExample> createState()=>_NgSwitchExampleState(); }
+class _NgSwitchExampleState extends State<NgSwitchExample> {
+bool enabled = true;
+Widget build(BuildContext context) => NgSwitch(label: 'Notifications',
+  value: enabled, onChanged: (v) => setState(() => enabled = v));
+}
+class NgDropDownListExample extends StatefulWidget { const NgDropDownListExample({super.key}); @override State<NgDropDownListExample> createState()=>_NgDropDownListExampleState(); }
+class _NgDropDownListExampleState extends State<NgDropDownListExample> {
+String? team = 'design';
+Widget build(BuildContext context) => NgDropDownList(label: 'Team', value: team,
+  items: const [NgOption('design','Design'), NgOption('dev','Engineering'),
+    NgOption('locked','Unavailable', disabled: true)],
+  onChanged: (v) => setState(() => team = v));
+}
+class NgRadioGroupExample extends StatefulWidget { const NgRadioGroupExample({super.key}); @override State<NgRadioGroupExample> createState()=>_NgRadioGroupExampleState(); }
+class _NgRadioGroupExampleState extends State<NgRadioGroupExample> {
+String? team = 'design';
+Widget build(BuildContext context) => NgRadioGroup(label: 'Team', value: team,
+  items: const [NgOption('design','Design'), NgOption('dev','Engineering'),
+    NgOption('locked','Unavailable', disabled: true)],
+  onChanged: (v) => setState(() => team = v));
+}
+class NgComboBoxExample extends StatefulWidget { const NgComboBoxExample({super.key}); @override State<NgComboBoxExample> createState()=>_NgComboBoxExampleState(); }
+class _NgComboBoxExampleState extends State<NgComboBoxExample> {
+String? team = 'design';
+Widget build(BuildContext context) => NgComboBox(label: 'Team', value: team,
+  items: const [NgOption('design','Design'), NgOption('dev','Engineering'),
+    NgOption('locked','Unavailable', disabled: true)],
+  onChanged: (v) => setState(() => team = v));
+}
+class NgAutoCompleteExample extends StatefulWidget { const NgAutoCompleteExample({super.key}); @override State<NgAutoCompleteExample> createState()=>_NgAutoCompleteExampleState(); }
+class _NgAutoCompleteExampleState extends State<NgAutoCompleteExample> {
+String city = '';
+Widget build(BuildContext context) => NgAutoComplete(label: 'City',
+  items: const ['Kyiv','Lviv','Odesa'], initialValue: city,
+  onChanged: (v) => city = v);
+}
+class NgMultiSelectExample extends StatefulWidget { const NgMultiSelectExample({super.key}); @override State<NgMultiSelectExample> createState()=>_NgMultiSelectExampleState(); }
+class _NgMultiSelectExampleState extends State<NgMultiSelectExample> {
+List<String> selected = [];
+Widget build(BuildContext context) => NgMultiSelect(label: 'Services', value: selected,
+  items: const [NgOption('a','Delivery'),NgOption('b','Assembly')], maxSelected: 2,
+  onChanged: (v) => setState(() => selected = v));
+}
+class NgDateInputExample extends StatefulWidget { const NgDateInputExample({super.key}); @override State<NgDateInputExample> createState()=>_NgDateInputExampleState(); }
+class _NgDateInputExampleState extends State<NgDateInputExample> {
+DateTime? value = DateTime(2026,10,20,9,30);
+Widget build(BuildContext context) => NgDateInput(value: value,
+  onChanged: (v) => setState(() => value = v));
+}
+class NgDatePickerExample extends StatefulWidget { const NgDatePickerExample({super.key}); @override State<NgDatePickerExample> createState()=>_NgDatePickerExampleState(); }
+class _NgDatePickerExampleState extends State<NgDatePickerExample> {
+DateTime? value = DateTime(2026,10,20,9,30);
+Widget build(BuildContext context) => NgDatePicker(value: value,
+  onChanged: (v) => setState(() => value = v));
+}
+class NgCalendarExample extends StatefulWidget { const NgCalendarExample({super.key}); @override State<NgCalendarExample> createState()=>_NgCalendarExampleState(); }
+class _NgCalendarExampleState extends State<NgCalendarExample> {
+DateTime? value = DateTime(2026,10,20,9,30);
+Widget build(BuildContext context) => NgCalendar(value: value,
+  onChanged: (v) => setState(() => value = v));
+}
+class NgDateTimePickerExample extends StatefulWidget { const NgDateTimePickerExample({super.key}); @override State<NgDateTimePickerExample> createState()=>_NgDateTimePickerExampleState(); }
+class _NgDateTimePickerExampleState extends State<NgDateTimePickerExample> {
+DateTime? value = DateTime(2026,10,20,9,30);
+Widget build(BuildContext context) => NgDateTimePicker(value: value,
+  onChanged: (v) => setState(() => value = v));
+}
+class NgTimePickerExample extends StatefulWidget { const NgTimePickerExample({super.key}); @override State<NgTimePickerExample> createState()=>_NgTimePickerExampleState(); }
+class _NgTimePickerExampleState extends State<NgTimePickerExample> {
+TimeOfDay? value = const TimeOfDay(hour: 9, minute: 30);
+Widget build(BuildContext context) => NgTimePicker(value: value,
+  onChanged: (v) => setState(() => value = v));
+}
+class NgDateRangePickerExample extends StatefulWidget { const NgDateRangePickerExample({super.key}); @override State<NgDateRangePickerExample> createState()=>_NgDateRangePickerExampleState(); }
+class _NgDateRangePickerExampleState extends State<NgDateRangePickerExample> {
+NgDateRange? range = NgDateRange(DateTime(2026,10,20), DateTime(2026,10,23));
+Widget build(BuildContext context) => NgDateRangePicker(label: 'Period', value: range,
+  required: true, onChanged: (v) => setState(() => range = v));
+}
+class NgFormExample extends StatefulWidget { const NgFormExample({super.key}); @override State<NgFormExample> createState()=>_NgFormExampleState(); }
+class _NgFormExampleState extends State<NgFormExample> {
+String name = '';
+Widget build(BuildContext context) => NgForm(submitLabel: 'Save',
+  onValidSubmit: () => debugPrint('Saved: $name'),
+  child: NgTextBox(label: 'Name', onChanged: (v) => name = v,
+    validator: (v) => v == null || v.trim().isEmpty ? 'Enter a name' : null));
+}
+class NgTabsExample extends StatefulWidget { const NgTabsExample({super.key}); @override State<NgTabsExample> createState()=>_NgTabsExampleState(); }
+class _NgTabsExampleState extends State<NgTabsExample> {
+int index = 0;
+Widget build(BuildContext context) => NgTabs(selectedIndex: index,
+  items: const [NgTab('Overview',Text('Summary')),NgTab('Details',Text('Details'))],
+  onChanged: (v) => setState(() => index = v));
+}
+class NgDialogExample extends StatefulWidget { const NgDialogExample({super.key}); @override State<NgDialogExample> createState()=>_NgDialogExampleState(); }
+class _NgDialogExampleState extends State<NgDialogExample> {
+Widget build(BuildContext context) => NgButton(child: const Text('Open'),
+  onPressed: () => NgDialog.show<void>(context, title: 'Confirmation',
+    child: const Text('Continue?'), actions: [TextButton(
+      onPressed: () => Navigator.of(context).pop(), child: const Text('Close'))]));
+}
+class NgTooltipExample extends StatefulWidget { const NgTooltipExample({super.key}); @override State<NgTooltipExample> createState()=>_NgTooltipExampleState(); }
+class _NgTooltipExampleState extends State<NgTooltipExample> {
+Widget build(BuildContext context) => NgTooltip(text: 'Create a copy',
+  child: NgButton(onPressed: () {}, child: const Text('Copy')));
+}
+class NgNotificationExample extends StatefulWidget { const NgNotificationExample({super.key}); @override State<NgNotificationExample> createState()=>_NgNotificationExampleState(); }
+class _NgNotificationExampleState extends State<NgNotificationExample> {
+bool visible = true;
+Widget build(BuildContext context) => visible ? NgNotification(message: 'Saved',
+  onDismiss: () => setState(() => visible = false)) : const SizedBox.shrink();
+}
+class NgPagerExample extends StatefulWidget { const NgPagerExample({super.key}); @override State<NgPagerExample> createState()=>_NgPagerExampleState(); }
+class _NgPagerExampleState extends State<NgPagerExample> {
+int page = 1, size = 5;
+Widget build(BuildContext context) => NgPager(total: 18, page: page, pageSize: size,
+  onPageChanged: (v) => setState(() => page = v),
+  onPageSizeChanged: (v) => setState(() { size = v; page = 1; }));
+}
+class NgBreadcrumbExample extends StatefulWidget { const NgBreadcrumbExample({super.key}); @override State<NgBreadcrumbExample> createState()=>_NgBreadcrumbExampleState(); }
+class _NgBreadcrumbExampleState extends State<NgBreadcrumbExample> {
+String? selected;
+Widget build(BuildContext context) => NgBreadcrumb(
+  items: const [NgBreadcrumbItem('all','Projects'),NgBreadcrumbItem('design','Design')],
+  onNavigate: (id) => setState(() => selected = id));
+}
+class NgDataGridExample extends StatefulWidget { const NgDataGridExample({super.key}); @override State<NgDataGridExample> createState()=>_NgDataGridExampleState(); }
+class _NgDataGridExampleState extends State<NgDataGridExample> {
+final rows = [(id: 'a', name: 'Desk', count: 12), (id: 'b', name: 'Chair', count: 120)];
+Set<String> selected = {};
+Widget build(BuildContext context) => NgDataGrid<({String id, String name, int count})>(
+  items: rows, rowId: (r) => r.id, selectedIds: selected,
+  onSelectionChanged: (v) => setState(() => selected = v),
+  columns: [NgDataColumn('name','Name',(r) => r.name),
+    NgDataColumn('count','Quantity',(r) => r.count)]);
+}
+class NgTreeViewExample extends StatefulWidget { const NgTreeViewExample({super.key}); @override State<NgTreeViewExample> createState()=>_NgTreeViewExampleState(); }
+class _NgTreeViewExampleState extends State<NgTreeViewExample> {
+Set<String> expanded = {'root'}; String? selected;
+Widget build(BuildContext context) => NgTreeView<String>(
+  items: const [NgTreeNode('root','Projects',children: [NgTreeNode('a','Design'),NgTreeNode('b','Engineering')])],
+  text: (s) => s,
+  expandedIds: expanded, selectedId: selected,
+  onExpandedChanged: (v) => setState(() => expanded = v),
+  onSelected: (v) => setState(() => selected = v));
+}
+class NgTreeListExample extends StatefulWidget { const NgTreeListExample({super.key}); @override State<NgTreeListExample> createState()=>_NgTreeListExampleState(); }
+class _NgTreeListExampleState extends State<NgTreeListExample> {
+Set<String> expanded = {'root'}; String? selected;
+Widget build(BuildContext context) => NgTreeList<String>(
+  items: const [NgTreeNode('root','Projects',children: [NgTreeNode('a','Design'),NgTreeNode('b','Engineering')])],
+  columns: [NgDataColumn('name','Name',(s) => s)],
+  expandedIds: expanded, selectedId: selected,
+  onExpandedChanged: (v) => setState(() => expanded = v),
+  onSelected: (v) => setState(() => selected = v));
+}
+class NgChartExample extends StatefulWidget { const NgChartExample({super.key}); @override State<NgChartExample> createState()=>_NgChartExampleState(); }
+class _NgChartExampleState extends State<NgChartExample> {
+String? selected;
+Widget build(BuildContext context) => NgChart(title: 'Sales', kind: NgChartKind.line,
+  categories: const ['Mon','Tue','Wed'], series: const [NgChartSeries('Orders',[10,null,25])],
+  onPointSelected: (p) => setState(() => selected = p.label));
+}
+class NgLinearGaugeExample extends StatefulWidget { const NgLinearGaugeExample({super.key}); @override State<NgLinearGaugeExample> createState()=>_NgLinearGaugeExampleState(); }
+class _NgLinearGaugeExampleState extends State<NgLinearGaugeExample> {
+Widget build(BuildContext context) => const NgLinearGauge(label: 'Load',
+  value: 72, min: 0, max: 100, unit: '%');
+}
+class NgArcGaugeExample extends StatefulWidget { const NgArcGaugeExample({super.key}); @override State<NgArcGaugeExample> createState()=>_NgArcGaugeExampleState(); }
+class _NgArcGaugeExampleState extends State<NgArcGaugeExample> {
+Widget build(BuildContext context) => const NgArcGauge(label: 'Load',
+  value: 72, min: 0, max: 100, unit: '%');
+}
+class NgSchedulerExample extends StatefulWidget { const NgSchedulerExample({super.key}); @override State<NgSchedulerExample> createState()=>_NgSchedulerExampleState(); }
+class _NgSchedulerExampleState extends State<NgSchedulerExample> {
+DateTime week = DateTime(2026,10,19);
+Widget build(BuildContext context) => NgScheduler(date: week,
+  items: [NgScheduleEvent('a','Meeting',DateTime(2026,10,19,10),DateTime(2026,10,19,11))],
+  onDateChanged: (v) => setState(() => week = v),
+  onCreate: (day) => debugPrint('Add $day'),
+  onEdit: (item) => debugPrint(item.title));
+}
+class NgSpreadsheetExample extends StatefulWidget { const NgSpreadsheetExample({super.key}); @override State<NgSpreadsheetExample> createState()=>_NgSpreadsheetExampleState(); }
+class _NgSpreadsheetExampleState extends State<NgSpreadsheetExample> {
+NgSheet sheet = NgSheet(rows: 8, columns: 5, cells: {'A1':'10','B1':'20','C1':'=SUM(A1:B1)'});
+Widget build(BuildContext context) => NgSpreadsheet(value: sheet,
+  onChanged: (v) => setState(() => sheet = v));
+}
+class NgPivotGridExample extends StatefulWidget { const NgPivotGridExample({super.key}); @override State<NgPivotGridExample> createState()=>_NgPivotGridExampleState(); }
+class _NgPivotGridExampleState extends State<NgPivotGridExample> {
+int count = 0;
+Widget build(BuildContext context) => NgPivotGrid(rowField: 'Team', columnField: 'Quarter',
+  aggregate: NgAggregate.average, items: [
+    NgPivotRecord('a', {'Team':'Design','Quarter':'Q1'},100),
+    NgPivotRecord('b', {'Team':'Design','Quarter':'Q1'},200)],
+  onCellSelected: (p) => setState(() => count = p.records.length));
+}
+class NgEditorExample extends StatefulWidget { const NgEditorExample({super.key}); @override State<NgEditorExample> createState()=>_NgEditorExampleState(); }
+class _NgEditorExampleState extends State<NgEditorExample> {
+NgDocument document = NgDocument(blocks: const [
+  NgDocumentBlock(text: 'Project plan', kind: NgBlockKind.heading1),
+  NgDocumentBlock(text: 'Agree on requirements', kind: NgBlockKind.bullet),
+  NgDocumentBlock(text: 'Review the result', kind: NgBlockKind.bullet, bold: true),
+]);
+String saved = '';
+Widget build(BuildContext context) => Column(children: [
+  NgEditor(label: 'Project description', value: document,
+    onChanged: (v) => setState(() => document = v)),
+  NgButton(onPressed: () => setState(() => saved = document.toJson()),
+    child: const Text('Save JSON')),
+  Text(saved),
+]);
+}
+class NgDiagramExample extends StatefulWidget { const NgDiagramExample({super.key}); @override State<NgDiagramExample> createState()=>_NgDiagramExampleState(); }
+class _NgDiagramExampleState extends State<NgDiagramExample> {
+NgDiagramModel graph = NgDiagramModel(nodes: const [
+  NgDiagramNode('start', 'Start', 40, 100, shape: NgDiagramShape.ellipse),
+  NgDiagramNode('work', 'Processing', 360, 100),
+], edges: const [NgDiagramEdge('next', 'start', 'work', text: 'Continue')]);
+String? selectedNode, selectedEdge;
+Widget build(BuildContext context) => NgDiagram(label: 'Process', value: graph,
+  onChanged: (v) => setState(() => graph = v),
+  selectedNodeId: selectedNode, selectedEdgeId: selectedEdge,
+  onSelectedNodeIdChanged: (v) => setState(() => selectedNode = v),
+  onSelectedEdgeIdChanged: (v) => setState(() => selectedEdge = v));
+}
+class NgPdfViewerExample extends StatefulWidget { const NgPdfViewerExample({super.key}); @override State<NgPdfViewerExample> createState()=>_NgPdfViewerExampleState(); }
+class _NgPdfViewerExampleState extends State<NgPdfViewerExample> {
+Widget build(BuildContext context) => const NgPdfViewer(
+  label: 'Guide', source: 'samples/nextgen-guide.pdf', height: 720);
+}
+class NgMapExample extends StatefulWidget { const NgMapExample({super.key}); @override State<NgMapExample> createState()=>_NgMapExampleState(); }
+class _NgMapExampleState extends State<NgMapExample> {
+String? selected;
+String last = '';
+NgMapView view = NgMapView(latitude: 50.4501, longitude: 30.5234, zoom: 13);
+final map = NgMapModel(markers: [
+  NgMapMarker('office', 'Office', NgMapPoint(50.4501, 30.5234)),
+  NgMapMarker('park', 'Park', NgMapPoint(50.4466, 30.5410)),
+], paths: [NgMapPath('line', 'Line', [
+  NgMapPoint(50.4501, 30.5234), NgMapPoint(50.4466, 30.5410),
+])]);
+Widget build(BuildContext context) => NgMap(label: 'Objects', value: map,
+  view: view, selectedId: selected, clusterMarkers: true, clusterRadius: 60,
+  onViewChanged: (v) => setState(() => view = v),
+  onSelectedIdChanged: (id) => setState(() => selected = id),
+  onMapClick: (p) => setState(() => last = '${p.latitude}, ${p.longitude}'),
+  tileUrlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+  attribution: '© OpenStreetMap contributors',
+  attributionUrl: 'https://www.openstreetmap.org/copyright');
+}
+class NgPromptBoxExample extends StatefulWidget { const NgPromptBoxExample({super.key}); @override State<NgPromptBoxExample> createState()=>_NgPromptBoxExampleState(); }
+class _NgPromptBoxExampleState extends State<NgPromptBoxExample> {
+String prompt = '', result = '';
+bool busy = false;
+int revision = 0;
+Future<void> submit(String text) async {
+  final request = ++revision;
+  setState(() => busy = true);
+  await Future<void>.delayed(const Duration(milliseconds: 700));
+  if (!mounted || request != revision) return;
+  setState(() { result = 'Received prompt: $text'; busy = false; });
+}
+Widget build(BuildContext context) => NgPromptBox(label: 'Prompt', value: prompt,
+  onChanged: (v) => setState(() => prompt = v), busy: busy,
+  onSubmit: submit,
+  onCancel: () => setState(() { revision++; busy = false; result = 'Cancelled'; }));
+}
+class NgAIPromptExample extends StatefulWidget { const NgAIPromptExample({super.key}); @override State<NgAIPromptExample> createState()=>_NgAIPromptExampleState(); }
+class _NgAIPromptExampleState extends State<NgAIPromptExample> {
+String prompt = 'Draft a meeting agenda', status = '';
+Future<String> generate(String text, NgPromptCancellation cancellation) async {
+  await Future<void>.delayed(const Duration(milliseconds: 600));
+  cancellation.throwIfCancelled();
+  return 'Local example response to: $text'; // Replace with your application service.
+}
+Widget build(BuildContext context) => NgAIPrompt(label: 'Assistant', value: prompt,
+  onChanged: (v) => setState(() => prompt = v), generate: generate,
+  suggestions: const ['Draft a meeting agenda', 'Suggest next steps'],
+  onCompleted: (r) => setState(() => status = 'Response ${r.id} ready'),
+  onFeedback: (f) => setState(() => status = 'Response feedback ${f.response.id}: ${f.helpful}'));
+}
+class NgStepperExample extends StatefulWidget { const NgStepperExample({super.key}); @override State<NgStepperExample> createState()=>_NgStepperExampleState(); }
+class _NgStepperExampleState extends State<NgStepperExample> {
+int current = 0;
+final steps = const [NgStep('Contact'), NgStep('Preferences', optional: true), NgStep('Review')];
+Widget build(BuildContext context) => NgStepper(items: steps, value: current, linear: true,
+  onChanged: (v) => setState(() => current = v));
+}
+class NgWizardExample extends StatefulWidget { const NgWizardExample({super.key}); @override State<NgWizardExample> createState()=>_NgWizardExampleState(); }
+class _NgWizardExampleState extends State<NgWizardExample> {
+int current = 0;
+String name = '', status = 'Not saved';
+final steps = const [NgStep('Contact'), NgStep('Review')];
+Widget build(BuildContext context) => Column(children: [
+ NgWizard(items: steps, value: current,
+  onChanged: (v) => setState(() => current = v),
+  validateStep: (index) async => index == 0 && name.trim().length < 2 ? 'Enter at least two characters.' : null,
+  onFinish: () async { setState(() => status = 'Saved: $name'); },
+  contentBuilder: (context, index) => index == 0
+    ? TextFormField(initialValue: name, decoration: const InputDecoration(labelText: 'Name'), onChanged: (v) => name = v)
+    : Text('Review: $name')),
+ Text(status),
+]);
+}
+class NgMenuExample extends StatefulWidget { const NgMenuExample({super.key}); @override State<NgMenuExample> createState()=>_NgMenuExampleState(); }
+class _NgMenuExampleState extends State<NgMenuExample> {
+String? selected;
+final commands = [
+  NgMenuItem('file', 'File', children: [
+    NgMenuItem('new', 'New document'),
+    NgMenuItem('export', 'Export', children: [NgMenuItem('pdf', 'PDF'), NgMenuItem('csv', 'CSV')]),
+    NgMenuItem('delete', 'Delete', disabled: true),
+  ]), NgMenuItem('help', 'Help'),
+];
+Widget build(BuildContext context) => Column(children: [
+  NgMenu(label: 'Document commands', items: commands, selectedId: selected,
+    onInvoke: (id) => setState(() => selected = id)),
+  Text('Last command: ${selected ?? "None"}'),
+]);
+}
+class NgDrawerExample extends StatefulWidget { const NgDrawerExample({super.key}); @override State<NgDrawerExample> createState()=>_NgDrawerExampleState(); }
+class _NgDrawerExampleState extends State<NgDrawerExample> {
+bool expanded = false;
+String? selected = 'overview';
+final note = TextEditingController();
+@override void dispose() { note.dispose(); super.dispose(); }
+Widget build(BuildContext context) => NgDrawer(
+  label: 'Workspace', items: const [NgOption('overview', 'Overview'), NgOption('reports', 'Reports'), NgOption('settings', 'Settings', disabled: true)],
+  selectedId: selected, onSelectedIdChanged: (id) => setState(() => selected = id),
+  expanded: expanded, onExpandedChanged: (value) => setState(() => expanded = value),
+  overlay: true,
+  child: Column(children: [Text(selected ?? 'Choose a section'), NgTextBox(label: 'Draft note', controller: note)]),
+);
+}
+class NgToggleButtonExample extends StatefulWidget { const NgToggleButtonExample({super.key}); @override State<NgToggleButtonExample> createState()=>_NgToggleButtonExampleState(); }
+class _NgToggleButtonExampleState extends State<NgToggleButtonExample> {
+bool selected = false;
+int clicks = 0;
+final toggleFocus = FocusNode();
+@override
+void dispose() { toggleFocus.dispose(); super.dispose(); }
+Widget build(BuildContext context) => Column(children: [
+  NgToggleButton(label: 'Preview outline', semanticIdentifier: 'preview-toggle', semanticHint: 'Toggle the preview outline.',
+    value: selected, onChanged: (v) => setState(() => selected = v), onClick: () => setState(() => clicks++),
+    focusNode: toggleFocus, size: 'lg', rounded: 'full', fillMode: 'outline', themeColor: 'success',
+    leading: const Icon(Icons.star, size: 16), child: const Text('Preview outline')),
+  TextButton(onPressed: toggleFocus.requestFocus, child: const Text('Focus preview')),
+  Text('Selected: $selected. Activations: $clicks'),
+]);
+
+}
+class NgButtonGroupExample extends StatefulWidget { const NgButtonGroupExample({super.key}); @override State<NgButtonGroupExample> createState()=>_NgButtonGroupExampleState(); }
+class _NgButtonGroupExampleState extends State<NgButtonGroupExample> {
+bool hideEmphasis = false;
+List<String> selected = ['strong'];
+String log = 'Ready';
+final actions = const [NgOption('strong','Strong'),NgOption('emphasis','Emphasis'),NgOption('clear','Clear formatting')];
+Widget build(BuildContext context) => Column(children: [
+  NgCheckBox(label: 'Hide Emphasis', value: hideEmphasis, onChanged: (v) => setState(() => hideEmphasis=v)),
+  NgButtonGroup(label: 'Formatting actions', items: actions, value: selected, multiple: true,
+    isCommand: (item) => item.value=='clear', isVisible: (item) => !hideEmphasis || item.value!='emphasis',
+    onChanged: (v) => setState(() { selected=v; log='changed:${v.join(",")}'; }),
+    onClick: (id) => setState(() { log+=' | clicked:$id'; if(id=='clear')selected=[]; }),
+    size: 'md', rounded: 'lg', fillMode: 'outline',
+    itemAppearance: (item) => NgButtonAppearance(themeColor: item.value=='clear'?'info':null),
+    leadingBuilder: (_) => const Icon(Icons.star, size:16), itemBuilder: (item) => Text(item.label)),
+  Text('Selected: ${selected.join(",")}. $log'),
+]);
+
+}
+class NgChipExample extends StatefulWidget { const NgChipExample({super.key}); @override State<NgChipExample> createState()=>_NgChipExampleState(); }
+class _NgChipExampleState extends State<NgChipExample> {
+bool selected = false, visible = true;
+int clicks = 0;
+Widget build(BuildContext context) => Wrap(spacing: 8, children: [
+  NgChip(tabIndex: 0, semanticIdentifier: 'build-status', semanticLabel: 'Build succeeded — Open build activity', semanticHint: 'Opens the build activity summary.', label: 'Build succeeded', selectable: false, themeColor: 'success',
+    fillMode: 'solid', size: 'lg', rounded: 'md', leading: const Icon(Icons.check, size: 18),
+    child: const Text('Build succeeded'), onClick: () => setState(() => clicks++)),
+  if (visible) NgChip(label: 'Favourite', value: selected,
+    onChanged: (v) => setState(() => selected = v),
+    removeIcon: const Icon(Icons.remove, size: 18),
+    onRemove: () => setState(() => visible = false)),
+  Text('Activity opened $clicks times'),
+]);
+}
+class NgChipListExample extends StatefulWidget { const NgChipListExample({super.key}); @override State<NgChipListExample> createState()=>_NgChipListExampleState(); }
+class _NgChipListExampleState extends State<NgChipListExample> {
+List<({String id, String name, String owner, bool pinned, bool disabled})> records = [
+  (id: 'ops', name: 'Operations', owner: 'Morgan', pinned: false, disabled: false),
+  (id: 'finance', name: 'Finance', owner: 'Alex', pinned: true, disabled: false),
+  (id: 'archive', name: 'Archive', owner: 'Sam', pinned: false, disabled: true),
+];
+List<String> selected = ['finance'];
+final heading = 'Business topics';
+final help = 'Choose topics for this workspace.';
+bool rtl = false;
+String message = 'Select a topic';
+late var data = bind();
+// Explicit record type keeps event handlers statically checked.
+NgChipData<({String id, String name, String owner, bool pinned, bool disabled})> bind() => NgChipData(records, value: (x) => x.id, text: (x) => x.name,
+  disabled: (x) => x.disabled, removable: (x) => !x.pinned,
+  appearance: (x) => NgChipAppearance(themeColor: x.pinned ? 'success' : 'base'));
+Widget build(BuildContext context) => Column(children: [
+  Text(heading), Text(help),
+  NgCheckBox(label: 'Right-to-left layout', value: rtl, onChanged: (v) => setState(() => rtl = v)),
+  Directionality(textDirection: rtl ? TextDirection.rtl : TextDirection.ltr,
+    child: NgChipList(gap: 'lg', tabIndex: 0, semanticIdentifier: 'business-topics', semanticHint: help, label: heading, items: data.items, value: selected,
+    multiple: true, canRemove: data.canRemove, itemAppearance: data.getAppearance,
+    onChanged: (v) => setState(() => selected = v),
+    onClick: (id) => setState(() => message = 'Owner: ${data.getItem(id).owner}'),
+    onRemove: (id) => setState(() {
+      message = 'Removed ${data.getItem(id).name}';
+      records = records.where((x) => x.id != id).toList();
+      selected = selected.where((x) => x != id).toList();
+      data = bind();
+    }))),
+  Text(message),
+]);
+}

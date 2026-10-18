@@ -6,6 +6,12 @@
 
 Let users switch between application sections while keeping workspace content and navigation state in the parent. Choose a modal overlay or a panel beside the content.
 
+## Appearance and live example
+
+[Try the Blazor example](http://127.0.0.1:5180/preview/NgDrawer) · [Try the Flutter Web example](http://127.0.0.1:5181/?preview=NgDrawer)
+
+The documentation launcher embeds these running examples here. Choose a framework, interact with the component, and compare it with the exact code below. Use Reload example to restore the initial state. Dialogs and drawers start closed; use their Open button. Tooltips appear on hover or keyboard focus.
+
 ## Behavior and practical rules
 
 ### Own the selected section and visibility

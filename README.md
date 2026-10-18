@@ -6,7 +6,7 @@ Blazor and Flutter component libraries with a shared design-token source and a T
 
 ## Manual
 
-[English developer manual](docs/manual/README.md): all 47 components, behavior, parameters, events and working Blazor/Flutter examples. Start with [Getting started](docs/manual/getting-started.md) and [Code examples](docs/manual/code-examples.md). Both demos include an interactive code browser. The local manual has a searchable category tree on the left and syntax-highlighted examples.
+[English developer manual](docs/manual/README.md): all 47 components, behavior, parameters, events and working Blazor/Flutter examples. Start with [Getting started](docs/manual/getting-started.md) and [Code examples](docs/manual/code-examples.md). Both demos include an interactive code browser. The local manual has a searchable category tree on the left, syntax-highlighted examples, and a live appearance preview for every component. Switch between Blazor and Flutter Web, try the component, reload its state, or open it full-page. Both local demos must be running.
 
 ## Layout
 
@@ -110,3 +110,9 @@ Each planned component needs a feature-level audit of its reference before imple
 ## Source and licensing
 
 This repository currently contains original component implementations; no Telerik component source or theme package is vendored. Telerik Default is a visual reference. Styling is an initial approximation, not a verified pixel match. See [provenance](docs/provenance.md).
+
+## Maintaining component previews
+
+`python3 scripts/generate_manual.py` generates every component page, code assets and runnable previews from `scripts/manual_content.py`. Add a curated Blazor and Flutter snippet for each new public component; the generator rejects missing manuals. Previews execute those exact snippets, so code and appearance share one source. Do not edit the generated `ManualPreviews/*Example.razor` or `manual_previews.g.dart` files directly.
+
+Build both galleries after regeneration. The local documentation embeds `/preview/NgComponent` (Blazor) or `/?preview=NgComponent` (Flutter). Static Markdown readers receive links to these same examples. Previews are local, stateful examples; Reload example resets them. Modal/tooltip examples require their documented trigger. The visible Chrome smoke runner is `node scripts/manual-preview-check.mjs blazor` or `flutter`; coordinate Chrome use first. It saves runtime diagnostics and screenshots under ignored `artifacts/browser/manual-*` for visual review.

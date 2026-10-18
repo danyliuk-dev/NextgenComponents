@@ -6,6 +6,12 @@
 
 Navigate a known number of records.
 
+## Appearance and live example
+
+[Try the Blazor example](http://127.0.0.1:5180/preview/NgPager) · [Try the Flutter Web example](http://127.0.0.1:5181/?preview=NgPager)
+
+The documentation launcher embeds these running examples here. Choose a framework, interact with the component, and compare it with the exact code below. Use Reload example to restore the initial state. Dialogs and drawers start closed; use their Open button. Tooltips appear on hover or keyboard focus.
+
 ## Behavior and practical rules
 
 Page is one-based; PageSize is positive, Total is the count before paging. Store PageChanged and PageSizeChanged, and reset/clamp the page when the filter or size changes. The pager does not fetch or slice data: the example performs Skip/Take or equivalent application slicing. Disable impossible navigation at the first/last page. Server paging must provide a consistent total and handle stale asynchronous responses.

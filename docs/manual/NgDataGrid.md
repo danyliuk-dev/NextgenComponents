@@ -6,6 +6,12 @@
 
 Display, sort, filter, select and page local records.
 
+## Appearance and live example
+
+[Try the Blazor example](http://127.0.0.1:5180/preview/NgDataGrid) · [Try the Flutter Web example](http://127.0.0.1:5181/?preview=NgDataGrid)
+
+The documentation launcher embeds these running examples here. Choose a framework, interact with the component, and compare it with the exact code below. Use Reload example to restore the initial state. Dialogs and drawers start closed; use their Open button. Tooltips appear on hover or keyboard focus.
+
 ## Behavior and practical rules
 
 NgDataColumn<T> supplies a stable key, title and Value/value accessor. Return typed values for sorting; Format/format changes display only. Template/cellBuilder customizes a cell. RowId must return a unique stable ID. Save selection callbacks and replace Items/items after edits so the grid recalculates. Toolbar and row actions allow the application to own editing and persistence. This local grid does not implement server data binding, virtualization, column grouping or Excel export; see [data workspace](../data-workspace.md).

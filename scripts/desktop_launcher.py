@@ -57,6 +57,28 @@ SCRIPT = r'''(()=>{
   const badges=document.createElement('div');badges.className='doc-badges';for(const text of ['Blazor','Flutter Web','Version 0.26']){const badge=document.createElement('span');badge.className='doc-badge';badge.textContent=text;badges.append(badge);}hero.append(badges);
   const oldNav=hero.nextElementSibling;if(category&&oldNav?.tagName==='P'&&oldNav.querySelectorAll('a').length>=3&&!oldNav.textContent.includes('Start with'))oldNav.remove();
  }
+ const appearance=main.querySelector('#appearance-and-live-example');
+ if(appearance){
+  const name=document.querySelector('.component-tree a.current')?.textContent;
+  if(name&&/^Ng[A-Za-z0-9]+$/.test(name)){
+   const box=document.createElement('div');box.className='component-preview';
+   const toolbar=document.createElement('div');toolbar.className='preview-toolbar';
+   const label=document.createElement('label');label.textContent='Framework ';
+   const select=document.createElement('select');select.setAttribute('aria-label','Preview framework');
+   for(const [value,text] of [['blazor','Blazor'],['flutter','Flutter Web']]){const option=document.createElement('option');option.value=value;option.textContent=text;select.append(option);}
+   label.append(select);
+   const reload=document.createElement('button');reload.type='button';reload.textContent='Reload example';
+   const open=document.createElement('a');open.textContent='Open full page ↗';open.target='_blank';open.rel='noopener';
+   const frame=document.createElement('iframe');frame.loading='lazy';frame.title=name+' live example';
+   const large=/Ng(AIPrompt|Calendar|Chart|DataGrid|Diagram|Drawer|Editor|Map|PdfViewer|PivotGrid|Scheduler|Spreadsheet|TreeList|TreeView|Wizard)/.test(name);frame.style.height=large?'560px':'340px';
+   const status=document.createElement('p');status.className='preview-status';status.setAttribute('role','status');
+   let timer;
+   const load=()=>{clearTimeout(timer);const flutter=select.value==='flutter';const url=flutter?'http://127.0.0.1:5181/?preview='+name:'http://127.0.0.1:5180/preview/'+name;open.href=url;frame.src=url;status.textContent='Loading '+(flutter?'Flutter Web':'Blazor')+' example…';timer=setTimeout(()=>{status.textContent='If the preview is blank, start the demos with the desktop launcher, then reload. You can also open the full page.';},12000);};
+   frame.addEventListener('load',()=>{clearTimeout(timer);status.textContent='Live example · changes stay in this preview. If it is blank, start the demos with the desktop launcher.';});
+   select.addEventListener('change',load);reload.addEventListener('click',load);
+   toolbar.append(label,reload,open);box.append(toolbar,frame,status);appearance.after(box);load();
+  }
+ }
  const headings=[...main.querySelectorAll('h2[id]')];
  if(headings.length){const toc=document.createElement('nav');toc.className='toc';toc.setAttribute('aria-label','On this page');const strong=document.createElement('strong');strong.textContent='On this page';toc.append(strong);const links=document.createElement('div');for(const h of headings){const a=document.createElement('a');a.href='#'+h.id;a.textContent=h.textContent;links.append(a);}toc.append(links);const first=main.querySelector('h2');first.before(toc);}
  main.querySelectorAll('pre').forEach(pre=>{const code=pre.querySelector('code');const frame=document.createElement('div');frame.className='code-frame';const bar=document.createElement('div');bar.className='code-toolbar';const label=document.createElement('span');label.textContent=(code?.className.match(/language-(\S+)/)?.[1]||'Code');const button=document.createElement('button');button.type='button';button.textContent='Copy code';button.setAttribute('aria-label','Copy '+label.textContent+' example');button.addEventListener('click',async()=>{try{await navigator.clipboard.writeText(code?.textContent||pre.textContent);button.textContent='Copied';setTimeout(()=>button.textContent='Copy code',1800);}catch{button.textContent='Select to copy';}});const actions=document.createElement('div');actions.className='code-actions';const wrap=document.createElement('button');wrap.type='button';wrap.textContent='Wrap lines';wrap.setAttribute('aria-pressed','false');wrap.addEventListener('click',()=>{wrap.setAttribute('aria-pressed',String(frame.classList.toggle('wrapped')));});actions.append(wrap,button);bar.append(label,actions);pre.before(frame);frame.append(bar,pre);});

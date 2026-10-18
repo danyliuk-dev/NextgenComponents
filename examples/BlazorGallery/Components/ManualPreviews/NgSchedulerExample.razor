@@ -1,0 +1,4 @@
+@* Generated from scripts/manual_content.py *@
+<NgScheduler @bind-Date="week" Items="events" OnCreate="day=>message=day.ToShortDateString()" OnEdit="item=>message=item.Title"/>
+<p>@message</p>
+@code { private DateTime week=new(2026,10,19); private string? message; private NgScheduleEvent[] events=[new("a","Meeting",new(2026,10,19,10,0,0),new(2026,10,19,11,0,0))]; }

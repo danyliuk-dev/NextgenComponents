@@ -1,0 +1,13 @@
+@* Generated from scripts/manual_content.py *@
+<NgPromptBox Label="Prompt" @bind-Value="prompt" Busy="busy" OnSubmit="Submit" OnCancel="Cancel"/>
+<p>@result</p>
+@code {
+ private string prompt="",result=""; private bool busy; private int revision;
+ private async Task Submit(string text) {
+  var request=++revision; busy=true;
+  await Task.Delay(700); // Local example; replace with an application handler.
+  if(request!=revision)return;
+  result=$"Received prompt: {text}"; busy=false;
+ }
+ private void Cancel(){revision++;busy=false;result="Cancelled";}
+}

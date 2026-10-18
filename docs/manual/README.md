@@ -4,7 +4,7 @@ Version 0.26.0. Detailed guidance for every public Blazor and Flutter Web compon
 
 Start with [Getting started](getting-started.md) and [Code examples](code-examples.md). See [data models and formulas](models.md) for shared model contracts and [verification](../verification.md) for tested behavior.
 
-Each page contains a Blazor example and a Flutter example, followed by API tables and integration rules. Flutter snippets belong inside a State class with the Material and Nextgen imports; the getting-started page supplies the full application shell.
+Each page includes a live appearance preview with Blazor / Flutter Web switching, followed by the exact source examples, API tables and integration rules. Start both demos through the desktop launcher to use the embedded previews. Flutter snippets belong inside a State class with the Material and Nextgen imports; the getting-started page supplies the full application shell.
 
 | Component | Purpose |
 |---|---|

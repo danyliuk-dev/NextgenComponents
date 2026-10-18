@@ -1,0 +1,4 @@
+@* Generated from scripts/manual_content.py *@
+<NgPivotGrid Items="records" RowField="Team" ColumnField="Quarter" Aggregate="NgAggregate.Average" OnCellSelected="p=>count=p.Records.Count"/>
+<p>Source records: @count</p>
+@code { private int count; private NgPivotRecord[] records=[new("a",new Dictionary<string,string>{{"Team","Design"},{"Quarter","Q1"}},100),new("b",new Dictionary<string,string>{{"Team","Design"},{"Quarter","Q1"}},200)]; }

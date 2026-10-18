@@ -1,0 +1,13 @@
+@* Generated from scripts/manual_content.py *@
+<NgEditor Label="Project description" @bind-Value="document"/>
+<NgButton OnClick="Save">Save JSON</NgButton>
+<pre>@saved</pre>
+@code {
+    private NgDocument document = new([
+        new("Project plan", NgBlockKind.Heading1),
+        new("Agree on requirements", NgBlockKind.Bullet),
+        new("Review the result", NgBlockKind.Bullet, Bold: true)
+    ]);
+    private string saved = "";
+    private void Save() => saved = document.ToJson();
+}

@@ -6,6 +6,12 @@
 
 Edit a string with a visible label and form validation.
 
+## Appearance and live example
+
+[Try the Blazor example](http://127.0.0.1:5180/preview/NgTextBox) · [Try the Flutter Web example](http://127.0.0.1:5181/?preview=NgTextBox)
+
+The documentation launcher embeds these running examples here. Choose a framework, interact with the component, and compare it with the exact code below. Use Reload example to restore the initial state. Dialogs and drawers start closed; use their Open button. Tooltips appear on hover or keyboard focus.
+
 ## Behavior and practical rules
 
 Blazor uses InputBase<string?>: prefer @bind-Value, which supplies Value, ValueChanged and ValueExpression. With manual binding, supply ValueExpression even outside a form. Flutter initialValue is a starting value, not a controlled value: use TextEditingController for programmatic changes, do not combine it with initialValue, and dispose it in its owner. In a Flutter form validator returns null for valid input or an error string. Keep drafts separate from saved records. TextArea supports rows and multiline input; limits and required rules belong to the field/form configuration. A validation error must block saving the entire form.

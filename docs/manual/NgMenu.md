@@ -6,6 +6,12 @@
 
 Group related application commands in a horizontal toolbar or a vertical navigation area. Open nested groups to choose a leaf action.
 
+## Appearance and live example
+
+[Try the Blazor example](http://127.0.0.1:5180/preview/NgMenu) · [Try the Flutter Web example](http://127.0.0.1:5181/?preview=NgMenu)
+
+The documentation launcher embeds these running examples here. Choose a framework, interact with the component, and compare it with the exact code below. Use Reload example to restore the initial state. Dialogs and drawers start closed; use their Open button. Tooltips appear on hover or keyboard focus.
+
 ## Behavior and practical rules
 
 ### Connect commands to your application

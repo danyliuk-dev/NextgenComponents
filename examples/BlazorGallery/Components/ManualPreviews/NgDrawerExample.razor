@@ -1,0 +1,10 @@
+@* Generated from scripts/manual_content.py *@
+<NgDrawer Label="Workspace" Items="destinations" @bind-SelectedId="selected" @bind-Expanded="expanded" Overlay="true">
+    <h2>@selected</h2>
+    <NgTextBox Label="Draft note" @bind-Value="note" />
+</NgDrawer>
+@code {
+    private string? selected = "overview", note;
+    private bool expanded;
+    private readonly NgOption[] destinations = [new("overview", "Overview"), new("reports", "Reports"), new("settings", "Settings", true)];
+}

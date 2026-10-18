@@ -1,0 +1,4 @@
+@* Generated from scripts/manual_content.py *@
+<NgChart Title="Sales" Kind="NgChartKind.Line" Categories="categories" Series="series" OnPointSelected="p=>selected=p.Label"/>
+<p>@selected</p>
+@code { private string? selected; private string[] categories=["Mon","Tue","Wed"]; private NgChartSeries[] series=[new("Orders",[10,null,25])]; }

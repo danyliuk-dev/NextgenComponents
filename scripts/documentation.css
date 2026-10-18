@@ -34,3 +34,10 @@ a:focus-visible,button:focus-visible,input:focus-visible,summary:focus-visible{o
 @media(max-width:1000px){.layout{grid-template-columns:1fr;gap:14px}.sidebar{position:static;background:#fff;border:1px solid var(--line);border-radius:12px;padding:10px 16px}.sidebar>.documentation-nav>summary{margin:0}.doc-hero{padding:28px}.doc-section{padding:24px}}
 @media(max-width:540px){header{padding:15px 18px;gap:14px}header .brand{font-size:12px}.layout{padding:12px}.doc-hero{padding:23px 20px;border-radius:16px}.doc-hero h1{font-size:32px;letter-spacing:-1px}.doc-subtitle{font-size:17px}.doc-section{padding:22px 16px;border-radius:12px}.doc-section>h2{font-size:20px}.toc{padding:16px}.toc a{font-size:11px}.code-toolbar{padding:10px;gap:8px;flex-wrap:wrap}.code-toolbar>span::before{margin-right:8px}pre{font-size:12px;padding:16px}.doc-breadcrumb{margin-bottom:16px}}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition:none!important}}
+
+/* Live previews use the same source snippets as the API reference. */
+.component-preview{margin:24px 0;border:1px solid #cbd8ea;border-radius:14px;overflow:hidden;background:#f5f8fd;box-shadow:0 6px 22px #1d39600a}
+.preview-toolbar{display:flex;align-items:center;gap:16px;flex-wrap:wrap;padding:14px 18px;background:#eaf0fa;border-bottom:1px solid #cbd8ea;font-size:14px}
+.preview-toolbar label{font-weight:700;color:#27446f}.preview-toolbar select,.preview-toolbar button{font:inherit;padding:8px 12px;border:1px solid #a9bbd5;border-radius:7px;background:white;color:#243d61;cursor:pointer}.preview-toolbar a{margin-left:auto}
+.component-preview iframe{display:block;width:100%;height:560px;border:0;background:white}.preview-status{font-size:12px;color:#53647a;margin:0;padding:10px 18px}
+@media(max-width:540px){.preview-toolbar{gap:10px;padding:12px}.preview-toolbar a{margin-left:0}.component-preview iframe{height:580px}}

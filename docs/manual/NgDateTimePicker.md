@@ -6,6 +6,12 @@
 
 Select a calendar date or local wall-clock time without automatic timezone conversion.
 
+## Appearance and live example
+
+[Try the Blazor example](http://127.0.0.1:5180/preview/NgDateTimePicker) · [Try the Flutter Web example](http://127.0.0.1:5181/?preview=NgDateTimePicker)
+
+The documentation launcher embeds these running examples here. Choose a framework, interact with the component, and compare it with the exact code below. Use Reload example to restore the initial state. Dialogs and drawers start closed; use their Open button. Tooltips appear on hover or keyboard focus.
+
 ## Behavior and practical rules
 
 Input format: yyyy-MM-dd HH:mm. Min/Max include boundary values. Invalid dates such as April 31 and times such as 24:00 are rejected. Blazor uses DateOnly, TimeOnly or DateTime; Flutter uses DateTime or TimeOfDay. Normalize timezones at application boundaries. Empty optional input is null. Validate required values through the form; Flutter also exposes required. See [forms and dates](../forms-and-dates.md) for supported calendar interactions and parsing limitations.

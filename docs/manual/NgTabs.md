@@ -6,6 +6,12 @@
 
 Switch between related content panels.
 
+## Appearance and live example
+
+[Try the Blazor example](http://127.0.0.1:5180/preview/NgTabs) · [Try the Flutter Web example](http://127.0.0.1:5181/?preview=NgTabs)
+
+The documentation launcher embeds these running examples here. Choose a framework, interact with the component, and compare it with the exact code below. Use Reload example to restore the initial state. Dialogs and drawers start closed; use their Open button. Tooltips appear on hover or keyboard focus.
+
 ## Behavior and practical rules
 
 NgTab contains label and content; disabled tabs cannot be activated. SelectedIndex is zero-based and controlled by the parent. Store selection callbacks. Blazor connects tab IDs, aria-controls and panel labels, and installs its keyboard behavior through the packaged JS module; interactive rendering and static assets are required. Flutter uses its platform focus behavior. Keep business state in the parent rather than depending on the lifetime of a panel widget.

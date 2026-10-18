@@ -6,6 +6,12 @@
 
 Browse and select hierarchical records.
 
+## Appearance and live example
+
+[Try the Blazor example](http://127.0.0.1:5180/preview/NgTreeView) · [Try the Flutter Web example](http://127.0.0.1:5181/?preview=NgTreeView)
+
+The documentation launcher embeds these running examples here. Choose a framework, interact with the component, and compare it with the exact code below. Use Reload example to restore the initial state. Dialogs and drawers start closed; use their Open button. Tooltips appear on hover or keyboard focus.
+
 ## Behavior and practical rules
 
 NgTreeNode<T> contains a stable unique ID, item, children and disabled flag. The graph must be acyclic. ExpandedIds and SelectedId are controlled: save callbacks and pass updated collections back. Replacing the tree should also remove obsolete IDs from parent selection/expansion. Disabled nodes cannot be selected. Lazy server loading, drag/drop and virtualization are not implemented.

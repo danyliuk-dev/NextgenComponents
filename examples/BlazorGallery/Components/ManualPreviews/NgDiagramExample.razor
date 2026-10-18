@@ -1,0 +1,11 @@
+@* Generated from scripts/manual_content.py *@
+<NgDiagram Label="Process" @bind-Value="graph"
+    @bind-SelectedNodeId="selectedNode" @bind-SelectedEdgeId="selectedEdge"/>
+<p>Node: @selectedNode · Connection: @selectedEdge</p>
+@code {
+    private string? selectedNode, selectedEdge;
+    private NgDiagramModel graph = new([
+        new("start", "Start", 40, 100, Shape: NgDiagramShape.Ellipse),
+        new("work", "Processing", 360, 100)
+    ], [new("next", "start", "work", "Continue")]);
+}

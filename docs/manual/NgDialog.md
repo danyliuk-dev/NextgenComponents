@@ -6,6 +6,12 @@
 
 Ask for a focused decision in a modal surface.
 
+## Appearance and live example
+
+[Try the Blazor example](http://127.0.0.1:5180/preview/NgDialog) · [Try the Flutter Web example](http://127.0.0.1:5181/?preview=NgDialog)
+
+The documentation launcher embeds these running examples here. Choose a framework, interact with the component, and compare it with the exact code below. Use Reload example to restore the initial state. Dialogs and drawers start closed; use their Open button. Tooltips appear on hover or keyboard focus.
+
 ## Behavior and practical rules
 
 Blazor Open/OpenChanged control visibility. Flutter uses the dialog helper shown in the example. Supply a meaningful title, content and explicit actions. Escape dismisses the dialog; opening should move focus into it and closing restore focus to the trigger. Save and Cancel have different application semantics: cancelling must not persist the draft. Nested modal workflows and a full screen-reader certification are outside this release.

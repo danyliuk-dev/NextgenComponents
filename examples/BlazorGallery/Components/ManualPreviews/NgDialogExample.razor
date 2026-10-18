@@ -1,0 +1,4 @@
+@* Generated from scripts/manual_content.py *@
+<NgButton OnClick="()=>open=true">Open</NgButton>
+<NgDialog Title="Confirmation" @bind-Open="open"><ChildContent>Continue?</ChildContent><Actions><NgButton OnClick="()=>open=false">Close</NgButton></Actions></NgDialog>
+@code { private bool open; }

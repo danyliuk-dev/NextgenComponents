@@ -1,0 +1,62 @@
+@page "/preview/{Name}"
+<PageTitle>@Name preview</PageTitle>
+<div class="ng-scope manual-preview" data-ng-theme="light">
+@if (ExampleType is {} type) {
+    <ErrorBoundary @key="Name"><ChildContent><DynamicComponent Type="type" /></ChildContent>
+    <ErrorContent><p role="alert">This example could not render. Reload the preview or open the gallery.</p></ErrorContent></ErrorBoundary>
+} else { <p role="alert">Unknown component.</p> }
+</div>
+<style>body { margin:0; } .manual-preview { box-sizing:border-box; padding:24px; min-height:100vh; background:var(--ng-background); color:var(--ng-text); } .manual-preview > * { max-width:100%; }</style>
+@code {
+    [Parameter] public string Name { get; set; } = "";
+    private Type? ExampleType => Name switch {
+"NgAIPrompt" => typeof(ManualPreviews.NgAIPromptExample),
+"NgArcGauge" => typeof(ManualPreviews.NgArcGaugeExample),
+"NgAutoComplete" => typeof(ManualPreviews.NgAutoCompleteExample),
+"NgBreadcrumb" => typeof(ManualPreviews.NgBreadcrumbExample),
+"NgButton" => typeof(ManualPreviews.NgButtonExample),
+"NgButtonGroup" => typeof(ManualPreviews.NgButtonGroupExample),
+"NgCalendar" => typeof(ManualPreviews.NgCalendarExample),
+"NgChart" => typeof(ManualPreviews.NgChartExample),
+"NgCheckBox" => typeof(ManualPreviews.NgCheckBoxExample),
+"NgChip" => typeof(ManualPreviews.NgChipExample),
+"NgChipList" => typeof(ManualPreviews.NgChipListExample),
+"NgComboBox" => typeof(ManualPreviews.NgComboBoxExample),
+"NgDataGrid" => typeof(ManualPreviews.NgDataGridExample),
+"NgDateInput" => typeof(ManualPreviews.NgDateInputExample),
+"NgDatePicker" => typeof(ManualPreviews.NgDatePickerExample),
+"NgDateRangePicker" => typeof(ManualPreviews.NgDateRangePickerExample),
+"NgDateTimePicker" => typeof(ManualPreviews.NgDateTimePickerExample),
+"NgDiagram" => typeof(ManualPreviews.NgDiagramExample),
+"NgDialog" => typeof(ManualPreviews.NgDialogExample),
+"NgDrawer" => typeof(ManualPreviews.NgDrawerExample),
+"NgDropDownList" => typeof(ManualPreviews.NgDropDownListExample),
+"NgEditor" => typeof(ManualPreviews.NgEditorExample),
+"NgForm" => typeof(ManualPreviews.NgFormExample),
+"NgLinearGauge" => typeof(ManualPreviews.NgLinearGaugeExample),
+"NgMap" => typeof(ManualPreviews.NgMapExample),
+"NgMenu" => typeof(ManualPreviews.NgMenuExample),
+"NgMultiSelect" => typeof(ManualPreviews.NgMultiSelectExample),
+"NgNotification" => typeof(ManualPreviews.NgNotificationExample),
+"NgNumericTextBox" => typeof(ManualPreviews.NgNumericTextBoxExample),
+"NgPager" => typeof(ManualPreviews.NgPagerExample),
+"NgPdfViewer" => typeof(ManualPreviews.NgPdfViewerExample),
+"NgPivotGrid" => typeof(ManualPreviews.NgPivotGridExample),
+"NgPromptBox" => typeof(ManualPreviews.NgPromptBoxExample),
+"NgRadioGroup" => typeof(ManualPreviews.NgRadioGroupExample),
+"NgScheduler" => typeof(ManualPreviews.NgSchedulerExample),
+"NgSpreadsheet" => typeof(ManualPreviews.NgSpreadsheetExample),
+"NgStepper" => typeof(ManualPreviews.NgStepperExample),
+"NgSwitch" => typeof(ManualPreviews.NgSwitchExample),
+"NgTabs" => typeof(ManualPreviews.NgTabsExample),
+"NgTextArea" => typeof(ManualPreviews.NgTextAreaExample),
+"NgTextBox" => typeof(ManualPreviews.NgTextBoxExample),
+"NgTimePicker" => typeof(ManualPreviews.NgTimePickerExample),
+"NgToggleButton" => typeof(ManualPreviews.NgToggleButtonExample),
+"NgTooltip" => typeof(ManualPreviews.NgTooltipExample),
+"NgTreeList" => typeof(ManualPreviews.NgTreeListExample),
+"NgTreeView" => typeof(ManualPreviews.NgTreeViewExample),
+"NgWizard" => typeof(ManualPreviews.NgWizardExample),
+_ => null
+};
+}

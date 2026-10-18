@@ -1,0 +1,9 @@
+@* Generated from scripts/manual_content.py *@
+<p id="preview-help">Toggle the preview outline.</p>
+<NgToggleButton @ref="toggle" Id="preview-toggle" Label="Preview outline" AriaDescribedBy="preview-help"
+    @bind-Value="selected" OnClick="()=>clicks++" Size="lg" Rounded="full" FillMode="outline" ThemeColor="success">
+  <Leading><span>★</span></Leading><ChildContent><strong>Preview outline</strong></ChildContent>
+</NgToggleButton>
+<NgButton OnClick="()=>toggle!.FocusAsync().AsTask()">Focus preview</NgButton>
+<p>Selected: @selected. Activations: @clicks</p>
+@code { private NgToggleButton? toggle; private bool selected; private int clicks; }

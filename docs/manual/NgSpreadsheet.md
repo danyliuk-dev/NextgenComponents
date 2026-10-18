@@ -6,6 +6,12 @@
 
 Edit a small local worksheet with formulas and undo/redo.
 
+## Appearance and live example
+
+[Try the Blazor example](http://127.0.0.1:5180/preview/NgSpreadsheet) · [Try the Flutter Web example](http://127.0.0.1:5181/?preview=NgSpreadsheet)
+
+The documentation launcher embeds these running examples here. Choose a framework, interact with the component, and compare it with the exact code below. Use Reload example to restore the initial state. Dialogs and drawers start closed; use their Open button. Tooltips appear on hover or keyboard focus.
+
 ## Behavior and practical rules
 
 Select a cell, edit Cell value or formula, then press Apply cell or Enter. Arrow keys move selection. NgSheet is immutable; save the entire new sheet from the callback. Undo/Redo keeps up to 50 operations; an independent parent Value replacement clears local history. ReadOnly disables edits. Paste cells accepts rectangular TSV from the selected address, preserves formula text literally and rejects an out-of-bounds paste as a whole. Limits: 1–100 rows, 1–26 columns, 1,000 characters per cell. See [models and formulas](models.md) for operators/functions/errors. One sheet only: no XLSX/CSV files, formatting, merges, relative formula adjustment or multi-sheet workbook.

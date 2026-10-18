@@ -1,0 +1,31 @@
+@* Generated from scripts/manual_content.py *@
+<h2>Selection-only listbox</h2>
+<NgChipList Label="Selection-only business topics" Items="data.Items" @bind-Value="selected" Multiple />
+<h2 id="topics-heading">Business topics</h2>
+<p id="topics-help">Choose topics for this workspace.</p>
+<NgCheckBox Label="Right-to-left layout" @bind-Value="rtl" />
+<div dir="@(rtl ? "rtl" : "ltr")">
+<NgChipList Gap="lg" TabIndex="0" Id="business-topics" Class="business-topics" AriaLabelledBy="topics-heading" AriaDescribedBy="topics-help" Label="Business topics" Items="data.Items" @bind-Value="selected"
+    Multiple CanRemove="data.CanRemove" ItemAppearance="data.GetAppearance"
+    OnClick="Open" OnRemove="Remove" />
+</div>
+<p role="status">@message</p>
+@code {
+    private bool rtl = false;
+    private sealed record Topic(string Id, string Name, string Owner, bool Pinned = false, bool Disabled = false);
+    private List<Topic> records = [new("ops", "Operations", "Morgan"), new("finance", "Finance", "Alex", Pinned: true), new("archive", "Archive", "Sam", Disabled: true)];
+    private IReadOnlyList<string> selected = ["finance"];
+    private NgChipData<Topic> data = default!;
+    private string message = "Select a topic";
+    protected override void OnInitialized() => Rebind();
+    private void Rebind() => data = new(records, x => x.Id, x => x.Name,
+        disabled: x => x.Disabled, removable: x => !x.Pinned,
+        appearance: x => new(ThemeColor: x.Pinned ? "success" : "base"));
+    private void Open(string id) => message = $"Owner: {data.GetItem(id).Owner}";
+    private void Remove(string id) {
+        message = $"Removed {data.GetItem(id).Name}";
+        records = records.Where(x => x.Id != id).ToList();
+        selected = selected.Where(x => x != id).ToArray();
+        Rebind();
+    }
+}

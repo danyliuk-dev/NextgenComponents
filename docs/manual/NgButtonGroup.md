@@ -6,6 +6,12 @@
 
 Present a small set of related settings as visible buttons. Use single selection for alignment or a view mode, and multiple selection for independent styles or filters.
 
+## Appearance and live example
+
+[Try the Blazor example](http://127.0.0.1:5180/preview/NgButtonGroup) · [Try the Flutter Web example](http://127.0.0.1:5181/?preview=NgButtonGroup)
+
+The documentation launcher embeds these running examples here. Choose a framework, interact with the component, and compare it with the exact code below. Use Reload example to restore the initial state. Dialogs and drawers start closed; use their Open button. Tooltips appear on hover or keyboard focus.
+
 ## Behavior and practical rules
 
 

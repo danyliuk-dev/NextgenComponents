@@ -1,0 +1,13 @@
+@* Generated from scripts/manual_content.py *@
+<NgMap Label="Objects" Value="map" ClusterMarkers="true" ClusterRadius="60" @bind-View="view" @bind-SelectedId="selected"
+    OnMapClick="Clicked" TileUrlTemplate="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
+    Attribution="© OpenStreetMap contributors" AttributionUrl="https://www.openstreetmap.org/copyright"/>
+<p>Selected: @selected; last point: @last</p>
+@code {
+ private string? selected; private string last="";
+ private NgMapView view=new(50.4501,30.5234,13);
+ private NgMapModel map=new(
+   [new("office","Office",new(50.4501,30.5234)),new("park","Park",new(50.4466,30.5410))],
+   [new("line","Line",[new(50.4501,30.5234),new(50.4466,30.5410)])]);
+ private void Clicked(NgMapPoint p){last=$"{p.Latitude:F4}, {p.Longitude:F4}";}
+}

@@ -1,0 +1,16 @@
+@* Generated from scripts/manual_content.py *@
+<p id="build-help">Opens the build activity summary.</p>
+<NgChip TabIndex="0" Id="build-status" AriaLabel="Build succeeded — Open build activity" Class="build-status" AriaDescribedBy="build-help" Label="Build succeeded" Selectable="false" ThemeColor="success" FillMode="solid" Size="lg" Rounded="md" OnClick="()=>clicks++">
+    <Leading><span>✓</span></Leading>
+    <ChildContent><strong>Build succeeded</strong></ChildContent>
+</NgChip>
+@if (visible) {
+    <NgChip Label="Favourite" @bind-Value="selected" OnRemove="()=>visible=false">
+        <RemoveContent>−</RemoveContent>
+    </NgChip>
+}
+<p>Activity opened @clicks times</p>
+@code {
+    private bool selected, visible = true;
+    private int clicks;
+}

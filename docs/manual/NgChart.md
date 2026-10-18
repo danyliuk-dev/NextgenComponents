@@ -6,6 +6,12 @@
 
 Visualize local series as column, bar, line, area, pie or donut charts.
 
+## Appearance and live example
+
+[Try the Blazor example](http://127.0.0.1:5180/preview/NgChart) · [Try the Flutter Web example](http://127.0.0.1:5181/?preview=NgChart)
+
+The documentation launcher embeds these running examples here. Choose a framework, interact with the component, and compare it with the exact code below. Use Reload example to restore the initial state. Dialogs and drawers start closed; use their Open button. Tooltips appear on hover or keyboard focus.
+
 ## Behavior and practical rules
 
 Categories define the shared domain; every series must have the same number of nullable numeric values. Null breaks a line instead of becoming zero. Point selection returns NgChartSelection with zero-based series/point indices, their names, the number and a ready-to-use label. The application chooses what to do with a point. Keep units explicit. See [analytics and scheduling](../analytics-and-schedule.md) for mode-specific constraints; advanced axes, export, remote aggregation and broad chart-type parity are not implemented.

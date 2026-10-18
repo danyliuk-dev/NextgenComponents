@@ -6,6 +6,12 @@
 
 Edit a linked start and end date.
 
+## Appearance and live example
+
+[Try the Blazor example](http://127.0.0.1:5180/preview/NgDateRangePicker) · [Try the Flutter Web example](http://127.0.0.1:5181/?preview=NgDateRangePicker)
+
+The documentation launcher embeds these running examples here. Choose a framework, interact with the component, and compare it with the exact code below. Use Reload example to restore the initial state. Dialogs and drawers start closed; use their Open button. Tooltips appear on hover or keyboard focus.
+
 ## Behavior and practical rules
 
 NgDateRange contains nullable Start/End (Blazor DateOnly, Flutter DateTime). An end before the start is invalid. Min/Max constrain both endpoints. Callbacks replace the whole range. A partially filled draft may exist; the form determines whether it is valid for submission. Do not save the last valid model while an invalid draft is visible: submit through NgForm. This is a calendar-date range, not a timezone-aware interval.

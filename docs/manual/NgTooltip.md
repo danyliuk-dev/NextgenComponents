@@ -6,6 +6,12 @@
 
 Explain a control with a short nonessential hint.
 
+## Appearance and live example
+
+[Try the Blazor example](http://127.0.0.1:5180/preview/NgTooltip) · [Try the Flutter Web example](http://127.0.0.1:5181/?preview=NgTooltip)
+
+The documentation launcher embeds these running examples here. Choose a framework, interact with the component, and compare it with the exact code below. Use Reload example to restore the initial state. Dialogs and drawers start closed; use their Open button. Tooltips appear on hover or keyboard focus.
+
 ## Behavior and practical rules
 
 Supply Text/text and the child control. Tooltips are supplementary: the child still needs an accessible name and essential instructions must remain visible. Use pointer hover or keyboard focus to reveal the hint. Do not place form fields, actions or long documents inside a tooltip.

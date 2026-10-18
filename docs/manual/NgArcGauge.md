@@ -6,6 +6,12 @@
 
 Display a value within a numeric range.
 
+## Appearance and live example
+
+[Try the Blazor example](http://127.0.0.1:5180/preview/NgArcGauge) · [Try the Flutter Web example](http://127.0.0.1:5181/?preview=NgArcGauge)
+
+The documentation launcher embeds these running examples here. Choose a framework, interact with the component, and compare it with the exact code below. Use Reload example to restore the initial state. Dialogs and drawers start closed; use their Open button. Tooltips appear on hover or keyboard focus.
+
 ## Behavior and practical rules
 
 Min must be less than Max and values must be finite. The gauge projects the configured value into the range; keep the original business value in the parent. Label and Unit explain the number without relying on color. This is a read-only display, not an input or a multi-scale gauge. Use the shared theme for light/dark contrast.

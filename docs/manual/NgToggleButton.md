@@ -6,6 +6,12 @@
 
 Switch a single setting on or off while keeping the action label visible. Examples include a preview border, a pinned item or a formatting option.
 
+## Appearance and live example
+
+[Try the Blazor example](http://127.0.0.1:5180/preview/NgToggleButton) · [Try the Flutter Web example](http://127.0.0.1:5181/?preview=NgToggleButton)
+
+The documentation launcher embeds these running examples here. Choose a framework, interact with the component, and compare it with the exact code below. Use Reload example to restore the initial state. Dialogs and drawers start closed; use their Open button. Tooltips appear on hover or keyboard focus.
+
 ## Behavior and practical rules
 
 

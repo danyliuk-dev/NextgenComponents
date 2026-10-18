@@ -6,6 +6,12 @@
 
 Validate fields and run a save handler only after successful validation.
 
+## Appearance and live example
+
+[Try the Blazor example](http://127.0.0.1:5180/preview/NgForm) · [Try the Flutter Web example](http://127.0.0.1:5181/?preview=NgForm)
+
+The documentation launcher embeds these running examples here. Choose a framework, interact with the component, and compare it with the exact code below. Use Reload example to restore the initial state. Dialogs and drawers start closed; use their Open button. Tooltips appear on hover or keyboard focus.
+
 ## Behavior and practical rules
 
 Blazor Model uses DataAnnotations; OnValidSubmit receives a valid form and OnInvalidSubmit reports a failed submission. Keep one model instance while editing. Flutter uses a GlobalKey<FormState>, field validators/required rules and the supplied submit handler. Return null for valid field values, otherwise an error message. Network failures belong to the application save flow, not numeric/date parsing. Avoid nested forms. Maintain a separate saved record so Cancel can discard the draft.

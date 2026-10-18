@@ -6,6 +6,12 @@
 
 Edit a Boolean option.
 
+## Appearance and live example
+
+[Try the Blazor example](http://127.0.0.1:5180/preview/NgCheckBox) · [Try the Flutter Web example](http://127.0.0.1:5181/?preview=NgCheckBox)
+
+The documentation launcher embeds these running examples here. Choose a framework, interact with the component, and compare it with the exact code below. Use Reload example to restore the initial state. Dialogs and drawers start closed; use their Open button. Tooltips appear on hover or keyboard focus.
+
 ## Behavior and practical rules
 
 The parent owns Value/value. Store ValueChanged/onChanged and pass the updated value back; Flutter needs setState or your state manager. Disabled prevents interaction. The label provides the accessible name. Keyboard focus and Space toggle the control. These components represent true/false, not a tri-state value; validate application requirements separately.
