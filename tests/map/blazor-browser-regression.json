@@ -1,0 +1,71 @@
+{
+  "actions": [
+    {
+      "method": "Page.navigate",
+      "params": {
+        "url": "http://127.0.0.1:5180/map"
+      }
+    },
+    {
+      "evaluate": "new Promise(r=>setTimeout(r,1000))"
+    },
+    {
+      "evaluate": "[...document.querySelectorAll('button')].find(e=>e.textContent==='Same location').click()"
+    },
+    {
+      "evaluate": "new Promise(r=>setTimeout(r,300))"
+    },
+    {
+      "method": "Emulation.setDeviceMetricsOverride",
+      "params": {
+        "width": 390,
+        "height": 1000,
+        "deviceScaleFactor": 1,
+        "mobile": false
+      }
+    },
+    {
+      "evaluate": "new Promise(r=>setTimeout(r,300))"
+    },
+    {
+      "evaluate": "document.querySelector('iframe').scrollIntoView({block:'center'});document.querySelector('iframe').contentDocument.querySelector('.ng-cluster').focus()"
+    },
+    {
+      "method": "Input.dispatchKeyEvent",
+      "params": {
+        "type": "keyDown",
+        "key": "Enter",
+        "code": "Enter",
+        "windowsVirtualKeyCode": 13,
+        "text": "\r"
+      }
+    },
+    {
+      "method": "Input.dispatchKeyEvent",
+      "params": {
+        "type": "keyUp",
+        "key": "Enter",
+        "code": "Enter",
+        "windowsVirtualKeyCode": 13
+      }
+    },
+    {
+      "evaluate": "new Promise(r=>setTimeout(r,400))"
+    },
+    {
+      "evaluate": "if(document.querySelector('iframe').contentDocument.querySelectorAll('[data-member]').length!==3)throw Error('cluster Enter');if(document.querySelector('iframe').contentDocument.documentElement.scrollWidth>document.querySelector('iframe').contentDocument.documentElement.clientWidth)throw Error('overflow');"
+    },
+    {
+      "evaluate": "new Promise(r=>setTimeout(r,1200))"
+    },
+    {
+      "evaluate": "(()=>{const d=document.querySelector('iframe').contentDocument,p=d.querySelector('.leaflet-popup');if(!p||d.defaultView.getComputedStyle(p).opacity!=='1')throw Error('popup closed after auto-pan');return {opacity:d.defaultView.getComputedStyle(p).opacity,buttons:d.querySelectorAll('[data-member]').length};})()"
+    },
+    {
+      "screenshot": "cluster-blazor-narrow.png"
+    },
+    {
+      "method": "Emulation.clearDeviceMetricsOverride"
+    }
+  ]
+}

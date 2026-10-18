@@ -163,6 +163,11 @@ Reject(()=>new NgMapModel([new("area","Duplicate",new(0,0))],[mapPath]),"map rej
 Reject(()=>new NgMapModel(Enumerable.Range(0,501).Select(i=>new NgMapMarker("m"+i,"Marker",new(0,0)))),"map marker limit");
 Reject(()=>new NgMapMarker("bad id","Marker",new(0,0)),"map rejects invalid IDs");
 await Check<NgMap>(new(){["Label"]="Places <safe>"},"Places &lt;safe&gt;","map-viewer/index.html","height:520px");
+foreach(var radius in new[]{19,121}) {
+ try {await Check<NgMap>(new(){["ClusterRadius"]=radius});throw new Exception("Invalid cluster radius accepted");}
+ catch(ArgumentOutOfRangeException){Rule(true,"map rejects cluster radius "+radius);}
+}
+await Check<NgMap>(new(){["ClusterMarkers"]=true,["ClusterRadius"]=120},"map-viewer/index.html");
 Console.WriteLine($"{count} rendering and data/date-rule checks passed. Browser interaction requires the separate visual run.");
 sealed class NoBrowserJS : IJSRuntime {
  public ValueTask<TValue> InvokeAsync<TValue>(string identifier, object?[]? args) => throw new InvalidOperationException("JS must not execute in SSR");

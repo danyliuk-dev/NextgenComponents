@@ -1,0 +1,121 @@
+{
+  "actions": [
+    {
+      "method": "Emulation.setDeviceMetricsOverride",
+      "params": {
+        "width": 390,
+        "height": 1000,
+        "deviceScaleFactor": 1,
+        "mobile": false
+      }
+    },
+    {
+      "method": "Page.navigate",
+      "params": {
+        "url": "http://127.0.0.1:5181"
+      }
+    },
+    {
+      "evaluate": "new Promise(r=>setTimeout(r,1400))"
+    },
+    {
+      "evaluate": "document.querySelector('flt-semantics-placeholder')?.click()"
+    },
+    {
+      "evaluate": "new Promise(r=>setTimeout(r,300))"
+    },
+    {
+      "evaluate": "[...document.querySelectorAll('[role=button]')].find(e=>e.textContent==='Map').click()"
+    },
+    {
+      "evaluate": "new Promise(r=>setTimeout(r,800))"
+    },
+    {
+      "evaluate": "[...document.querySelectorAll('[role=button]')].find(e=>e.textContent==='Same location').click()"
+    },
+    {
+      "clickSelector": "[role=switch]"
+    },
+    {
+      "method": "Input.dispatchMouseEvent",
+      "params": {
+        "type": "mouseWheel",
+        "x": 10,
+        "y": 800,
+        "deltaX": 0,
+        "deltaY": 400
+      }
+    },
+    {
+      "evaluate": "new Promise(r=>setTimeout(r,400))"
+    },
+    {
+      "evaluate": "document.querySelector('iframe').contentDocument.querySelector('.ng-cluster').focus()"
+    },
+    {
+      "method": "Input.dispatchKeyEvent",
+      "params": {
+        "type": "keyDown",
+        "key": " ",
+        "code": "Space",
+        "windowsVirtualKeyCode": 32,
+        "text": " "
+      }
+    },
+    {
+      "method": "Input.dispatchKeyEvent",
+      "params": {
+        "type": "keyUp",
+        "key": " ",
+        "code": "Space",
+        "windowsVirtualKeyCode": 32
+      }
+    },
+    {
+      "evaluate": "new Promise(r=>setTimeout(r,350))"
+    },
+    {
+      "evaluate": "if(document.querySelector('iframe').contentDocument.querySelectorAll('[data-member]').length!==3)throw Error('Flutter Space');if(document.querySelector('iframe').contentDocument.documentElement.scrollWidth>document.querySelector('iframe').contentDocument.documentElement.clientWidth)throw Error('overflow');"
+    },
+    {
+      "evaluate": "new Promise(r=>setTimeout(r,1200))"
+    },
+    {
+      "evaluate": "(()=>{const d=document.querySelector('iframe').contentDocument,p=d.querySelector('.leaflet-popup');if(!p||d.defaultView.getComputedStyle(p).opacity!=='1')throw Error('Flutter popup closed after auto-pan');return {opacity:d.defaultView.getComputedStyle(p).opacity,buttons:d.querySelectorAll('[data-member]').length};})()"
+    },
+    {
+      "screenshot": "cluster-flutter-narrow.png"
+    },
+    {
+      "evaluate": "document.querySelector('iframe').contentDocument.querySelector('[data-member=same_2]').focus()"
+    },
+    {
+      "method": "Input.dispatchKeyEvent",
+      "params": {
+        "type": "keyDown",
+        "key": "Enter",
+        "code": "Enter",
+        "windowsVirtualKeyCode": 13,
+        "text": "\r"
+      }
+    },
+    {
+      "method": "Input.dispatchKeyEvent",
+      "params": {
+        "type": "keyUp",
+        "key": "Enter",
+        "code": "Enter",
+        "windowsVirtualKeyCode": 13
+      }
+    },
+    {
+      "evaluate": "new Promise(r=>setTimeout(r,350))"
+    },
+    {
+      "evaluate": "if(!document.body.innerText.includes('Selected: same_2'))throw Error('keyboard member selection');document.body.innerText"
+    },
+    {
+      "method": "Emulation.clearDeviceMetricsOverride"
+    }
+  ]
+}

@@ -3,6 +3,30 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:nextgen_components/nextgen_components.dart';
 
 void main() {
+  testWidgets('Cluster radius is validated even when clustering is disabled', (
+    tester,
+  ) async {
+    for (final radius in [19, 121]) {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: NgMap(value: NgMapModel(), clusterRadius: radius),
+        ),
+      );
+      expect(tester.takeException(), isArgumentError);
+    }
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: NgMap(
+            value: NgMapModel(),
+            clusterMarkers: true,
+            clusterRadius: 120,
+          ),
+        ),
+      ),
+    );
+    expect(tester.takeException(), isNull);
+  });
   test('Map coordinates and zoom reject unsupported values', () {
     for (final p in [
       () => NgMapPoint(double.nan, 0),

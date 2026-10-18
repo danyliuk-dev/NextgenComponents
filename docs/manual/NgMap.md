@@ -10,7 +10,7 @@
 
 ### Подключение и источник карты
 
-Blazor требует интерактивного render mode и static web assets. Общий движок Leaflet 1.9.4 поставляется локально в _content/NextgenComponents.Blazor/map-viewer/ и assets пакета Flutter; CDN и script-теги в приложении не нужны. Flutter: реализован Web, native показывает явное сообщение о неподдерживаемой платформе. Мобильные приложения будут проверяться отдельно.
+Blazor требует интерактивного render mode и static web assets. При UseStaticFiles обеспечьте MIME .mjs = text/javascript для модуля кластеризации (пример настройки в Program.cs галереи). Общий движок Leaflet 1.9.4 поставляется локально в _content/NextgenComponents.Blazor/map-viewer/ и assets пакета Flutter; CDN и script-теги в приложении не нужны. Flutter: реализован Web, native показывает явное сообщение о неподдерживаемой платформе. Мобильные приложения будут проверяться отдельно.
 
 TileUrlTemplate/tileUrlTemplate — один шаблон растровых XYZ-тайлов с обязательными {z}, {x}, {y}; пример выше использует публичный OpenStreetMap. Поддерживаются относительный URL (от base URI приложения) и HTTP(S). Пустой/null источник показывает сетку и ваши объекты без географической подложки. Attribution/attribution — обязательная непустая подпись для источника тайлов. AttributionUrl/attributionUrl добавляет ссылку; HTML в подписи и тексте объектов не исполняется. Подпись видна в правом нижнем углу карты. Провайдер должен поддерживать zoom 0–19 и разрешать использование тайлов вашим приложением. Headers, bearer-токены, TMS и vector tiles пока не поддерживаются.
 
@@ -32,16 +32,24 @@ OnMapClick/onMapClick сообщает NgMapPoint для свободной об
 
 Height/height: 400–1200 px, по умолчанию 520. При ширине до 540 px список объектов перемещается под карту и прокручивается горизонтально. Label/label задаёт заголовок и title iframe. Blazor Dark задаётся явно; Flutter берёт тему из Theme. Смена темы и модели сохраняет iframe и текущий вид, если View/view не изменился; подложка провайдера остаётся исходной (не инвертируется).
 
+### Кластеризация маркеров (0.9.1)
+
+ClusterMarkers/clusterMarkers (по умолчанию false) объединяет близкие маркеры в круг с их количеством. ClusterRadius/clusterRadius — целое число от 20 до 120 CSS px, по умолчанию 60; проверяется даже при выключенной кластеризации. Это расстояние на текущем масштабе, а не метры. Маркеры сортируются по ID и группируются вокруг первой точки группы; длинные цепочки соседних точек не склеиваются в одну бесконечную группу. Изменение порядка исходной коллекции и перемещение карты не меняют состав групп; изменение zoom пересчитывает его. Точки через линию даты не объединяются.
+
+Нажатие на группу приближает её область минимум на один уровень, максимум до zoom 19. Если координаты совпадают или достигнут zoom 19, открывается прокручиваемый список конкретных объектов. Нажатие на имя передаёт обычный SelectedIdChanged/onSelectedIdChanged, раскрывает индивидуальный маркер и popup. Группа сама не имеет публичного ID и не вызывает событие выбора объекта или щелчка по фону. Выбор через Objects работает так же. Выбранный маркер исключается из кластеров и остаётся отдельным; после Clear selection снова включается в группу. Следовательно, число на группе не включает выбранный маркер, а общий счётчик внизу всегда показывает все исходные маркеры.
+
+Группы доступны по Tab и Enter, список внутри popup — обычные кнопки. Изменение данных и включение/выключение кластеризации сохраняют вид карты; открытый popup при перегруппировке может закрыться. Тема не сбрасывает группы. Пути и полигоны не кластеризуются. Лимит модели остаётся 500 маркеров; это не серверная агрегация и не обещание работы с миллионами точек. В галереях Dense markers показывает 60 близких объектов, Same location — три офиса в одной точке без внешних тайлов.
+
 ### Состояния и ограничения
 
 No objects — пустая модель; No basemap configured — нет источника тайлов. Loading tiles, Tiles loaded и Some map tiles unavailable показывают загрузку текущего набора тайлов. При отказе сети маркеры, линии и выбор продолжают работать; повторная навигация или смена источника запрашивает новые тайлы. Количество объектов всегда отображается отдельно. Отсутствие подложки не означает отсутствие данных.
 
-Одна растровая подложка, точки, линии и простые полигоны — текущий объём. Кластеризация, геокодирование, маршрутизация, GeoJSON import, bubble layers, редактирование геометрии, экспорт и offline-режим пока не реализованы. Для больших данных сначала фильтруйте объекты по области/задаче в приложении. Полный API Telerik не воспроизводится.
+Одна растровая подложка, точки, линии и простые полигоны — текущий объём. Геокодирование, маршрутизация, GeoJSON import, bubble layers, редактирование геометрии, экспорт и offline-режим пока не реализованы. Для больших данных сначала фильтруйте объекты по области/задаче в приложении. Полный API Telerik не воспроизводится.
 
 ## Blazor: рабочий пример
 
 ```razor
-<NgMap Label="Объекты" Value="map" @bind-View="view" @bind-SelectedId="selected"
+<NgMap Label="Объекты" Value="map" ClusterMarkers="true" ClusterRadius="60" @bind-View="view" @bind-SelectedId="selected"
     OnMapClick="Clicked" TileUrlTemplate="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
     Attribution="© OpenStreetMap contributors" AttributionUrl="https://www.openstreetmap.org/copyright"/>
 <p>Выбрано: @selected; последняя точка: @last</p>
@@ -68,7 +76,7 @@ final map = NgMapModel(markers: [
   NgMapPoint(50.4501, 30.5234), NgMapPoint(50.4466, 30.5410),
 ])]);
 Widget build(BuildContext context) => NgMap(label: 'Объекты', value: map,
-  view: view, selectedId: selected,
+  view: view, selectedId: selected, clusterMarkers: true, clusterRadius: 60,
   onViewChanged: (v) => setState(() => view = v),
   onSelectedIdChanged: (id) => setState(() => selected = id),
   onMapClick: (p) => setState(() => last = '${p.latitude}, ${p.longitude}'),
@@ -93,6 +101,8 @@ Widget build(BuildContext context) => NgMap(label: 'Объекты', value: map,
 | `TileUrlTemplate` | `string?` | не задан | Смотрите поведение и тип модели выше. |
 | `Attribution` | `string` | "" | Смотрите поведение и тип модели выше. |
 | `AttributionUrl` | `string?` | не задан | Смотрите поведение и тип модели выше. |
+| `ClusterMarkers` | `bool` | false | Смотрите поведение и тип модели выше. |
+| `ClusterRadius` | `int` | 60 | Смотрите поведение и тип модели выше. |
 | `Dark` | `bool` | false | Смотрите поведение и тип модели выше. |
 | `Height` | `int` | 520 | Смотрите поведение и тип модели выше. |
 
@@ -110,6 +120,8 @@ Widget build(BuildContext context) => NgMap(label: 'Объекты', value: map,
 | `attributionUrl` | `String?` | Смотрите поведение и тип модели выше. |
 | `attribution` | `String` | Смотрите поведение и тип модели выше. |
 | `height` | `double` | Смотрите поведение и тип модели выше. |
+| `clusterMarkers` | `bool` | Смотрите поведение и тип модели выше. |
+| `clusterRadius` | `int` | Смотрите поведение и тип модели выше. |
 | `onViewChanged` | `ValueChanged<NgMapView>?` | Смотрите поведение и тип модели выше. |
 | `onSelectedIdChanged` | `ValueChanged<String?>?` | Смотрите поведение и тип модели выше. |
 | `onMapClick` | `ValueChanged<NgMapPoint>?` | Смотрите поведение и тип модели выше. |
@@ -125,6 +137,8 @@ const NgMap({
     this.attribution = '',
     this.attributionUrl,
     this.height = 520,
+    this.clusterMarkers = false,
+    this.clusterRadius = 60,
     this.onViewChanged,
     this.onSelectedIdChanged,
     this.onMapClick,

@@ -43,7 +43,7 @@ class _MapGalleryState extends State<MapGallery> {
   NgMapView view = NgMapView(latitude: 50.4501, longitude: 30.5234, zoom: 13);
   String? selected;
   String provider = 'osm', lastClick = 'none';
-  bool addMarker = false;
+  bool addMarker = false, clusterMarkers = true;
   int sequence = 0;
   @override
   Widget build(BuildContext context) => Scaffold(
@@ -86,6 +86,60 @@ class _MapGalleryState extends State<MapGallery> {
             spacing: 8,
             runSpacing: 8,
             children: [
+              NgCheckBox(
+                label: 'Cluster markers',
+                value: clusterMarkers,
+                onChanged: (v) => setState(() => clusterMarkers = v),
+              ),
+              NgButton(
+                child: const Text('Dense markers'),
+                onPressed: () => setState(() {
+                  model = NgMapModel(
+                    markers: List.generate(
+                      60,
+                      (i) => NgMapMarker(
+                        'dense_$i',
+                        'Location ${i + 1}',
+                        NgMapPoint(
+                          50.4501 + (i ~/ 10) * .0007,
+                          30.5234 + (i % 10) * .0007,
+                        ),
+                      ),
+                    ),
+                  );
+                  selected = null;
+                  clusterMarkers = true;
+                  provider = 'none';
+                  view = NgMapView(
+                    latitude: 50.452,
+                    longitude: 30.526,
+                    zoom: 13,
+                  );
+                }),
+              ),
+              NgButton(
+                child: const Text('Same location'),
+                onPressed: () => setState(() {
+                  model = NgMapModel(
+                    markers: List.generate(
+                      3,
+                      (i) => NgMapMarker(
+                        'same_$i',
+                        'Office ${i + 1}',
+                        NgMapPoint(50.4501, 30.5234),
+                      ),
+                    ),
+                  );
+                  selected = null;
+                  clusterMarkers = true;
+                  provider = 'none';
+                  view = NgMapView(
+                    latitude: 50.4501,
+                    longitude: 30.5234,
+                    zoom: 19,
+                  );
+                }),
+              ),
               NgButton(
                 child: const Text('Reset data'),
                 onPressed: () => setState(() {
@@ -129,6 +183,7 @@ class _MapGalleryState extends State<MapGallery> {
           NgMap(
             label: 'Kyiv places',
             value: model,
+            clusterMarkers: clusterMarkers,
             view: view,
             selectedId: selected,
             onSelectedIdChanged: (id) => setState(() => selected = id),

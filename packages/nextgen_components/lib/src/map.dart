@@ -114,6 +114,8 @@ class NgMap extends StatelessWidget {
   final String? selectedId, tileUrlTemplate, attributionUrl;
   final String attribution;
   final double height;
+  final bool clusterMarkers;
+  final int clusterRadius;
   final ValueChanged<NgMapView>? onViewChanged;
   final ValueChanged<String?>? onSelectedIdChanged;
   final ValueChanged<NgMapPoint>? onMapClick;
@@ -127,12 +129,16 @@ class NgMap extends StatelessWidget {
     this.attribution = '',
     this.attributionUrl,
     this.height = 520,
+    this.clusterMarkers = false,
+    this.clusterRadius = 60,
     this.onViewChanged,
     this.onSelectedIdChanged,
     this.onMapClick,
   });
   @override
   Widget build(BuildContext context) {
+    if (clusterRadius < 20 || clusterRadius > 120)
+      throw ArgumentError('Cluster radius must be 20–120 pixels.');
     if (!height.isFinite || height < 400 || height > 1200)
       throw ArgumentError('Use a height from 400 to 1200 pixels.');
     for (final url in [tileUrlTemplate, attributionUrl]) {
@@ -151,6 +157,8 @@ class NgMap extends StatelessWidget {
       );
     final config = jsonEncode({
       'model': value.toJson(),
+      'clusterMarkers': clusterMarkers,
+      'clusterRadius': clusterRadius,
       'view': (view ?? NgMapView()).toJson(),
       'selectedId': selectedId,
       'tileUrlTemplate': tileUrlTemplate,

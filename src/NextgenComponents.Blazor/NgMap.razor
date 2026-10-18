@@ -14,15 +14,18 @@
  [Parameter] public string? TileUrlTemplate {get;set;}
  [Parameter] public string Attribution {get;set;}="";
  [Parameter] public string? AttributionUrl {get;set;}
+ [Parameter] public bool ClusterMarkers {get;set;}
+ [Parameter] public int ClusterRadius {get;set;}=60;
  [Parameter] public bool Dark {get;set;}
  [Parameter] public int Height {get;set;}=520;
  private ElementReference frame; private IJSObjectReference? module; private DotNetObjectReference<NgMap>? reference; private string config="",sent="";
  private string? Resolve(string? url){if(string.IsNullOrWhiteSpace(url))return null;var uri=Navigation.ToAbsoluteUri(url);if(uri.Scheme is not ("http" or "https"))throw new ArgumentException("Map URLs must be relative or HTTP(S).");return uri.ToString();}
  protected override void OnParametersSet(){
+  if(ClusterRadius<20||ClusterRadius>120)throw new ArgumentOutOfRangeException(nameof(ClusterRadius));
   ArgumentNullException.ThrowIfNull(Value);ArgumentNullException.ThrowIfNull(View);
   if(Height<400||Height>1200)throw new ArgumentOutOfRangeException(nameof(Height));
   if(!string.IsNullOrWhiteSpace(TileUrlTemplate)&&(!new[]{"{z}","{x}","{y}"}.All(TileUrlTemplate.Contains)||string.IsNullOrWhiteSpace(Attribution)))throw new ArgumentException("Tile URL needs {z}, {x}, {y} and visible attribution.");
-  config=JsonSerializer.Serialize(new{model=Value,view=View,SelectedId,tileUrlTemplate=Resolve(TileUrlTemplate),Attribution,attributionUrl=Resolve(AttributionUrl),Dark},new JsonSerializerOptions{PropertyNamingPolicy=JsonNamingPolicy.CamelCase});
+  config=JsonSerializer.Serialize(new{model=Value,view=View,SelectedId,ClusterMarkers,ClusterRadius,tileUrlTemplate=Resolve(TileUrlTemplate),Attribution,attributionUrl=Resolve(AttributionUrl),Dark},new JsonSerializerOptions{PropertyNamingPolicy=JsonNamingPolicy.CamelCase});
  }
  protected override async Task OnAfterRenderAsync(bool first){if(first){module=await JS.InvokeAsync<IJSObjectReference>("import","./_content/NextgenComponents.Blazor/map-bridge.js");reference=DotNetObjectReference.Create(this);await module.InvokeVoidAsync("attach",frame,reference);}if(module is not null&&sent!=config){await module.InvokeVoidAsync("update",frame,config);sent=config;}}
  [JSInvokable] public async Task MapEvent(string json){using var doc=JsonDocument.Parse(json);var e=doc.RootElement;switch(e.GetProperty("kind").GetString()){
