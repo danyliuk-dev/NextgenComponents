@@ -61,7 +61,7 @@ class NgNumericTextBox extends StatefulWidget {
   final double? min;
   final double? max;
   final ValueChanged<double?>? onChanged;
-  final bool enabled;
+  final bool enabled, required;
   const NgNumericTextBox({
     super.key,
     required this.label,
@@ -70,6 +70,7 @@ class NgNumericTextBox extends StatefulWidget {
     this.max,
     this.onChanged,
     this.enabled = true,
+    this.required = false,
   });
   @override
   State<NgNumericTextBox> createState() => _NgNumericTextBoxState();
@@ -95,7 +96,8 @@ class _NgNumericTextBoxState extends State<NgNumericTextBox> {
   }
 
   String? validate(String? input) {
-    if (input == null || input.isEmpty) return null;
+    if (input == null || input.isEmpty)
+      return widget.required ? '${widget.label} is required' : null;
     final value = double.tryParse(input);
     if (value == null || !value.isFinite) return 'Enter a valid number';
     if (widget.min != null && value < widget.min!)

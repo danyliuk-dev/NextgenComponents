@@ -1,0 +1,27 @@
+@typeparam TItem
+<div class="ng-tree-list"><label class="ng-field">Search @Label<input class="ng-input" aria-label="@($"Search {Label}")" @bind="search" @bind:event="oninput" /></label>
+<div class="ng-table-scroll" tabindex="0" aria-label="@($"{Label} table scroll area")"><table class="ng-data-table"><caption class="ng-sr-only">@Label</caption><thead><tr>
+@foreach(var column in Columns){<th scope="col" aria-sort="@(sortKey==column.Key?(descending?"descending":"ascending"):"none")"><button type="button" disabled="@(!column.Sortable)" @onclick="()=>Sort(column.Key)">@column.Title @(sortKey==column.Key?(descending?"↓":"↑"):"↕")</button></th>}
+</tr></thead><tbody>
+@foreach(var row in Rows){var node=row.Node;<tr @key="node.Id" class="@(SelectedId==node.Id?"ng-row-selected":"")">
+@for(var i=0;i<Columns.Count;i++){var column=Columns[i];<td>@if(i==0){<div class="ng-tree-cell" style="padding-left:@(row.Depth*20)px">@if(node.Children?.Count>0){<NgButton Disabled="@(node.Disabled || !string.IsNullOrWhiteSpace(search))" aria-expanded="@(row.Expanded?"true":"false")" aria-label="@($"{(row.Expanded?"Collapse":"Expand")} {column.Text(node.Item)}")" OnClick="()=>Toggle(node.Id)">@(row.Expanded?"▾":"▸")</NgButton>}else{<span class="ng-tree-spacer"></span>}<button type="button" class="ng-link" disabled="node.Disabled" aria-pressed="@(SelectedId==node.Id?"true":"false")" @onclick="()=>Select(node)">@column.Text(node.Item)</button></div>}else if(column.Template is not null){@column.Template(node.Item)}else{@column.Text(node.Item)}</td>}
+</tr>}
+@if(Rows.Count==0){<tr><td colspan="@Columns.Count" class="ng-empty">No matching items.</td></tr>}
+</tbody></table></div></div>
+@code {
+ [Parameter] public string Label{get;set;}="Hierarchy";
+ [Parameter] public IReadOnlyList<NgTreeNode<TItem>> Items{get;set;}=[];
+ [Parameter] public IReadOnlyList<NgDataColumn<TItem>> Columns{get;set;}=[];
+ [Parameter] public HashSet<string> ExpandedIds{get;set;}=[];
+ [Parameter] public EventCallback<HashSet<string>> ExpandedIdsChanged{get;set;}
+ [Parameter] public string? SelectedId{get;set;}
+ [Parameter] public EventCallback<string?> SelectedIdChanged{get;set;}
+ private string search="";
+ private string? sortKey;
+ private bool descending;
+ private IReadOnlyList<NgTreeRow<TItem>> Rows=>NgDataOperations.Flatten(Items,ExpandedIds,x=>string.Join(" ",Columns.Select(c=>c.Text(x))),search,Compare);
+ private int Compare(NgTreeNode<TItem> a,NgTreeNode<TItem> b){var column=Columns.FirstOrDefault(c=>c.Key==sortKey&&c.Sortable);if(column is null)return 0;return NgDataOperations.CompareValues(column.Value(a.Item),column.Value(b.Item))*(descending?-1:1);}
+ private void Sort(string key){descending=sortKey==key&&!descending;sortKey=key;}
+ private async Task Toggle(string id){var next=new HashSet<string>(ExpandedIds);if(!next.Add(id))next.Remove(id);ExpandedIds=next;await ExpandedIdsChanged.InvokeAsync(next);}
+ private async Task Select(NgTreeNode<TItem> node){if(node.Disabled)return;SelectedId=node.Id;await SelectedIdChanged.InvokeAsync(node.Id);}
+}

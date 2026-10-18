@@ -2,7 +2,7 @@
 
 Native Blazor and Flutter foundation libraries with a shared design-token source and a Telerik Blazor component roadmap.
 
-**Current release: 0.2 forms and dates, 22 components on each platform.** This is not a complete Telerik replacement or API-compatible clone. The [catalog](docs/catalog.md) tracks 139 named entries from the published Telerik Blazor index; chart variants are counted separately. See [foundation capabilities](docs/foundation.md) and [forms/date capabilities and gaps](docs/forms-and-dates.md).
+**Current release: 0.3 data workspace, 27 components on each platform.** This is not a complete Telerik replacement or API-compatible clone. The [catalog](docs/catalog.md) tracks 139 named entries from the published Telerik Blazor index; chart variants are counted separately. See [foundation capabilities](docs/foundation.md) and [forms/date capabilities](docs/forms-and-dates.md) and [data workspace capabilities and gaps](docs/data-workspace.md).
 
 ## Layout
 
@@ -77,7 +77,7 @@ flutter test
 
 1. Shared theme, catalog, 11 foundation components and galleries (implemented subset).
 2. Forms and dates: 11 more controls and a complete booking example (0.2 implemented subset). Remaining input/layout features stay in the catalogue.
-3. Grid, TreeList, TreeView and data/navigation features.
+3. Grid, TreeList, TreeView, Pager and Breadcrumb (0.3 implemented subset); advanced data features remain in the capability matrix.
 4. Charts, gauges and scheduling.
 5. Editors, Spreadsheet, PDF Viewer, PivotGrid, diagrams, maps and AI interfaces.
 

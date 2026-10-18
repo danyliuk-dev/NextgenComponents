@@ -2,7 +2,7 @@
 
 Snapshot: 2026-10-18. 139 named entries from the [Telerik Blazor index](https://www.telerik.com/blazor-ui). Chart variants count separately.
 
-`foundation` means the limited working subset documented in [foundation.md](foundation.md) and [forms-and-dates.md](forms-and-dates.md), not Telerik feature parity. `planned` has no implementation yet.
+`foundation` means an implemented subset, not Telerik feature parity. See [foundation](foundation.md), [forms/dates](forms-and-dates.md) and [data workspace](data-workspace.md). `planned` has no implementation yet.
 
 | Category | Telerik entry | Blazor | Flutter | Phase |
 |---|---|---|---|---|
@@ -12,7 +12,7 @@ Snapshot: 2026-10-18. 139 named entries from the [Telerik Blazor index](https://
 | AI Interface | [PromptBox](https://www.telerik.com/blazor-ui/promptbox) | planned | planned | 5 |
 | AI Interface | [SmartPasteButton](https://www.telerik.com/blazor-ui/smartpastebutton) | planned | planned | 5 |
 | Navigation | [AppBar](https://www.telerik.com/blazor-ui/appbar) | planned | planned | 2 |
-| Navigation | [Breadcrumb](https://www.telerik.com/blazor-ui/breadcrumb) | planned | planned | 2 |
+| Navigation | [Breadcrumb](https://www.telerik.com/blazor-ui/breadcrumb) | foundation: `NgBreadcrumb` | foundation: `NgBreadcrumb` | 3 |
 | Navigation | [Button Group](https://www.telerik.com/blazor-ui/buttongroup) | planned | planned | 2 |
 | Navigation | [Buttons](https://www.telerik.com/blazor-ui/buttons) | foundation: `NgButton` | foundation: `NgButton` | 1 |
 | Navigation | [Chip](https://www.telerik.com/blazor-ui/chip) | planned | planned | 2 |
@@ -30,15 +30,15 @@ Snapshot: 2026-10-18. 139 named entries from the [Telerik Blazor index](https://
 | Navigation | [TabStrip](https://www.telerik.com/blazor-ui/tabstrip) | foundation: `NgTabs` | foundation: `NgTabs` | 1 |
 | Navigation | [Toggle Button](https://www.telerik.com/blazor-ui/togglebutton) | planned | planned | 2 |
 | Navigation | [ToolBar](https://www.telerik.com/blazor-ui/toolbar) | planned | planned | 2 |
-| Navigation | [TreeView](https://www.telerik.com/blazor-ui/treeview) | planned | planned | 2 |
-| Data Management | [Data Grid](https://www.telerik.com/blazor-ui/grid) | planned | planned | 3 |
+| Navigation | [TreeView](https://www.telerik.com/blazor-ui/treeview) | foundation: `NgTreeView` | foundation: `NgTreeView` | 3 |
+| Data Management | [Data Grid](https://www.telerik.com/blazor-ui/grid) | foundation: `NgDataGrid` | foundation: `NgDataGrid` | 3 |
 | Data Management | [Filter](https://www.telerik.com/blazor-ui/filter) | planned | planned | 3 |
 | Data Management | [ListView](https://www.telerik.com/blazor-ui/listview) | planned | planned | 3 |
-| Data Management | [Pager](https://www.telerik.com/blazor-ui/pager) | planned | planned | 3 |
+| Data Management | [Pager](https://www.telerik.com/blazor-ui/pager) | foundation: `NgPager` | foundation: `NgPager` | 3 |
 | Data Management | [PivotGrid](https://www.telerik.com/blazor-ui/pivotgrid) | planned | planned | 5 |
 | Data Management | [Spreadsheet](https://www.telerik.com/blazor-ui/spreadsheet) | planned | planned | 5 |
 | Data Management | [TaskBoard](https://www.telerik.com/blazor-ui/taskboard) | planned | planned | 3 |
-| Data Management | [TreeList](https://www.telerik.com/blazor-ui/treelist) | planned | planned | 3 |
+| Data Management | [TreeList](https://www.telerik.com/blazor-ui/treelist) | foundation: `NgTreeList` | foundation: `NgTreeList` | 3 |
 | File Upload & Management | [DropZone](https://www.telerik.com/blazor-ui/dropzone) | planned | planned | 2 |
 | File Upload & Management | [File Manager](https://www.telerik.com/blazor-ui/file-manager) | planned | planned | 5 |
 | File Upload & Management | [FileSelect](https://www.telerik.com/blazor-ui/fileselect) | planned | planned | 2 |

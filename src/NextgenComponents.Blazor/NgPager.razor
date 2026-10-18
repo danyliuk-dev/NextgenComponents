@@ -1,0 +1,26 @@
+<nav class="ng-pager" aria-label="@Label">
+<span role="status">@(Total==0?0:(Current-1)*Size+1)–@Math.Min(Current*Size,Math.Max(0,Total)) of @Math.Max(0,Total)</span>
+<div class="ng-pager-buttons">
+<NgButton Disabled="@(Disabled || Current==1)" OnClick="()=>Go(1)" aria-label="First page">«</NgButton>
+<NgButton Disabled="@(Disabled || Current==1)" OnClick="()=>Go(Current-1)" aria-label="Previous page">‹</NgButton>
+@for(var i=Math.Max(1,Current-2);i<=Math.Min(Count,Current+2);i++){var target=i;<NgButton Primary="@(target==Current)" Disabled="Disabled" OnClick="()=>Go(target)" aria-label="@($"Page {target}")" aria-current="@(target==Current?"page":null)">@target</NgButton>}
+<NgButton Disabled="@(Disabled || Current==Count)" OnClick="()=>Go(Current+1)" aria-label="Next page">›</NgButton>
+<NgButton Disabled="@(Disabled || Current==Count)" OnClick="()=>Go(Count)" aria-label="Last page">»</NgButton>
+</div>
+<label>Rows <select class="ng-input" aria-label="Rows per page" value="@Size" @onchange="Resize" disabled="@Disabled">@foreach(var size in Sizes.Append(Size).Where(x=>x>0).Distinct().Order()){<option value="@size">@size</option>}</select></label>
+</nav>
+@code {
+ [Parameter] public int Total{get;set;}
+ [Parameter] public int Page{get;set;}=1;
+ [Parameter] public int PageSize{get;set;}=10;
+ [Parameter] public IReadOnlyList<int> Sizes{get;set;}=[5,10,25,50];
+ [Parameter] public bool Disabled{get;set;}
+ [Parameter] public string Label{get;set;}="Pagination";
+ [Parameter] public EventCallback<int> PageChanged{get;set;}
+ [Parameter] public EventCallback<int> PageSizeChanged{get;set;}
+ private int Size=>Math.Max(1,PageSize);
+ private int Count=>NgDataOperations.PageCount(Total,Size);
+ private int Current=>NgDataOperations.ClampPage(Page,Total,Size);
+ private Task Go(int page)=>PageChanged.InvokeAsync(NgDataOperations.ClampPage(page,Total,Size));
+ private async Task Resize(ChangeEventArgs e){if(int.TryParse(e.Value?.ToString(),out var size)&&size>0){await PageSizeChanged.InvokeAsync(size);await PageChanged.InvokeAsync(1);}}
+}

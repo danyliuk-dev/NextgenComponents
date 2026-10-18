@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'forms_gallery.dart';
+import 'data_gallery.dart';
 import 'package:nextgen_components/nextgen_components.dart';
 
 void main() => runApp(const Gallery());
@@ -11,7 +12,7 @@ class Gallery extends StatefulWidget {
 }
 
 class _GalleryState extends State<Gallery> {
-  bool dark = false, compact = false, forms = false;
+  bool dark = false, compact = false, forms = false, data = false;
   @override
   Widget build(BuildContext context) => MaterialApp(
     title: 'Nextgen • Flutter',
@@ -19,7 +20,15 @@ class _GalleryState extends State<Gallery> {
     theme: NgTheme.light(compact: compact),
     darkTheme: NgTheme.dark(compact: compact),
     themeMode: dark ? ThemeMode.dark : ThemeMode.light,
-    home: forms
+    home: data
+        ? DataGallery(
+            dark: dark,
+            compact: compact,
+            onDark: (v) => setState(() => dark = v),
+            onCompact: (v) => setState(() => compact = v),
+            onBack: () => setState(() => data = false),
+          )
+        : forms
         ? FormsGallery(
             dark: dark,
             compact: compact,
@@ -29,6 +38,7 @@ class _GalleryState extends State<Gallery> {
           )
         : GalleryPage(
             onForms: () => setState(() => forms = true),
+            onData: () => setState(() => data = true),
             dark: dark,
             compact: compact,
             onDark: (v) => setState(() => dark = v),
@@ -39,11 +49,12 @@ class _GalleryState extends State<Gallery> {
 
 class GalleryPage extends StatefulWidget {
   final bool dark, compact;
-  final VoidCallback onForms;
+  final VoidCallback onForms, onData;
   final ValueChanged<bool> onDark, onCompact;
   const GalleryPage({
     super.key,
     required this.onForms,
+    required this.onData,
     required this.dark,
     required this.compact,
     required this.onDark,
@@ -116,6 +127,10 @@ class _GalleryPageState extends State<GalleryPage> {
                         fontWeight: FontWeight.bold,
                         letterSpacing: 1,
                       ),
+                    ),
+                    TextButton(
+                      onPressed: widget.onData,
+                      child: const Text('Data workspace'),
                     ),
                     TextButton(
                       onPressed: widget.onForms,

@@ -97,16 +97,16 @@
       "name": "Breadcrumb",
       "category": "Navigation",
       "reference": "https://www.telerik.com/blazor-ui/breadcrumb",
-      "phase": 2,
+      "phase": 3,
       "blazor": {
-        "status": "planned",
-        "component": null
+        "status": "foundation",
+        "component": "NgBreadcrumb"
       },
       "flutter": {
-        "status": "planned",
-        "component": null
+        "status": "foundation",
+        "component": "NgBreadcrumb"
       },
-      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+      "featureSpec": "docs/data-workspace.md"
     },
     {
       "name": "Button Group",
@@ -367,16 +367,16 @@
       "name": "TreeView",
       "category": "Navigation",
       "reference": "https://www.telerik.com/blazor-ui/treeview",
-      "phase": 2,
+      "phase": 3,
       "blazor": {
-        "status": "planned",
-        "component": null
+        "status": "foundation",
+        "component": "NgTreeView"
       },
       "flutter": {
-        "status": "planned",
-        "component": null
+        "status": "foundation",
+        "component": "NgTreeView"
       },
-      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+      "featureSpec": "docs/data-workspace.md"
     },
     {
       "name": "Data Grid",
@@ -384,14 +384,14 @@
       "reference": "https://www.telerik.com/blazor-ui/grid",
       "phase": 3,
       "blazor": {
-        "status": "planned",
-        "component": null
+        "status": "foundation",
+        "component": "NgDataGrid"
       },
       "flutter": {
-        "status": "planned",
-        "component": null
+        "status": "foundation",
+        "component": "NgDataGrid"
       },
-      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+      "featureSpec": "docs/data-workspace.md"
     },
     {
       "name": "Filter",
@@ -429,14 +429,14 @@
       "reference": "https://www.telerik.com/blazor-ui/pager",
       "phase": 3,
       "blazor": {
-        "status": "planned",
-        "component": null
+        "status": "foundation",
+        "component": "NgPager"
       },
       "flutter": {
-        "status": "planned",
-        "component": null
+        "status": "foundation",
+        "component": "NgPager"
       },
-      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+      "featureSpec": "docs/data-workspace.md"
     },
     {
       "name": "PivotGrid",
@@ -489,14 +489,14 @@
       "reference": "https://www.telerik.com/blazor-ui/treelist",
       "phase": 3,
       "blazor": {
-        "status": "planned",
-        "component": null
+        "status": "foundation",
+        "component": "NgTreeList"
       },
       "flutter": {
-        "status": "planned",
-        "component": null
+        "status": "foundation",
+        "component": "NgTreeList"
       },
-      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+      "featureSpec": "docs/data-workspace.md"
     },
     {
       "name": "DropZone",

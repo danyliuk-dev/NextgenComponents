@@ -43,3 +43,19 @@ export function combo(root) {
   if(!root.contains(document.activeElement)) root.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true}));
  },0));
 }
+
+export function tree(root) {
+ root.addEventListener('keydown', e => {
+  const item=e.target.closest('[role=treeitem]');if(!item)return;
+  const items=[...root.querySelectorAll('[role=treeitem]')].filter(x=>x.getAttribute('aria-disabled')!=='true');
+  const index=items.indexOf(item);let next;
+  if(e.key==='ArrowDown')next=items[index+1];
+  if(e.key==='ArrowUp')next=items[index-1];
+  if(e.key==='Home')next=items[0];
+  if(e.key==='End')next=items.at(-1);
+  if(e.key==='ArrowRight'&&item.getAttribute('aria-expanded')==='true')next=items[index+1];
+  if(e.key==='ArrowLeft'&&item.getAttribute('aria-expanded')!=='true')next=items.find(x=>x.dataset.treeId===item.dataset.parent);
+  if(['ArrowDown','ArrowUp','Home','End','ArrowRight','ArrowLeft',' '].includes(e.key))e.preventDefault();
+  next?.focus();
+ });
+}

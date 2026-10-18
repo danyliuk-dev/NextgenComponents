@@ -1,0 +1,8 @@
+<nav class="ng-breadcrumb" aria-label="@Label"><ol>
+@for(var i=0;i<Items.Count;i++){var item=Items[i];<li>@if(i==Items.Count-1){<span aria-current="page">@item.Label</span>}else{<button type="button" @onclick="()=>OnNavigate.InvokeAsync(item.Id)">@item.Label</button>}</li>}
+</ol></nav>
+@code {
+ [Parameter] public string Label{get;set;}="Breadcrumb";
+ [Parameter] public IReadOnlyList<NgBreadcrumbItem> Items{get;set;}=[];
+ [Parameter] public EventCallback<string> OnNavigate{get;set;}
+}

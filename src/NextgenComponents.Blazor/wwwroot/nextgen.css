@@ -73,3 +73,26 @@
 .ng-empty { display:block; padding:10px; color:var(--ng-muted); }
 textarea.ng-input { resize:vertical; min-height:80px; }
 @media(max-width:640px) { .ng-form-grid { grid-template-columns:1fr; } .ng-calendar { width:250px; } }
+
+.ng-sr-only { position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0; }
+.ng-data-toolbar { display:flex;align-items:end;gap:16px;flex-wrap:wrap;margin-bottom:16px; }
+.ng-data-toolbar>.ng-field { flex:1;min-width:160px;max-width:340px; }
+.ng-table-scroll { overflow:auto;max-width:100%;border:1px solid var(--ng-border);border-radius:var(--ng-radius); }
+.ng-data-table { width:100%;border-collapse:collapse;white-space:nowrap;background:var(--ng-surface); }
+.ng-data-table td,.ng-data-table th { padding:10px 14px;text-align:left;border-bottom:1px solid var(--ng-border); }
+[data-ng-density=compact] .ng-data-table td,[data-ng-density=compact] .ng-data-table th { padding:6px 10px; }
+.ng-data-table th { background:var(--ng-subtle);font-weight:600; }
+.ng-data-table th button,.ng-link,.ng-breadcrumb button { border:0;background:transparent;color:inherit;font:inherit;cursor:pointer;padding:4px 0; }
+.ng-data-table input[type=checkbox] { width:16px;height:16px;accent-color:var(--ng-primary); }
+.ng-row-selected { background:color-mix(in srgb,var(--ng-primary) 12%,var(--ng-surface)); }
+.ng-data-table tbody tr:hover { background:var(--ng-subtle); }
+.ng-pager { display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;padding:16px 0;min-height:0;border:0; }
+.ng-pager-buttons { display:flex;gap:4px; }.ng-pager .ng-button { padding:4px 10px; }
+.ng-pager label { display:flex;gap:8px;align-items:center; }.ng-pager select { width:76px; }
+.ng-breadcrumb { border:0;min-height:0;padding:12px 0; }.ng-breadcrumb ol { list-style:none;display:flex;flex-wrap:wrap;gap:8px;padding:0;margin:0; }
+.ng-breadcrumb li+li:before { content:'›';margin-right:8px;color:var(--ng-muted); }.ng-breadcrumb button,.ng-link { color:var(--ng-primary); }
+.ng-tree-view>.ng-field,.ng-tree-list>.ng-field { margin-bottom:16px; }
+.ng-tree-row { display:flex;align-items:center;min-height:var(--ng-height);border-radius:var(--ng-radius);cursor:pointer;padding-right:8px; }
+.ng-tree-row[aria-disabled=true] { opacity:.5;cursor:not-allowed; }.ng-tree-row>button { width:28px;border:0;background:transparent;color:inherit;font:inherit;cursor:pointer; }
+.ng-tree-spacer { display:inline-block;width:28px;flex-shrink:0; }.ng-tree-cell { display:flex;gap:4px;align-items:center; }
+.ng-tree-cell .ng-button { width:28px;min-height:28px;padding:0; }

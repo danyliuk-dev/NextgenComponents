@@ -45,7 +45,24 @@ foreach(var invalid in new[]{"2026-02-29","2026-04-31","2026-13-01","2026-1-01"}
 Rule(!NgDateRules.TryTime("24:00",out _),"reject midnight overflow");
 Rule(NgDateRules.RangeError(new(new(2026,10,23),new(2026,10,22))) is not null,"reject inverted range");
 Rule(!NgDateRules.Allowed(new(2026,10,18),null,null,d=>d.DayOfWeek==DayOfWeek.Sunday),"reject disabled date");
-Console.WriteLine($"{count} rendering and date-rule checks passed. Browser interaction requires the separate visual run.");
+var data=new[]{(Id:"a",Budget:120),(Id:"b",Budget:9000),(Id:"c",Budget:75),(Id:"d",Budget:120)};
+NgDataColumn<(string Id,int Budget)>[] dataColumns=[new("id","ID",r=>r.Id),new("budget","Budget",r=>r.Budget)];
+Rule(NgDataOperations.Query(data,dataColumns,"","budget",false).Select(r=>r.Id).SequenceEqual(new[]{"c","a","d","b"}),"numeric stable sort");
+Rule(NgDataOperations.Query(data,dataColumns,"","budget",true).Select(r=>r.Id).SequenceEqual(new[]{"b","a","d","c"}),"descending stable sort");
+Rule(NgDataOperations.Query(data,dataColumns," 75 ",null,false).Single().Id=="c","filter before page");
+Rule(NgDataOperations.ClampPage(9,0,5)==1 && NgDataOperations.ClampPage(9,6,5)==2,"page clamps on empty/shrink");
+NgTreeNode<string>[] tree=[new("root","Root",[new("a","Alpha"),new("b","Beta",[new("c","Child")])])];
+Rule(NgDataOperations.Flatten(tree,new HashSet<string>(),s=>s).Count==1,"collapsed descendants hidden");
+var found=NgDataOperations.Flatten(tree,new HashSet<string>(),s=>s,"child");
+Rule(found.Select(r=>r.Node.Id).SequenceEqual(new[]{"root","b","c"}) && found.Select(r=>r.Depth).SequenceEqual(new[]{0,1,2}),"search retains ancestor path");
+Rule(NgDataOperations.Flatten(tree,new HashSet<string>{"root","b"},s=>s,"",(a,b)=>StringComparer.Ordinal.Compare(b.Item,a.Item)).Select(r=>r.Node.Id).SequenceEqual(new[]{"root","b","c","a"}),"tree sorts siblings only");
+try { NgDataOperations.Flatten(new[]{new NgTreeNode<string>("x","One"),new NgTreeNode<string>("x","Two")},new HashSet<string>(),s=>s);throw new Exception("duplicate ID accepted"); } catch(ArgumentException){Rule(true,"duplicate tree IDs rejected");}
+await Check<NgPager>(new(){["Total"]=18,["Page"]=2,["PageSize"]=5},"6", "10 of 18", "Rows per page", "Next page");
+await Check<NgBreadcrumb>(new(){["Items"]=new NgBreadcrumbItem[]{new("all","All projects"),new("design","Design")}},"aria-current=\"page\"", "All projects", "Design");
+await Check<NgDataGrid<(string Id,int Budget)>>(new(){["Items"]=data,["Columns"]=dataColumns,["RowId"]=(Func<(string Id,int Budget),string>)(r=>r.Id)},"Budget", "9000", "Select page");
+await Check<NgTreeView<string>>(new(){["Items"]=tree,["Text"]=(Func<string,string>)(s=>s)},"role=\"tree\"", "Root", "aria-expanded=\"false\"");
+await Check<NgTreeList<string>>(new(){["Items"]=tree,["Columns"]=new NgDataColumn<string>[]{new("name","Name",s=>s)}},"Root", "Expand Root", "Search Hierarchy");
+Console.WriteLine($"{count} rendering and data/date-rule checks passed. Browser interaction requires the separate visual run.");
 sealed class NoBrowserJS : IJSRuntime {
  public ValueTask<TValue> InvokeAsync<TValue>(string identifier, object?[]? args) => throw new InvalidOperationException("JS must not execute in SSR");
  public ValueTask<TValue> InvokeAsync<TValue>(string identifier, CancellationToken cancellationToken, object?[]? args) => InvokeAsync<TValue>(identifier,args);
