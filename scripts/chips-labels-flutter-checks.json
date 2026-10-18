@@ -1,0 +1,151 @@
+{
+  "actions": [
+    {
+      "clickSelector": "[aria-label=\"Custom action labels\"]"
+    },
+    {
+      "evaluate": "new Promise(r=>setTimeout(r,350))"
+    },
+    {
+      "evaluate": "(()=>{if(!document.body.textContent.includes('Dismiss Design')||document.body.textContent.includes('Remove Design'))throw Error('custom labels')})()"
+    },
+    {
+      "evaluate": "(()=>{const e=[...document.querySelectorAll('[role=button]')].find(e=>e.textContent===\"Focus topics\");e.setAttribute('data-test-click','yes')})()"
+    },
+    {
+      "clickSelector": "[data-test-click=yes]"
+    },
+    {
+      "evaluate": "new Promise(r=>setTimeout(r,350))"
+    },
+    {
+      "evaluate": "(()=>{document.querySelector('[data-test-click]')?.removeAttribute('data-test-click')})()"
+    },
+    {
+      "evaluate": "(()=>{if(!(document.activeElement.matches('[aria-label=\"Design\"]')||document.activeElement.querySelector('[aria-label=\"Design\"]')))throw Error(document.activeElement.outerHTML)})()"
+    },
+    {
+      "screenshot": "chips018-flutter-focus.png"
+    },
+    {
+      "method": "Input.dispatchKeyEvent",
+      "params": {
+        "type": "keyDown",
+        "key": "ArrowRight",
+        "code": "ArrowRight",
+        "windowsVirtualKeyCode": 39
+      }
+    },
+    {
+      "method": "Input.dispatchKeyEvent",
+      "params": {
+        "type": "keyUp",
+        "key": "ArrowRight",
+        "code": "ArrowRight",
+        "windowsVirtualKeyCode": 39
+      }
+    },
+    {
+      "evaluate": "new Promise(r=>setTimeout(r,350))"
+    },
+    {
+      "evaluate": "(()=>{if(!(document.activeElement.matches('[aria-label=\"Web\"]')||document.activeElement.querySelector('[aria-label=\"Web\"]')))throw Error(document.activeElement.outerHTML)})()"
+    },
+    {
+      "method": "Input.dispatchKeyEvent",
+      "params": {
+        "type": "keyDown",
+        "key": "Delete",
+        "code": "Delete",
+        "windowsVirtualKeyCode": 46
+      }
+    },
+    {
+      "method": "Input.dispatchKeyEvent",
+      "params": {
+        "type": "keyUp",
+        "key": "Delete",
+        "code": "Delete",
+        "windowsVirtualKeyCode": 46
+      }
+    },
+    {
+      "evaluate": "new Promise(r=>setTimeout(r,350))"
+    },
+    {
+      "evaluate": "(()=>{if(!(document.activeElement.matches('[aria-label=\"Flutter\"]')||document.activeElement.querySelector('[aria-label=\"Flutter\"]')))throw Error(document.activeElement.outerHTML)})()"
+    },
+    {
+      "evaluate": "(()=>{if(document.querySelector('[aria-label=Web]'))throw Error('remove failed')})()"
+    },
+    {
+      "evaluate": "(()=>{const e=[...document.querySelectorAll('[role=button]')].find(e=>e.textContent===\"Clear topics\");e.setAttribute('data-test-click','yes')})()"
+    },
+    {
+      "clickSelector": "[data-test-click=yes]"
+    },
+    {
+      "evaluate": "new Promise(r=>setTimeout(r,350))"
+    },
+    {
+      "evaluate": "(()=>{document.querySelector('[data-test-click]')?.removeAttribute('data-test-click')})()"
+    },
+    {
+      "evaluate": "(()=>{if(!document.body.textContent.includes('No topics available'))throw Error('empty text')})()"
+    },
+    {
+      "evaluate": "(()=>{const e=[...document.querySelectorAll('[role=button]')].find(e=>e.textContent===\"Focus topics\");e.setAttribute('data-test-click','yes')})()"
+    },
+    {
+      "clickSelector": "[data-test-click=yes]"
+    },
+    {
+      "evaluate": "new Promise(r=>setTimeout(r,350))"
+    },
+    {
+      "evaluate": "(()=>{document.querySelector('[data-test-click]')?.removeAttribute('data-test-click')})()"
+    },
+    {
+      "evaluate": "(()=>{if(!document.activeElement.querySelector('[aria-label=Topics]'))throw Error('empty focus')})()"
+    },
+    {
+      "screenshot": "chips018-flutter-empty.png"
+    },
+    {
+      "evaluate": "(()=>{const e=[...document.querySelectorAll('[role=button]')].find(e=>e.textContent===\"Reset tags\");e.setAttribute('data-test-click','yes')})()"
+    },
+    {
+      "clickSelector": "[data-test-click=yes]"
+    },
+    {
+      "evaluate": "new Promise(r=>setTimeout(r,350))"
+    },
+    {
+      "evaluate": "(()=>{document.querySelector('[data-test-click]')?.removeAttribute('data-test-click')})()"
+    },
+    {
+      "evaluate": "(()=>{const e=[...document.querySelectorAll('[role=button]')].find(e=>e.textContent===\"Focus topics\");e.setAttribute('data-test-click','yes')})()"
+    },
+    {
+      "clickSelector": "[data-test-click=yes]"
+    },
+    {
+      "evaluate": "new Promise(r=>setTimeout(r,350))"
+    },
+    {
+      "evaluate": "(()=>{document.querySelector('[data-test-click]')?.removeAttribute('data-test-click')})()"
+    },
+    {
+      "evaluate": "(()=>{if(!(document.activeElement.matches('[aria-label=\"Design\"]')||document.activeElement.querySelector('[aria-label=\"Design\"]')))throw Error(document.activeElement.outerHTML)})()"
+    },
+    {
+      "clickSelector": "[aria-label=\"Custom action labels\"]"
+    },
+    {
+      "evaluate": "new Promise(r=>setTimeout(r,350))"
+    },
+    {
+      "evaluate": "(()=>{if(!document.body.textContent.includes('Remove Design'))throw Error('default labels')})()"
+    }
+  ]
+}

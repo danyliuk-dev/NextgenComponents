@@ -44,7 +44,7 @@ packages:
       path: "../../packages/nextgen_components"
       relative: true
     source: path
-    version: "0.17.0"
+    version: "0.18.0"
   sky_engine:
     dependency: transitive
     description: flutter

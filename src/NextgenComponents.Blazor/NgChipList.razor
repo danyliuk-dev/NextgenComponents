@@ -5,14 +5,16 @@
  var appearance=ItemAppearance?.Invoke(item);
  <span @key="item.Value" data-chip-id="@item.Value"><NgChip Label="@item.Label" Value="@(Value.Contains(item.Value))" Selectable="Selectable" Disabled="@(Disabled||item.Disabled)"
  Size="@(appearance?.Size??Size)" Rounded="@(appearance?.Rounded??Rounded)" FillMode="@(appearance?.FillMode??FillMode)" ThemeColor="@(appearance?.ThemeColor??ThemeColor)"
- Leading="@(LeadingTemplate is null?null:LeadingTemplate(item))" ChildContent="@(ItemTemplate is null?null:ItemTemplate(item))" RemoveContent="RemoveContent"
+ Leading="@(LeadingTemplate is null?null:LeadingTemplate(item))" ChildContent="@(ItemTemplate is null?null:ItemTemplate(item))" RemoveContent="RemoveContent" RemoveLabel="@(RemoveLabel?.Invoke(item))"
  ValueChanged="@(ValueChanged.HasDelegate?EventCallback.Factory.Create<bool>(this,_=>Select(item.Value)):default)"
  OnClick="@(OnClick.HasDelegate?EventCallback.Factory.Create(this,()=>OnClick.InvokeAsync(item.Value)):default)"
  OnRemove="@(OnRemove.HasDelegate&&(CanRemove?.Invoke(item)??true)?EventCallback.Factory.Create(this,()=>Remove(item.Value)):default)"/></span>
 }
-@if(Items.Count==0){<span class="ng-muted">No tags</span>}
+@if(Items.Count==0){<span class="ng-muted">@EmptyText</span>}
 </div>
 @code {
+ [Parameter] public string EmptyText {get;set;}="No tags";
+ [Parameter] public Func<NgOption,string>? RemoveLabel {get;set;}
  [Parameter] public string Label {get;set;}="Tags";
  [Parameter,EditorRequired] public IReadOnlyList<NgOption> Items {get;set;}=[];
  [Parameter] public IReadOnlyList<string> Value {get;set;}=[];
@@ -32,7 +34,7 @@
  [Parameter] public RenderFragment<NgOption>? ItemTemplate {get;set;}
  [Parameter] public RenderFragment<NgOption>? LeadingTemplate {get;set;}
  [Parameter] public RenderFragment? RemoveContent {get;set;}
- protected override void OnParametersSet(){NgSelectionRules.Validate(Items,Value,Multiple);NgChipRules.Validate(Size,Rounded,FillMode,ThemeColor);}
+ protected override void OnParametersSet(){if(string.IsNullOrWhiteSpace(EmptyText))throw new ArgumentException("EmptyText must be nonblank.");NgSelectionRules.Validate(Items,Value,Multiple);NgChipRules.Validate(Size,Rounded,FillMode,ThemeColor);}
  private Task Select(string id){if(Disabled||!Selectable)return Task.CompletedTask;var next=NgSelectionRules.Toggle(Items,Value,id,Multiple,AllowEmpty);return next.SequenceEqual(Value)?Task.CompletedTask:ValueChanged.InvokeAsync(next);}
  private bool removing,disposed;private ElementReference root;private IJSObjectReference? module;
  private async Task Remove(string id){if(removing||Disabled||!Items.Any(x=>x.Value==id&&!x.Disabled&&(CanRemove?.Invoke(x)??true)))return;removing=true;try{await OnRemove.InvokeAsync(id);}finally{removing=false;}}

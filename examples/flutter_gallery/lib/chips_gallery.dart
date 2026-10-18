@@ -23,7 +23,14 @@ class _ChipsGalleryState extends State<ChipsGallery> {
       selectable = true;
   String message = 'Ready';
   String size = 'md', rounded = 'full', fill = 'outline', lastClick = 'none';
-  bool custom = false;
+  bool custom = false, customLabels = false;
+  final chipFocus = NgChipListController();
+  @override
+  void dispose() {
+    chipFocus.dispose();
+    super.dispose();
+  }
+
   Widget choice(
     String label,
     String value,
@@ -92,7 +99,7 @@ class _ChipsGalleryState extends State<ChipsGallery> {
               ),
               const SizedBox(height: 16),
               const Text(
-                'FLUTTER WEB / CHIPS 0.17 · Select topics, remove a tag, or show a compact status. Your application owns every change.',
+                'FLUTTER WEB / CHIPS 0.18 · Select topics, remove a tag, or show a compact status. Your application owns every change.',
               ),
               const SizedBox(height: 28),
               Wrap(
@@ -191,7 +198,17 @@ class _ChipsGalleryState extends State<ChipsGallery> {
                 'Keyboard: Tab enters once and leaves the list. Shift+Tab returns to the remembered chip. Left/Right, Home/End move focus. Enter/Space activates. Delete/Backspace requests removal. Disabled tags are skipped.',
               ),
               const SizedBox(height: 12),
+              NgCheckBox(
+                label: 'Custom action labels',
+                value: customLabels,
+                onChanged: (v) => setState(() => customLabels = v),
+              ),
               NgChipList(
+                focusController: chipFocus,
+                emptyText: customLabels ? 'No topics available' : 'No tags',
+                removeLabelBuilder: customLabels
+                    ? (item) => 'Dismiss ${item.label}'
+                    : null,
                 label: 'Topics',
                 size: size,
                 rounded: rounded,
@@ -221,6 +238,23 @@ class _ChipsGalleryState extends State<ChipsGallery> {
                   message = 'Selection updated';
                 }),
                 onRemove: remove,
+              ),
+              Wrap(
+                spacing: 12,
+                children: [
+                  NgButton(
+                    onPressed: () => chipFocus.focus(),
+                    child: const Text('Focus topics'),
+                  ),
+                  NgButton(
+                    onPressed: () => setState(() {
+                      items = [];
+                      selected = [];
+                      message = 'Topics cleared';
+                    }),
+                    child: const Text('Clear topics'),
+                  ),
+                ],
               ),
               const SizedBox(height: 16),
               Semantics(

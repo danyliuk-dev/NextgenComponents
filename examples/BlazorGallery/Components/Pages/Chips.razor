@@ -2,18 +2,18 @@
 <PageTitle>Nextgen • Chips and tags</PageTitle>
 <div class="ng-scope gallery" data-ng-theme="@(dark?"dark":"light")"><main>
 <nav><a href="/code-examples">Code examples</a><strong>N NEXTGEN COMPONENTS</strong><div class="row"><a href="/">Foundation</a><NgSwitch Label="Dark theme" @bind-Value="dark"/></div></nav>
-<section class="hero"><p class="eyebrow">BLAZOR / CHIPS 0.17</p><h1>Small tags.<br/>Clear choices.</h1><p>Select topics, remove a tag, or show a compact status. Your application owns every change.</p></section>
+<section class="hero"><p class="eyebrow">BLAZOR / CHIPS 0.18</p><h1>Small tags.<br/>Clear choices.</h1><p>Select topics, remove a tag, or show a compact status. Your application owns every change.</p></section>
 <section class="panel"><div class="row"><NgCheckBox Label="Disable controls" @bind-Value="disabled"/><NgCheckBox Label="Multiple selection" Value="multiple" ValueChanged="SetMultiple" ValueExpression="()=>multiple"/><NgCheckBox Label="Enable selection" @bind-Value="selectable"/><NgCheckBox Label="Protect Design from removal" @bind-Value="protect"/><NgButton OnClick="Reset">Reset tags</NgButton></div>
 <h2>Appearance and content</h2>
 <div class="row"><NgDropDownList Label="Size" Items="sizes" @bind-Value="size"/><NgDropDownList Label="Rounded" Items="roundings" @bind-Value="rounded"/><NgDropDownList Label="Fill mode" Items="fills" @bind-Value="fill"/><NgCheckBox Label="Custom content" @bind-Value="custom"/></div>
 <p>Templates can show an icon, avatar or custom text. The accessible name always comes from the label.</p>
 <div class="row">@foreach(var tone in tones){<NgChip Label="@tone" Selectable="false" Size="@size" Rounded="@rounded" FillMode="@fill" ThemeColor="@tone"/>}</div>
-<h2>Topics</h2><p>Keyboard: Tab enters once and leaves the list. Shift+Tab returns to the remembered chip. Left/Right, Home/End move focus. Enter/Space activates. Delete/Backspace requests removal. Disabled tags are skipped.</p><NgChipList @ref="chipList" Label="Topics" Items="items" Value="selected" ValueChanged="SetSelected" OnRemove="Remove" Multiple="multiple" Disabled="disabled" Selectable="selectable" Size="@size" Rounded="@rounded" FillMode="@fill" CanRemove="CanRemove" ItemAppearance="Appearance" OnClick="id=>lastClick=id">
+<h2>Topics</h2><p>Keyboard: Tab enters once and leaves the list. Shift+Tab returns to the remembered chip. Left/Right, Home/End move focus. Enter/Space activates. Delete/Backspace requests removal. Disabled tags are skipped.</p><NgCheckBox Label="Custom action labels" @bind-Value="customLabels"/><NgChipList EmptyText="@(customLabels?"No topics available":"No tags")" RemoveLabel="@(customLabels?ActionLabel:null)" @ref="chipList" Label="Topics" Items="items" Value="selected" ValueChanged="SetSelected" OnRemove="Remove" Multiple="multiple" Disabled="disabled" Selectable="selectable" Size="@size" Rounded="@rounded" FillMode="@fill" CanRemove="CanRemove" ItemAppearance="Appearance" OnClick="id=>lastClick=id">
 <LeadingTemplate Context="item">@if(custom){<span aria-hidden="true">★</span>}</LeadingTemplate>
 <ItemTemplate Context="item">@if(custom){<strong>@item.Label <small>· @item.Label.Length</small></strong>}else{@item.Label}</ItemTemplate>
 <RemoveContent>−</RemoveContent>
 </NgChipList>
-<NgButton OnClick="()=>chipList!.FocusAsync()">Focus topics</NgButton><p id="chips-status" role="status">Selected: @(selected.Count==0?"none":string.Join(", ",selected)) · Tags: @items.Count · @message</p>
+<NgButton OnClick="()=>chipList!.FocusAsync()">Focus topics</NgButton><NgButton OnClick="ClearTopics">Clear topics</NgButton><p id="chips-status" role="status">Selected: @(selected.Count==0?"none":string.Join(", ",selected)) · Tags: @items.Count · @message</p>
 <p>Flutter is not removable. Last click: <span id="chip-click">@lastClick</span></p><h2>Status and standalone selection</h2><div class="row"><NgChip Label="Published" Selectable="false"/><NgChip Label="Favourite" @bind-Value="favourite" Disabled="disabled"/></div>
 <NgChip Label="Open activity" Selectable="false" OnClick="OpenActivity" Disabled="disabled"/><p>Removal is a request. Enable protection to reject removal of Design without changing the list.</p></section>
 <footer>47 CONTROLS / 53 CATALOGUE ENTRIES · WEB FIRST</footer></main></div>
@@ -23,7 +23,9 @@
  private bool CanRemove(NgOption item)=>item.Value!="flutter";
  private NgChipAppearance Appearance(NgOption item)=>new(ThemeColor:item.Value=="design"?"info":"base");
  private void OpenActivity()=>lastClick="activity";
- private bool custom;
+ private bool custom,customLabels;
+ private string ActionLabel(NgOption item)=>$"Dismiss {item.Label}";
+ private void ClearTopics(){items=[];selected=[];message="Topics cleared";}
  private string size="md",rounded="full",fill="outline",lastClick="none";
  private static NgOption[] Options(params string[] values)=>values.Select(x=>new NgOption(x,x)).ToArray();
  private readonly NgOption[] sizes=Options("sm","md","lg"),roundings=Options("sm","md","lg","full"),fills=Options("solid","outline");

@@ -14,7 +14,7 @@ The parent owns Value/value and stores selection callbacks. Selectable/selectabl
 
 ### Keyboard and accessibility
 
-Selection and removal have separate accessible actions. Tab moves through enabled actions; Enter or Space activates the focused action. Selected state is exposed to assistive technology. Disabled chips cannot be selected or removed. Delete or Backspace requests removal from a focused interactive chip. Holding the key does not repeatedly remove chips. ChipList adds Left/Right and Home/End navigation with focus recovery after removal; see the keyboard rules below. Test screen-reader behavior in your target browser.
+Selection and removal have separate accessible actions. Tab enters the list once and then leaves; arrows move inside; Enter or Space activates the focused action. Selected state is exposed to assistive technology. Disabled chips cannot be selected or removed. Delete or Backspace requests removal from a focused interactive chip. Holding the key does not repeatedly remove chips. ChipList adds Left/Right and Home/End navigation with focus recovery after removal; see the keyboard rules below. Test screen-reader behavior in your target browser.
 
 ### Scope
 
@@ -52,18 +52,39 @@ Since 0.17, the list has one Tab stop. On first entry, focus goes to the first s
 
 Single Tab entry does not imply full listbox semantics: Blazor still exposes a group of pressed buttons, Flutter its native chip semantics. Flutter SDK used for this release lacks listbox/option roles. Those roles, public accessibility hooks and screen-reader validation remain explicit gaps in the parity matrix.
 
-Blazor exposes FocusAsync() on NgChipList via @ref after interactive rendering. It focuses the first available action or the list container. The JS module is initialized automatically and disposed with the component. Flutter owns and disposes internal focus nodes; a public list focus controller is still pending.
+Blazor exposes FocusAsync() on NgChipList via @ref after interactive rendering. It focuses the first available action or the list container. The JS module is initialized automatically and disposed with the component. Flutter owns and disposes internal focus nodes; use the public NgChipListController described below.
 
 Blazor serializes pending remove callbacks. Flutter removal callbacks remain synchronous requests: if the application performs async deletion, it must handle duplicate requests, errors and cancellation, then update items and selected IDs together. Focus restoration tracks that later state update; it does not await network operations. Removing a standalone chip requires the application to move focus explicitly.
+
+
+### Action labels (0.18)
+
+NgChip.RemoveLabel / removeLabel overrides the complete accessible removal name and Flutter delete tooltip. Null keeps "Remove {label}". Supply a nonblank phrase including the item name, such as "Dismiss Design"; a visual remove icon alone is not an accessible name. Text is escaped, not treated as markup. Obtain translations from your application's localization resources; the library does not select a locale or ship translation dictionaries.
+
+
+For lists, RemoveLabel (Blazor) / removeLabelBuilder (Flutter) receives each NgOption and supplies that chip's removal phrase. Keep the callback pure. EmptyText / emptyText changes the empty collection message; the default remains "No tags" and blank text is rejected. Label / label still supplies the list name. Changing these strings does not change IDs, selection or removal permissions. Changing the application locale must trigger a normal parent rerender/rebuild. RTL direction is inherited from the surrounding HTML direction or Flutter Directionality; these label hooks do not set direction.
+
+### Focus from application code (0.18)
+
+Blazor: keep an @ref and await FocusAsync() after interactive rendering. It focuses the first enabled action, or the list container when none exists. Calling before initialization is a no-op.
+
+Flutter: create one NgChipListController in the owning State, pass it as focusController, and dispose it in that State's dispose(). Never create a controller inside build or share one between simultaneous lists. A shared or previously disposed controller throws StateError on attachment. Changing focusController detaches the old handle; removing the list detaches it automatically. The list continues to own its internal FocusNodes.
+
+focus() requests the first enabled interactive chip, or the container for an empty/all-disabled list. The Flutter container shows a focus outline when it receives primary focus. focus(itemId: 'web') targets an enabled interactive chip by stable ID. It returns false without moving focus if detached, disposed, not yet laid out, or if the explicit ID is missing/disabled. A true return means a focus request was issued; Flutter applies it on the next frame. isAttached reports attachment, not layout readiness. Call from an event callback or a post-frame callback after mounting. Focus never changes selection or invokes click/removal callbacks. The example intentionally uses English custom labels; substitute application translations as needed.
 
 
 ## Blazor example
 
 ```razor
-<NgChipList Label="Topics" Items="items" @bind-Value="selected" Multiple OnRemove="Remove" CanRemove="@(item=>item.Value!="locked")" FillMode="solid" ItemAppearance="@(item=>new NgChipAppearance(ThemeColor:item.Value=="design"?"info":"base"))"><ItemTemplate Context="item"><strong>@item.Label</strong></ItemTemplate><LeadingTemplate><span>★</span></LeadingTemplate></NgChipList>
+<NgChipList @ref="topics" Label="Topics" Items="items" @bind-Value="selected"
+    Multiple OnRemove="Remove" RemoveLabel="RemoveLabel" EmptyText="No topics available" />
+<NgButton OnClick="FocusTopics">Focus topics</NgButton>
 @code {
+    private NgChipList? topics;
     private IReadOnlyList<NgOption> items = [new("design", "Design"), new("web", "Web"), new("locked", "Locked", true)];
     private IReadOnlyList<string> selected = ["design"];
+    private string RemoveLabel(NgOption item) => $"Dismiss {item.Label}";
+    private async Task FocusTopics() { if (topics is not null) await topics.FocusAsync(); }
     private void Remove(string id) {
         items = items.Where(item => item.Value != id).ToArray();
         selected = selected.Where(value => value != id).ToArray();
@@ -74,19 +95,23 @@ Blazor serializes pending remove callbacks. Flutter removal callbacks remain syn
 ## Flutter example
 
 ```dart
+final topics = NgChipListController();
 List<NgOption> items = const [NgOption('design', 'Design'), NgOption('web', 'Web'), NgOption('locked', 'Locked', disabled: true)];
 List<String> selected = ['design'];
-Widget build(BuildContext context) => NgChipList(label: 'Topics', items: items,
-  value: selected, multiple: true, fillMode: 'solid',
-  canRemove: (item) => item.value != 'locked',
-  itemAppearance: (item) => NgChipAppearance(themeColor: item.value == 'design' ? 'info' : 'base'),
-  itemBuilder: (item) => Text(item.label, style: const TextStyle(fontWeight: FontWeight.bold)),
-  leadingBuilder: (_) => const Icon(Icons.star, size: 18),
-  onChanged: (v) => setState(() => selected = v),
-  onRemove: (id) => setState(() {
-    items = items.where((item) => item.value != id).toList();
-    selected = selected.where((value) => value != id).toList();
-  }));
+@override
+void dispose() { topics.dispose(); super.dispose(); }
+Widget build(BuildContext context) => Column(children: [
+  NgChipList(label: 'Topics', focusController: topics, items: items,
+    value: selected, multiple: true, emptyText: 'No topics available',
+    removeLabelBuilder: (item) => 'Dismiss ${item.label}',
+    onChanged: (v) => setState(() => selected = v),
+    onRemove: (id) => setState(() {
+      items = items.where((item) => item.value != id).toList();
+      selected = selected.where((value) => value != id).toList();
+    })),
+  NgButton(onPressed: () => topics.focus(), child: const Text('Focus topics')),
+  NgButton(onPressed: () => topics.focus(itemId: 'web'), child: const Text('Focus Web')),
+]);
 ```
 
 ## Blazor parameters and events
@@ -95,6 +120,8 @@ Names are case-sensitive. `?` permits null. `EditorRequired` parameters are mark
 
 | Parameter | Type | Default / requirement | Purpose |
 |---|---|---|---|
+| `EmptyText` | `string` | "No tags" | See the behavior rules and model contract above. |
+| `RemoveLabel` | `Func<NgOption,string>?` | not set | Complete nonblank accessible removal name; for ChipList, a callback receiving NgOption. |
 | `Label` | `string` | "Tags" | Visible label or accessible name. |
 | `Items` | `IReadOnlyList<NgOption>` | required | Input collection. Replace it when changing records or configuration. |
 | `Value` | `IReadOnlyList<string>` | [] | Current value; see state ownership and model rules above. |
@@ -122,6 +149,9 @@ Names are case-sensitive. `?` permits null. `EditorRequired` parameters are mark
 | Argument | Type | Purpose |
 |---|---|---|
 | `label` | `String` | Visible label or accessible name. |
+| `emptyText` | `String` | See the behavior rules and model contract above. |
+| `removeLabelBuilder` | `String Function(NgOption)?` | Pure callback supplying a complete accessible removal name for each NgOption. |
+| `focusController` | `NgChipListController?` | Application-owned NgChipListController; one list per controller. See lifecycle and focus rules. |
 | `items` | `List<NgOption>` | Input collection. Replace it when changing records or configuration. |
 | `value` | `List<String>` | Current value; see state ownership and model rules above. |
 | `onChanged` | `ValueChanged<List<String>>?` | Store the new value using setState or your state manager. |
@@ -145,6 +175,9 @@ Names are case-sensitive. `?` permits null. `EditorRequired` parameters are mark
 const NgChipList({
     super.key,
     this.label = 'Tags',
+    this.emptyText = 'No tags',
+    this.removeLabelBuilder,
+    this.focusController,
     this.onClick,
     this.size = 'md',
     this.rounded = 'full',

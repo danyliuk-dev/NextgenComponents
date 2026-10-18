@@ -33,12 +33,12 @@ Sources: [Chip API](https://www.telerik.com/blazor-ui/documentation/api/telerik.
 | Custom chip/list content | Implemented | Implemented | RenderFragment / Widget builders with stable accessible labels; compiled manual and Chrome. |
 | Leading icon/avatar and removal icon | Equivalent slots | Equivalent slots | Application-supplied content; no Telerik icon registry/variant API. No image loader is supplied. |
 | Keyboard activation and list movement | Implemented core | Implemented core | 0.16: Enter/Space, Delete/Backspace, arrows and Home/End. 0.17 adds one remembered Tab entry and forward/reverse exit; listbox semantics remain open. |
-| Focus after removal / public focus API | Implemented / FocusAsync | Implemented / controller pending | 0.16: next/previous/container recovery; rejection, outside-focus protection and disabled neighbors tested. Flutter public controller remains. |
+| Focus after removal / public focus API | Implemented / FocusAsync | Implemented / public controller | 0.16: next/previous/container recovery; rejection, outside-focus protection and disabled neighbors tested. 0.18: Flutter public controller supports first-action and stable-ID focus, detachment and ownership guards. |
 | Selection listbox/option semantics | Remaining | Remaining | One Tab entry implemented; semantic group still differs from reference listbox. Installed Flutter SDK has no listbox/option roles. Do not claim ARIA parity. |
 | Generic field-name model binding | Remaining | Remaining | NgOption adapters only; additional record fields resolved by stable ID. |
 | Large collections | Remaining | Remaining | Current 50-item guard is an explicit limitation; reference has no documented equivalent cap. |
 | Public ID/class/tab index/labelled-by hooks | Remaining | Remaining | Current Label naming only; platform-specific APIs need a documented equivalent. |
-| RTL/localized action labels | Remaining | Remaining | Remove/empty labels are currently English. RTL keyboard behavior not verified. |
+| RTL/localized action labels | Label hooks implemented | Label hooks implemented | 0.18: configurable remove/empty labels; application supplies translations. RTL arrows tested; full RTL layout and screen-reader audit remain. |
 | Screen readers / WCAG certification | Not verified | Not verified | Browser inspection is not certification. Keyboard/focus semantics must be completed first. |
 | ThemeBuilder / Telerik icon packages | Not compatible | Not compatible | Original themes/content slots; no commercial tooling compatibility claim. |
 | Native mobile platforms | Deferred | Deferred | User chose Web first. Native validation is a separate phase. |

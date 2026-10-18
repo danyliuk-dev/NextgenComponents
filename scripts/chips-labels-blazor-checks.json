@@ -1,0 +1,112 @@
+{
+  "actions": [
+    {
+      "evaluate": "(()=>{const e=[...document.querySelectorAll('button,label')].find(e=>e.textContent.trim()===\"Custom action labels\");e.setAttribute('data-test-click','yes');e.scrollIntoView({block:'center'});})()"
+    },
+    {
+      "clickSelector": "[data-test-click=yes]"
+    },
+    {
+      "evaluate": "new Promise(r=>setTimeout(r,350))"
+    },
+    {
+      "evaluate": "(()=>{document.querySelector('[data-test-click]')?.removeAttribute('data-test-click')})()"
+    },
+    {
+      "evaluate": "(()=>{if(!document.querySelector('[aria-label=\"Dismiss Design\"]')||document.querySelector('[aria-label=\"Remove Design\"]'))throw Error('labels')})()"
+    },
+    {
+      "evaluate": "(()=>{const e=[...document.querySelectorAll('button,label')].find(e=>e.textContent.trim()===\"Focus topics\");e.setAttribute('data-test-click','yes');e.scrollIntoView({block:'center'});})()"
+    },
+    {
+      "clickSelector": "[data-test-click=yes]"
+    },
+    {
+      "evaluate": "new Promise(r=>setTimeout(r,350))"
+    },
+    {
+      "evaluate": "(()=>{document.querySelector('[data-test-click]')?.removeAttribute('data-test-click')})()"
+    },
+    {
+      "evaluate": "(()=>{if(document.activeElement.getAttribute('aria-label')!==\"Design\")throw Error(document.activeElement.outerHTML)})()"
+    },
+    {
+      "screenshot": "chips018-blazor-focus.png"
+    },
+    {
+      "evaluate": "(()=>{const e=[...document.querySelectorAll('button,label')].find(e=>e.textContent.trim()===\"Clear topics\");e.setAttribute('data-test-click','yes');e.scrollIntoView({block:'center'});})()"
+    },
+    {
+      "clickSelector": "[data-test-click=yes]"
+    },
+    {
+      "evaluate": "new Promise(r=>setTimeout(r,350))"
+    },
+    {
+      "evaluate": "(()=>{document.querySelector('[data-test-click]')?.removeAttribute('data-test-click')})()"
+    },
+    {
+      "evaluate": "(()=>{if(!document.querySelector('.ng-chip-list').textContent.includes('No topics available'))throw Error('empty')})()"
+    },
+    {
+      "evaluate": "(()=>{const e=[...document.querySelectorAll('button,label')].find(e=>e.textContent.trim()===\"Focus topics\");e.setAttribute('data-test-click','yes');e.scrollIntoView({block:'center'});})()"
+    },
+    {
+      "clickSelector": "[data-test-click=yes]"
+    },
+    {
+      "evaluate": "new Promise(r=>setTimeout(r,350))"
+    },
+    {
+      "evaluate": "(()=>{document.querySelector('[data-test-click]')?.removeAttribute('data-test-click')})()"
+    },
+    {
+      "evaluate": "(()=>{if(document.activeElement.getAttribute('aria-label')!==\"Topics\")throw Error(document.activeElement.outerHTML)})()"
+    },
+    {
+      "screenshot": "chips018-blazor-empty.png"
+    },
+    {
+      "evaluate": "(()=>{const e=[...document.querySelectorAll('button,label')].find(e=>e.textContent.trim()===\"Reset tags\");e.setAttribute('data-test-click','yes');e.scrollIntoView({block:'center'});})()"
+    },
+    {
+      "clickSelector": "[data-test-click=yes]"
+    },
+    {
+      "evaluate": "new Promise(r=>setTimeout(r,350))"
+    },
+    {
+      "evaluate": "(()=>{document.querySelector('[data-test-click]')?.removeAttribute('data-test-click')})()"
+    },
+    {
+      "evaluate": "(()=>{const e=[...document.querySelectorAll('button,label')].find(e=>e.textContent.trim()===\"Focus topics\");e.setAttribute('data-test-click','yes');e.scrollIntoView({block:'center'});})()"
+    },
+    {
+      "clickSelector": "[data-test-click=yes]"
+    },
+    {
+      "evaluate": "new Promise(r=>setTimeout(r,350))"
+    },
+    {
+      "evaluate": "(()=>{document.querySelector('[data-test-click]')?.removeAttribute('data-test-click')})()"
+    },
+    {
+      "evaluate": "(()=>{if(document.activeElement.getAttribute('aria-label')!==\"Design\")throw Error(document.activeElement.outerHTML)})()"
+    },
+    {
+      "evaluate": "(()=>{const e=[...document.querySelectorAll('button,label')].find(e=>e.textContent.trim()===\"Custom action labels\");e.setAttribute('data-test-click','yes');e.scrollIntoView({block:'center'});})()"
+    },
+    {
+      "clickSelector": "[data-test-click=yes]"
+    },
+    {
+      "evaluate": "new Promise(r=>setTimeout(r,350))"
+    },
+    {
+      "evaluate": "(()=>{document.querySelector('[data-test-click]')?.removeAttribute('data-test-click')})()"
+    },
+    {
+      "evaluate": "(()=>{if(!document.querySelector('[aria-label=\"Remove Design\"]'))throw Error('default labels')})()"
+    }
+  ]
+}

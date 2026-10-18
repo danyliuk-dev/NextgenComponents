@@ -5,6 +5,163 @@ import 'package:nextgen_components/nextgen_components.dart';
 
 void main() {
   testWidgets(
+    'public focus controller targets IDs, swaps and detaches safely',
+    (t) async {
+      final first = NgChipListController();
+      final second = NgChipListController();
+      expect(first.isAttached, isFalse);
+      expect(first.focus(), isFalse);
+      var controller = first;
+      var items = const [
+        NgOption('a', 'Alpha'),
+        NgOption('b', 'Beta'),
+        NgOption('locked', 'Locked', disabled: true),
+      ];
+      late StateSetter update;
+      var changes = 0;
+      await t.pumpWidget(
+        MaterialApp(
+          builder: (context, child) => Material(child: child),
+          home: StatefulBuilder(
+            builder: (context, set) {
+              update = set;
+              return NgChipList(
+                focusController: controller,
+                items: items,
+                onChanged: (_) => changes++,
+              );
+            },
+          ),
+        ),
+      );
+      expect(first.isAttached, isTrue);
+      expect(first.focus(itemId: 'b'), isTrue);
+      await t.pumpAndSettle();
+      expect(FocusManager.instance.primaryFocus?.debugLabel, 'Chip b');
+      expect(first.focus(itemId: 'locked'), isFalse);
+      expect(first.focus(itemId: 'missing'), isFalse);
+      expect(FocusManager.instance.primaryFocus?.debugLabel, 'Chip b');
+      expect(changes, 0);
+      update(() => controller = second);
+      await t.pumpAndSettle();
+      expect(first.isAttached, isFalse);
+      expect(first.focus(), isFalse);
+      expect(second.focus(), isTrue);
+      await t.pumpAndSettle();
+      expect(FocusManager.instance.primaryFocus?.debugLabel, 'Chip a');
+      update(() => items = []);
+      await t.pumpAndSettle();
+      expect(second.focus(), isTrue);
+      await t.pumpAndSettle();
+      expect(FocusManager.instance.primaryFocus?.debugLabel, 'Empty chip list');
+      final outline = t
+          .widgetList<Container>(
+            find.descendant(
+              of: find.byType(NgChipList),
+              matching: find.byType(Container),
+            ),
+          )
+          .firstWhere((c) => c.decoration is BoxDecoration);
+      final border = (outline.decoration! as BoxDecoration).border! as Border;
+      expect(border.top.color.a, greaterThan(0));
+      await t.pumpWidget(const SizedBox());
+      expect(second.isAttached, isFalse);
+      expect(second.focus(), isFalse);
+      first.dispose();
+      second.dispose();
+      expect(second.focus(), isFalse);
+    },
+  );
+
+  testWidgets(
+    'controller cannot attach to two lists or be reused after disposal',
+    (t) async {
+      final controller = NgChipListController();
+      await t.pumpWidget(
+        MaterialApp(
+          builder: (context, child) => Material(child: child),
+          home: Column(
+            children: [
+              Expanded(
+                child: NgChipList(items: const [], focusController: controller),
+              ),
+              Expanded(
+                child: NgChipList(items: const [], focusController: controller),
+              ),
+            ],
+          ),
+        ),
+      );
+      expect(t.takeException(), isStateError);
+      await t.pumpWidget(const SizedBox());
+      controller.dispose();
+      await t.pumpWidget(
+        MaterialApp(
+          builder: (context, child) => Material(child: child),
+          home: NgChipList(items: const [], focusController: controller),
+        ),
+      );
+      expect(t.takeException(), isStateError);
+      await t.pumpWidget(const SizedBox());
+    },
+  );
+
+  testWidgets('custom remove labels and empty text follow parent updates', (
+    t,
+  ) async {
+    var custom = false;
+    var items = const [NgOption('a', 'Alpha')];
+    late StateSetter update;
+    var removals = 0;
+    await t.pumpWidget(
+      MaterialApp(
+        builder: (context, child) => Material(child: child),
+        home: StatefulBuilder(
+          builder: (context, set) {
+            update = set;
+            return NgChipList(
+              items: items,
+              emptyText: 'No topics available',
+              removeLabelBuilder: custom
+                  ? (item) => 'Dismiss ${item.label}'
+                  : null,
+              onRemove: (_) => removals++,
+            );
+          },
+        ),
+      ),
+    );
+    expect(find.byTooltip('Remove Alpha'), findsOneWidget);
+    update(() => custom = true);
+    await t.pumpAndSettle();
+    expect(find.byTooltip('Remove Alpha'), findsNothing);
+    await t.tap(find.byTooltip('Dismiss Alpha'));
+    await t.pumpAndSettle();
+    expect(removals, 1);
+    expect(
+      find.text('Alpha'),
+      findsOneWidget,
+    ); // Request was rejected by parent.
+    update(() => items = []);
+    await t.pumpAndSettle();
+    expect(find.text('No topics available'), findsOneWidget);
+    await t.pumpWidget(
+      MaterialApp(
+        builder: (context, child) => Material(child: child),
+        home: NgChip(label: 'Alpha', removeLabel: ' '),
+      ),
+    );
+    expect(t.takeException(), isArgumentError);
+    await t.pumpWidget(
+      MaterialApp(
+        builder: (context, child) => Material(child: child),
+        home: NgChipList(items: [], emptyText: ' '),
+      ),
+    );
+    expect(t.takeException(), isArgumentError);
+  });
+
+  testWidgets(
     'Tab enters selected chip, exits list and returns to remembered chip',
     (t) async {
       final before = FocusNode(debugLabel: 'Before');

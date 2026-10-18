@@ -10,6 +10,8 @@ The remaining work is substantial: listbox/option semantics, generic data bindin
 
 See [NgChip](manual/NgChip.md) and [NgChipList](manual/NgChipList.md) for compiled examples and exact API. Templates must contain noninteractive content and retain a meaningful label.
 
-0.16 adds Left/Right (including RTL), Home/End, Delete/Backspace and focus restoration to the next/previous enabled chip or the list container. Rejected removal keeps focus; delayed updates do not steal focus from outside controls. Blazor has a public FocusAsync method. Full listbox semantics, Flutter public focus controller and screen-reader verification remain open. See the manual for callback ownership and exact keyboard rules.
+0.16 adds Left/Right (including RTL), Home/End, Delete/Backspace and focus restoration to the next/previous enabled chip or the list container. Rejected removal keeps focus; delayed updates do not steal focus from outside controls. Blazor has a public FocusAsync method. Full listbox semantics, screen-reader verification remain open. See the manual for callback ownership and exact keyboard rules.
 
 0.17 adds one remembered Tab entry per list on both Web platforms. Initial entry prefers an enabled selected chip; Tab and Shift+Tab exit to neighboring controls. Arrows navigate inside the list and Delete/Backspace request removal. Empty/fully disabled lists do not add a Tab stop. Flutter focus scopes now pass traversal to the parent instead of trapping Tab. Semantic listbox roles remain pending.
+
+0.18 adds application-supplied remove and empty labels for both platforms, plus NgChipListController for Flutter first-action or stable-ID focus. Controller lifecycle, shared-owner rejection, invalid targets and custom labels have regression tests. No locale dictionaries or screen-reader certification are supplied.

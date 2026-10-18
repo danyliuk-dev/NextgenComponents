@@ -31,6 +31,11 @@ Leading/leading accepts decorative content such as a small icon or avatar. Child
 OnClick/onClick is independent of selection: it runs after the selection callback on activation, also when selection is disabled. Removal only invokes the remove callback. Disabled chips invoke neither. A missing selection callback keeps selection unchanged, while an available click callback can still run a command. Blazor awaits the selection handler before invoking click; the next boolean is calculated before either callback. Flutter callbacks are synchronous. Do not use click to toggle selection a second time.
 
 
+### Action labels (0.18)
+
+NgChip.RemoveLabel / removeLabel overrides the complete accessible removal name and Flutter delete tooltip. Null keeps "Remove {label}". Supply a nonblank phrase including the item name, such as "Dismiss Design"; a visual remove icon alone is not an accessible name. Text is escaped, not treated as markup. Obtain translations from your application's localization resources; the library does not select a locale or ship translation dictionaries.
+
+
 ## Blazor example
 
 ```razor
@@ -74,6 +79,7 @@ Names are case-sensitive. `?` permits null. `EditorRequired` parameters are mark
 | Parameter | Type | Default / requirement | Purpose |
 |---|---|---|---|
 | `Label` | `string` | required | Visible label or accessible name. |
+| `RemoveLabel` | `string?` | not set | Complete nonblank accessible removal name; for ChipList, a callback receiving NgOption. |
 | `Value` | `bool` | false | Current value; see state ownership and model rules above. |
 | `ValueChanged` | `EventCallback<bool>` | not set | New value for the parent to store and pass back. |
 | `Selectable` | `bool` | true | See the behavior rules and model contract above. |
@@ -95,6 +101,7 @@ Names are case-sensitive. `?` permits null. `EditorRequired` parameters are mark
 | Argument | Type | Purpose |
 |---|---|---|
 | `label` | `String` | Visible label or accessible name. |
+| `removeLabel` | `String?` | Complete nonblank accessible removal name; for ChipList, a callback receiving NgOption. |
 | `value` | `bool` | Current value; see state ownership and model rules above. |
 | `selectable` | `bool` | See the behavior rules and model contract above. |
 | `disabled` | `bool` | Disable user interaction. |
@@ -113,6 +120,7 @@ Names are case-sensitive. `?` permits null. `EditorRequired` parameters are mark
 const NgChip({
     super.key,
     required this.label,
+    this.removeLabel,
     this.value = false,
     this.selectable = true,
     this.disabled = false,

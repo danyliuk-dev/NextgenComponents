@@ -1536,3 +1536,58 @@ Blazor exposes FocusAsync() on NgChipList via @ref after interactive rendering. 
 
 Blazor serializes pending remove callbacks. Flutter removal callbacks remain synchronous requests: if the application performs async deletion, it must handle duplicate requests, errors and cancellation, then update items and selected IDs together. Focus restoration tracks that later state update; it does not await network operations. Removing a standalone chip requires the application to move focus explicitly.
 """
+
+# 0.18: application focus and translatable action/empty labels.
+for name in ('NgChip', 'NgChipList'):
+    D[name]['notes'] += """
+
+### Action labels (0.18)
+
+NgChip.RemoveLabel / removeLabel overrides the complete accessible removal name and Flutter delete tooltip. Null keeps "Remove {label}". Supply a nonblank phrase including the item name, such as "Dismiss Design"; a visual remove icon alone is not an accessible name. Text is escaped, not treated as markup. Obtain translations from your application's localization resources; the library does not select a locale or ship translation dictionaries.
+"""
+D['NgChipList']['notes'] = D['NgChipList']['notes'].replace('Flutter owns and disposes internal focus nodes; a public list focus controller is still pending.', 'Flutter owns and disposes internal focus nodes; use the public NgChipListController described below.')
+D['NgChipList']['notes'] += """
+
+For lists, RemoveLabel (Blazor) / removeLabelBuilder (Flutter) receives each NgOption and supplies that chip's removal phrase. Keep the callback pure. EmptyText / emptyText changes the empty collection message; the default remains "No tags" and blank text is rejected. Label / label still supplies the list name. Changing these strings does not change IDs, selection or removal permissions. Changing the application locale must trigger a normal parent rerender/rebuild. RTL direction is inherited from the surrounding HTML direction or Flutter Directionality; these label hooks do not set direction.
+
+### Focus from application code (0.18)
+
+Blazor: keep an @ref and await FocusAsync() after interactive rendering. It focuses the first enabled action, or the list container when none exists. Calling before initialization is a no-op.
+
+Flutter: create one NgChipListController in the owning State, pass it as focusController, and dispose it in that State's dispose(). Never create a controller inside build or share one between simultaneous lists. A shared or previously disposed controller throws StateError on attachment. Changing focusController detaches the old handle; removing the list detaches it automatically. The list continues to own its internal FocusNodes.
+
+focus() requests the first enabled interactive chip, or the container for an empty/all-disabled list. focus(itemId: 'web') targets an enabled interactive chip by stable ID. It returns false without moving focus if detached, disposed, not yet laid out, or if the explicit ID is missing/disabled. A true return means a focus request was issued; Flutter applies it on the next frame. isAttached reports attachment, not layout readiness. Call from an event callback or a post-frame callback after mounting. Focus never changes selection or invokes click/removal callbacks. The example intentionally uses English custom labels; substitute application translations as needed.
+"""
+D['NgChipList']['blazor'] = '''<NgChipList @ref="topics" Label="Topics" Items="items" @bind-Value="selected"
+    Multiple OnRemove="Remove" RemoveLabel="RemoveLabel" EmptyText="No topics available" />
+<NgButton OnClick="FocusTopics">Focus topics</NgButton>
+@code {
+    private NgChipList? topics;
+    private IReadOnlyList<NgOption> items = [new("design", "Design"), new("web", "Web"), new("locked", "Locked", true)];
+    private IReadOnlyList<string> selected = ["design"];
+    private string RemoveLabel(NgOption item) => $"Dismiss {item.Label}";
+    private async Task FocusTopics() { if (topics is not null) await topics.FocusAsync(); }
+    private void Remove(string id) {
+        items = items.Where(item => item.Value != id).ToArray();
+        selected = selected.Where(value => value != id).ToArray();
+    }
+}'''
+D['NgChipList']['dart'] = '''final topics = NgChipListController();
+List<NgOption> items = const [NgOption('design', 'Design'), NgOption('web', 'Web'), NgOption('locked', 'Locked', disabled: true)];
+List<String> selected = ['design'];
+@override
+void dispose() { topics.dispose(); super.dispose(); }
+Widget build(BuildContext context) => Column(children: [
+  NgChipList(label: 'Topics', focusController: topics, items: items,
+    value: selected, multiple: true, emptyText: 'No topics available',
+    removeLabelBuilder: (item) => 'Dismiss ${item.label}',
+    onChanged: (v) => setState(() => selected = v),
+    onRemove: (id) => setState(() {
+      items = items.where((item) => item.value != id).toList();
+      selected = selected.where((value) => value != id).toList();
+    })),
+  NgButton(onPressed: () => topics.focus(), child: const Text('Focus topics')),
+  NgButton(onPressed: () => topics.focus(itemId: 'web'), child: const Text('Focus Web')),
+]);'''
+
+D['NgChipList']['notes'] = D['NgChipList']['notes'].replace('Tab moves through enabled actions;', 'Tab enters the list once and then leaves; arrows move inside;').replace('focus() requests the first enabled interactive chip, or the container for an empty/all-disabled list.', 'focus() requests the first enabled interactive chip, or the container for an empty/all-disabled list. The Flutter container shows a focus outline when it receives primary focus.')
