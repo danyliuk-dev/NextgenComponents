@@ -6,8 +6,10 @@ Original implementations with partial feature parity. See the [feature-by-featur
 
 The parent owns selection and removal. A removal callback is a request carrying the stable item ID: accept it by updating items and selected IDs together, or reject it by leaving state unchanged. `CanRemove`/`canRemove` controls whether removal is offered; it does not disable selection or replace request rejection.
 
-The remaining work is substantial: single-tab-stop listbox semantics, generic data binding, the 50-item limit, localization/RTL, public accessibility hooks and screen-reader validation. No full-parity claim is made. Icons are application content, not Telerik icon packages; styling is not a verified pixel match.
+The remaining work is substantial: listbox/option semantics, generic data binding, the 50-item limit, localization/RTL, public accessibility hooks and screen-reader validation. No full-parity claim is made. Icons are application content, not Telerik icon packages; styling is not a verified pixel match.
 
 See [NgChip](manual/NgChip.md) and [NgChipList](manual/NgChipList.md) for compiled examples and exact API. Templates must contain noninteractive content and retain a meaningful label.
 
-0.16 adds Left/Right (including RTL), Home/End, Delete/Backspace and focus restoration to the next/previous enabled chip or the list container. Rejected removal keeps focus; delayed updates do not steal focus from outside controls. Blazor has a public FocusAsync method. Full listbox semantics, single-tab-stop behavior, Flutter public focus controller and screen-reader verification remain open. See the manual for callback ownership and exact keyboard rules.
+0.16 adds Left/Right (including RTL), Home/End, Delete/Backspace and focus restoration to the next/previous enabled chip or the list container. Rejected removal keeps focus; delayed updates do not steal focus from outside controls. Blazor has a public FocusAsync method. Full listbox semantics, Flutter public focus controller and screen-reader verification remain open. See the manual for callback ownership and exact keyboard rules.
+
+0.17 adds one remembered Tab entry per list on both Web platforms. Initial entry prefers an enabled selected chip; Tab and Shift+Tab exit to neighboring controls. Arrows navigate inside the list and Delete/Backspace request removal. Empty/fully disabled lists do not add a Tab stop. Flutter focus scopes now pass traversal to the parent instead of trapping Tab. Semantic listbox roles remain pending.

@@ -2,13 +2,13 @@
 <PageTitle>Nextgen • Chips and tags</PageTitle>
 <div class="ng-scope gallery" data-ng-theme="@(dark?"dark":"light")"><main>
 <nav><a href="/code-examples">Code examples</a><strong>N NEXTGEN COMPONENTS</strong><div class="row"><a href="/">Foundation</a><NgSwitch Label="Dark theme" @bind-Value="dark"/></div></nav>
-<section class="hero"><p class="eyebrow">BLAZOR / CHIPS 0.16</p><h1>Small tags.<br/>Clear choices.</h1><p>Select topics, remove a tag, or show a compact status. Your application owns every change.</p></section>
+<section class="hero"><p class="eyebrow">BLAZOR / CHIPS 0.17</p><h1>Small tags.<br/>Clear choices.</h1><p>Select topics, remove a tag, or show a compact status. Your application owns every change.</p></section>
 <section class="panel"><div class="row"><NgCheckBox Label="Disable controls" @bind-Value="disabled"/><NgCheckBox Label="Multiple selection" Value="multiple" ValueChanged="SetMultiple" ValueExpression="()=>multiple"/><NgCheckBox Label="Enable selection" @bind-Value="selectable"/><NgCheckBox Label="Protect Design from removal" @bind-Value="protect"/><NgButton OnClick="Reset">Reset tags</NgButton></div>
 <h2>Appearance and content</h2>
 <div class="row"><NgDropDownList Label="Size" Items="sizes" @bind-Value="size"/><NgDropDownList Label="Rounded" Items="roundings" @bind-Value="rounded"/><NgDropDownList Label="Fill mode" Items="fills" @bind-Value="fill"/><NgCheckBox Label="Custom content" @bind-Value="custom"/></div>
 <p>Templates can show an icon, avatar or custom text. The accessible name always comes from the label.</p>
 <div class="row">@foreach(var tone in tones){<NgChip Label="@tone" Selectable="false" Size="@size" Rounded="@rounded" FillMode="@fill" ThemeColor="@tone"/>}</div>
-<h2>Topics</h2><p>Keyboard: Left/Right, Home/End move focus. Enter/Space activates. Delete/Backspace requests removal. Disabled tags are skipped.</p><NgChipList @ref="chipList" Label="Topics" Items="items" Value="selected" ValueChanged="SetSelected" OnRemove="Remove" Multiple="multiple" Disabled="disabled" Selectable="selectable" Size="@size" Rounded="@rounded" FillMode="@fill" CanRemove="CanRemove" ItemAppearance="Appearance" OnClick="id=>lastClick=id">
+<h2>Topics</h2><p>Keyboard: Tab enters once and leaves the list. Shift+Tab returns to the remembered chip. Left/Right, Home/End move focus. Enter/Space activates. Delete/Backspace requests removal. Disabled tags are skipped.</p><NgChipList @ref="chipList" Label="Topics" Items="items" Value="selected" ValueChanged="SetSelected" OnRemove="Remove" Multiple="multiple" Disabled="disabled" Selectable="selectable" Size="@size" Rounded="@rounded" FillMode="@fill" CanRemove="CanRemove" ItemAppearance="Appearance" OnClick="id=>lastClick=id">
 <LeadingTemplate Context="item">@if(custom){<span aria-hidden="true">★</span>}</LeadingTemplate>
 <ItemTemplate Context="item">@if(custom){<strong>@item.Label <small>· @item.Label.Length</small></strong>}else{@item.Label}</ItemTemplate>
 <RemoveContent>−</RemoveContent>

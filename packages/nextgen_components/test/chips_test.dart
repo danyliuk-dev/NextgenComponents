@@ -4,6 +4,66 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:nextgen_components/nextgen_components.dart';
 
 void main() {
+  testWidgets(
+    'Tab enters selected chip, exits list and returns to remembered chip',
+    (t) async {
+      final before = FocusNode(debugLabel: 'Before');
+      final after = FocusNode(debugLabel: 'After');
+      await t.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Column(
+              children: [
+                TextButton(
+                  focusNode: before,
+                  onPressed: () {},
+                  child: const Text('Before'),
+                ),
+                NgChipList(
+                  items: const [
+                    NgOption('a', 'Alpha'),
+                    NgOption('b', 'Beta'),
+                    NgOption('c', 'Gamma'),
+                  ],
+                  value: const ['b'],
+                  onChanged: (_) {},
+                  onRemove: (_) {},
+                ),
+                TextButton(
+                  focusNode: after,
+                  onPressed: () {},
+                  child: const Text('After'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+      before.requestFocus();
+      await t.pumpAndSettle();
+      await t.sendKeyEvent(LogicalKeyboardKey.tab);
+      await t.pumpAndSettle();
+      expect(FocusManager.instance.primaryFocus?.debugLabel, 'Chip b');
+      await t.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+      await t.pumpAndSettle();
+      expect(FocusManager.instance.primaryFocus?.debugLabel, 'Chip c');
+      await t.sendKeyEvent(LogicalKeyboardKey.tab);
+      await t.pumpAndSettle();
+      expect(after.hasFocus, isTrue);
+      await t.sendKeyDownEvent(LogicalKeyboardKey.shiftLeft);
+      await t.sendKeyEvent(LogicalKeyboardKey.tab);
+      await t.pumpAndSettle();
+      expect(FocusManager.instance.primaryFocus?.debugLabel, 'Chip c');
+      await t.sendKeyEvent(LogicalKeyboardKey.tab);
+      await t.pumpAndSettle();
+      expect(before.hasFocus, isTrue);
+      await t.sendKeyUpEvent(LogicalKeyboardKey.shiftLeft);
+      await t.pumpWidget(const SizedBox());
+      before.dispose();
+      after.dispose();
+    },
+  );
+
   testWidgets('semantic activation callback also establishes keyboard focus', (
     t,
   ) async {

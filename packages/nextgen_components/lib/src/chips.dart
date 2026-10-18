@@ -250,7 +250,11 @@ class NgChipList extends StatefulWidget {
 
 class _NgChipListState extends State<NgChipList> {
   final Map<String, FocusNode> nodes = {};
-  final FocusScopeNode scope = FocusScopeNode(debugLabel: 'Chip list scope');
+  String? entryId;
+  final FocusScopeNode scope = FocusScopeNode(
+    debugLabel: 'Chip list scope',
+    traversalEdgeBehavior: TraversalEdgeBehavior.parentScope,
+  );
   final FocusNode fallback = FocusNode(
     debugLabel: 'Empty chip list',
     skipTraversal: true,
@@ -376,6 +380,15 @@ class _NgChipListState extends State<NgChipList> {
       widget.fillMode,
       widget.themeColor,
     );
+    final available = widget.items.where(enabled).toList();
+    if (!available.any((item) => item.value == entryId)) {
+      entryId =
+          (available
+                      .where((item) => widget.value.contains(item.value))
+                      .firstOrNull ??
+                  available.firstOrNull)
+              ?.value;
+    }
     return FocusScope(
       node: scope,
       child: Focus(
@@ -399,8 +412,12 @@ class _NgChipListState extends State<NgChipList> {
                           return Focus(
                             focusNode: focus,
                             canRequestFocus: enabled(item),
-                            onFocusChange: (_) {
-                              if (mounted) setState(() {});
+                            skipTraversal: item.value != entryId,
+                            onFocusChange: (focused) {
+                              if (mounted)
+                                setState(() {
+                                  if (focused) entryId = item.value;
+                                });
                             },
                             onKeyEvent: (_, e) => key(item, e),
                             child: Listener(

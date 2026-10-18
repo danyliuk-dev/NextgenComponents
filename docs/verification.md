@@ -291,3 +291,14 @@ Verified in a separately coordinated visible Chrome run: initial counts/current 
 - Blazor JS focus module edge cases (next enabled neighbor, no-target container, outside focus, RTL, disposal) were checked in the real browser with a temporary DOM fixture. Reproduce with `node scripts/chrome-review.mjs scripts/chips-focus-checks.json` while a coordinated visible CDP9341 tab is on the Blazor origin. The fixture removes itself afterward.
 - Screenshots inspected: [Blazor focus](screenshots/chips016-blazor-focus.png), [Flutter focus](screenshots/chips016-flutter-focus.png), [Flutter dark focus](screenshots/chips016-flutter-dark-focus.png), [Flutter 390px focus](screenshots/chips016-flutter-narrow-focus.png).
 - Still pending: one-tab-stop listbox/option semantics, public Flutter focus controller, screen-reader certification and the other binding/localization gaps in the matrix. Flutter async removal is application-owned; Blazor guards pending remove callbacks. Standalone chip removal requires application-owned focus transfer.
+
+
+## 0.17.0 — ChipList single Tab entry (2026-10-18)
+
+Both Web platforms now keep one remembered keyboard entry per list. Initial entry prefers an enabled selected item. Tab exits forward, Shift+Tab exits backward and returns to the remembered chip. Arrow navigation does not select. Flutter's internal focus scope explicitly passes traversal to its parent, fixing the closed-loop Tab trap found by the new regression test.
+
+Validation: 193 Blazor rendering/rule checks, 90 Flutter tests, library analyzer, 47 Blazor + 47 Flutter compiled/analyzed manual examples, 94 lossless highlighted snippets and palette checks passed. Blazor build has no warnings/errors. Flutter Web build passed with the existing CupertinoIcons font warning.
+
+Visible foreground Chrome on local Linux/iMac, coordinated separate profile/CDP 9341: both real galleries passed ArrowRight → Tab exit → Shift+Tab remembered reentry → Shift+Tab exit → Tab reentry → Delete with focus recovery. Final English help and focus indicators inspected in screenshots: [Blazor](screenshots/chips017-blazor-tab.png), [Flutter](screenshots/chips017-flutter-tab.png). Reproducible CDP actions: `scripts/chips-tab-blazor-checks.json` (opens /chips), `scripts/chips-tab-flutter-checks.json` (run after opening Chips and tags and enabling Flutter semantics). `scripts/chips-focus-checks.json` also passed selected initial entry, roving entry, disabled skipping, empty fallback, outside-focus protection and RTL. Review Chrome closed and GUI slot released.
+
+Scope limitation: one keyboard Tab entry does not mean one accessibility-tree node. Blazor remains a group of native buttons; Flutter retains native chip/checkbox and remove actions. The installed Flutter SemanticsRole enum lacks listbox/option roles. Full listbox semantics and screen-reader certification remain open; no complete Telerik accessibility parity is claimed. Mobile platforms were not tested.
