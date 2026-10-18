@@ -1,7 +1,13 @@
 @* Generated from scripts/manual_content.py *@
-<NgStepper Items="steps" @bind-Value="current" Linear />
-<p>Current index: @current</p>
+<NgCheckBox Label="Right-to-left" @bind-Value="rtl"/>
+<NgDropDownList Label="Step display" Items="modes" @bind-Value="mode"/>
+<NgStepper Label="Publishing progress" Items="steps" @bind-Value="current" Rtl="rtl" DisplayMode="@mode">
+  <IndicatorTemplate Context="step"><span>@(step.Current?"★":"○")</span></IndicatorTemplate>
+  <LabelTemplate Context="step"><strong>@step.Step.Label</strong></LabelTemplate>
+</NgStepper>
+<p>Selected step: @(current+1)</p>
 @code {
- private int current;
- private NgStep[] steps=[new("Contact"),new("Preferences",Optional:true),new("Review")];
+  private int current; private bool rtl; private string mode="all";
+  private readonly NgStep[] steps=[new("Draft",Valid:true),new("Details",Optional:true,Valid:false),new("Publish")];
+  private readonly NgOption[] modes=[new("all","Indicators and labels"),new("labels","Labels only"),new("indicators","Indicators only")];
 }

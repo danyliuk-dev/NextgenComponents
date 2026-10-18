@@ -2,20 +2,29 @@
 <PageTitle>Nextgen • Steps and wizard</PageTitle>
 <div class="ng-scope gallery" data-ng-theme="@(dark?"dark":"light")"><main>
 <nav><a href="/code-examples">Code examples</a><strong>N NEXTGEN COMPONENTS</strong><div class="row"><a href="/">Foundation</a><NgSwitch Label="Dark theme" @bind-Value="dark"/></div></nav>
-<section class="hero"><p class="eyebrow">BLAZOR / STEPS 0.11</p><h1>A clear path<br/>to completion.</h1><p>Step-by-step application with asynchronous validation. Demo saves locally only.</p></section>
-<section class="panel"><div class="row"><NgCheckBox Label="Vertical" @bind-Value="vertical"/><NgCheckBox Label="Simulate failure" @bind-Value="fail"/><NgButton OnClick="Reset">Reset wizard</NgButton></div>
-<NgWizard @key="generation" Label="Application" Items="steps" @bind-Value="current" Vertical="vertical" ValidateStep="Validate" OnFinish="Save" Context="index">
+<section class="hero"><p class="eyebrow">BLAZOR / STEPS 0.28</p><h1>A clear path<br/>to completion.</h1><p>Step-by-step application with asynchronous validation. Demo saves locally only.</p></section>
+<section class="panel"><div class="row"><NgCheckBox Label="Vertical" @bind-Value="vertical"/><NgCheckBox Label="Simulate failure" @bind-Value="fail"/><NgCheckBox Label="Right-to-left" @bind-Value="rtl"/><NgCheckBox Label="Block transitions" @bind-Value="block"/><NgCheckBox Label="Custom actions" @bind-Value="custom"/><NgButton OnClick="Reset">Reset wizard</NgButton></div>
+<div class="row"><NgDropDownList Label="Stepper position" Items="positions" @bind-Value="position"/><NgDropDownList Label="Step display" Items="modes" @bind-Value="mode"/></div>
+<NgWizard ResetKey="generation" Rtl="rtl" Position="@position" DisplayMode="@mode" BeforeChange="Guard" BackText="Previous" NextText="Continue" FinishText="Submit application" ActionsTemplate="@(custom?CustomActions:null)" Label="Application" Items="steps" @bind-Value="current" Vertical="vertical" ValidateStep="Validate" OnFinish="Save">
+<IndicatorTemplate Context="step"><span>@(step.Index==0?"✎":step.Index==3?"✓":"◆")</span></IndicatorTemplate>
+<LabelTemplate Context="step"><strong>@step.Step.Label</strong></LabelTemplate>
+<ChildContent Context="index">
 @if(index==0){<h2>Contact details</h2><label class="ng-field">Applicant name<input class="ng-input" aria-label="Applicant name" @bind="name" @bind:event="oninput"/></label><p>Enter at least two characters. Next waits for validation.</p>}
 else if(index==2){<h2>Preferences</h2><NgCheckBox Label="Email updates" @bind-Value="updates"/><p>This optional step can be left unchanged.</p>}
 else{<h2>Review application</h2><p>Applicant: @name</p><p>Email updates: @updates</p>}
-</NgWizard><p id="wizard-result">Saved: @saved</p></section>
-<section class="panel"><h2>Standalone Stepper</h2><NgStepper Items="standalone" @bind-Value="selected" Vertical="vertical"/><p>Selected step: @(selected+1)</p></section>
-<footer>41 CONTROLS / 47 CATALOGUE ENTRIES · WEB FIRST</footer></main></div>
+</ChildContent></NgWizard><p id="wizard-result">Saved: @saved · Guard: @guardStatus</p></section>
+<section class="panel"><h2>Standalone Stepper</h2><NgStepper Items="standalone" @bind-Value="selected" Vertical="vertical" DisplayMode="@mode" Rtl="rtl"><IndicatorTemplate Context="step"><span>★</span></IndicatorTemplate><LabelTemplate Context="step"><strong>@step.Step.Label</strong></LabelTemplate></NgStepper><p>Selected step: @(selected+1)</p></section>
+<footer>47 CONTROLS / 53 CATALOGUE ENTRIES · WEB FIRST</footer></main></div>
 @code {
+ private bool rtl,block,custom;private string position="top",mode="all",guardStatus="Ready";
+ private readonly NgOption[] positions=[new("top","Top"),new("bottom","Bottom"),new("start","Start side"),new("end","End side")];
+ private readonly NgOption[] modes=[new("all","Indicators and labels"),new("labels","Labels only"),new("indicators","Indicators only")];
+ private async Task<bool> Guard(NgWizardChange change){var denied=block;var version=generation;await Task.Delay(250);if(version==generation){guardStatus=denied?"Blocked":$"{change.Current} → {change.Target}";StateHasChanged();}return !denied;}
+ private RenderFragment<NgWizardActions> CustomActions=>a=>@<div class="ng-wizard-actions"><NgButton Disabled="@(!a.CanBack)" OnClick="a.BackAsync">Previous</NgButton><span>@(a.Busy?"Working…":a.Finished?"Application complete":"Custom action bar")</span>@if(!a.IsLast){<NgButton Primary Disabled="@(!a.CanNext)" OnClick="a.NextAsync">Continue</NgButton>}else if(!a.Finished){<NgButton Primary Disabled="@(!a.CanFinish)" OnClick="a.FinishAsync">Submit application</NgButton>}</div>;
  private bool dark,vertical,fail,updates;private int current,selected,generation,saved;private string name="";
  private readonly NgStep[] steps=[new("Contact"),new("Business only",Disabled:true),new("Preferences",Optional:true),new("Review")];
  private readonly NgStep[] standalone=[new("Draft",Valid:true),new("Details",Valid:false),new("Unavailable",Disabled:true),new("Publish")];
  private async Task<string?> Validate(int index){var failed=fail;var valid=name.Trim().Length>=2;await Task.Delay(600);if(failed)throw new InvalidOperationException("Demo failure");return index==0&&!valid?"Enter an applicant name (at least 2 characters).":null;}
  private async Task Save(){var version=generation;await Task.Delay(400);if(version==generation)saved++;}
- private void Reset(){generation++;current=0;name="";updates=false;saved=0;}
+ private void Reset(){generation++;guardStatus="Ready";current=0;name="";updates=false;saved=0;}
 }

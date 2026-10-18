@@ -1,12 +1,15 @@
 @implements IDisposable
-<section class="ng-wizard" aria-label="@Label" aria-busy="@(busy?"true":"false")">
-<NgStepper Label="@Label" Items="Items" Value="Value" ValueChanged="Move" Linear="Linear" Vertical="Vertical" Disabled="@(Disabled||busy||finished)"/>
+<section class="ng-wizard" dir="@(Rtl?"rtl":"ltr")" data-position="@Position" aria-label="@Label" aria-busy="@(busy?"true":"false")">
+<div class="ng-wizard-stepper"><NgStepper Label="@Label" Items="Items" Value="Value" ValueChanged="Move" Linear="Linear" Vertical="@(Vertical||Position is "start" or "end")" Disabled="@(Disabled||busy||finished||!ValueChanged.HasDelegate)" Rtl="Rtl" DisplayMode="@DisplayMode" IndicatorTemplate="IndicatorTemplate" LabelTemplate="LabelTemplate"/></div>
+<div class="ng-wizard-body">
 <div class="ng-wizard-content" role="region" aria-label="@Items[Value].Label">@ChildContent(Value)</div>
 @if(error is not null){<p role="alert" class="ng-wizard-error">@error</p>}
 <p role="status">@(busy?"Checking…":finished?"Completed.":$"Step {Value+1} of {Items.Count}")</p>
-<div class="ng-wizard-actions"><NgButton Disabled="@(Disabled||busy||finished||Previous<0)" OnClick="()=>Move(Previous)">Back</NgButton>
-@if(Next>=0){<NgButton Primary Disabled="@(Disabled||busy||finished)" OnClick="()=>Move(Next)">Next</NgButton>}
-else{<NgButton Primary Disabled="@(Disabled||busy||finished||!OnFinish.HasDelegate)" OnClick="Finish">Finish</NgButton>}
+@if(ActionsTemplate is not null){@ActionsTemplate(Actions)}else{
+<div class="ng-wizard-actions"><NgButton Disabled="@(!Actions.CanBack)" OnClick="()=>Move(Previous)">@BackText</NgButton>
+@if(Next>=0){<NgButton Primary Disabled="@(!Actions.CanNext)" OnClick="()=>Move(Next)">@NextText</NgButton>}
+else{<NgButton Primary Disabled="@(!Actions.CanFinish)" OnClick="Finish">@FinishText</NgButton>}
+</div>}
 </div></section>
 @code {
  [Parameter] public string Label {get;set;}="Wizard";
@@ -19,15 +22,30 @@ else{<NgButton Primary Disabled="@(Disabled||busy||finished||!OnFinish.HasDelega
  [Parameter] public Func<int,Task<string?>>? ValidateStep {get;set;}
  [Parameter] public EventCallback OnFinish {get;set;}
  [Parameter,EditorRequired] public RenderFragment<int> ChildContent {get;set;}=default!;
+ [Parameter] public bool Rtl {get;set;}
+ [Parameter] public string Position {get;set;}="top";
+ [Parameter] public string DisplayMode {get;set;}="all";
+ [Parameter] public int ResetKey {get;set;}
+ [Parameter] public string BackText {get;set;}="Back";
+ [Parameter] public string NextText {get;set;}="Next";
+ [Parameter] public string FinishText {get;set;}="Finish";
+ [Parameter] public RenderFragment<NgStepContext>? IndicatorTemplate {get;set;}
+ [Parameter] public RenderFragment<NgStepContext>? LabelTemplate {get;set;}
+ [Parameter] public RenderFragment<NgWizardActions>? ActionsTemplate {get;set;}
+ [Parameter] public Func<NgWizardChange,Task<bool>>? BeforeChange {get;set;}
+ private NgWizardActions Actions=>new(Value,busy,finished,Next<0,CanNavigate&&Previous>=0,CanNavigate&&Next>=0,!Disabled&&!busy&&!finished&&Next<0&&OnFinish.HasDelegate,()=>Move(Previous),()=>Move(Next),Finish);
+ private bool CanNavigate=>!Disabled&&!busy&&!finished&&ValueChanged.HasDelegate;
+ private int resetSnapshot;private bool wasLinear=true;
  private bool busy,finished,disposed;private string? error;private int revision;
  private int incoming=-1;private NgStep[] snapshot=[];private bool wasDisabled;
  private int Previous=>NgStepRules.Adjacent(Items,Value,-1);private int Next=>NgStepRules.Adjacent(Items,Value,1);
- protected override void OnParametersSet(){NgStepRules.Validate(Items,Value);if(ChildContent is null)throw new ArgumentException("ChildContent is required.");if(incoming!=Value||!snapshot.SequenceEqual(Items)||wasDisabled!=Disabled){revision++;busy=false;finished=false;error=null;incoming=Value;snapshot=Items.ToArray();wasDisabled=Disabled;}}
- private Task Move(int target)=>NgStepRules.CanMove(Items,Value,target,Linear)?Act(target,false):Task.CompletedTask;
+ protected override void OnParametersSet(){NgStepRules.Validate(Items,Value);NgStepRules.ValidatePresentation(Label,DisplayMode,Position);NgStepRules.ValidatePresentation(BackText);NgStepRules.ValidatePresentation(NextText);NgStepRules.ValidatePresentation(FinishText);if(ChildContent is null)throw new ArgumentException("ChildContent is required.");if(resetSnapshot!=ResetKey||wasLinear!=Linear||incoming!=Value||!snapshot.SequenceEqual(Items)||wasDisabled!=Disabled){revision++;busy=false;finished=false;error=null;incoming=Value;snapshot=Items.ToArray();wasDisabled=Disabled;resetSnapshot=ResetKey;wasLinear=Linear;}}
+ private Task Move(int target)=>ValueChanged.HasDelegate&&NgStepRules.CanMove(Items,Value,target,Linear)?Act(target,false):Task.CompletedTask;
  private Task Finish()=>Next<0&&OnFinish.HasDelegate?Act(Value,true):Task.CompletedTask;
  private async Task Act(int target,bool finish){
   if(Disabled||busy||finished||disposed)return;var version=++revision;var source=Value;busy=true;error=null;
   try{
+   if(BeforeChange is not null){var accepted=await BeforeChange(new(source,target,finish));if(version!=revision||disposed||!accepted)return;}
    if((target>source||finish)&&ValidateStep is not null){var message=await ValidateStep(source);if(version!=revision||disposed)return;if(!string.IsNullOrEmpty(message)){error=message;return;}}
    if(version!=revision||disposed)return;
    if(finish){await OnFinish.InvokeAsync();if(version==revision&&!disposed)finished=true;}

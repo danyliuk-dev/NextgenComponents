@@ -14,32 +14,51 @@ The documentation launcher embeds these running examples here. Choose a framewor
 
 ## Behavior and practical rules
 
-Items/items contains 1–30 NgStep values. Labels must contain 1–120 UTF-16 units and cannot be whitespace-only. Value/value is a zero-based enabled index. Invalid configuration throws ArgumentException/ArgumentError instead of silently selecting another step. Replace lists when updating them.
+### State and display
 
-NgStep contains Label/label, Disabled/disabled, Optional/optional and nullable Valid/valid. Optional is an annotation, not an automatic skip. Valid is presentation only: true shows a check mark, false shows Needs attention, null shows the step number. It never performs validation. Disabled steps cannot be selected. NgStepRules.Adjacent/adjacent finds the next enabled index in direction -1 or 1, returning -1 at the boundary.
+Value/value is a zero-based, enabled index owned by the parent. ValueChanged/onChanged requests a new index; selecting the current step does nothing. A missing callback or Disabled/disabled disables navigation. Linear/linear defaults to false: when enabled, allow earlier enabled steps or the next enabled step; disabled steps are skipped. Optional and Valid are display metadata, not automatic validation or a skip command. Use 1–30 steps with nonempty labels of at most 120 UTF-16 units.
 
-Without Linear/linear, any enabled step can be selected. Linear permits any earlier enabled step or the next enabled step, skipping disabled entries. It does not remember the furthest visited step. Clicking the current step does nothing. Store ValueChanged/onChanged in the parent; without updating Value the active marker stays unchanged. Disabled disables all interaction. Vertical stacks the steps; horizontal layout wraps on narrow screens.
+DisplayMode/displayMode is `all` (default), `labels` or `indicators`. Vertical/vertical controls orientation; horizontal steps wrap. Rtl/rtl defaults to false and mirrors the layout. IndicatorTemplate/indicatorBuilder and LabelTemplate/labelBuilder receive NgStepContext with the step, zero-based index and current-state flag. They replace display content only. Do not put interactive/focusable controls inside either template.
 
-Use Tab to reach enabled buttons and Enter/Space to activate them. Blazor marks the current step with aria-current=step; Flutter exposes selected semantics. Arrow-key roving focus and full screen-reader certification are not implemented. Use NgWizard to add content, validation and finish actions; this component itself does not mount pages, validate fields or save data.
+### Accessibility and integration
+
+The accessible name retains the step number, model label, optional and validity state even in indicators-only mode or with custom templates. Blazor exposes aria-current=step; Flutter exposes selected semantics. Every enabled step remains a native Tab stop with Enter/Space activation; arrow-key roving focus and automatic focus movement are not implemented. To reject asynchronous transitions, use Wizard BeforeChange or handle the controlled callback in the application. Replace the item collection when changing metadata. Display mode and templates use an original API; no Telerik theme or declarative-child compatibility is implied.
 
 ## Blazor example
 
 ```razor
-<NgStepper Items="steps" @bind-Value="current" Linear />
-<p>Current index: @current</p>
+<NgCheckBox Label="Right-to-left" @bind-Value="rtl"/>
+<NgDropDownList Label="Step display" Items="modes" @bind-Value="mode"/>
+<NgStepper Label="Publishing progress" Items="steps" @bind-Value="current" Rtl="rtl" DisplayMode="@mode">
+  <IndicatorTemplate Context="step"><span>@(step.Current?"★":"○")</span></IndicatorTemplate>
+  <LabelTemplate Context="step"><strong>@step.Step.Label</strong></LabelTemplate>
+</NgStepper>
+<p>Selected step: @(current+1)</p>
 @code {
- private int current;
- private NgStep[] steps=[new("Contact"),new("Preferences",Optional:true),new("Review")];
+  private int current; private bool rtl; private string mode="all";
+  private readonly NgStep[] steps=[new("Draft",Valid:true),new("Details",Optional:true,Valid:false),new("Publish")];
+  private readonly NgOption[] modes=[new("all","Indicators and labels"),new("labels","Labels only"),new("indicators","Indicators only")];
 }
+
 ```
 
 ## Flutter example
 
 ```dart
-int current = 0;
-final steps = const [NgStep('Contact'), NgStep('Preferences', optional: true), NgStep('Review')];
-Widget build(BuildContext context) => NgStepper(items: steps, value: current, linear: true,
-  onChanged: (v) => setState(() => current = v));
+int current = 0; bool rtl = false; String mode = 'all';
+final steps = const [NgStep('Draft',valid:true),NgStep('Details',optional:true,valid:false),NgStep('Publish')];
+Widget build(BuildContext context) => Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
+  NgCheckBox(label:'Right-to-left',value:rtl,onChanged:(v)=>setState(()=>rtl=v)),
+  DropdownButtonFormField<String>(initialValue:mode,decoration:const InputDecoration(labelText:'Step display'),
+    items:const [DropdownMenuItem(value:'all',child:Text('Indicators and labels')),DropdownMenuItem(value:'labels',child:Text('Labels only')),DropdownMenuItem(value:'indicators',child:Text('Indicators only'))],
+    onChanged:(v)=>setState(()=>mode=v!)),
+  const SizedBox(height:16),
+  NgStepper(label:'Publishing progress',items:steps,value:current,onChanged:(v)=>setState(()=>current=v),rtl:rtl,displayMode:mode,
+    indicatorBuilder:(_,step)=>Icon(step.current?Icons.star:Icons.circle_outlined,size:20),
+    labelBuilder:(_,step)=>Text(step.step.label,style:const TextStyle(fontWeight:FontWeight.bold))),
+  Text('Selected step: ${current+1}'),
+]);
+
 ```
 
 ## Blazor parameters and events
@@ -55,6 +74,10 @@ Names are case-sensitive. `?` permits null. `EditorRequired` parameters are mark
 | `Linear` | `bool` | false | Restrict forward navigation to the next enabled step; earlier steps remain accessible. |
 | `Vertical` | `bool` | false | Use a vertical root layout; see the component keyboard and layout rules. |
 | `Disabled` | `bool` | false | Disable user interaction. |
+| `Rtl` | `bool` | false | See the behavior rules and model contract above. |
+| `DisplayMode` | `string` | "all" | See the behavior rules and model contract above. |
+| `IndicatorTemplate` | `RenderFragment<NgStepContext>?` | not set | See the behavior rules and model contract above. |
+| `LabelTemplate` | `RenderFragment<NgStepContext>?` | not set | See the behavior rules and model contract above. |
 
 ## Flutter parameters and events
 
@@ -63,12 +86,16 @@ Names are case-sensitive. `?` permits null. `EditorRequired` parameters are mark
 | Argument | Type | Purpose |
 |---|---|---|
 | `label` | `String` | Visible label or accessible name. |
+| `displayMode` | `String` | See the behavior rules and model contract above. |
 | `items` | `List<NgStep>` | Input collection. Replace it when changing records or configuration. |
 | `value` | `int` | Current value; see state ownership and model rules above. |
 | `onChanged` | `ValueChanged<int>?` | Store the new value using setState or your state manager. |
 | `linear` | `bool` | Restrict forward navigation to the next enabled step; earlier steps remain accessible. |
 | `vertical` | `bool` | Use a vertical root layout; see the component keyboard and layout rules. |
 | `disabled` | `bool` | Disable user interaction. |
+| `rtl` | `bool` | See the behavior rules and model contract above. |
+| `indicatorBuilder` | `Widget Function(BuildContext, NgStepContext)?` | See the behavior rules and model contract above. |
+| `labelBuilder` | `Widget Function(BuildContext, NgStepContext)?` | See the behavior rules and model contract above. |
 
 ```dart
 const NgStepper({
@@ -80,6 +107,10 @@ const NgStepper({
     this.linear = false,
     this.vertical = false,
     this.disabled = false,
+    this.rtl = false,
+    this.displayMode = 'all',
+    this.indicatorBuilder,
+    this.labelBuilder,
   });
 ```
 

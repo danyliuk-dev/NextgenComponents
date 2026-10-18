@@ -10,7 +10,7 @@ lines = ['# Feature parity with Telerik UI for Blazor', '',
 'A component can be marked complete only after every reference feature is recorded, both implementations and detailed English examples exist, meaningful automated checks and visible Chrome scenarios pass, and remaining differences are explicitly accepted. Unknown is not complete. A test pass proves the tested behavior, not all reference behavior.', '',
 '## Current work order', '',
 '1. Chip/ChipList remaining gaps stay tracked below; do not mark full parity or silently accept them. Work is delivered in component blocks, not one release per parameter.',
-'2. ToggleButton/ButtonGroup and Menu/Drawer implementation blocks are delivered with explicit remaining gaps below. Next paired block: Stepper/Wizard. No block is a full-parity verdict.',
+'2. ToggleButton/ButtonGroup and Menu/Drawer implementation blocks are delivered with explicit remaining gaps below. Stepper/Wizard is also delivered below; next work moves to existing forms and input components. No block is a full-parity verdict.',
 '3. Continue through existing editors/forms, data management, visualization and complex editors. Add new component names only after closing the active group or recording a user-approved exception.', '',
 '## Chip and ChipList feature matrix', '',
 'Sources: [Chip API](https://www.telerik.com/blazor-ui/documentation/api/telerik.blazor.components.telerikchip), [Chip appearance](https://www.telerik.com/blazor-ui/documentation/components/chip/appearance), [Chip events](https://www.telerik.com/blazor-ui/documentation/components/chip/events), [ChipList binding](https://www.telerik.com/blazor-ui/documentation/components/chiplist/data-bind), [ChipList templates](https://www.telerik.com/blazor-ui/documentation/components/chiplist/templates), [ChipList appearance](https://www.telerik.com/blazor-ui/documentation/components/chiplist/appearance), [keyboard demo](https://demos.telerik.com/blazor-ui/chiplist/keyboard-navigation), [RTL reference](https://www.telerik.com/blazor-ui/documentation/globalization/rtl-support), [ARIA reference](https://www.telerik.com/blazor-ui/documentation/components/chiplist/accessibility/wai-aria-support).', '',
@@ -61,7 +61,7 @@ for c in catalog['components']:
     cells=[]
     for platform in ('blazor','flutter'):
         v=c[platform];cells.append('Implemented subset: '+v['component'] if v['component'] else 'Not implemented')
-    lines.append(f"| [{c['name']}]({c['reference']}) | {' | '.join(cells)} | "+('Partial — matrix above' if c['name'] in ('Chip','ChipList','ToggleButton','ButtonGroup') else 'Partial — navigation matrix below' if c['name'] in ('Menu','Drawer') else 'Not assessed')+' |')
+    lines.append(f"| [{c['name']}]({c['reference']}) | {' | '.join(cells)} | "+('Partial — matrix above' if c['name'] in ('Chip','ChipList','ToggleButton','ButtonGroup') else 'Partial — navigation matrix below' if c['name'] in ('Menu','Drawer') else 'Partial — wizard matrix below' if c['name'] in ('Stepper','Wizard') else 'Not assessed')+' |')
 lines += ['', '## Menu and Drawer audit (0.27)', '',
 'Sources: [Menu overview](https://www.telerik.com/blazor-ui/documentation/components/menu/overview), [Menu binding](https://www.telerik.com/blazor-ui/documentation/components/menu/data-binding/overview), [Menu templates](https://www.telerik.com/blazor-ui/documentation/components/menu/templates), [Drawer overview](https://www.telerik.com/blazor-ui/documentation/components/drawer/overview), [Drawer templates](https://www.telerik.com/blazor-ui/documentation/components/drawer/templates), [mini mode](https://www.telerik.com/blazor-ui/documentation/components/drawer/mini-view).', '',
 '| Feature | Blazor / Flutter Web | Remaining difference |', '|---|---|---|',
@@ -74,5 +74,17 @@ lines += ['', '## Menu and Drawer audit (0.27)', '',
 '| Disabled/read-only destinations | Disabled state and missing callback disable selection | An open overlay intentionally remains dismissible |',
 '| Mini mode / swipe / automatic URLs | Not implemented | Routing stays application-owned |',
 '| Accessibility and platforms | Native buttons/dialog or Material semantics; Web checked | Full screen-reader and native mobile validation remain open |', '']
+lines += ['', '## Stepper and Wizard audit (0.28)', '',
+'Sources: [Stepper overview](https://www.telerik.com/blazor-ui/documentation/components/stepper/overview), [step templates](https://www.telerik.com/blazor-ui/documentation/components/stepper/step-template), [Wizard layout](https://www.telerik.com/blazor-ui/documentation/components/wizard/layout), [Wizard buttons](https://www.telerik.com/blazor-ui/documentation/components/wizard/structure/buttons), [Wizard events](https://www.telerik.com/blazor-ui/documentation/components/wizard/events).', '',
+'| Feature | Blazor / Flutter Web | Remaining difference |', '|---|---|---|',
+'| Controlled step, linear navigation and disabled/optional/valid states | Implemented; 1–30 steps | Optional/Valid remain presentation; no automatic form validation integration |',
+'| Indicators, labels and templates | all/labels/indicators modes; indicator/label slots with complete accessible names | No full interactive step replacement, per-step template fields or icon registry |',
+'| Orientation, RTL and Wizard layouts | Horizontal/vertical; top/bottom/start/end, responsive side stacking | Logical sides differ from physical-position API; original themes |',
+'| Wizard actions | Built-in captions or custom action context | Custom controls must use Can… flags and provided callbacks; no Telerik event-args compatibility |',
+'| Cancellable transitions | Async BeforeChange before forward validation, backward navigation and Finish | Unified pipeline; standalone Stepper relies on controlled application callback |',
+'| Async completion and reset | Busy/duplicate guards, ResetKey, stale-result rejection | No transport cancellation, server idempotency or rollback of external side effects |',
+'| Content and forms | Active-step content; application-owned models and validators | No retained inactive panels or automatic form wiring |',
+'| Accessibility/localization | Native Tab and Enter/Space; state names preserved in templates | Arrow navigation, focus transfer, full localization and screen-reader certification remain open |',
+'| Animation/native platforms | Not implemented / deferred | Web-first validation only |', '']
 (root/'docs/parity.md').write_text('\n'.join(lines).rstrip()+'\n')
 print(f"Generated {len(catalog['components'])} parity inventory entries")

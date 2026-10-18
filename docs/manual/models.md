@@ -132,3 +132,11 @@ This is a snapshot of mapped fields, not a deep copy of application records. Reb
 `NgMenuItem` adds optional immutable `Visible/visible` (default true) and `Separator/separator` (default false) alongside ID, text, disabled and children. Separators need unique IDs and labels but cannot contain children or invoke actions. Hidden ancestors make their descendants unreachable. Validation includes hidden items.
 
 Drawer continues to use `NgOption`. `IsVisible/isVisible` and `IsSeparator/isSeparator` are pure predicates over those options. Their labels remain accessible names when item templates replace the displayed content. See the [Menu](NgMenu.md) and [Drawer](NgDrawer.md) manuals for complete examples and lifecycle rules.
+
+### Stepper/Wizard contexts (0.28)
+
+`NgStepContext` contains the immutable step model, zero-based Index/index and Current/current flag. Indicator and label templates are display-only; model labels and validity metadata remain accessible names.
+
+`NgWizardChange` describes Current/current, Target/target and IsFinish/isFinish. BeforeChange returns an asynchronous boolean; false rejects the request before validation and state callbacks.
+
+`NgWizardActions` provides Value/value, Busy/busy, Finished/finished, IsLast/isLast and CanBack/CanNext/CanFinish (lower camelCase in Dart). BackAsync/NextAsync/FinishAsync in Blazor and back/next/finish in Flutter return tasks/futures using the same guarded transition pipeline. Use IsLast to select a forward action and Can… to determine whether it is enabled. Do not cache these render contexts. See the [Wizard manual](NgWizard.md) for a complete custom action bar.

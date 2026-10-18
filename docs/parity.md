@@ -11,7 +11,7 @@ A component can be marked complete only after every reference feature is recorde
 ## Current work order
 
 1. Chip/ChipList remaining gaps stay tracked below; do not mark full parity or silently accept them. Work is delivered in component blocks, not one release per parameter.
-2. ToggleButton/ButtonGroup and Menu/Drawer implementation blocks are delivered with explicit remaining gaps below. Next paired block: Stepper/Wizard. No block is a full-parity verdict.
+2. ToggleButton/ButtonGroup and Menu/Drawer implementation blocks are delivered with explicit remaining gaps below. Stepper/Wizard is also delivered below; next work moves to existing forms and input components. No block is a full-parity verdict.
 3. Continue through existing editors/forms, data management, visualization and complex editors. Add new component names only after closing the active group or recording a user-approved exception.
 
 ## Chip and ChipList feature matrix
@@ -93,7 +93,7 @@ The inventory includes chart modes as separate entries. “Not assessed” means
 | [Segmented Control](https://www.telerik.com/blazor-ui/segmented-control) | Not implemented | Not implemented | Not assessed |
 | [Speech-to-Text Button](https://www.telerik.com/blazor-ui/speech-to-text-button) | Not implemented | Not implemented | Not assessed |
 | [Split Button](https://www.telerik.com/blazor-ui/split-button) | Not implemented | Not implemented | Not assessed |
-| [Stepper](https://www.telerik.com/blazor-ui/stepper) | Implemented subset: NgStepper | Implemented subset: NgStepper | Not assessed |
+| [Stepper](https://www.telerik.com/blazor-ui/stepper) | Implemented subset: NgStepper | Implemented subset: NgStepper | Partial — wizard matrix below |
 | [Switch](https://www.telerik.com/blazor-ui/switch) | Implemented subset: NgSwitch | Implemented subset: NgSwitch | Not assessed |
 | [TabStrip](https://www.telerik.com/blazor-ui/tabstrip) | Implemented subset: NgTabs | Implemented subset: NgTabs | Not assessed |
 | [Toggle Button](https://www.telerik.com/blazor-ui/togglebutton) | Implemented subset: NgToggleButton | Implemented subset: NgToggleButton | Not assessed |
@@ -186,7 +186,7 @@ The inventory includes chart modes as separate entries. “Not assessed” means
 | [TileLayout](https://www.telerik.com/blazor-ui/tilelayout) | Not implemented | Not implemented | Not assessed |
 | [Tooltip](https://www.telerik.com/blazor-ui/tooltip) | Implemented subset: NgTooltip | Implemented subset: NgTooltip | Not assessed |
 | [Window](https://www.telerik.com/blazor-ui/window) | Not implemented | Not implemented | Not assessed |
-| [Wizard](https://www.telerik.com/blazor-ui/wizard) | Implemented subset: NgWizard | Implemented subset: NgWizard | Not assessed |
+| [Wizard](https://www.telerik.com/blazor-ui/wizard) | Implemented subset: NgWizard | Implemented subset: NgWizard | Partial — wizard matrix below |
 | [Arc Gauge](https://www.telerik.com/blazor-ui/arc-gauge) | Implemented subset: NgArcGauge | Implemented subset: NgArcGauge | Not assessed |
 | [Circular Gauge](https://www.telerik.com/blazor-ui/circular-gauge) | Not implemented | Not implemented | Not assessed |
 | [Linear Gauge](https://www.telerik.com/blazor-ui/linear-gauge) | Implemented subset: NgLinearGauge | Implemented subset: NgLinearGauge | Not assessed |
@@ -229,3 +229,20 @@ Sources: [Menu overview](https://www.telerik.com/blazor-ui/documentation/compone
 | Disabled/read-only destinations | Disabled state and missing callback disable selection | An open overlay intentionally remains dismissible |
 | Mini mode / swipe / automatic URLs | Not implemented | Routing stays application-owned |
 | Accessibility and platforms | Native buttons/dialog or Material semantics; Web checked | Full screen-reader and native mobile validation remain open |
+
+
+## Stepper and Wizard audit (0.28)
+
+Sources: [Stepper overview](https://www.telerik.com/blazor-ui/documentation/components/stepper/overview), [step templates](https://www.telerik.com/blazor-ui/documentation/components/stepper/step-template), [Wizard layout](https://www.telerik.com/blazor-ui/documentation/components/wizard/layout), [Wizard buttons](https://www.telerik.com/blazor-ui/documentation/components/wizard/structure/buttons), [Wizard events](https://www.telerik.com/blazor-ui/documentation/components/wizard/events).
+
+| Feature | Blazor / Flutter Web | Remaining difference |
+|---|---|---|
+| Controlled step, linear navigation and disabled/optional/valid states | Implemented; 1–30 steps | Optional/Valid remain presentation; no automatic form validation integration |
+| Indicators, labels and templates | all/labels/indicators modes; indicator/label slots with complete accessible names | No full interactive step replacement, per-step template fields or icon registry |
+| Orientation, RTL and Wizard layouts | Horizontal/vertical; top/bottom/start/end, responsive side stacking | Logical sides differ from physical-position API; original themes |
+| Wizard actions | Built-in captions or custom action context | Custom controls must use Can… flags and provided callbacks; no Telerik event-args compatibility |
+| Cancellable transitions | Async BeforeChange before forward validation, backward navigation and Finish | Unified pipeline; standalone Stepper relies on controlled application callback |
+| Async completion and reset | Busy/duplicate guards, ResetKey, stale-result rejection | No transport cancellation, server idempotency or rollback of external side effects |
+| Content and forms | Active-step content; application-owned models and validators | No retained inactive panels or automatic form wiring |
+| Accessibility/localization | Native Tab and Enter/Space; state names preserved in templates | Arrow navigation, focus transfer, full localization and screen-reader certification remain open |
+| Animation/native platforms | Not implemented / deferred | Web-first validation only |

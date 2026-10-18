@@ -430,3 +430,16 @@ Original Menu and Drawer implementations were expanded together on both Web plat
 - Screenshots: [Blazor menu](screenshots/navigation027-blazor-menu.png), [Blazor RTL drawer](screenshots/navigation027-blazor-rtl-dark.png), [Blazor narrow](screenshots/navigation027-blazor-narrow.png), [Flutter menu](screenshots/navigation027-flutter-menu.png), [Flutter RTL drawer](screenshots/navigation027-flutter-rtl-dark.png), [Flutter narrow](screenshots/navigation027-flutter-narrow.png), [manual appearance](screenshots/navigation027-manual.png).
 
 No full Telerik parity or screen-reader/native-mobile certification is claimed. Mini mode, arbitrary model mapping, automatic URL handling, full drawer-template replacement and configurable popup timing/animation remain recorded gaps. The next paired implementation block is Stepper/Wizard.
+
+## Stepper and Wizard component block (0.28, 2026-10-19)
+
+Both Web implementations add indicator/label templates, three display modes, RTL, four Wizard stepper positions, custom action contexts and captions, asynchronous cancellable transition guards and same-step ResetKey. Remaining Telerik coverage is recorded in the parity matrix.
+
+- **247 Blazor rendering/data checks** and **123 Flutter tests** passed. New widget tests cover cancellation, guard/validation ordering, duplicate actions, stale pending results, reset after completion, missing callbacks and logical layout positions.
+- Blazor gallery build passed with zero warnings/errors. Flutter Web release build and Dart analysis passed; the existing CupertinoIcons font-family warning remains. **47 Blazor + 47 Flutter manual examples** compile/analyze; **94 lossless highlighting checks** pass.
+- Coordinated foreground Chrome on local Linux/iMac: `scripts/steps-block-check.mjs blazor|flutter` passed blocked transitions, required-name validation, reset during an asynchronous check at the same step, custom Previous/Continue/Submit actions, disabled-step skipping, backward navigation, successful completion, RTL/dark and 390 px layouts.
+- `scripts/steps-layout-check.mjs blazor|flutter` passed logical end placement with RTL, indicator-only accessible names and narrow custom actions. Screenshot inspection caught collapsed Blazor indicator-only buttons; explicit intrinsic sizing fixed the overlap and the regression check passed. The Blazor demo guard status now renders immediately on cancellation.
+- The updated Stepper and Wizard live manual previews rendered on both platforms without captured runtime exceptions, console errors or error panels. Their source is the same highlighted code displayed in the manual.
+- Visual evidence: [Blazor RTL indicators](screenshots/steps028-blazor-side-indicators.png), [Blazor narrow](screenshots/steps028-blazor-side-narrow.png), [Flutter RTL indicators](screenshots/steps028-flutter-side-indicators.png), [Flutter narrow](screenshots/steps028-flutter-side-narrow.png), [completed Flutter workflow](screenshots/steps028-flutter-completed.png).
+
+Reset invalidates local pending results; it does not cancel network operations or undo external save effects. Automatic form integration, per-step event/template overrides, complete localization, focus transfer/arrow navigation, animation and native/mobile/screen-reader certification remain open. Next planned block: existing forms and input components.

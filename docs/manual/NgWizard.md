@@ -14,56 +14,79 @@ The documentation launcher embeds these running examples here. Choose a framewor
 
 ## Behavior and practical rules
 
-### Configuration and state
-Items and Value follow NgStepper rules: 1–30 steps, enabled zero-based current index, unique positions and valid labels. Linear defaults to true. Back moves to the preceding enabled step. Next moves to the following enabled step, skipping disabled entries. Earlier headers are reachable; later headers obey Linear. With Linear=false, clicking a later header validates only the current step, not every skipped step. Optional is a label, not a separate Skip action.
+### One transition pipeline
 
-ValueChanged/onChanged is a request to the parent. Store it and render the returned index; otherwise the wizard remains on the current step. ChildContent is RenderFragment<int> in Blazor; contentBuilder is Widget Function(BuildContext,int) in Flutter. Only active content is rendered. Keep drafts/controllers/validation keys in the parent so data survives navigation; do not rely on child widget state. Blazor consumers can key their content by index when they need fresh child instances.
+The parent owns Value/value and durable draft data. Linear/linear defaults to true. Header selection, built-in buttons and actions supplied to custom buttons all use the same pipeline: BeforeChange/beforeChange, forward/Finish validation, then ValueChanged/onChanged or OnFinish/onFinish. NgWizardChange contains Current/current, Target/target and IsFinish/isFinish. Return false from the async guard to cancel silently; show any explanation in application-owned UI. Guard exceptions and validation/save exceptions show a generic retry message. Backward movement runs the guard but does not validate. Finish targets the current final enabled step and runs both guard and validation. An empty/null validation message allows continuation.
 
-### Validation and asynchronous work
-ValidateStep/validateStep receives the current index before forward movement (Next or a future header) and before Finish. Return null or an empty string to allow the action; return a user-facing message to block it. Backward movement does not validate. Use EditContext.Validate or FormState.validate in this callback if embedding a form; the wizard does not automatically validate nested fields. On Finish, revalidate all business-critical values in your save service, including earlier steps.
+### Busy, completion and reset
 
-During validation/saving, navigation buttons and headers are disabled and Checking… is announced. Duplicate activation is ignored. Validation failure keeps the current step and displays its message. Exceptions show a generic retryable error. A changed current index, changed step configuration, disabled state or disposal invalidates pending UI results, so an old validator cannot navigate a newly reset wizard. This does not cancel network work: own transport cancellation in your application. Vertical/theme changes alone preserve the pending operation.
+Only one action runs at a time. Successful Finish blocks repeat local submission until reset. Increment ResetKey/resetKey to clear busy/error/completed state even when the current index stays unchanged. Changed index, item metadata, Disabled or Linear also invalidates pending results. A result from an obsolete guard/validator is ignored, including after disposal. This does not cancel your HTTP request, roll back a running save, clear form fields or provide server idempotency: the application owns cancellation, draft reset and safe persistence. Presentation changes alone do not reset completion. Replace collections instead of mutating lists in place.
 
-### Completion and reset
-Finish appears when no later enabled step exists. It requires OnFinish/onFinish. After successful completion it shows Completed. and disables further navigation/saving. Failed saves remain retryable. Completion is local UI state, not a server idempotency guarantee: use an idempotency key for durable operations. A callback already running may still have external effects after disposal/reset; protect your application's result updates accordingly.
+### Layout and step templates
 
-Use a new @key/ValueKey to reset the whole wizard, including completion, then reset the parent draft/index. Changing the current index, step configuration or Disabled also resets local status. The gallery demonstrates resetting while a delayed validator is running. Do not change configuration during a durable save unless the host handles its consequences.
+Position/position accepts `top` (default), `bottom`, `start` or `end`. Side placement is relative to Rtl/rtl and uses a vertical step rail; below 600 px it stacks above the content. Vertical remains available for top/bottom layouts. DisplayMode/displayMode and IndicatorTemplate/indicatorBuilder / LabelTemplate/labelBuilder follow Stepper contracts. Template contexts retain model labels as accessible names. Only active step content is rendered; keep draft controllers/models in the parent. Full content retention and automatic focus movement are not implemented.
 
-### Accessibility and scope
-Tab and Enter/Space operate controls; status/error messages are announced. Stepper orientation is horizontal/wrapping or vertical, above content. No automatic focus move into the new form, custom button templates, side/bottom stepper placements, built-in persistence, animated transitions or native/mobile certification. Keep the form's visible headings and labels meaningful.
+### Built-in and custom actions
+
+BackText/backText, NextText/nextText and FinishText/finishText customize built-in captions; each must be nonempty and at most 120 characters. ActionsTemplate/actionsBuilder replaces the action bar and receives NgWizardActions: Value/value, Busy/busy, Finished/finished, IsLast/isLast, CanBack/canBack, CanNext/canNext and CanFinish/canFinish, plus BackAsync/back, NextAsync/next and FinishAsync/finish callbacks. Use IsLast to choose the forward button and Can… to enable it; busy state is not the same as the last step. Await callbacks when handling them yourself. Do not cache the context across renders or bypass it by directly changing Value. The callbacks recheck current navigation, busy, disabled and completion rules. A missing change callback disables navigation, but a single final step can still finish if a finish handler exists.
+
+The English status/error messages are currently built in. Full localization, animated transitions, roving arrow-key focus and complete screen-reader/native-platform validation remain open. Detailed form validation and persistence belong to the application.
 
 ## Blazor example
 
 ```razor
-<NgWizard Items="steps" @bind-Value="current" ValidateStep="Validate" OnFinish="Save" Context="index">
- @if(index==0){<label>Name <input @bind="name" @bind:event="oninput" /></label>}
- else{<p>Review: @name</p>}
+<NgCheckBox Label="Block transitions" @bind-Value="blocked"/>
+<NgButton OnClick="Restart">Restart wizard</NgButton>
+<NgWizard Label="Application" Items="steps" @bind-Value="current" ResetKey="reset"
+          Position="start" BeforeChange="AllowChange" ValidateStep="Validate" OnFinish="Save">
+  <IndicatorTemplate Context="step"><span>@(step.Index==0?"✎":"✓")</span></IndicatorTemplate>
+  <ChildContent Context="index">
+    @if(index==0){<NgTextBox Label="Applicant name" @bind-Value="name"/>}
+    else{<p>Review: @name</p>}
+  </ChildContent>
+  <ActionsTemplate Context="actions">
+    <div class="ng-wizard-actions">
+      <NgButton Disabled="@(!actions.CanBack)" OnClick="actions.BackAsync">Previous</NgButton>
+      @if(!actions.IsLast){<NgButton Primary Disabled="@(!actions.CanNext)" OnClick="actions.NextAsync">Continue</NgButton>}
+      else{<NgButton Primary Disabled="@(!actions.CanFinish)" OnClick="actions.FinishAsync">Save application</NgButton>}
+    </div>
+  </ActionsTemplate>
 </NgWizard>
 <p>@status</p>
 @code {
- private int current; private string name="",status="Not saved";
- private NgStep[] steps=[new("Contact"),new("Review")];
- private Task<string?> Validate(int index)=>Task.FromResult<string?>(index==0&&name.Trim().Length<2?"Enter at least two characters.":null);
- private Task Save(){status=$"Saved: {name}";return Task.CompletedTask;}
+  private int current,reset; private bool blocked; private string? name;
+  private string status="Not saved";
+  private readonly NgStep[] steps=[new("Contact"),new("Review")];
+  private Task<bool> AllowChange(NgWizardChange change)=>Task.FromResult(!blocked);
+  private Task<string?> Validate(int index)=>Task.FromResult<string?>(index==0&&string.IsNullOrWhiteSpace(name)?"Enter your name.":null);
+  private Task Save(){status="Saved locally";return Task.CompletedTask;}
+  private void Restart(){reset++;current=0;status="Not saved";}
 }
+
 ```
 
 ## Flutter example
 
 ```dart
-int current = 0;
-String name = '', status = 'Not saved';
-final steps = const [NgStep('Contact'), NgStep('Review')];
-Widget build(BuildContext context) => Column(children: [
- NgWizard(items: steps, value: current,
-  onChanged: (v) => setState(() => current = v),
-  validateStep: (index) async => index == 0 && name.trim().length < 2 ? 'Enter at least two characters.' : null,
-  onFinish: () async { setState(() => status = 'Saved: $name'); },
-  contentBuilder: (context, index) => index == 0
-    ? TextFormField(initialValue: name, decoration: const InputDecoration(labelText: 'Name'), onChanged: (v) => name = v)
-    : Text('Review: $name')),
- Text(status),
+int current = 0, reset = 0; bool blocked = false; String status = 'Not saved';
+final name = TextEditingController(); final steps = const [NgStep('Contact'),NgStep('Review')];
+@override void dispose(){name.dispose();super.dispose();}
+Widget build(BuildContext context) => Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
+  NgCheckBox(label:'Block transitions',value:blocked,onChanged:(v)=>setState(()=>blocked=v)),
+  NgButton(onPressed:()=>setState((){reset++;current=0;status='Not saved';}),child:const Text('Restart wizard')),
+  NgWizard(label:'Application',items:steps,value:current,onChanged:(v)=>setState(()=>current=v),resetKey:reset,
+    position:'start',beforeChange:(change)async=>!blocked,
+    validateStep:(index)async=>index==0&&name.text.trim().isEmpty?'Enter your name.':null,
+    onFinish:()async{setState(()=>status='Saved locally');},
+    indicatorBuilder:(_,step)=>Icon(step.index==0?Icons.person_outline:Icons.check,size:20),
+    contentBuilder:(_,index)=>index==0?NgTextBox(label:'Applicant name',controller:name):Text('Review: ${name.text}'),
+    actionsBuilder:(_,a)=>Wrap(spacing:16,runSpacing:8,children:[
+      NgButton(onPressed:a.canBack?a.back:null,child:const Text('Previous')),
+      if(!a.isLast)NgButton(primary:true,onPressed:a.canNext?a.next:null,child:const Text('Continue'))
+      else NgButton(primary:true,onPressed:a.canFinish?a.finish:null,child:const Text('Save application'))])),
+  Text(status),
 ]);
+
 ```
 
 ## Blazor parameters and events
@@ -82,6 +105,17 @@ Names are case-sensitive. `?` permits null. `EditorRequired` parameters are mark
 | `ValidateStep` | `Func<int,Task<string?>>?` | not set | Async current-step validation; null/empty allows forward navigation or completion. |
 | `OnFinish` | `EventCallback` | not set | Completion handler; success disables subsequent completion until reset. |
 | `ChildContent` | `RenderFragment<int>` | required | Razor content; for a wizard, a RenderFragment<int> receiving the active index. |
+| `Rtl` | `bool` | false | See the behavior rules and model contract above. |
+| `Position` | `string` | "top" | See the behavior rules and model contract above. |
+| `DisplayMode` | `string` | "all" | See the behavior rules and model contract above. |
+| `ResetKey` | `int` | 0 | See the behavior rules and model contract above. |
+| `BackText` | `string` | "Back" | See the behavior rules and model contract above. |
+| `NextText` | `string` | "Next" | See the behavior rules and model contract above. |
+| `FinishText` | `string` | "Finish" | See the behavior rules and model contract above. |
+| `IndicatorTemplate` | `RenderFragment<NgStepContext>?` | not set | See the behavior rules and model contract above. |
+| `LabelTemplate` | `RenderFragment<NgStepContext>?` | not set | See the behavior rules and model contract above. |
+| `ActionsTemplate` | `RenderFragment<NgWizardActions>?` | not set | See the behavior rules and model contract above. |
+| `BeforeChange` | `Func<NgWizardChange,Task<bool>>?` | not set | See the behavior rules and model contract above. |
 
 ## Flutter parameters and events
 
@@ -96,6 +130,17 @@ Names are case-sensitive. `?` permits null. `EditorRequired` parameters are mark
 | `linear` | `bool` | Restrict forward navigation to the next enabled step; earlier steps remain accessible. |
 | `vertical` | `bool` | Use a vertical root layout; see the component keyboard and layout rules. |
 | `disabled` | `bool` | Disable user interaction. |
+| `rtl` | `bool` | See the behavior rules and model contract above. |
+| `position` | `String` | See the behavior rules and model contract above. |
+| `displayMode` | `String` | See the behavior rules and model contract above. |
+| `backText` | `String` | See the behavior rules and model contract above. |
+| `nextText` | `String` | See the behavior rules and model contract above. |
+| `finishText` | `String` | See the behavior rules and model contract above. |
+| `resetKey` | `int` | See the behavior rules and model contract above. |
+| `indicatorBuilder` | `Widget Function(BuildContext, NgStepContext)?` | See the behavior rules and model contract above. |
+| `labelBuilder` | `Widget Function(BuildContext, NgStepContext)?` | See the behavior rules and model contract above. |
+| `actionsBuilder` | `Widget Function(BuildContext, NgWizardActions)?` | See the behavior rules and model contract above. |
+| `beforeChange` | `Future<bool> Function(NgWizardChange)?` | See the behavior rules and model contract above. |
 | `validateStep` | `Future<String?> Function(int)?` | Async current-step validation; null/empty allows forward navigation or completion. |
 | `onFinish` | `Future<void> Function()?` | Completion handler; success disables subsequent completion until reset. |
 | `contentBuilder` | `Widget Function(BuildContext, int)` | Build content for the current zero-based step; keep durable draft state in the parent. |
@@ -110,6 +155,17 @@ const NgWizard({
     this.linear = true,
     this.vertical = false,
     this.disabled = false,
+    this.rtl = false,
+    this.position = 'top',
+    this.displayMode = 'all',
+    this.resetKey = 0,
+    this.backText = 'Back',
+    this.nextText = 'Next',
+    this.finishText = 'Finish',
+    this.indicatorBuilder,
+    this.labelBuilder,
+    this.actionsBuilder,
+    this.beforeChange,
     this.validateStep,
     this.onFinish,
     required this.contentBuilder,

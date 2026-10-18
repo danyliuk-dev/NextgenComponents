@@ -378,26 +378,42 @@ Widget build(BuildContext context) => NgAIPrompt(label: 'Assistant', value: prom
 }
 class NgStepperExample extends StatefulWidget { const NgStepperExample({super.key}); @override State<NgStepperExample> createState()=>_NgStepperExampleState(); }
 class _NgStepperExampleState extends State<NgStepperExample> {
-int current = 0;
-final steps = const [NgStep('Contact'), NgStep('Preferences', optional: true), NgStep('Review')];
-Widget build(BuildContext context) => NgStepper(items: steps, value: current, linear: true,
-  onChanged: (v) => setState(() => current = v));
+int current = 0; bool rtl = false; String mode = 'all';
+final steps = const [NgStep('Draft',valid:true),NgStep('Details',optional:true,valid:false),NgStep('Publish')];
+Widget build(BuildContext context) => Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
+  NgCheckBox(label:'Right-to-left',value:rtl,onChanged:(v)=>setState(()=>rtl=v)),
+  DropdownButtonFormField<String>(initialValue:mode,decoration:const InputDecoration(labelText:'Step display'),
+    items:const [DropdownMenuItem(value:'all',child:Text('Indicators and labels')),DropdownMenuItem(value:'labels',child:Text('Labels only')),DropdownMenuItem(value:'indicators',child:Text('Indicators only'))],
+    onChanged:(v)=>setState(()=>mode=v!)),
+  const SizedBox(height:16),
+  NgStepper(label:'Publishing progress',items:steps,value:current,onChanged:(v)=>setState(()=>current=v),rtl:rtl,displayMode:mode,
+    indicatorBuilder:(_,step)=>Icon(step.current?Icons.star:Icons.circle_outlined,size:20),
+    labelBuilder:(_,step)=>Text(step.step.label,style:const TextStyle(fontWeight:FontWeight.bold))),
+  Text('Selected step: ${current+1}'),
+]);
+
 }
 class NgWizardExample extends StatefulWidget { const NgWizardExample({super.key}); @override State<NgWizardExample> createState()=>_NgWizardExampleState(); }
 class _NgWizardExampleState extends State<NgWizardExample> {
-int current = 0;
-String name = '', status = 'Not saved';
-final steps = const [NgStep('Contact'), NgStep('Review')];
-Widget build(BuildContext context) => Column(children: [
- NgWizard(items: steps, value: current,
-  onChanged: (v) => setState(() => current = v),
-  validateStep: (index) async => index == 0 && name.trim().length < 2 ? 'Enter at least two characters.' : null,
-  onFinish: () async { setState(() => status = 'Saved: $name'); },
-  contentBuilder: (context, index) => index == 0
-    ? TextFormField(initialValue: name, decoration: const InputDecoration(labelText: 'Name'), onChanged: (v) => name = v)
-    : Text('Review: $name')),
- Text(status),
+int current = 0, reset = 0; bool blocked = false; String status = 'Not saved';
+final name = TextEditingController(); final steps = const [NgStep('Contact'),NgStep('Review')];
+@override void dispose(){name.dispose();super.dispose();}
+Widget build(BuildContext context) => Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
+  NgCheckBox(label:'Block transitions',value:blocked,onChanged:(v)=>setState(()=>blocked=v)),
+  NgButton(onPressed:()=>setState((){reset++;current=0;status='Not saved';}),child:const Text('Restart wizard')),
+  NgWizard(label:'Application',items:steps,value:current,onChanged:(v)=>setState(()=>current=v),resetKey:reset,
+    position:'start',beforeChange:(change)async=>!blocked,
+    validateStep:(index)async=>index==0&&name.text.trim().isEmpty?'Enter your name.':null,
+    onFinish:()async{setState(()=>status='Saved locally');},
+    indicatorBuilder:(_,step)=>Icon(step.index==0?Icons.person_outline:Icons.check,size:20),
+    contentBuilder:(_,index)=>index==0?NgTextBox(label:'Applicant name',controller:name):Text('Review: ${name.text}'),
+    actionsBuilder:(_,a)=>Wrap(spacing:16,runSpacing:8,children:[
+      NgButton(onPressed:a.canBack?a.back:null,child:const Text('Previous')),
+      if(!a.isLast)NgButton(primary:true,onPressed:a.canNext?a.next:null,child:const Text('Continue'))
+      else NgButton(primary:true,onPressed:a.canFinish?a.finish:null,child:const Text('Save application'))])),
+  Text(status),
 ]);
+
 }
 class NgMenuExample extends StatefulWidget { const NgMenuExample({super.key}); @override State<NgMenuExample> createState()=>_NgMenuExampleState(); }
 class _NgMenuExampleState extends State<NgMenuExample> {

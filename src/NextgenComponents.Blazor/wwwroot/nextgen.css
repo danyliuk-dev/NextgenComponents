@@ -151,3 +151,10 @@ textarea.ng-input { resize:vertical; min-height:80px; }
 .ng-drawer-push[data-position=end]{grid-template-columns:minmax(0,1fr) min(var(--ng-drawer-width),40%)}
 .ng-drawer-push[data-position=end]>.ng-drawer-panel{grid-column:2;grid-row:1}.ng-drawer-push[data-position=end]>.ng-drawer-content{grid-column:1;grid-row:1}
 @media(max-width:600px){.ng-drawer-push[data-position=end]{grid-template-columns:1fr}.ng-drawer-push[data-position=end]>.ng-drawer-panel,.ng-drawer-push[data-position=end]>.ng-drawer-content{grid-column:auto;grid-row:auto}}
+
+/* Wizard layout uses logical start/end and stacks its rail on narrow screens. */
+.ng-step-button{text-align:start}.ng-stepper[data-display-mode=indicators] li{flex:0 0 auto;min-width:56px}.ng-stepper[data-display-mode=indicators] .ng-step-button{justify-content:center}
+.ng-wizard{display:flex;flex-direction:column;gap:12px}.ng-wizard-body{min-width:0}.ng-wizard[data-position=bottom]>.ng-wizard-stepper{order:2}
+.ng-wizard[data-position=start],.ng-wizard[data-position=end]{display:grid;grid-template-columns:minmax(150px,240px) minmax(0,1fr);gap:24px;align-items:start}
+.ng-wizard[data-position=end]{grid-template-columns:minmax(0,1fr) minmax(150px,240px)}.ng-wizard[data-position=end]>.ng-wizard-stepper{grid-column:2;grid-row:1}.ng-wizard[data-position=end]>.ng-wizard-body{grid-column:1;grid-row:1}
+@media(max-width:600px){.ng-wizard[data-position=start],.ng-wizard[data-position=end]{display:flex;flex-direction:column}.ng-wizard-stepper{min-width:0;width:100%}}

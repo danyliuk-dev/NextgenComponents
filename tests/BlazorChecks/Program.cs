@@ -201,6 +201,11 @@ Rule(NgStepRules.CanMove(steps,0,2,true)&&!NgStepRules.CanMove(steps,0,3,true)&&
 Rule(NgStepRules.CanMove(steps,0,3,false)&&!NgStepRules.CanMove(steps,0,1,false)&&!NgStepRules.CanMove(steps,0,0,false),"nonlinear and current/disabled contract");
 foreach(var invalid in new[]{-1,1,4}){try{NgStepRules.Validate(steps,invalid);throw new Exception("invalid current accepted");}catch(ArgumentException){Rule(true,"invalid active step rejected");}}
 try{NgStepRules.Adjacent(steps,0,0);throw new Exception("zero direction accepted");}catch(ArgumentOutOfRangeException){Rule(true,"zero direction rejected");}
+Reject(()=>NgStepRules.ValidatePresentation(" "),"empty stepper label");
+Reject(()=>NgStepRules.ValidatePresentation("Progress","icons"),"unknown step display mode");
+Reject(()=>NgStepRules.ValidatePresentation("Progress","all","left"),"unknown wizard position");
+await Check<NgStepper>(new(){["Items"]=new[]{new NgStep("Review",Optional:true)},["DisplayMode"]="indicators",["Rtl"]=true,["IndicatorTemplate"]=(RenderFragment<NgStepContext>)(s=>Text("Custom icon"))},"aria-label=\"Step 1: Review, Optional\"","data-display-mode=\"indicators\"","dir=\"rtl\"","Custom icon");
+await Check<NgWizard>(new(){["Items"]=new[]{new NgStep("Review")},["Position"]="end",["ChildContent"]=(RenderFragment<int>)(_=>Text("Summary")),["ActionsTemplate"]=(RenderFragment<NgWizardActions>)(a=>Text($"Custom actions {a.CanFinish}"))},"data-position=\"end\"","Custom actions False","Summary");
 var menuChildren=new List<NgMenuItem>{new("leaf","Leaf")};var menuGroup=new NgMenuItem("group","Group",children:menuChildren);menuChildren.Clear();
 Rule(menuGroup.Children.Count==1,"menu copies caller children");
 NgNavigationRules.ValidateMenu([menuGroup]);

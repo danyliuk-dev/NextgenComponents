@@ -1,12 +1,28 @@
 @* Generated from scripts/manual_content.py *@
-<NgWizard Items="steps" @bind-Value="current" ValidateStep="Validate" OnFinish="Save" Context="index">
- @if(index==0){<label>Name <input @bind="name" @bind:event="oninput" /></label>}
- else{<p>Review: @name</p>}
+<NgCheckBox Label="Block transitions" @bind-Value="blocked"/>
+<NgButton OnClick="Restart">Restart wizard</NgButton>
+<NgWizard Label="Application" Items="steps" @bind-Value="current" ResetKey="reset"
+          Position="start" BeforeChange="AllowChange" ValidateStep="Validate" OnFinish="Save">
+  <IndicatorTemplate Context="step"><span>@(step.Index==0?"✎":"✓")</span></IndicatorTemplate>
+  <ChildContent Context="index">
+    @if(index==0){<NgTextBox Label="Applicant name" @bind-Value="name"/>}
+    else{<p>Review: @name</p>}
+  </ChildContent>
+  <ActionsTemplate Context="actions">
+    <div class="ng-wizard-actions">
+      <NgButton Disabled="@(!actions.CanBack)" OnClick="actions.BackAsync">Previous</NgButton>
+      @if(!actions.IsLast){<NgButton Primary Disabled="@(!actions.CanNext)" OnClick="actions.NextAsync">Continue</NgButton>}
+      else{<NgButton Primary Disabled="@(!actions.CanFinish)" OnClick="actions.FinishAsync">Save application</NgButton>}
+    </div>
+  </ActionsTemplate>
 </NgWizard>
 <p>@status</p>
 @code {
- private int current; private string name="",status="Not saved";
- private NgStep[] steps=[new("Contact"),new("Review")];
- private Task<string?> Validate(int index)=>Task.FromResult<string?>(index==0&&name.Trim().Length<2?"Enter at least two characters.":null);
- private Task Save(){status=$"Saved: {name}";return Task.CompletedTask;}
+  private int current,reset; private bool blocked; private string? name;
+  private string status="Not saved";
+  private readonly NgStep[] steps=[new("Contact"),new("Review")];
+  private Task<bool> AllowChange(NgWizardChange change)=>Task.FromResult(!blocked);
+  private Task<string?> Validate(int index)=>Task.FromResult<string?>(index==0&&string.IsNullOrWhiteSpace(name)?"Enter your name.":null);
+  private Task Save(){status="Saved locally";return Task.CompletedTask;}
+  private void Restart(){reset++;current=0;status="Not saved";}
 }

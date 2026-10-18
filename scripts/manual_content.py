@@ -1996,3 +1996,104 @@ Widget build(BuildContext context) => Column(crossAxisAlignment:CrossAxisAlignme
       Text('Current section: $selected'),NgTextBox(label:'Draft note',controller:note)])),
 ]);
 '''
+
+D['NgStepper']['notes'] = '''### State and display
+
+Value/value is a zero-based, enabled index owned by the parent. ValueChanged/onChanged requests a new index; selecting the current step does nothing. A missing callback or Disabled/disabled disables navigation. Linear/linear defaults to false: when enabled, allow earlier enabled steps or the next enabled step; disabled steps are skipped. Optional and Valid are display metadata, not automatic validation or a skip command. Use 1–30 steps with nonempty labels of at most 120 UTF-16 units.
+
+DisplayMode/displayMode is `all` (default), `labels` or `indicators`. Vertical/vertical controls orientation; horizontal steps wrap. Rtl/rtl defaults to false and mirrors the layout. IndicatorTemplate/indicatorBuilder and LabelTemplate/labelBuilder receive NgStepContext with the step, zero-based index and current-state flag. They replace display content only. Do not put interactive/focusable controls inside either template.
+
+### Accessibility and integration
+
+The accessible name retains the step number, model label, optional and validity state even in indicators-only mode or with custom templates. Blazor exposes aria-current=step; Flutter exposes selected semantics. Every enabled step remains a native Tab stop with Enter/Space activation; arrow-key roving focus and automatic focus movement are not implemented. To reject asynchronous transitions, use Wizard BeforeChange or handle the controlled callback in the application. Replace the item collection when changing metadata. Display mode and templates use an original API; no Telerik theme or declarative-child compatibility is implied.'''
+D['NgStepper']['blazor'] = '''<NgCheckBox Label="Right-to-left" @bind-Value="rtl"/>
+<NgDropDownList Label="Step display" Items="modes" @bind-Value="mode"/>
+<NgStepper Label="Publishing progress" Items="steps" @bind-Value="current" Rtl="rtl" DisplayMode="@mode">
+  <IndicatorTemplate Context="step"><span>@(step.Current?"★":"○")</span></IndicatorTemplate>
+  <LabelTemplate Context="step"><strong>@step.Step.Label</strong></LabelTemplate>
+</NgStepper>
+<p>Selected step: @(current+1)</p>
+@code {
+  private int current; private bool rtl; private string mode="all";
+  private readonly NgStep[] steps=[new("Draft",Valid:true),new("Details",Optional:true,Valid:false),new("Publish")];
+  private readonly NgOption[] modes=[new("all","Indicators and labels"),new("labels","Labels only"),new("indicators","Indicators only")];
+}
+'''
+D['NgStepper']['dart'] = '''int current = 0; bool rtl = false; String mode = 'all';
+final steps = const [NgStep('Draft',valid:true),NgStep('Details',optional:true,valid:false),NgStep('Publish')];
+Widget build(BuildContext context) => Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
+  NgCheckBox(label:'Right-to-left',value:rtl,onChanged:(v)=>setState(()=>rtl=v)),
+  DropdownButtonFormField<String>(initialValue:mode,decoration:const InputDecoration(labelText:'Step display'),
+    items:const [DropdownMenuItem(value:'all',child:Text('Indicators and labels')),DropdownMenuItem(value:'labels',child:Text('Labels only')),DropdownMenuItem(value:'indicators',child:Text('Indicators only'))],
+    onChanged:(v)=>setState(()=>mode=v!)),
+  const SizedBox(height:16),
+  NgStepper(label:'Publishing progress',items:steps,value:current,onChanged:(v)=>setState(()=>current=v),rtl:rtl,displayMode:mode,
+    indicatorBuilder:(_,step)=>Icon(step.current?Icons.star:Icons.circle_outlined,size:20),
+    labelBuilder:(_,step)=>Text(step.step.label,style:const TextStyle(fontWeight:FontWeight.bold))),
+  Text('Selected step: ${current+1}'),
+]);
+'''
+D['NgWizard']['notes'] = '''### One transition pipeline
+
+The parent owns Value/value and durable draft data. Linear/linear defaults to true. Header selection, built-in buttons and actions supplied to custom buttons all use the same pipeline: BeforeChange/beforeChange, forward/Finish validation, then ValueChanged/onChanged or OnFinish/onFinish. NgWizardChange contains Current/current, Target/target and IsFinish/isFinish. Return false from the async guard to cancel silently; show any explanation in application-owned UI. Guard exceptions and validation/save exceptions show a generic retry message. Backward movement runs the guard but does not validate. Finish targets the current final enabled step and runs both guard and validation. An empty/null validation message allows continuation.
+
+### Busy, completion and reset
+
+Only one action runs at a time. Successful Finish blocks repeat local submission until reset. Increment ResetKey/resetKey to clear busy/error/completed state even when the current index stays unchanged. Changed index, item metadata, Disabled or Linear also invalidates pending results. A result from an obsolete guard/validator is ignored, including after disposal. This does not cancel your HTTP request, roll back a running save, clear form fields or provide server idempotency: the application owns cancellation, draft reset and safe persistence. Presentation changes alone do not reset completion. Replace collections instead of mutating lists in place.
+
+### Layout and step templates
+
+Position/position accepts `top` (default), `bottom`, `start` or `end`. Side placement is relative to Rtl/rtl and uses a vertical step rail; below 600 px it stacks above the content. Vertical remains available for top/bottom layouts. DisplayMode/displayMode and IndicatorTemplate/indicatorBuilder / LabelTemplate/labelBuilder follow Stepper contracts. Template contexts retain model labels as accessible names. Only active step content is rendered; keep draft controllers/models in the parent. Full content retention and automatic focus movement are not implemented.
+
+### Built-in and custom actions
+
+BackText/backText, NextText/nextText and FinishText/finishText customize built-in captions; each must be nonempty and at most 120 characters. ActionsTemplate/actionsBuilder replaces the action bar and receives NgWizardActions: Value/value, Busy/busy, Finished/finished, IsLast/isLast, CanBack/canBack, CanNext/canNext and CanFinish/canFinish, plus BackAsync/back, NextAsync/next and FinishAsync/finish callbacks. Use IsLast to choose the forward button and Can… to enable it; busy state is not the same as the last step. Await callbacks when handling them yourself. Do not cache the context across renders or bypass it by directly changing Value. The callbacks recheck current navigation, busy, disabled and completion rules. A missing change callback disables navigation, but a single final step can still finish if a finish handler exists.
+
+The English status/error messages are currently built in. Full localization, animated transitions, roving arrow-key focus and complete screen-reader/native-platform validation remain open. Detailed form validation and persistence belong to the application.'''
+D['NgWizard']['blazor'] = '''<NgCheckBox Label="Block transitions" @bind-Value="blocked"/>
+<NgButton OnClick="Restart">Restart wizard</NgButton>
+<NgWizard Label="Application" Items="steps" @bind-Value="current" ResetKey="reset"
+          Position="start" BeforeChange="AllowChange" ValidateStep="Validate" OnFinish="Save">
+  <IndicatorTemplate Context="step"><span>@(step.Index==0?"✎":"✓")</span></IndicatorTemplate>
+  <ChildContent Context="index">
+    @if(index==0){<NgTextBox Label="Applicant name" @bind-Value="name"/>}
+    else{<p>Review: @name</p>}
+  </ChildContent>
+  <ActionsTemplate Context="actions">
+    <div class="ng-wizard-actions">
+      <NgButton Disabled="@(!actions.CanBack)" OnClick="actions.BackAsync">Previous</NgButton>
+      @if(!actions.IsLast){<NgButton Primary Disabled="@(!actions.CanNext)" OnClick="actions.NextAsync">Continue</NgButton>}
+      else{<NgButton Primary Disabled="@(!actions.CanFinish)" OnClick="actions.FinishAsync">Save application</NgButton>}
+    </div>
+  </ActionsTemplate>
+</NgWizard>
+<p>@status</p>
+@code {
+  private int current,reset; private bool blocked; private string? name;
+  private string status="Not saved";
+  private readonly NgStep[] steps=[new("Contact"),new("Review")];
+  private Task<bool> AllowChange(NgWizardChange change)=>Task.FromResult(!blocked);
+  private Task<string?> Validate(int index)=>Task.FromResult<string?>(index==0&&string.IsNullOrWhiteSpace(name)?"Enter your name.":null);
+  private Task Save(){status="Saved locally";return Task.CompletedTask;}
+  private void Restart(){reset++;current=0;status="Not saved";}
+}
+'''
+D['NgWizard']['dart'] = '''int current = 0, reset = 0; bool blocked = false; String status = 'Not saved';
+final name = TextEditingController(); final steps = const [NgStep('Contact'),NgStep('Review')];
+@override void dispose(){name.dispose();super.dispose();}
+Widget build(BuildContext context) => Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
+  NgCheckBox(label:'Block transitions',value:blocked,onChanged:(v)=>setState(()=>blocked=v)),
+  NgButton(onPressed:()=>setState((){reset++;current=0;status='Not saved';}),child:const Text('Restart wizard')),
+  NgWizard(label:'Application',items:steps,value:current,onChanged:(v)=>setState(()=>current=v),resetKey:reset,
+    position:'start',beforeChange:(change)async=>!blocked,
+    validateStep:(index)async=>index==0&&name.text.trim().isEmpty?'Enter your name.':null,
+    onFinish:()async{setState(()=>status='Saved locally');},
+    indicatorBuilder:(_,step)=>Icon(step.index==0?Icons.person_outline:Icons.check,size:20),
+    contentBuilder:(_,index)=>index==0?NgTextBox(label:'Applicant name',controller:name):Text('Review: ${name.text}'),
+    actionsBuilder:(_,a)=>Wrap(spacing:16,runSpacing:8,children:[
+      NgButton(onPressed:a.canBack?a.back:null,child:const Text('Previous')),
+      if(!a.isLast)NgButton(primary:true,onPressed:a.canNext?a.next:null,child:const Text('Continue'))
+      else NgButton(primary:true,onPressed:a.canFinish?a.finish:null,child:const Text('Save application'))])),
+  Text(status),
+]);
+'''
