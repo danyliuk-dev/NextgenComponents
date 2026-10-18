@@ -1,4 +1,5 @@
-import { getDocument, GlobalWorkerOptions } from './vendor/pdf.min.mjs';
+import { findTextMatches, indexTextItems, matchSegments } from './text-search.mjs';
+import { getDocument, GlobalWorkerOptions, TextLayer } from './vendor/pdf.min.mjs';
 GlobalWorkerOptions.workerSrc = new URL('./vendor/pdf.worker.min.mjs', import.meta.url).href;
 const $ = id => document.getElementById(id);
 const params = new URLSearchParams(location.search);
@@ -6,6 +7,28 @@ document.documentElement.dataset.theme = params.get('theme') === 'dark' ? 'dark'
 const LIMIT = 20 * 1024 * 1024;
 let doc, task, renderTask, bytes, filename='document.pdf', page=1, scale=1, mode='fit', generation=0, renderVersion=0, searchVersion=0, request;
 const texts = new Map();
+let textLayer, displayedText, activeQuery='';
+function clearTextLayer() {
+  textLayer?.cancel();textLayer=undefined;displayedText=undefined;
+  globalThis.CSS?.highlights?.delete('pdf-search');
+  $('text-layer-host').replaceChildren();
+}
+function highlightMatches() {
+  const registry=globalThis.CSS?.highlights;
+  if(!registry)return;
+  registry.delete('pdf-search');
+  if(!textLayer||!displayedText||!activeQuery)return;
+  const ranges=[];
+  const matches=findTextMatches(displayedText.text,activeQuery);
+  for(const part of matchSegments(displayedText.segments,matches)){
+    const node=textLayer.textDivs[part.index]?.firstChild;
+    if(!node)continue;
+    const range=document.createRange();
+    range.setStart(node,part.start);range.setEnd(node,part.end);ranges.push(range);
+  }
+  registry.set('pdf-search',new Highlight(...ranges));
+}
+
 const status = (text, error=false) => { $('status').textContent=text; $('status').classList.toggle('error',error); };
 function controls() {
   for (const id of ['page','out','in','width','fit','query','search','download']) $(id).disabled=!doc;
@@ -15,14 +38,14 @@ function controls() {
 async function textFor(pdf, number) {
   if (pdf===doc && texts.has(number)) return texts.get(number);
   const p=await pdf.getPage(number), content=await p.getTextContent();
-  const text=content.items.map(item=>item.str+(item.hasEOL?'\n':' ')).join('');
+  const text=indexTextItems(content.items).text;
   if(pdf===doc)texts.set(number,text);
   return text;
 }
 async function render() {
   if(!doc)return;
   const version=++renderVersion, current=doc, number=page;
-  renderTask?.cancel(); controls(); status('Rendering page '+number+'…');
+  renderTask?.cancel(); clearTextLayer(); controls(); status('Rendering page '+number+'…');
   try {
     const p=await current.getPage(number);
     if(version!==renderVersion||current!==doc)return;
@@ -31,6 +54,10 @@ async function render() {
     if(mode==='fit') scale=Math.min((area.clientWidth-26)/base.width,(area.clientHeight-26)/base.height);
     scale=Math.max(.1,Math.min(3,scale));
     const viewport=p.getViewport({scale});
+    const surface=$('page-surface');surface.hidden=false;
+    surface.style.width=viewport.width+'px';surface.style.height=viewport.height+'px';
+    surface.style.setProperty('--total-scale-factor',viewport.scale*viewport.userUnit);
+
     // Bound raster memory independently of logical zoom and device pixel ratio.
     const ratio=Math.min(devicePixelRatio||1,2,8192/viewport.width,8192/viewport.height,Math.sqrt(16000000/(viewport.width*viewport.height)));
     const canvas=$('canvas');canvas.hidden=false;canvas.width=Math.max(1,Math.floor(viewport.width*ratio));canvas.height=Math.max(1,Math.floor(viewport.height*ratio));
@@ -39,16 +66,25 @@ async function render() {
     $('zoom').textContent=Math.round(scale*100)+'%';$('text').textContent='';
     renderTask=p.render({canvasContext:canvas.getContext('2d'),viewport,transform:[ratio,0,0,ratio,0,0]});
     await renderTask.promise;
-    const text=await textFor(current,number);
     if(version!==renderVersion||current!==doc)return;
+    const content=await p.getTextContent();
+    if(version!==renderVersion||current!==doc)return;
+    const indexed=indexTextItems(content.items),text=indexed.text;
+    texts.set(number,text);
+    const container=document.createElement('div');container.className='textLayer';
+    $('text-layer-host').replaceChildren(container);
+    const layer=new TextLayer({textContentSource:content,container,viewport});
+    textLayer=layer;await layer.render();
+    if(version!==renderVersion||current!==doc)return;
+    displayedText=indexed;highlightMatches();
     $('text').textContent=text||'No extractable text on this page. Scanned PDFs require OCR.';
     status('Page '+number+' of '+current.numPages+' · '+filename);
-  }catch(e){if(version===renderVersion&&e.name!=='RenderingCancelledException')status('Unable to render this page.',true);}
+  }catch(e){if(version===renderVersion&&e.name!=='RenderingCancelledException'&&e.name!=='AbortException')status('Unable to render this page.',true);}
 }
 async function reset() {
   const version=++generation; renderVersion++; searchVersion++; request?.abort();request=undefined;
-  renderTask?.cancel(); const old=task; task=undefined;doc=undefined;bytes=undefined;texts.clear();page=1;
-  $('canvas').hidden=true;$('canvas').width=1;$('canvas').height=1;$('text').textContent='';$('results').replaceChildren();$('search-status').textContent='';$('name').textContent='No document';controls();
+  renderTask?.cancel();clearTextLayer();activeQuery=''; const old=task; task=undefined;doc=undefined;bytes=undefined;texts.clear();page=1;
+  $('page-surface').hidden=true;$('canvas').hidden=true;$('canvas').width=1;$('canvas').height=1;$('text').textContent='';$('results').replaceChildren();$('search-status').textContent='';$('name').textContent='No document';controls();
   if(old)await old.destroy().catch(()=>{});
   return version;
 }
@@ -95,13 +131,13 @@ $('out').onclick=()=>{mode='manual';scale=Math.max(.1,scale-.25);render();};
 $('in').onclick=()=>{mode='manual';scale=Math.min(3,scale+.25);render();};
 $('width').onclick=()=>{mode='width';render();};$('fit').onclick=()=>{mode='fit';render();};
 $('download').onclick=()=>{if(!bytes)return;const url=URL.createObjectURL(new Blob([bytes],{type:'application/pdf'})),a=document.createElement('a');a.href=url;a.download=filename;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);};
-$('clear').onclick=()=>{searchVersion++;$('query').value='';$('results').replaceChildren();$('search-status').textContent='';};
+$('clear').onclick=()=>{searchVersion++;activeQuery='';highlightMatches();$('query').value='';$('results').replaceChildren();$('search-status').textContent='';};
 $('search-form').onsubmit=async e=>{
-  e.preventDefault();const query=$('query').value.trim().toLocaleLowerCase();const current=doc,version=++searchVersion;
+  e.preventDefault();const query=$('query').value.trim();activeQuery=query;highlightMatches();const current=doc,version=++searchVersion;
   $('results').replaceChildren();if(!query||!current){$('search-status').textContent='';return;}$('search-status').textContent='Searching…';let count=0;
   try{for(let number=1;number<=current.numPages;number++){
     const text=await textFor(current,number);if(version!==searchVersion||current!==doc)return;
-    if(text.toLocaleLowerCase().includes(query)){count++;const button=document.createElement('button');button.type='button';button.textContent='Page '+number;button.onclick=()=>{page=number;render();$('text-panel').open=true;};$('results').append(button);}
+    if(findTextMatches(text,query,1).length){count++;const button=document.createElement('button');button.type='button';button.textContent='Page '+number;button.onclick=()=>{page=number;render();$('text-panel').open=true;};$('results').append(button);}
   }if(version===searchVersion)$('search-status').textContent=count+' matching pages.';}
   catch{if(version===searchVersion)$('search-status').textContent='Unable to search this document.';}
 };

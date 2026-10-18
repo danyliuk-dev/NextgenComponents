@@ -6,3 +6,5 @@ Unmodified distribution files: build/pdf.min.mjs, build/pdf.worker.min.mjs,
 cmaps, standard_fonts, wasm. Source maps are not needed at runtime.
 
 Archive SHA-256: 86269b40170eb41740ea05ad2102d71d33de4f122b34eb2f478be0ea7779c415
+
+text_layer.css: Apache header and .textLayer rule extracted unchanged from web/pdf_viewer.css of the same distribution.

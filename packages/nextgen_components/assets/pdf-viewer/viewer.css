@@ -11,9 +11,19 @@ label{display:flex;align-items:center;gap:6px}#page{width:65px}#query{width:160p
 #file{position:absolute;inset:0;opacity:0;width:100%;cursor:pointer}#name{overflow-wrap:anywhere}
 #status{margin:0;color:var(--muted)}#status.error{color:var(--accent)}
 #viewport{min-height:150px;flex:1;overflow:auto;background:#777;border:1px solid var(--border);text-align:center}
-canvas{display:block;background:white;margin:12px auto;max-width:none}canvas[hidden]{display:none}
+canvas{display:block;background:white;margin:0;max-width:none}canvas[hidden]{display:none}
 #results{display:flex;gap:6px;flex-wrap:wrap;max-height:100px;overflow:auto}#results:empty{display:none}
 details{max-height:150px;overflow:auto}summary{cursor:pointer}pre{white-space:pre-wrap;overflow-wrap:anywhere;font:inherit;padding:8px;background:var(--surface)}
 @media(max-width:440px){main{padding:8px}button,input,.file-button{padding:6px 8px}#viewport{min-height:100px}}
 
 #search-status{margin:0;color:var(--muted)}#search-status:empty{display:none}
+
+#page-surface{position:relative;margin:12px auto;background:white;--scale-round-x:1px;--scale-round-y:1px}
+#page-surface[hidden]{display:none}
+#text-layer-host{position:absolute;inset:0;text-align:initial}
+.textLayer ::highlight(pdf-search){background-color:rgba(255,190,0,.55);color:transparent}
+.textLayer ::selection{background-color:rgba(0,100,255,.35);color:transparent}
+
+.textLayer[data-main-rotation="90"]{transform:rotate(90deg) translateY(-100%)}
+.textLayer[data-main-rotation="180"]{transform:rotate(180deg) translate(-100%,-100%)}
+.textLayer[data-main-rotation="270"]{transform:rotate(270deg) translateX(-100%)}

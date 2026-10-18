@@ -29,6 +29,12 @@ try{
  }
  await wait("!!document.querySelector('iframe')?.contentDocument?.getElementById('status')");
  await ready();await assert(q('pages')+".textContent==='of 3'",'sample has three pages');
+ await evaluate("document.querySelector('iframe').scrollIntoView({block:'center'})");
+ await assert(q('text-layer-host')+".querySelectorAll('.textLayer span').length>0",'text layer overlays page');
+ const point=await evaluate("(()=>{const f=document.querySelector('iframe'),d=f.contentDocument,n=[...d.querySelectorAll('.textLayer span')].find(e=>e.textContent.startsWith('Approval')).firstChild,r=d.createRange();r.setStart(n,0);r.setEnd(n,8);const b=r.getBoundingClientRect(),o=f.getBoundingClientRect();return {x:o.x+f.clientLeft+b.x+b.width/2,y:o.y+f.clientTop+b.y+b.height/2};})()");
+ await call('Input.dispatchMouseEvent',{type:'mousePressed',...point,button:'left',clickCount:2});
+ await call('Input.dispatchMouseEvent',{type:'mouseReleased',...point,button:'left',clickCount:2});
+ await assert(d+".getSelection().toString()==='Approval'",'mouse selects actual PDF word');
  await click('next');await ready();await assert(q('page')+".value==='2' && "+q('text')+".textContent.includes('Release checklist')",'next page renders real PDF text');
  await evaluate(q('page')+".value=999;"+q('page')+".dispatchEvent(new Event('change'))");
  await assert(q('page')+".value==='2'",'invalid page preserves current page');
@@ -37,7 +43,12 @@ try{
  await wait(q('search-status')+".textContent==='3 matching pages.'");
  await evaluate(q('results')+".querySelectorAll('button')[1].click()");await ready();
  await assert(q('page')+".value==='2' && "+q('text-panel')+".open",'search result navigates and exposes text');
- await click('clear');await assert(q('results')+".children.length===0",'clear search');
+ await sleep(300);await ready();
+ await assert("(()=>{const w=document.querySelector('iframe').contentWindow;return [...w.CSS.highlights.get('pdf-search')].length===2 && [...w.CSS.highlights.get('pdf-search')].every(r=>r.toString().toLowerCase()==='approval');})()",'exact matches highlighted on selected page');
+ await click('in');await ready();
+ await assert("document.querySelector('iframe').contentWindow.CSS.highlights.get('pdf-search').size===2",'highlights survive zoom');
+ await click('clear');await assert("!document.querySelector('iframe').contentWindow.CSS.highlights.has('pdf-search')",'clear removes highlights');
+ await assert(q('results')+".children.length===0",'clear search');
  await evaluate(q('text-panel')+".open=false");await click('width');await ready();
  const widthScale=await evaluate(q('zoom')+'.textContent');
  await click('fit');await ready();await assert(q('zoom')+'.textContent!=='+JSON.stringify(widthScale),'fit width differs from fit page');
@@ -48,13 +59,18 @@ try{
  const downloaded=await readFile('/tmp/nextgen-pdf-downloads/nextgen-guide.pdf');
  if(createHash('sha256').update(expected).digest('hex')!==createHash('sha256').update(downloaded).digest('hex'))throw Error('Download bytes changed');
  console.log('PASS downloaded original bytes');
- // Exercise browser File API, malformed document recovery recovery.
+ // Exercise browser File API, malformed document recovery.
  await evaluate("(async()=>{const d="+d+",dt=new DataTransfer();dt.items.add(new File(['bad pdf'],'broken.pdf'));d.getElementById('file').files=dt.files;d.getElementById('file').dispatchEvent(new Event('change'));})()");
  await wait(q('status')+".classList.contains('error')");
  await assert(q('download')+".disabled && "+q('canvas')+".hidden",'malformed PDF clears previous document');
+ await assert(q('text-layer-host')+".children.length===0 && !document.querySelector('iframe').contentWindow.CSS.highlights.has('pdf-search')",'document failure clears text and highlights');
  await evaluate("(async()=>{const d="+d+",data=await(await fetch('/samples/nextgen-guide.pdf')).arrayBuffer(),dt=new DataTransfer();dt.items.add(new File([data],'local-review.pdf',{type:'application/pdf'}));d.getElementById('file').files=dt.files;d.getElementById('file').dispatchEvent(new Event('change'));})()");
  await ready();await assert(q('name')+".textContent==='local-review.pdf'",'local file recovers after invalid PDF');
  await evaluate("document.querySelector('iframe').scrollIntoView({block:'center'})");await sleep(300);
- await screenshot('pdf-'+(flutter?'flutter':'blazor')+'.png');
+ await evaluate(q('query')+".value='approval';"+q('search-form')+".requestSubmit()");
+ await wait(q('search-status')+".textContent==='3 matching pages.'");
+ await click('width');await ready();
+ await evaluate("(()=>{const f=document.querySelector('iframe'),d=f.contentDocument,r=[...f.contentWindow.CSS.highlights.get('pdf-search')][0],v=d.getElementById('viewport');v.scrollTop+=r.getBoundingClientRect().top-v.getBoundingClientRect().top-100;})()");
+ await screenshot('pdf-text-'+(flutter?'flutter':'blazor')+'.png');
  console.log('PASS '+(flutter?'Flutter Web':'Blazor')+' visible PDF review');
 }finally{ws.close();}
