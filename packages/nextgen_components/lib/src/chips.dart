@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'components.dart';
 import 'selection.dart';
 
@@ -129,6 +130,24 @@ class NgChip extends StatelessWidget {
       onClick?.call();
     }
 
+    Widget keyboard(Widget child) => Focus(
+      canRequestFocus: false,
+      onKeyEvent: (_, event) {
+        if (HardwareKeyboard.instance.isAltPressed ||
+            HardwareKeyboard.instance.isControlPressed ||
+            HardwareKeyboard.instance.isMetaPressed)
+          return KeyEventResult.ignored;
+        if (event is KeyDownEvent &&
+            (event.logicalKey == LogicalKeyboardKey.delete ||
+                event.logicalKey == LogicalKeyboardKey.backspace) &&
+            remove != null) {
+          remove();
+          return KeyEventResult.handled;
+        }
+        return KeyEventResult.ignored;
+      },
+      child: child,
+    );
     if (!selectable && onClick == null) {
       final chip = Chip(
         label: text,
@@ -143,39 +162,55 @@ class NgChip extends StatelessWidget {
         deleteIconColor: foreground,
         deleteButtonTooltipMessage: 'Remove $label',
       );
-      return Opacity(
-        opacity: disabled ? .5 : 1,
-        child: remove == null
-            ? Semantics(label: label, excludeSemantics: true, child: chip)
-            : chip,
+      return keyboard(
+        Opacity(
+          opacity: disabled ? .5 : 1,
+          child: remove == null
+              ? Semantics(label: label, excludeSemantics: true, child: chip)
+              : chip,
+        ),
       );
     }
-    return InputChip(
-      label: text,
-      avatar: decoration,
-      shape: shape,
-      backgroundColor: background,
-      selectedColor: palette[1],
-      labelStyle: textStyle,
-      padding: padding,
-      side: BorderSide(color: foreground, width: value ? 2 : 1),
-      checkmarkColor: foreground,
-      selected: value,
-      isEnabled: !disabled,
-      onSelected:
-          !disabled && selectable && (onChanged != null || onClick != null)
-          ? (_) => activate()
-          : null,
-      onPressed: !disabled && !selectable && onClick != null ? activate : null,
-      onDeleted: remove,
-      deleteIcon: removeIcon,
-      deleteIconColor: foreground,
-      deleteButtonTooltipMessage: 'Remove $label',
+    final interactive = keyboard(
+      InputChip(
+        label: text,
+        avatar: decoration,
+        shape: shape,
+        backgroundColor: background,
+        selectedColor: palette[1],
+        labelStyle: textStyle,
+        padding: padding,
+        side: BorderSide(color: foreground, width: value ? 2 : 1),
+        checkmarkColor: foreground,
+        selected: value,
+        isEnabled: !disabled,
+        onSelected:
+            !disabled && selectable && (onChanged != null || onClick != null)
+            ? (_) => activate()
+            : null,
+        onPressed: !disabled && !selectable && onClick != null
+            ? activate
+            : null,
+        onDeleted: remove,
+        deleteIcon: removeIcon,
+        deleteIconColor: foreground,
+        deleteButtonTooltipMessage: 'Remove $label',
+      ),
     );
+    return !selectable && onRemove == null
+        ? Semantics(
+            label: label,
+            button: true,
+            enabled: !disabled,
+            onTap: disabled ? null : activate,
+            excludeSemantics: true,
+            child: interactive,
+          )
+        : interactive;
   }
 }
 
-class NgChipList extends StatelessWidget {
+class NgChipList extends StatefulWidget {
   final String label;
   final List<NgOption> items;
   final List<String> value;
@@ -210,61 +245,243 @@ class NgChipList extends StatelessWidget {
     this.disabled = false,
   });
   @override
+  State<NgChipList> createState() => _NgChipListState();
+}
+
+class _NgChipListState extends State<NgChipList> {
+  final Map<String, FocusNode> nodes = {};
+  final FocusScopeNode scope = FocusScopeNode(debugLabel: 'Chip list scope');
+  final FocusNode fallback = FocusNode(
+    debugLabel: 'Empty chip list',
+    skipTraversal: true,
+  );
+  bool enabled(NgOption item) =>
+      !widget.disabled &&
+      !item.disabled &&
+      ((widget.selectable && widget.onChanged != null) ||
+          widget.onClick != null ||
+          (widget.onRemove != null && (widget.canRemove?.call(item) ?? true)));
+  FocusNode node(String id) =>
+      nodes.putIfAbsent(id, () => FocusNode(debugLabel: 'Chip $id'));
+  void activateItem(NgOption item) {
+    if (!enabled(item)) return;
+    if (widget.selectable && widget.onChanged != null) {
+      final next = NgSelectionRules.toggle(
+        widget.items,
+        widget.value,
+        item.value,
+        widget.multiple,
+        widget.allowEmpty,
+      );
+      if (!listEquals(next, widget.value)) widget.onChanged!(next);
+    }
+    widget.onClick?.call(item.value);
+  }
+
+  void remove(NgOption item) {
+    if (enabled(item) && (widget.canRemove?.call(item) ?? true)) {
+      node(item.value).requestFocus();
+      widget.onRemove?.call(item.value);
+    }
+  }
+
+  KeyEventResult key(NgOption item, KeyEvent event) {
+    final k = event.logicalKey;
+    if (HardwareKeyboard.instance.isAltPressed ||
+        HardwareKeyboard.instance.isControlPressed ||
+        HardwareKeyboard.instance.isMetaPressed)
+      return KeyEventResult.ignored;
+    final keys = [
+      LogicalKeyboardKey.arrowLeft,
+      LogicalKeyboardKey.arrowRight,
+      LogicalKeyboardKey.home,
+      LogicalKeyboardKey.end,
+      LogicalKeyboardKey.delete,
+      LogicalKeyboardKey.backspace,
+      LogicalKeyboardKey.enter,
+      LogicalKeyboardKey.space,
+    ];
+    if (!keys.contains(k)) return KeyEventResult.ignored;
+    if (event is! KeyDownEvent) return KeyEventResult.handled;
+    if (k == LogicalKeyboardKey.delete || k == LogicalKeyboardKey.backspace) {
+      remove(item);
+      return KeyEventResult.handled;
+    }
+    if (k == LogicalKeyboardKey.enter || k == LogicalKeyboardKey.space) {
+      activateItem(item);
+      return KeyEventResult.handled;
+    }
+    final all = widget.items.where(enabled).toList();
+    if (all.isEmpty) return KeyEventResult.handled;
+    final index = all.indexWhere((x) => x.value == item.value);
+    final rtl = Directionality.of(context) == TextDirection.rtl;
+    final next = k == LogicalKeyboardKey.home
+        ? 0
+        : k == LogicalKeyboardKey.end
+        ? all.length - 1
+        : index + ((k == LogicalKeyboardKey.arrowRight) != rtl ? 1 : -1);
+    node(all[next.clamp(0, all.length - 1)].value).requestFocus();
+    return KeyEventResult.handled;
+  }
+
+  @override
+  void didUpdateWidget(covariant NgChipList oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final focused = nodes.entries.where((e) => e.value.hasFocus).firstOrNull;
+    final previous = FocusManager.instance.primaryFocus;
+    String? nextId;
+    bool restore = false;
+    if (focused != null &&
+        !widget.items.any((x) => x.value == focused.key && enabled(x))) {
+      restore = true;
+      final index = oldWidget.items
+          .indexWhere((x) => x.value == focused.key)
+          .clamp(0, widget.items.length);
+      final candidates = [
+        ...widget.items.skip(index),
+        ...widget.items.take(index).toList().reversed,
+      ];
+      nextId = candidates.where(enabled).firstOrNull?.value;
+    }
+    final removed = nodes.keys
+        .where((id) => !widget.items.any((x) => x.value == id))
+        .toList();
+    final retired = [for (final id in removed) nodes.remove(id)!];
+    if (restore || retired.isNotEmpty)
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && restore) {
+          final current = FocusManager.instance.primaryFocus;
+          if (current == previous || current == scope || current == null) {
+            (nextId == null ? fallback : node(nextId)).requestFocus();
+          }
+        }
+        for (final n in retired) n.dispose();
+      });
+  }
+
+  @override
+  void dispose() {
+    for (final n in nodes.values) n.dispose();
+    scope.dispose();
+    fallback.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    NgSelectionRules.validate(items, value, multiple);
-    NgChipRules.validate(size, rounded, fillMode, themeColor);
-    return Semantics(
-      label: label,
-      container: true,
-      explicitChildNodes: true,
-      child: items.isEmpty
-          ? const Text('No tags')
-          : Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                for (final item in items)
-                  Builder(
-                    key: ValueKey(item.value),
-                    builder: (context) {
-                      final appearance = itemAppearance?.call(item);
-                      return NgChip(
+    NgSelectionRules.validate(widget.items, widget.value, widget.multiple);
+    NgChipRules.validate(
+      widget.size,
+      widget.rounded,
+      widget.fillMode,
+      widget.themeColor,
+    );
+    return FocusScope(
+      node: scope,
+      child: Focus(
+        focusNode: fallback,
+        child: Semantics(
+          label: widget.label,
+          container: true,
+          explicitChildNodes: true,
+          child: widget.items.isEmpty
+              ? const Text('No tags')
+              : Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    for (final item in widget.items)
+                      Builder(
                         key: ValueKey(item.value),
-                        size: appearance?.size ?? size,
-                        rounded: appearance?.rounded ?? rounded,
-                        fillMode: appearance?.fillMode ?? fillMode,
-                        themeColor: appearance?.themeColor ?? themeColor,
-                        child: itemBuilder?.call(item),
-                        leading: leadingBuilder?.call(item),
-                        removeIcon: removeIcon,
-                        onClick: onClick == null
-                            ? null
-                            : () => onClick!(item.value),
-                        label: item.label,
-                        value: value.contains(item.value),
-                        selectable: selectable,
-                        disabled: disabled || item.disabled,
-                        onChanged: onChanged == null
-                            ? null
-                            : (_) {
-                                final next = NgSelectionRules.toggle(
-                                  items,
-                                  value,
-                                  item.value,
-                                  multiple,
-                                  allowEmpty,
-                                );
-                                if (!listEquals(next, value)) onChanged!(next);
+                        builder: (context) {
+                          final appearance = widget.itemAppearance?.call(item);
+                          final focus = node(item.value);
+                          return Focus(
+                            focusNode: focus,
+                            canRequestFocus: enabled(item),
+                            onFocusChange: (_) {
+                              if (mounted) setState(() {});
+                            },
+                            onKeyEvent: (_, e) => key(item, e),
+                            child: Listener(
+                              onPointerDown: (_) {
+                                if (enabled(item)) focus.requestFocus();
                               },
-                        onRemove:
-                            onRemove == null || !(canRemove?.call(item) ?? true)
-                            ? null
-                            : () => onRemove!(item.value),
-                      );
-                    },
-                  ),
-              ],
-            ),
+                              child: DecoratedBox(
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(
+                                    color: focus.hasFocus
+                                        ? Theme.of(context).colorScheme.primary
+                                        : Colors.transparent,
+                                    width: 2,
+                                  ),
+                                ),
+                                child: Padding(
+                                  padding: const EdgeInsets.all(2),
+                                  child: ExcludeFocus(
+                                    child: NgChip(
+                                      label: item.label,
+                                      value: widget.value.contains(item.value),
+                                      selectable: widget.selectable,
+                                      disabled:
+                                          widget.disabled || item.disabled,
+                                      size: appearance?.size ?? widget.size,
+                                      rounded:
+                                          appearance?.rounded ?? widget.rounded,
+                                      fillMode:
+                                          appearance?.fillMode ??
+                                          widget.fillMode,
+                                      themeColor:
+                                          appearance?.themeColor ??
+                                          widget.themeColor,
+                                      child: widget.itemBuilder?.call(item),
+                                      leading: widget.leadingBuilder?.call(
+                                        item,
+                                      ),
+                                      removeIcon: widget.removeIcon,
+                                      onClick: widget.onClick == null
+                                          ? null
+                                          : () {
+                                              focus.requestFocus();
+                                              widget.onClick!(item.value);
+                                            },
+                                      onChanged: widget.onChanged == null
+                                          ? null
+                                          : (_) {
+                                              focus.requestFocus();
+                                              final next =
+                                                  NgSelectionRules.toggle(
+                                                    widget.items,
+                                                    widget.value,
+                                                    item.value,
+                                                    widget.multiple,
+                                                    widget.allowEmpty,
+                                                  );
+                                              if (!listEquals(
+                                                next,
+                                                widget.value,
+                                              ))
+                                                widget.onChanged!(next);
+                                            },
+                                      onRemove:
+                                          widget.onRemove == null ||
+                                              !(widget.canRemove?.call(item) ??
+                                                  true)
+                                          ? null
+                                          : () => remove(item),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                  ],
+                ),
+        ),
+      ),
     );
   }
 }

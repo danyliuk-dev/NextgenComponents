@@ -10,7 +10,7 @@ A component can be marked complete only after every reference feature is recorde
 
 ## Current work order
 
-1. Finish the Chip/ChipList audit below: keyboard/focus and selection semantics, model binding and sizing limits, then accessibility and remaining public API differences.
+1. Finish the Chip/ChipList audit below: single-tab-stop listbox and selection semantics, model binding and sizing limits, then accessibility and remaining public API differences.
 2. Audit the existing selection/navigation group (ToggleButton, ButtonGroup, Menu, Drawer, Stepper, Wizard) against complete public reference pages.
 3. Continue through existing editors/forms, data management, visualization and complex editors. Add new component names only after closing the active group or recording a user-approved exception.
 
@@ -32,8 +32,8 @@ Sources: [Chip API](https://www.telerik.com/blazor-ui/documentation/api/telerik.
 | Per-item color/fill | Equivalent contract | Equivalent contract | NgChipAppearance callback inherits unspecified list defaults. |
 | Custom chip/list content | Implemented | Implemented | RenderFragment / Widget builders with stable accessible labels; compiled manual and Chrome. |
 | Leading icon/avatar and removal icon | Equivalent slots | Equivalent slots | Application-supplied content; no Telerik icon registry/variant API. No image loader is supplied. |
-| Keyboard activation | Partial | Partial | Enter/Space activation tested. Blazor Delete/Backspace and list arrow keys remain. |
-| Focus after removal / public focus API | Remaining | Remaining | Must cover accepted/rejected/async removal, last item and disabled neighbors. |
+| Keyboard activation and list movement | Implemented core | Implemented core | 0.16: Enter/Space, Delete/Backspace, arrows and Home/End. Tab pattern still differs; no single-tab-stop listbox. |
+| Focus after removal / public focus API | Implemented / FocusAsync | Implemented / controller pending | 0.16: next/previous/container recovery; rejection, outside-focus protection and disabled neighbors tested. Flutter public controller remains. |
 | Selection listbox/option semantics | Remaining | Remaining | Current group of individual controls differs from reference listbox. Do not claim ARIA parity. |
 | Generic field-name model binding | Remaining | Remaining | NgOption adapters only; additional record fields resolved by stable ID. |
 | Large collections | Remaining | Remaining | Current 50-item guard is an explicit limitation; reference has no documented equivalent cap. |

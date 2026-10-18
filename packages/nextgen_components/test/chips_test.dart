@@ -4,6 +4,152 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:nextgen_components/nextgen_components.dart';
 
 void main() {
+  testWidgets('semantic activation callback also establishes keyboard focus', (
+    t,
+  ) async {
+    await t.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: NgChipList(
+            items: const [NgOption('a', 'Alpha'), NgOption('b', 'Beta')],
+            onChanged: (_) {},
+          ),
+        ),
+      ),
+    );
+    // Web semantics can invoke the action without a raw pointer-down event.
+    t.widget<NgChip>(find.byType(NgChip).first).onChanged!(true);
+    await t.pumpAndSettle();
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'Chip a');
+    await t.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+    await t.pumpAndSettle();
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'Chip b');
+  });
+
+  testWidgets(
+    'arrows skip disabled, deletion moves next then previous then empty',
+    (t) async {
+      var items = const [
+        NgOption('a', 'Alpha'),
+        NgOption('locked', 'Locked', disabled: true),
+        NgOption('b', 'Beta'),
+        NgOption('c', 'Gamma'),
+      ];
+      var value = <String>[];
+      await t.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: StatefulBuilder(
+              builder: (context, update) => NgChipList(
+                items: items,
+                value: value,
+                multiple: true,
+                onChanged: (v) => update(() => value = v),
+                onRemove: (id) => update(() {
+                  items = items.where((x) => x.value != id).toList();
+                  value = value.where((x) => x != id).toList();
+                }),
+              ),
+            ),
+          ),
+        ),
+      );
+      await t.tap(find.text('Alpha'));
+      await t.pumpAndSettle();
+      await t.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+      await t.pumpAndSettle();
+      expect(FocusManager.instance.primaryFocus?.debugLabel, 'Chip b');
+      await t.sendKeyEvent(LogicalKeyboardKey.delete);
+      await t.pumpAndSettle();
+      expect(find.text('Beta'), findsNothing);
+      expect(FocusManager.instance.primaryFocus?.debugLabel, 'Chip c');
+      await t.sendKeyEvent(LogicalKeyboardKey.backspace);
+      await t.pumpAndSettle();
+      expect(FocusManager.instance.primaryFocus?.debugLabel, 'Chip a');
+      await t.sendKeyEvent(LogicalKeyboardKey.delete);
+      await t.pumpAndSettle();
+      expect(FocusManager.instance.primaryFocus?.debugLabel, 'Empty chip list');
+    },
+  );
+  testWidgets(
+    'rejected removal retains focus; delayed removal never steals outside focus',
+    (t) async {
+      var items = const [NgOption('a', 'Alpha'), NgOption('b', 'Beta')];
+      late StateSetter update;
+      var requests = 0;
+      final outside = FocusNode(debugLabel: 'Outside');
+      await t.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: StatefulBuilder(
+              builder: (context, set) {
+                update = set;
+                return Column(
+                  children: [
+                    NgChipList(
+                      items: items,
+                      onChanged: (_) {},
+                      onRemove: (_) => requests++,
+                    ),
+                    TextButton(
+                      focusNode: outside,
+                      onPressed: () {},
+                      child: const Text('After'),
+                    ),
+                  ],
+                );
+              },
+            ),
+          ),
+        ),
+      );
+      await t.tap(find.text('Alpha'));
+      await t.pumpAndSettle();
+      await t.sendKeyEvent(LogicalKeyboardKey.delete);
+      await t.pumpAndSettle();
+      expect(requests, 1);
+      expect(FocusManager.instance.primaryFocus?.debugLabel, 'Chip a');
+      outside.requestFocus();
+      await t.pumpAndSettle();
+      update(() => items = items.skip(1).toList());
+      await t.pumpAndSettle();
+      expect(FocusManager.instance.primaryFocus, outside);
+      await t.pumpWidget(const SizedBox());
+      outside.dispose();
+    },
+  );
+  testWidgets('Home End and RTL arrows focus without changing selection', (
+    t,
+  ) async {
+    var changes = 0;
+    await t.pumpWidget(
+      MaterialApp(
+        home: Directionality(
+          textDirection: TextDirection.rtl,
+          child: Scaffold(
+            body: NgChipList(
+              items: const [NgOption('a', 'Alpha'), NgOption('b', 'Beta')],
+              onChanged: (_) => changes++,
+            ),
+          ),
+        ),
+      ),
+    );
+    await t.tap(find.text('Alpha'));
+    await t.pumpAndSettle();
+    expect(changes, 1);
+    await t.sendKeyEvent(LogicalKeyboardKey.arrowLeft);
+    await t.pumpAndSettle();
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'Chip b');
+    expect(changes, 1);
+    await t.sendKeyEvent(LogicalKeyboardKey.home);
+    await t.pumpAndSettle();
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'Chip a');
+    await t.sendKeyEvent(LogicalKeyboardKey.end);
+    await t.pumpAndSettle();
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'Chip b');
+  });
+
   test(
     'appearance validation accepts all combinations and rejects invalid values',
     () {

@@ -92,7 +92,7 @@ class _ChipsGalleryState extends State<ChipsGallery> {
               ),
               const SizedBox(height: 16),
               const Text(
-                'FLUTTER WEB / CHIPS 0.15 · Select topics, remove a tag, or show a compact status. Your application owns every change.',
+                'FLUTTER WEB / CHIPS 0.16 · Select topics, remove a tag, or show a compact status. Your application owns every change.',
               ),
               const SizedBox(height: 28),
               Wrap(
@@ -187,6 +187,9 @@ class _ChipsGalleryState extends State<ChipsGallery> {
               ),
               const SizedBox(height: 24),
               Text('Topics', style: Theme.of(context).textTheme.titleLarge),
+              const Text(
+                'Keyboard: Left/Right, Home/End move focus. Enter/Space activates. Delete/Backspace requests removal. Disabled tags are skipped.',
+              ),
               const SizedBox(height: 12),
               NgChipList(
                 label: 'Topics',

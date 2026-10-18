@@ -1515,3 +1515,22 @@ D['NgChipList']['blazor'] = D['NgChipList']['blazor'].replace('Multiple OnRemove
 D['NgChipList']['dart'] = D['NgChipList']['dart'].replace('value: selected, multiple: true,', "value: selected, multiple: true, fillMode: 'solid',\n  canRemove: (item) => item.value != 'locked',\n  itemAppearance: (item) => NgChipAppearance(themeColor: item.value == 'design' ? 'info' : 'base'),\n  itemBuilder: (item) => Text(item.label, style: const TextStyle(fontWeight: FontWeight.bold)),\n  leadingBuilder: (_) => const Icon(Icons.star, size: 18),")
 
 D['NgChipList']['blazor'] = D['NgChipList']['blazor'].replace('CanRemove="item=>item.Value!=\"locked\""', 'CanRemove="@(item=>item.Value!=\"locked\")"').replace('ItemAppearance="item=>new NgChipAppearance(ThemeColor:item.Value==\"design\"?\"info\":\"base\")"', 'ItemAppearance="@(item=>new NgChipAppearance(ThemeColor:item.Value==\"design\"?\"info\":\"base\"))"')
+
+# 0.16: keyboard and focus behavior, with explicit remaining ARIA differences.
+for name in ('NgChip', 'NgChipList'):
+    D[name]['notes'] = D[name]['notes'].replace('Native Flutter chip keyboard behavior includes its delete action.', 'Delete or Backspace requests removal from a focused interactive chip. Holding the key does not repeatedly remove chips.')
+    D[name]['notes'] = D[name]['notes'].replace('Arrow-key list navigation and focus transfer after removing a focused item are not implemented.', 'ChipList adds Left/Right and Home/End navigation with focus recovery after removal; see the keyboard rules below.')
+D['NgChipList']['notes'] += """
+
+### Keyboard and focus (0.16)
+
+Left/Right moves to the adjacent enabled interactive chip, reversing direction in RTL. Home/End focuses the first/last available chip. Navigation clamps at the ends and does not change selection. Enter/Space activates selection and click. Delete/Backspace requests removal if allowed; a nonremovable chip keeps focus. Modified shortcuts (Alt/Ctrl/Meta) are left to the application. Repeated deletion keydown is ignored.
+
+After accepted removal of the focused item, focus moves to the next enabled item at the former position, otherwise the nearest previous enabled item. When none remains, the named list container receives focus. A rejected request keeps focus. Delayed data updates do not pull focus back when the user has moved to another control. Stable IDs preserve focus on reorder. Changing a focused item to disabled uses the same fallback. Do not reuse IDs for unrelated records.
+
+Tab remains ordinary control traversal: Blazor exposes separate selection/removal buttons; Flutter uses one keyboard focus stop per interactive chip. Neither is yet the reference single-tab-stop listbox. The remaining listbox/option semantics and screen-reader audit are recorded in the parity matrix.
+
+Blazor exposes FocusAsync() on NgChipList via @ref after interactive rendering. It focuses the first available action or the list container. The JS module is initialized automatically and disposed with the component. Flutter owns and disposes internal focus nodes; a public list focus controller is still pending.
+
+Blazor serializes pending remove callbacks. Flutter removal callbacks remain synchronous requests: if the application performs async deletion, it must handle duplicate requests, errors and cancellation, then update items and selected IDs together. Focus restoration tracks that later state update; it does not await network operations. Removing a standalone chip requires the application to move focus explicitly.
+"""

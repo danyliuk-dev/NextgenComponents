@@ -14,7 +14,7 @@ The parent owns Value/value and stores selection callbacks. Selectable/selectabl
 
 ### Keyboard and accessibility
 
-Selection and removal have separate accessible actions. Tab moves through enabled actions; Enter or Space activates the focused action. Selected state is exposed to assistive technology. Disabled chips cannot be selected or removed. Native Flutter chip keyboard behavior includes its delete action. Arrow-key list navigation and focus transfer after removing a focused item are not implemented. Test screen-reader behavior in your target browser.
+Selection and removal have separate accessible actions. Tab moves through enabled actions; Enter or Space activates the focused action. Selected state is exposed to assistive technology. Disabled chips cannot be selected or removed. Delete or Backspace requests removal from a focused interactive chip. Holding the key does not repeatedly remove chips. ChipList adds Left/Right and Home/End navigation with focus recovery after removal; see the keyboard rules below. Test screen-reader behavior in your target browser.
 
 ### Scope
 

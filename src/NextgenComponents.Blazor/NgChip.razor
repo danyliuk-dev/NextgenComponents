@@ -1,4 +1,4 @@
-<span class="ng-chip ng-chip-@Size ng-chip-rounded-@Rounded ng-chip-@FillMode ng-chip-tone-@ThemeColor @(Value?"ng-chip-selected":"") @(Disabled?"ng-chip-disabled":"")">
+<span @onkeydown="KeyDown" class="ng-chip ng-chip-@Size ng-chip-rounded-@Rounded ng-chip-@FillMode ng-chip-tone-@ThemeColor @(Value?"ng-chip-selected":"") @(Disabled?"ng-chip-disabled":"")">
 @if(Selectable||OnClick.HasDelegate){<button class="ng-chip-label" type="button" aria-label="@Label" aria-pressed="@(Selectable?(Value?"true":"false"):null)" disabled="@(Disabled||(!ValueChanged.HasDelegate&&!OnClick.HasDelegate))" @onclick="Activate">@Content</button>}
 else {<span class="ng-chip-label" aria-label="@Label">@Content</span>}
 @if(OnRemove.HasDelegate){<button class="ng-chip-remove" type="button" aria-label="@($"Remove {Label}")" disabled="@Disabled" @onclick="Remove"><span aria-hidden="true">@if(RemoveContent is not null){@RemoveContent}else{<text>×</text>}</span></button>}
@@ -21,5 +21,7 @@ else {<span class="ng-chip-label" aria-label="@Label">@Content</span>}
  private RenderFragment Content => @<text>@if(Leading is not null){<span class="ng-chip-leading" aria-hidden="true">@Leading</span>}@if(ChildContent is not null){@ChildContent}else{@Label}</text>;
  protected override void OnParametersSet(){if(string.IsNullOrWhiteSpace(Label)||Label.Length>120)throw new ArgumentException("Use a nonblank label of at most 120 characters.");NgChipRules.Validate(Size,Rounded,FillMode,ThemeColor);}
  private async Task Activate(){if(Disabled)return;var next=!Value;if(Selectable&&ValueChanged.HasDelegate)await ValueChanged.InvokeAsync(next);await OnClick.InvokeAsync();}
- private Task Remove()=>Disabled?Task.CompletedTask:OnRemove.InvokeAsync();
+ private bool removing;
+ private Task KeyDown(KeyboardEventArgs e)=>e.Key is "Delete" or "Backspace"&&!e.Repeat&&!e.AltKey&&!e.CtrlKey&&!e.MetaKey?Remove():Task.CompletedTask;
+ private async Task Remove(){if(Disabled||removing)return;removing=true;try{await OnRemove.InvokeAsync();}finally{removing=false;}}
 }
