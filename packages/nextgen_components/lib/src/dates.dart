@@ -137,7 +137,7 @@ class NgTemporalField<T> extends StatefulWidget {
   final String Function(T?) format;
   final T? Function(String) parse;
   final String? Function(T)? validateValue;
-  final bool required, enabled;
+  final bool required, enabled, readOnly;
   final Widget Function(ValueChanged<T>)? suffixBuilder;
   const NgTemporalField({
     super.key,
@@ -150,6 +150,7 @@ class NgTemporalField<T> extends StatefulWidget {
     this.validateValue,
     this.required = false,
     this.enabled = true,
+    this.readOnly = false,
     this.suffixBuilder,
   });
   @override
@@ -158,6 +159,7 @@ class NgTemporalField<T> extends StatefulWidget {
 
 class _NgTemporalFieldState<T> extends State<NgTemporalField<T>> {
   late final TextEditingController controller;
+  int revision = 0;
   @override
   void initState() {
     super.initState();
@@ -167,6 +169,7 @@ class _NgTemporalFieldState<T> extends State<NgTemporalField<T>> {
   @override
   void didUpdateWidget(covariant NgTemporalField<T> old) {
     super.didUpdateWidget(old);
+    revision++;
     if (old.value != widget.value &&
         widget.parse(controller.text) != widget.value)
       controller.text = widget.format(widget.value);
@@ -182,24 +185,37 @@ class _NgTemporalFieldState<T> extends State<NgTemporalField<T>> {
   }
 
   @override
-  Widget build(BuildContext context) => TextFormField(
-    controller: controller,
-    enabled: widget.enabled,
-    decoration: InputDecoration(
-      labelText: widget.label,
-      hintText: widget.hint,
-      suffixIcon: widget.suffixBuilder?.call((value) {
-        controller.text = widget.format(value);
-        widget.onChanged?.call(value);
-      }),
-    ),
-    autovalidateMode: AutovalidateMode.onUserInteraction,
-    validator: validate,
-    onChanged: (text) {
-      if (validate(text) == null)
-        widget.onChanged?.call(text.isEmpty ? null : widget.parse(text));
-    },
-  );
+  Widget build(BuildContext context) {
+    final generation = revision;
+    return TextFormField(
+      controller: controller,
+      enabled: widget.enabled,
+      readOnly: widget.readOnly,
+      decoration: InputDecoration(
+        labelText: widget.label,
+        hintText: widget.hint,
+        suffixIcon: widget.suffixBuilder?.call((value) {
+          if (!mounted ||
+              generation != revision ||
+              !widget.enabled ||
+              widget.readOnly)
+            return;
+          setState(() => revision++);
+          controller.text = widget.format(value);
+          if (validate(controller.text) != null) return;
+          widget.onChanged?.call(value);
+        }),
+      ),
+      autovalidateMode: AutovalidateMode.onUserInteraction,
+      validator: validate,
+      onChanged: (text) {
+        setState(() => revision++);
+        if (widget.enabled && !widget.readOnly && validate(text) == null)
+          widget.onChanged?.call(text.isEmpty ? null : widget.parse(text));
+      },
+    );
+  }
+
   @override
   void dispose() {
     controller.dispose();
@@ -310,7 +326,8 @@ class NgDatePicker extends StatelessWidget {
 class NgTimePicker extends StatelessWidget {
   final String label;
   final TimeOfDay? value, min, max;
-  final bool required, enabled;
+  final bool required, enabled, readOnly;
+  final int minuteStep;
   final ValueChanged<TimeOfDay?>? onChanged;
   const NgTimePicker({
     super.key,
@@ -321,51 +338,66 @@ class NgTimePicker extends StatelessWidget {
     this.max,
     this.required = false,
     this.enabled = true,
+    this.readOnly = false,
+    this.minuteStep = 1,
   });
   static int minutes(TimeOfDay t) => t.hour * 60 + t.minute;
   String? validate(TimeOfDay t) =>
       (min != null && minutes(t) < minutes(min!)) ||
           (max != null && minutes(t) > minutes(max!))
       ? 'Time is outside the allowed range.'
+      : t.minute % minuteStep != 0
+      ? 'Choose a time in $minuteStep-minute intervals.'
       : null;
   @override
-  Widget build(BuildContext context) => NgTemporalField<TimeOfDay>(
-    label: label,
-    hint: 'hh:mm',
-    value: value,
-    onChanged: onChanged,
-    format: NgDateRules.timeText,
-    parse: NgDateRules.parseTime,
-    required: required,
-    enabled: enabled,
-    validateValue: validate,
-    suffixBuilder: (apply) => IconButton(
-      tooltip: 'Choose $label',
-      icon: const Icon(Icons.schedule),
-      onPressed: !enabled
-          ? null
-          : () async {
-              final result = await showTimePicker(
-                context: context,
-                initialTime: value ?? const TimeOfDay(hour: 9, minute: 0),
-              );
-              if (result != null) {
-                if (validate(result) == null)
-                  apply(result);
-                else if (context.mounted)
-                  ScaffoldMessenger.maybeOf(
-                    context,
-                  )?.showSnackBar(SnackBar(content: Text(validate(result)!)));
-              }
-            },
-    ),
-  );
+  Widget build(BuildContext context) {
+    if (minuteStep < 1 ||
+        minuteStep > 60 ||
+        60 % minuteStep != 0 ||
+        (min != null && max != null && minutes(min!) > minutes(max!)))
+      throw ArgumentError(
+        'MinuteStep must divide 60 and Min must not exceed Max',
+      );
+    return NgTemporalField<TimeOfDay>(
+      label: label,
+      hint: 'hh:mm',
+      value: value,
+      onChanged: onChanged,
+      format: NgDateRules.timeText,
+      parse: NgDateRules.parseTime,
+      required: required,
+      enabled: enabled,
+      readOnly: readOnly,
+      validateValue: validate,
+      suffixBuilder: (apply) => IconButton(
+        tooltip: 'Choose $label',
+        icon: const Icon(Icons.schedule),
+        onPressed: !enabled || readOnly || onChanged == null
+            ? null
+            : () async {
+                final result = await showTimePicker(
+                  context: context,
+                  initialTime: value ?? const TimeOfDay(hour: 9, minute: 0),
+                );
+                if (result != null) {
+                  if (validate(result) == null)
+                    apply(result);
+                  else if (context.mounted)
+                    ScaffoldMessenger.maybeOf(
+                      context,
+                    )?.showSnackBar(SnackBar(content: Text(validate(result)!)));
+                }
+              },
+      ),
+    );
+  }
 }
 
 class NgDateTimePicker extends StatelessWidget {
   final String label;
   final DateTime? value, min, max;
-  final bool required, enabled;
+  final bool required, enabled, readOnly;
+  final int minuteStep;
   final ValueChanged<DateTime?>? onChanged;
   const NgDateTimePicker({
     super.key,
@@ -376,65 +408,79 @@ class NgDateTimePicker extends StatelessWidget {
     this.max,
     this.required = false,
     this.enabled = true,
+    this.readOnly = false,
+    this.minuteStep = 1,
   });
   String? validate(DateTime d) =>
       (min != null && d.isBefore(min!)) || (max != null && d.isAfter(max!))
       ? 'Value is outside the allowed range.'
+      : d.minute % minuteStep != 0
+      ? 'Choose a time in $minuteStep-minute intervals.'
       : null;
   @override
-  Widget build(BuildContext context) => NgTemporalField<DateTime>(
-    label: label,
-    hint: 'yyyy-mm-dd hh:mm',
-    value: value,
-    onChanged: onChanged,
-    format: (d) => d == null
-        ? ''
-        : '${NgDateRules.dateText(d)} ${NgDateRules.timeText(TimeOfDay.fromDateTime(d))}',
-    parse: NgDateRules.parseDateTime,
-    required: required,
-    enabled: enabled,
-    validateValue: validate,
-    suffixBuilder: (apply) => IconButton(
-      tooltip: 'Choose $label',
-      icon: const Icon(Icons.event),
-      onPressed: !enabled
-          ? null
-          : () async {
-              final first = NgDateRules.dateOnly(min ?? DateTime(1900)),
-                  last = NgDateRules.dateOnly(max ?? DateTime(2100, 12, 31));
-              var initial = NgDateRules.dateOnly(value ?? DateTime.now());
-              if (initial.isBefore(first)) initial = first;
-              if (initial.isAfter(last)) initial = last;
-              final date = await showDatePicker(
-                context: context,
-                initialDate: initial,
-                firstDate: first,
-                lastDate: last,
-              );
-              if (date == null || !context.mounted) return;
-              final time = await showTimePicker(
-                context: context,
-                initialTime: value == null
-                    ? const TimeOfDay(hour: 9, minute: 0)
-                    : TimeOfDay.fromDateTime(value!),
-              );
-              if (time == null) return;
-              final result = DateTime(
-                date.year,
-                date.month,
-                date.day,
-                time.hour,
-                time.minute,
-              );
-              if (validate(result) == null)
-                apply(result);
-              else if (context.mounted)
-                ScaffoldMessenger.maybeOf(
-                  context,
-                )?.showSnackBar(SnackBar(content: Text(validate(result)!)));
-            },
-    ),
-  );
+  Widget build(BuildContext context) {
+    if (minuteStep < 1 ||
+        minuteStep > 60 ||
+        60 % minuteStep != 0 ||
+        (min != null && max != null && min!.isAfter(max!)))
+      throw ArgumentError(
+        'MinuteStep must divide 60 and Min must not exceed Max',
+      );
+    return NgTemporalField<DateTime>(
+      label: label,
+      hint: 'yyyy-mm-dd hh:mm',
+      value: value,
+      onChanged: onChanged,
+      format: (d) => d == null
+          ? ''
+          : '${NgDateRules.dateText(d)} ${NgDateRules.timeText(TimeOfDay.fromDateTime(d))}',
+      parse: NgDateRules.parseDateTime,
+      required: required,
+      enabled: enabled,
+      readOnly: readOnly,
+      validateValue: validate,
+      suffixBuilder: (apply) => IconButton(
+        tooltip: 'Choose $label',
+        icon: const Icon(Icons.event),
+        onPressed: !enabled || readOnly || onChanged == null
+            ? null
+            : () async {
+                final first = NgDateRules.dateOnly(min ?? DateTime(1900)),
+                    last = NgDateRules.dateOnly(max ?? DateTime(2100, 12, 31));
+                var initial = NgDateRules.dateOnly(value ?? DateTime.now());
+                if (initial.isBefore(first)) initial = first;
+                if (initial.isAfter(last)) initial = last;
+                final date = await showDatePicker(
+                  context: context,
+                  initialDate: initial,
+                  firstDate: first,
+                  lastDate: last,
+                );
+                if (date == null || !context.mounted) return;
+                final time = await showTimePicker(
+                  context: context,
+                  initialTime: value == null
+                      ? const TimeOfDay(hour: 9, minute: 0)
+                      : TimeOfDay.fromDateTime(value!),
+                );
+                if (time == null) return;
+                final result = DateTime(
+                  date.year,
+                  date.month,
+                  date.day,
+                  time.hour,
+                  time.minute,
+                );
+                if (validate(result) == null)
+                  apply(result);
+                else if (context.mounted)
+                  ScaffoldMessenger.maybeOf(
+                    context,
+                  )?.showSnackBar(SnackBar(content: Text(validate(result)!)));
+              },
+      ),
+    );
+  }
 }
 
 class NgDateRangePicker extends StatelessWidget {

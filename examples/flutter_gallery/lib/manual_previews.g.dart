@@ -98,10 +98,15 @@ Text('Current: ${editor.text}'),Text('Submitted: $submitted')]);
 }
 class NgNumericTextBoxExample extends StatefulWidget { const NgNumericTextBoxExample({super.key}); @override State<NgNumericTextBoxExample> createState()=>_NgNumericTextBoxExampleState(); }
 class _NgNumericTextBoxExampleState extends State<NgNumericTextBoxExample> {
-double? quantity = 5;
-Widget build(BuildContext context) => NgNumericTextBox(label: 'Quantity',
-  value: quantity, min: 0, max: 100, required: true,
-  onChanged: (v) => setState(() => quantity = v));
+double? amount=2; bool readOnly=false; String status='';
+@override
+Widget build(BuildContext context)=>Column(crossAxisAlignment:CrossAxisAlignment.start, children:[
+ NgForm(submitLabel:'Save amount',onValidSubmit:()=>setState(()=>status='Saved amount: $amount'),child:
+  NgNumericTextBox(label:'Amount',value:amount,min:0,max:10,step:0.5,readOnly:readOnly,
+   helperText:'0 to 10; buttons change by 0.5.',onChanged:(v)=>setState(()=>amount=v))),
+ NgButton(onPressed:()=>setState(()=>readOnly=!readOnly),child:const Text('Read only')),
+ Text('Accepted amount: $amount'),Text(status),
+]);
 }
 class NgCheckBoxExample extends StatefulWidget { const NgCheckBoxExample({super.key}); @override State<NgCheckBoxExample> createState()=>_NgCheckBoxExampleState(); }
 class _NgCheckBoxExampleState extends State<NgCheckBoxExample> {
@@ -183,13 +188,13 @@ Widget build(BuildContext context) => NgCalendar(value: value,
 class NgDateTimePickerExample extends StatefulWidget { const NgDateTimePickerExample({super.key}); @override State<NgDateTimePickerExample> createState()=>_NgDateTimePickerExampleState(); }
 class _NgDateTimePickerExampleState extends State<NgDateTimePickerExample> {
 DateTime? value = DateTime(2026,10,20,9,30);
-Widget build(BuildContext context) => NgDateTimePicker(value: value,
+Widget build(BuildContext context) => NgDateTimePicker(label: 'Appointment', minuteStep: 15, value: value,
   onChanged: (v) => setState(() => value = v));
 }
 class NgTimePickerExample extends StatefulWidget { const NgTimePickerExample({super.key}); @override State<NgTimePickerExample> createState()=>_NgTimePickerExampleState(); }
 class _NgTimePickerExampleState extends State<NgTimePickerExample> {
 TimeOfDay? value = const TimeOfDay(hour: 9, minute: 30);
-Widget build(BuildContext context) => NgTimePicker(value: value,
+Widget build(BuildContext context) => NgTimePicker(label: 'Appointment', minuteStep: 15, value: value,
   onChanged: (v) => setState(() => value = v));
 }
 class NgDateRangePickerExample extends StatefulWidget { const NgDateRangePickerExample({super.key}); @override State<NgDateRangePickerExample> createState()=>_NgDateRangePickerExampleState(); }

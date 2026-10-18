@@ -6,7 +6,7 @@ The API is intentionally small and native to each platform. It is not source-com
 |---|---|---|---|
 | NgButton | primary/default, disabled, click, submit type | primary/default, disabled, callback | icons/loading/style variants |
 | NgTextBox | label, placeholder, disabled, immediate binding, EditForm | label, placeholder, disabled, controller or initialValue, Form validator | masks, multiline, password variants |
-| NgNumericTextBox | nullable decimal, native number input, min/max/step attributes, EditForm parsing | nullable double, finite number and min/max validation, external value updates | locale-specific formatting, custom spinners; Blazor business bounds need model validation |
+| NgNumericTextBox | nullable decimal, retained drafts, inclusive bounds validation, labelled spin actions, read-only, helper text | nullable finite double, bounds validation, labelled spin actions, read-only, helper text, external value updates | locale-specific formatting, precision and acceleration; Blazor business bounds need model validation |
 | NgCheckBox | bool binding, label, disabled, EditForm | bool callback, label, disabled | indeterminate state |
 | NgRadioGroup | string options, per-option/group disabled, EditForm | string options, per-option/group disabled, callback | generic values, custom item templates |
 | NgSwitch | bool binding, native checkbox keyboard behavior with switch role | bool callback, native Flutter switch | additional size/style variants |

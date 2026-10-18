@@ -25,7 +25,7 @@ await Check<NgTextBox>(new() { ["Label"] = "Name", ["Value"] = name, ["ValueExpr
 await Check<NgTextBox>(new(){["Label"]="Project",["Value"]=name,["ValueExpression"]=(Expression<Func<string?>>)(()=>name),["Id"]="project",["ReadOnly"]=true,["MaxLength"]=80,["HelperText"]="Guidance",["PrefixTemplate"]=Text("Prefix"),["AdditionalAttributes"]=new Dictionary<string,object>{{"aria-describedby","external-help"}}},"readonly","maxlength=\"80\"","external-help project-help","Prefix","Guidance");
 await Check<NgTextArea>(new(){["Value"]=name,["ValueExpression"]=(Expression<Func<string?>>)(()=>name),["Rows"]=3,["ReadOnly"]=true,["HelperText"]="Notes guidance",["SuffixTemplate"]=Text("Suffix")},"readonly","rows=\"3\"","Notes guidance","Suffix");
 await Check<NgForm>(new(){["Model"]=new object(),["Disabled"]=true,["ChildContent"]=Text("Draft")},"fieldset","disabled","Draft");
-await Check<NgNumericTextBox>(new() { ["Label"] = "Seats", ["Value"] = number, ["ValueExpression"] = (Expression<Func<decimal?>>)(() => number), ["Min"] = (decimal?)1, ["Max"] = (decimal?)100 }, "type=\"number\"", "min=\"1\"", "max=\"100\"", "value=\"5\"");
+await Check<NgNumericTextBox>(new() { ["Label"] = "Seats", ["Value"] = number, ["ValueExpression"] = (Expression<Func<decimal?>>)(() => number), ["Min"] = (decimal?)1, ["Max"] = (decimal?)100 }, "role=\"spinbutton\"", "aria-valuemin=\"1\"", "aria-valuemax=\"100\"", "value=\"5\"");
 await Check<NgCheckBox>(new() { ["Label"] = "Updates", ["Value"] = enabled, ["ValueExpression"] = (Expression<Func<bool>>)(() => enabled) }, "checked", "Updates");
 await Check<NgSwitch>(new() { ["Label"] = "Active", ["Value"] = enabled, ["ValueExpression"] = (Expression<Func<bool>>)(() => enabled) }, "role=\"switch\"", "checked");
 await Check<NgDropDownList>(new() { ["Label"] = "Team", ["Value"] = team, ["ValueExpression"] = (Expression<Func<string>>)(() => team), ["Items"] = options }, "Alpha", "disabled", "value=\"b\"");
@@ -46,6 +46,8 @@ await Check<NgDateInput>(new(){["Value"]=date,["ValueExpression"]=(Expression<Fu
 await Check<NgDatePicker>(new(){["Value"]=date,["ValueExpression"]=(Expression<Func<DateOnly?>>)(()=>date)},"2026-10-22", "Choose");
 await Check<NgTimePicker>(new(){["Value"]=time,["ValueExpression"]=(Expression<Func<TimeOnly?>>)(()=>time)},"09:30", "type=\"time\"");
 await Check<NgDateTimePicker>(new(){["Value"]=stamp,["ValueExpression"]=(Expression<Func<DateTime?>>)(()=>stamp)},"2026-10-22", "datetime-local");
+await Check<NgNumericTextBox>(new(){["Value"]=number,["ValueExpression"]=(Expression<Func<decimal?>>)(()=>number),["ReadOnly"]=true,["HelperText"]="Bounded amount"},"readonly","Increase Number","Bounded amount");
+await Check<NgTimePicker>(new(){["Value"]=time,["ValueExpression"]=(Expression<Func<TimeOnly?>>)(()=>time),["ReadOnly"]=true,["MinuteStep"]=15},"readonly","step=\"any\"");
 void Rule(bool condition,string name){if(!condition)throw new Exception(name);count++;Console.WriteLine($"PASS {name}");}
 Rule(NgFilterRules.Matches("Alpha","PH","contains",2)&&!NgFilterRules.Matches("Alpha","ph","startsWith",0)&&NgFilterRules.Matches("Alpha","HA","endsWith",0),"selection filter operators");
 Rule(!NgFilterRules.Matches("Alpha","a","contains",2),"selection minimum query length");
@@ -319,6 +321,14 @@ Reject(()=>NgChipRules.ValidateTabIndex(1),"chip tab rejects positive index");
 Reject(()=>NgChipRules.ValidateTabIndex(-2),"chip tab rejects other negative index");
 await Check<NgChipList>(new(){["Items"]=options,["Gap"]="lg",["TabIndex"]=-1},"ng-chip-gap-lg","data-chip-tab-index=\"-1\"");
 await Check<NgChip>(new(){["Label"]="Skipped",["TabIndex"]=-1,["OnClick"]=EventCallback.Factory.Create(new object(),()=>{})},"tabindex=\"-1\"");
+var numericProbe=new NumericProbe();
+Rule(numericProbe.Parse("2.5",out var numericValue)&&numericValue==2.5m,"numeric decimal accepted");
+foreach(var bad in new[]{"11","-1","1e2","NaN","1,2"}) Rule(!numericProbe.Parse(bad,out _),"numeric rejects "+bad);
+Rule(numericProbe.Parse("",out var emptyNumber)&&emptyNumber is null,"numeric optional empty");
+var timeProbe=new TimeProbe();
+Rule(!timeProbe.Parse("09:17")&&timeProbe.Parse("09:15"),"time minute interval validation");
+var stampProbe=new StampProbe();
+Rule(!stampProbe.Parse("2026-10-20 09:17")&&stampProbe.Parse("2026-10-20 09:15"),"datetime minute interval validation");
 Console.WriteLine($"{count} rendering and data/date-rule checks passed. Browser interaction requires the separate visual run.");
 sealed class NoBrowserJS : IJSRuntime {
  public ValueTask<TValue> InvokeAsync<TValue>(string identifier, object?[]? args) => throw new InvalidOperationException("JS must not execute in SSR");
@@ -328,3 +338,13 @@ sealed class NoBrowserJS : IJSRuntime {
 sealed class TestNavigation : NavigationManager { public TestNavigation()=>Initialize("http://localhost/","http://localhost/"); protected override void NavigateToCore(string uri,bool forceLoad){} }
 
 sealed class ChipRecord { public string Id {get;set;}=""; public string Name {get;set;}=""; public bool Pinned {get;set;} }
+
+sealed class NumericProbe:NgNumericTextBox {
+ public bool Parse(string text,out decimal? result){Min=0;Max=10;return TryParseValueFromString(text,out result,out _);}
+}
+sealed class TimeProbe:NgTimePicker {
+ public bool Parse(string text){MinuteStep=15;return TryParseValueFromString(text,out _,out _);}
+}
+sealed class StampProbe:NgDateTimePicker {
+ public bool Parse(string text){MinuteStep=15;return TryParseValueFromString(text,out _,out _);}
+}

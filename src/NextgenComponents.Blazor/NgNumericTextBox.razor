@@ -1,15 +1,46 @@
-<label class="ng-field" for="@Id">@Label
-<InputNumber @attributes="AdditionalAttributes" id="@Id" class="ng-input" TValue="decimal?" Value="Value" ValueChanged="ValueChanged" ValueExpression="ValueExpression" min="@Min" max="@Max" step="@Step" disabled="@Disabled" />
-</label>
+@inherits InputBase<decimal?>
+<div class="ng-field ng-text-field"><label for="@Id">@Label</label>
+<div class="ng-combo-editor">
+<input @attributes="AdditionalAttributes" id="@Id" type="text" inputmode="decimal" role="spinbutton" class="ng-input @CssClass" value="@CurrentValueAsString" aria-valuemin="@Min" aria-valuemax="@Max" aria-valuenow="@FormatValueAsString(Value)" aria-describedby="@DescriptionIds" readonly="@ReadOnly" disabled="@Disabled" @oninput="Changed" @onkeydown="KeyDown" aria-invalid="@(error is not null ? "true" : "false")" />
+@if(ShowSpinButtons) {
+<button type="button" class="ng-button" aria-label="Decrease @Label" disabled="@(Disabled || ReadOnly || !ValueChanged.HasDelegate)" @onclick="()=>Spin(-1)">−</button>
+<button type="button" class="ng-button" aria-label="Increase @Label" disabled="@(Disabled || ReadOnly || !ValueChanged.HasDelegate)" @onclick="()=>Spin(1)">+</button>
+}
+</div>
+@if(HelperText is not null){<span id="@(Id+"-help")" class="ng-field-help">@HelperText</span>}
+@if(error is not null){<span id="@(Id+"-error")" class="ng-field-error" role="status">@error</span>}
+</div>
 @code {
  [Parameter] public string Id { get; set; } = "ng-" + Guid.NewGuid().ToString("N");
- [Parameter] public string Label { get; set; } = "";
- [Parameter] public decimal? Value { get; set; }
- [Parameter] public EventCallback<decimal?> ValueChanged { get; set; }
- [Parameter] public System.Linq.Expressions.Expression<Func<decimal?>>? ValueExpression { get; set; }
+ [Parameter] public string Label { get; set; } = "Number";
  [Parameter] public decimal? Min { get; set; }
  [Parameter] public decimal? Max { get; set; }
  [Parameter] public decimal Step { get; set; } = 1;
  [Parameter] public bool Disabled { get; set; }
- [Parameter(CaptureUnmatchedValues=true)] public Dictionary<string,object>? AdditionalAttributes { get; set; }
+ [Parameter] public bool ReadOnly { get; set; }
+ [Parameter] public bool ShowSpinButtons { get; set; } = true;
+ [Parameter] public string? HelperText { get; set; }
+ private string? error;
+ private string DescriptionIds=>string.Join(" ",new[]{AdditionalAttributes?.GetValueOrDefault("aria-describedby")?.ToString(),HelperText is null?null:Id+"-help",error is null?null:Id+"-error"}.Where(s=>!string.IsNullOrWhiteSpace(s)));
+ protected override void OnParametersSet() { if(Step<=0 || Min>Max) throw new ArgumentException("Step must be positive and Min must not exceed Max."); }
+ private void Changed(ChangeEventArgs e) { if(!Disabled && !ReadOnly) { error=null; CurrentValueAsString=e.Value?.ToString(); } }
+ protected override string? FormatValueAsString(decimal? value)=>value?.ToString(System.Globalization.CultureInfo.InvariantCulture);
+ protected override bool TryParseValueFromString(string? text, out decimal? result, [System.Diagnostics.CodeAnalysis.NotNullWhen(false)] out string? validationErrorMessage) {
+  result=null; error=null;
+  if(!string.IsNullOrEmpty(text)) {
+   if(!decimal.TryParse(text,System.Globalization.NumberStyles.AllowLeadingSign | System.Globalization.NumberStyles.AllowDecimalPoint,System.Globalization.CultureInfo.InvariantCulture,out var n)) error="Enter a valid number using a decimal point.";
+   else if(n<Min || n>Max) error="Value is outside the allowed range.";
+   else result=n;
+  }
+  validationErrorMessage=error; return error is null;
+ }
+ private void KeyDown(KeyboardEventArgs e) { if(e.Key=="ArrowUp") Spin(1); else if(e.Key=="ArrowDown") Spin(-1); }
+ private void Spin(int direction) {
+  if(Disabled || ReadOnly || !ValueChanged.HasDelegate) return;
+  decimal next;
+  try { next=(Value ?? 0)+direction*Step; } catch(OverflowException) { next=direction>0?decimal.MaxValue:decimal.MinValue; }
+  if(Min is {} min) next=Math.Max(min,next);
+  if(Max is {} max) next=Math.Min(max,next);
+  error=null; CurrentValueAsString=FormatValueAsString(next);
+ }
 }

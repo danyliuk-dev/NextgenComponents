@@ -89,7 +89,9 @@ class NgNumericTextBox extends StatefulWidget {
   final double? min;
   final double? max;
   final ValueChanged<double?>? onChanged;
-  final bool enabled, required;
+  final bool enabled, required, readOnly, showSpinButtons;
+  final double step;
+  final String? helperText;
   const NgNumericTextBox({
     super.key,
     required this.label,
@@ -99,6 +101,10 @@ class NgNumericTextBox extends StatefulWidget {
     this.onChanged,
     this.enabled = true,
     this.required = false,
+    this.readOnly = false,
+    this.showSpinButtons = true,
+    this.step = 1,
+    this.helperText,
   });
   @override
   State<NgNumericTextBox> createState() => _NgNumericTextBoxState();
@@ -126,7 +132,10 @@ class _NgNumericTextBoxState extends State<NgNumericTextBox> {
   String? validate(String? input) {
     if (input == null || input.isEmpty)
       return widget.required ? '${widget.label} is required' : null;
-    final value = double.tryParse(input);
+    final value =
+        RegExp(r'^[+-]?(?:[0-9]+(?:\.[0-9]*)?|\.[0-9]+)$').hasMatch(input)
+        ? double.tryParse(input)
+        : null;
     if (value == null || !value.isFinite) return 'Enter a valid number';
     if (widget.min != null && value < widget.min!)
       return 'Minimum: ${widget.min}';
@@ -136,21 +145,69 @@ class _NgNumericTextBoxState extends State<NgNumericTextBox> {
   }
 
   @override
-  Widget build(BuildContext context) => TextFormField(
-    controller: controller,
-    enabled: widget.enabled,
-    keyboardType: const TextInputType.numberWithOptions(
-      decimal: true,
-      signed: true,
-    ),
-    decoration: InputDecoration(labelText: widget.label),
-    autovalidateMode: AutovalidateMode.onUserInteraction,
-    validator: validate,
-    onChanged: (text) {
-      if (validate(text) == null)
-        widget.onChanged?.call(text.isEmpty ? null : double.parse(text));
-    },
-  );
+  Widget build(BuildContext context) {
+    if (!widget.step.isFinite ||
+        widget.step <= 0 ||
+        (widget.min != null && !widget.min!.isFinite) ||
+        (widget.max != null && !widget.max!.isFinite) ||
+        (widget.min != null &&
+            widget.max != null &&
+            widget.min! > widget.max!)) {
+      throw ArgumentError(
+        'Step must be positive and finite; bounds must be finite and ordered',
+      );
+    }
+    return TextFormField(
+      controller: controller,
+      enabled: widget.enabled,
+      readOnly: widget.readOnly,
+      keyboardType: const TextInputType.numberWithOptions(
+        decimal: true,
+        signed: true,
+      ),
+      decoration: InputDecoration(
+        labelText: widget.label,
+        helperText: widget.helperText,
+        suffixIcon: widget.showSpinButtons
+            ? Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                    tooltip: 'Decrease ${widget.label}',
+                    onPressed: canSpin ? () => spin(-1) : null,
+                    icon: const Icon(Icons.remove),
+                  ),
+                  IconButton(
+                    tooltip: 'Increase ${widget.label}',
+                    onPressed: canSpin ? () => spin(1) : null,
+                    icon: const Icon(Icons.add),
+                  ),
+                ],
+              )
+            : null,
+      ),
+      autovalidateMode: AutovalidateMode.onUserInteraction,
+      validator: validate,
+      onChanged: (text) {
+        if (widget.enabled && !widget.readOnly && validate(text) == null)
+          widget.onChanged?.call(text.isEmpty ? null : double.parse(text));
+      },
+    );
+  }
+
+  bool get canSpin =>
+      widget.enabled && !widget.readOnly && widget.onChanged != null;
+  void spin(int direction) {
+    if (!canSpin) return;
+    var next = (widget.value ?? 0) + direction * widget.step;
+    if (!next.isFinite)
+      next = direction > 0 ? double.maxFinite : -double.maxFinite;
+    if (widget.min != null && next < widget.min!) next = widget.min!;
+    if (widget.max != null && next > widget.max!) next = widget.max!;
+    controller.text = format(next);
+    widget.onChanged?.call(next);
+  }
+
   @override
   void dispose() {
     controller.dispose();

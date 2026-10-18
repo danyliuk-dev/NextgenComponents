@@ -46,3 +46,10 @@ The Forms and dates gallery demonstrates these features with read-only text, sim
 AutoComplete, ComboBox and MultiSelect add contains/startsWith/endsWith filtering, minimum query lengths and read-only selection behavior. ComboBox adds clear, option templates and selected-label refresh. MultiSelect adds item/tag templates and optional atomic Select filtered / Clear selection actions. Disabled selections stay locked and count against the selection limit; a bulk addition over the limit changes nothing. Flutter validation follows the current controlled selection.
 
 Blazor AutoComplete still uses a browser datalist; Flutter uses a native Material overlay. ComboBox empty popups and disabled-match presentation differ. MultiSelect is still an inline checklist. Remote loading, virtualization, grouping, full popup APIs and accessibility/native certification remain explicit gaps. See [AutoComplete](manual/NgAutoComplete.md), [ComboBox](manual/NgComboBox.md), [MultiSelect](manual/NgMultiSelect.md) and the [parity matrix](parity.md).
+
+
+## Numeric and time editing (0.31)
+
+NumericTextBox validates inclusive bounds inside the component on both platforms, preserves invalid drafts, and offers labelled increment/decrement buttons with clamping. Typed values need not be multiples of Step. Blazor uses invariant decimal syntax; Flutter finite double syntax, without exponent/group separators. Read-only protects the editor and buttons.
+
+TimePicker and DateTimePicker add read-only and MinuteStep (positive divisors of 60). Intervals start at each hour, independent of Min. Native/Material popup minute choices remain unrestricted; off-step values are rejected. Flutter ignores stale popup results after parent rebuild, editing or disposal. Models supplied externally still require application validation. See the runnable manual examples for limits and usage.

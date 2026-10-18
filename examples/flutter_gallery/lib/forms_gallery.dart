@@ -111,7 +111,7 @@ class _FormsGalleryState extends State<FormsGallery> {
               ),
               const SizedBox(height: 40),
               Text(
-                'FLUTTER / FORMS AND DATES 0.30',
+                'FLUTTER / FORMS AND DATES 0.31',
                 style: TextStyle(color: Theme.of(context).colorScheme.primary),
               ),
               const SizedBox(height: 16),
@@ -267,6 +267,7 @@ class _FormsGalleryState extends State<FormsGallery> {
                           onChanged: (v) => setState(() => date = v),
                         ),
                         NgTimePicker(
+                          minuteStep: 15,
                           label: 'Start time',
                           value: time,
                           min: const TimeOfDay(hour: 8, minute: 0),
@@ -275,6 +276,7 @@ class _FormsGalleryState extends State<FormsGallery> {
                           onChanged: (v) => setState(() => time = v),
                         ),
                         NgDateTimePicker(
+                          minuteStep: 15,
                           label: 'Reminder',
                           value: reminder,
                           min: min,

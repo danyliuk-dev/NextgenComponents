@@ -2201,3 +2201,47 @@ Text('Selected IDs: ${selected.join(', ')}')]);
 '''
 
 D['NgComboBox']['notes'] += '\n\nFlutter caches the currently computed popup options until the next text edit. After replacing Items or filter configuration, edit the query to recompute suggestions. A stale callback for a removed, renamed or newly disabled option is rejected against the current collection.'
+
+
+# Numeric and time editing block, 0.31.
+D['NgNumericTextBox'].update(use='Edit bounded numbers with explicit increment controls, retained invalid drafts and read-only review.',
+notes="""Value/value is nullable and controlled by the parent. Blazor uses decimal; Flutter uses finite double, so binary floating-point rounding can appear. Use a dot decimal separator and optional leading sign. Grouping separators, exponent notation, NaN and infinity are rejected. Empty input emits null (Flutter required can reject it; Blazor use model validation attributes).
+
+Min/min and Max/max are inclusive edit constraints. Invalid or out-of-range drafts remain visible, do not replace the last valid model and block form validation. Bounds must be ordered; Step/step must be positive (and finite in Flutter). These constraints validate user edits, not arbitrary values supplied by the parent; validate application models independently.
+
+ShowSpinButtons/showSpinButtons defaults to true. Increase and Decrease add/subtract Step from the last valid model, using zero for null, then clamp to bounds. A spin deliberately replaces an invalid draft. Step does not restrict typed decimal precision or require multiples. Blazor also handles ArrowUp/ArrowDown; Flutter exposes labelled focusable buttons. Native browser number controls are replaced by a text editor so invalid drafts are preserved consistently.
+
+ReadOnly/readOnly permits copying but blocks editing and spin actions; Disabled/enabled=false blocks interaction. Missing change callbacks disable spin buttons. HelperText/helperText explains the field. Flutter replaces the draft when the parent supplies a changed value. In Blazor, InputBase retains parsing-failed text until correction. Use a new component key to discard an invalid draft reliably on either platform.
+
+Currency/percent formats, custom culture, precision rounding, acceleration and full screen-reader certification remain out of scope.""",
+blazor='''<NgForm Model="model" OnValidSubmit="Save">
+<NgNumericTextBox Label="Amount" @bind-Value="model.Amount" Min="0" Max="10" Step="0.5m" ReadOnly="readOnly" HelperText="0 to 10; buttons change by 0.5." />
+<NgButton Type="submit" Primary>Save amount</NgButton>
+</NgForm>
+<NgButton OnClick="Toggle">Read only</NgButton>
+<p>Accepted amount: @model.Amount</p><p>@status</p>
+@code {
+ private Draft model=new(); private bool readOnly; private string status="";
+ private void Toggle()=>readOnly=!readOnly;
+ private void Save()=>status="Saved amount: "+model.Amount;
+ private sealed class Draft { public decimal? Amount {get;set;}=2; }
+}''',
+dart='''double? amount=2; bool readOnly=false; String status='';
+@override
+Widget build(BuildContext context)=>Column(crossAxisAlignment:CrossAxisAlignment.start, children:[
+ NgForm(submitLabel:'Save amount',onValidSubmit:()=>setState(()=>status='Saved amount: $amount'),child:
+  NgNumericTextBox(label:'Amount',value:amount,min:0,max:10,step:0.5,readOnly:readOnly,
+   helperText:'0 to 10; buttons change by 0.5.',onChanged:(v)=>setState(()=>amount=v))),
+ NgButton(onPressed:()=>setState(()=>readOnly=!readOnly),child:const Text('Read only')),
+ Text('Accepted amount: $amount'),Text(status),
+]);''')
+for _name in ['NgTimePicker','NgDateTimePicker']:
+ D[_name]['notes'] += """
+
+MinuteStep/minuteStep defaults to 1. Set 1, 2, 3, 4, 5, 6, 10, 12, 15, 20, 30 or 60: the step must divide an hour. Accepted minutes are multiples from the start of each hour, independently of Min. Bounds are inclusive and must be ordered. For example, with 15-minute intervals, 09:15 is accepted and 09:17 remains an invalid draft. Typed invalid drafts do not replace the last valid model and block form submission. These rules validate edits; externally supplied model values must be validated by the application.
+
+ReadOnly/readOnly blocks typing and picker changes while keeping the value readable. Blazor retains the browser-native picker with unrestricted native stepping; the component validates the chosen result. Flutter's Material time dialog still displays all minutes and rejects an off-step selection with a message. This is interval validation, not a restricted-minute popup. A stale Flutter dialog result is discarded after editor changes, parent rebuild or disposal. Reset with a new key if the parent value is unchanged.
+
+Custom display formats, time zones, disabled time lists and popup templates remain gaps. No implicit UTC conversion occurs; values represent local wall-clock time."""
+ D[_name]['blazor']=D[_name]['blazor'].replace('Label="Date"', 'Label="Appointment" MinuteStep="15"')
+ D[_name]['dart']=D[_name]['dart'].replace('(value: value,', "(label: 'Appointment', minuteStep: 15, value: value,")

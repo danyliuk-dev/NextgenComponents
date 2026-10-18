@@ -4,7 +4,7 @@
 
 ## When to use it
 
-Edit a nullable number with range validation.
+Edit bounded numbers with explicit increment controls, retained invalid drafts and read-only review.
 
 ## Appearance and live example
 
@@ -14,22 +14,45 @@ The documentation launcher embeds these running examples here. Choose a framewor
 
 ## Behavior and practical rules
 
-Min/Max are inclusive. Invalid text must not silently submit the last valid number: submit through NgForm so the displayed draft is validated. Empty optional input is null. Blazor uses its declared numeric type and InputBase expression binding; Flutter uses double?. Keep storage precision and business rounding in the application. Do not treat a numeric input as a currency or timezone service.
+Value/value is nullable and controlled by the parent. Blazor uses decimal; Flutter uses finite double, so binary floating-point rounding can appear. Use a dot decimal separator and optional leading sign. Grouping separators, exponent notation, NaN and infinity are rejected. Empty input emits null (Flutter required can reject it; Blazor use model validation attributes).
+
+Min/min and Max/max are inclusive edit constraints. Invalid or out-of-range drafts remain visible, do not replace the last valid model and block form validation. Bounds must be ordered; Step/step must be positive (and finite in Flutter). These constraints validate user edits, not arbitrary values supplied by the parent; validate application models independently.
+
+ShowSpinButtons/showSpinButtons defaults to true. Increase and Decrease add/subtract Step from the last valid model, using zero for null, then clamp to bounds. A spin deliberately replaces an invalid draft. Step does not restrict typed decimal precision or require multiples. Blazor also handles ArrowUp/ArrowDown; Flutter exposes labelled focusable buttons. Native browser number controls are replaced by a text editor so invalid drafts are preserved consistently.
+
+ReadOnly/readOnly permits copying but blocks editing and spin actions; Disabled/enabled=false blocks interaction. Missing change callbacks disable spin buttons. HelperText/helperText explains the field. Flutter replaces the draft when the parent supplies a changed value. In Blazor, InputBase retains parsing-failed text until correction. Use a new component key to discard an invalid draft reliably on either platform.
+
+Currency/percent formats, custom culture, precision rounding, acceleration and full screen-reader certification remain out of scope.
 
 ## Blazor example
 
 ```razor
-<NgNumericTextBox Label="Quantity" Min="0" Max="100" Step="1" @bind-Value="quantity"/>
-@code { private decimal? quantity=5; }
+<NgForm Model="model" OnValidSubmit="Save">
+<NgNumericTextBox Label="Amount" @bind-Value="model.Amount" Min="0" Max="10" Step="0.5m" ReadOnly="readOnly" HelperText="0 to 10; buttons change by 0.5." />
+<NgButton Type="submit" Primary>Save amount</NgButton>
+</NgForm>
+<NgButton OnClick="Toggle">Read only</NgButton>
+<p>Accepted amount: @model.Amount</p><p>@status</p>
+@code {
+ private Draft model=new(); private bool readOnly; private string status="";
+ private void Toggle()=>readOnly=!readOnly;
+ private void Save()=>status="Saved amount: "+model.Amount;
+ private sealed class Draft { public decimal? Amount {get;set;}=2; }
+}
 ```
 
 ## Flutter example
 
 ```dart
-double? quantity = 5;
-Widget build(BuildContext context) => NgNumericTextBox(label: 'Quantity',
-  value: quantity, min: 0, max: 100, required: true,
-  onChanged: (v) => setState(() => quantity = v));
+double? amount=2; bool readOnly=false; String status='';
+@override
+Widget build(BuildContext context)=>Column(crossAxisAlignment:CrossAxisAlignment.start, children:[
+ NgForm(submitLabel:'Save amount',onValidSubmit:()=>setState(()=>status='Saved amount: $amount'),child:
+  NgNumericTextBox(label:'Amount',value:amount,min:0,max:10,step:0.5,readOnly:readOnly,
+   helperText:'0 to 10; buttons change by 0.5.',onChanged:(v)=>setState(()=>amount=v))),
+ NgButton(onPressed:()=>setState(()=>readOnly=!readOnly),child:const Text('Read only')),
+ Text('Accepted amount: $amount'),Text(status),
+]);
 ```
 
 ## Blazor parameters and events
@@ -39,15 +62,18 @@ Names are case-sensitive. `?` permits null. `EditorRequired` parameters are mark
 | Parameter | Type | Default / requirement | Purpose |
 |---|---|---|---|
 | `Id` | `string` | "ng-" + Guid.NewGuid().ToString("N") | See the behavior rules and model contract above. |
-| `Label` | `string` | "" | Visible label or accessible name. |
-| `Value` | `decimal?` | not set | Current value; see state ownership and model rules above. |
-| `ValueChanged` | `EventCallback<decimal?>` | not set | New value for the parent to store and pass back. |
-| `ValueExpression` | `System.Linq.Expressions.Expression<Func<decimal?>>?` | not set | Expression identifying the model field; @bind-Value supplies it automatically. |
+| `Label` | `string` | "Number" | Visible label or accessible name. |
 | `Min` | `decimal?` | not set | Inclusive minimum. |
 | `Max` | `decimal?` | not set | Inclusive maximum. |
 | `Step` | `decimal` | 1 | See the behavior rules and model contract above. |
 | `Disabled` | `bool` | false | Disable user interaction. |
-| `AdditionalAttributes` | `Dictionary<string,object>?` | not set | Additional HTML/ARIA attributes; do not bypass component validation. |
+| `ReadOnly` | `bool` | false | Prevent changes while retaining supported viewing actions. |
+| `ShowSpinButtons` | `bool` | true | See the behavior rules and model contract above. |
+| `HelperText` | `string?` | not set | See the behavior rules and model contract above. |
+| `Value` | `decimal?` | model value | Current field value. |
+| `ValueChanged` | `EventCallback<decimal?>` | not set | Value change callback. |
+| `ValueExpression` | `Expression<Func<decimal?>>` | required | Supplied by @bind-Value; pass explicitly with manual binding. |
+| `AdditionalAttributes` | HTML attribute dictionary | null | Extra HTML/ARIA attributes. |
 
 ## Flutter parameters and events
 
@@ -62,6 +88,10 @@ Names are case-sensitive. `?` permits null. `EditorRequired` parameters are mark
 | `onChanged` | `ValueChanged<double?>?` | Store the new value using setState or your state manager. |
 | `enabled` | `bool` | See the behavior rules and model contract above. |
 | `required` | `bool` | Require a nonempty/selected value during form validation. |
+| `readOnly` | `bool` | Prevent changes while retaining supported viewing actions. |
+| `showSpinButtons` | `bool` | See the behavior rules and model contract above. |
+| `step` | `double` | See the behavior rules and model contract above. |
+| `helperText` | `String?` | See the behavior rules and model contract above. |
 
 ```dart
 const NgNumericTextBox({
@@ -73,6 +103,10 @@ const NgNumericTextBox({
     this.onChanged,
     this.enabled = true,
     this.required = false,
+    this.readOnly = false,
+    this.showSpinButtons = true,
+    this.step = 1,
+    this.helperText,
   });
 ```
 
