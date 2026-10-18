@@ -2,8 +2,8 @@
 <PageTitle>Nextgen • Chips and tags</PageTitle>
 <div class="ng-scope gallery" data-ng-theme="@(dark?"dark":"light")"><main>
 <nav><a href="/code-examples">Code examples</a><strong>N NEXTGEN COMPONENTS</strong><div class="row"><a href="/">Foundation</a><NgSwitch Label="Dark theme" @bind-Value="dark"/></div></nav>
-<section class="hero"><p class="eyebrow">BLAZOR / CHIPS 0.18</p><h1>Small tags.<br/>Clear choices.</h1><p>Select topics, remove a tag, or show a compact status. Your application owns every change.</p></section>
-<section class="panel"><div class="row"><NgCheckBox Label="Disable controls" @bind-Value="disabled"/><NgCheckBox Label="Multiple selection" Value="multiple" ValueChanged="SetMultiple" ValueExpression="()=>multiple"/><NgCheckBox Label="Enable selection" @bind-Value="selectable"/><NgCheckBox Label="Protect Design from removal" @bind-Value="protect"/><NgButton OnClick="Reset">Reset tags</NgButton></div>
+<section class="hero"><p class="eyebrow">BLAZOR / CHIPS 0.19</p><h1>Small tags.<br/>Clear choices.</h1><p>Select topics, remove a tag, or show a compact status. Your application owns every change.</p></section>
+<section class="panel"><div class="row"><NgCheckBox Label="Disable controls" @bind-Value="disabled"/><NgCheckBox Label="Multiple selection" Value="multiple" ValueChanged="SetMultiple" ValueExpression="()=>multiple"/><NgCheckBox Label="Enable selection" @bind-Value="selectable"/><NgCheckBox Label="Protect Design from removal" @bind-Value="protect"/><NgButton OnClick="Reset">Reset tags</NgButton><NgButton OnClick="LoadCollection">Load 500 tags</NgButton></div>
 <h2>Appearance and content</h2>
 <div class="row"><NgDropDownList Label="Size" Items="sizes" @bind-Value="size"/><NgDropDownList Label="Rounded" Items="roundings" @bind-Value="rounded"/><NgDropDownList Label="Fill mode" Items="fills" @bind-Value="fill"/><NgCheckBox Label="Custom content" @bind-Value="custom"/></div>
 <p>Templates can show an icon, avatar or custom text. The accessible name always comes from the label.</p>
@@ -36,5 +36,6 @@
  private void SetSelected(IReadOnlyList<string> value){selected=value;message="Selection updated";}
  private void SetMultiple(bool value){multiple=value;if(!value)selected=selected.Take(1).ToArray();}
  private void Remove(string id){if(protect&&id=="design"){message="Design is protected";return;}items=items.Where(x=>x.Value!=id).ToArray();selected=selected.Where(x=>x!=id).ToArray();message=$"Removed {id}";}
+ private void LoadCollection(){items=Enumerable.Range(1,500).Select(i=>new NgOption($"tag{i}",$"Topic {i:D3}",i%10==0)).ToArray();selected=["tag1"];multiple=true;message="500 tags loaded; every tenth tag is disabled";}
  private void Reset(){items=Initial();selected=["design"];message="Tags restored";favourite=false;}
 }

@@ -22,7 +22,7 @@ Labels must be nonblank and at most 120 UTF-16 code units. Labels render as text
 
 ### Collection contract
 
-Use NgOption IDs, not display labels. IDs must be unique, 1–64 ASCII letters, digits, underscores or hyphens. Up to 50 items are supported. Selected IDs must be unique and exist in items; single mode accepts at most one. Multiple/multiple defaults to false. AllowEmpty/allowEmpty defaults to true; false prevents deselecting the last choice, but does not invent an initial selection or block application-owned removal. Callbacks return IDs in item order. No-op selection does not emit a callback. Empty items with empty value displays No tags.
+Use NgOption IDs, not display labels. IDs must be unique, 1–64 ASCII letters, digits, underscores or hyphens. Since 0.19, ChipList has no fixed item-count cap. Selected IDs must be unique and exist in items; single mode accepts at most one. Multiple/multiple defaults to false. AllowEmpty/allowEmpty defaults to true; false prevents deselecting the last choice, but does not invent an initial selection or block application-owned removal. Callbacks return IDs in item order. No-op selection does not emit a callback. Empty items with empty value displays No tags.
 
 When switching from multiple to single selection, normalize the selection in the same update. Disabled selected items stay visible; another single choice can replace them. The example below removes both the item and its selected ID atomically. For async removal, hold state until success and disable controls while pending.
 
@@ -39,7 +39,7 @@ OnClick/onClick is independent of selection: it runs after the selection callbac
 
 ItemTemplate/itemBuilder and LeadingTemplate/leadingBuilder receive NgOption. ItemAppearance/itemAppearance returns NgChipAppearance: its nullable size, rounded, fill mode and theme color override list defaults independently. CanRemove/canRemove hides the remove action for selected items without disabling selection. It defaults to true and still requires the list removal callback. This predicate controls availability; reject a permitted request by leaving parent state unchanged. Functions should be pure, because rendering can evaluate them again.
 
-This is a typed NgOption adapter contract, not Telerik generic model reflection or property-name binding. Map application data to NgOption and resolve additional fields by stable ID in the template. The current 50-item limit and keyboard/listbox differences are tracked in the feature parity matrix.
+This is a typed NgOption adapter contract, not Telerik generic model reflection or property-name binding. Map application data to NgOption and resolve additional fields by stable ID in the template. ChipList no longer has a fixed item-count cap; remaining keyboard/listbox differences are tracked in the feature parity matrix.
 
 
 ### Keyboard and focus (0.16)
@@ -73,14 +73,28 @@ Flutter: create one NgChipListController in the owning State, pass it as focusCo
 focus() requests the first enabled interactive chip, or the container for an empty/all-disabled list. The Flutter container shows a focus outline when it receives primary focus. focus(itemId: 'web') targets an enabled interactive chip by stable ID. It returns false without moving focus if detached, disposed, not yet laid out, or if the explicit ID is missing/disabled. A true return means a focus request was issued; Flutter applies it on the next frame. isAttached reports attachment, not layout readiness. Call from an event callback or a post-frame callback after mounting. Focus never changes selection or invokes click/removal callbacks. The example intentionally uses English custom labels; substitute application translations as needed.
 
 
+### Larger collections (0.19)
+
+The Web demo and interaction tests cover 500 tags, including disabled items, selection, Home/End and removal with focus recovery. Data-rule tests additionally cover 5,000 records in Flutter; that is not a rendering or performance guarantee. All chips are rendered eagerly and retain their own focus state. There is no virtualization, lazy fetching or automatic paging. For thousands of visible records, filter the application data or use a data-oriented control and measure on your target device. The limit removal does not imply unlimited practical capacity.
+
+IDs still must be unique and valid, labels must be nonblank and at most 120 UTF-16 code units, and selected IDs must exist in the current items. Update items and value together when filtering/removing records; do not leave selected IDs outside the supplied collection. Selection validation and membership checks use sets rather than rescanning the entire list per selected ID. ButtonGroup retains its 50-option limit and Drawer its 100-item limit.
+
+Flutter scrolls focused chips into ancestor scrollable viewports when keyboard or application focus moves. Put the list inside a bounded scrollable page, as in the gallery. Blazor uses native browser scrolling on focus. Keep templates display-only and prefer short labels. The Load 500 tags example resets selection deliberately; adapt this policy to your application.
+
+
 ## Blazor example
 
 ```razor
 <NgChipList @ref="topics" Label="Topics" Items="items" @bind-Value="selected"
     Multiple OnRemove="Remove" RemoveLabel="RemoveLabel" EmptyText="No topics available" />
 <NgButton OnClick="FocusTopics">Focus topics</NgButton>
+<NgButton OnClick="LoadTags">Load 500 tags</NgButton>
 @code {
     private NgChipList? topics;
+    private void LoadTags() {
+        items = Enumerable.Range(1, 500).Select(i => new NgOption($"tag{i}", $"Topic {i}", i % 10 == 0)).ToArray();
+        selected = ["tag1"];
+    }
     private IReadOnlyList<NgOption> items = [new("design", "Design"), new("web", "Web"), new("locked", "Locked", true)];
     private IReadOnlyList<string> selected = ["design"];
     private string RemoveLabel(NgOption item) => $"Dismiss {item.Label}";
@@ -100,7 +114,11 @@ List<NgOption> items = const [NgOption('design', 'Design'), NgOption('web', 'Web
 List<String> selected = ['design'];
 @override
 void dispose() { topics.dispose(); super.dispose(); }
-Widget build(BuildContext context) => Column(children: [
+void loadTags() => setState(() {
+  items = List.generate(500, (i) => NgOption('tag${i + 1}', 'Topic ${i + 1}', disabled: (i + 1) % 10 == 0));
+  selected = ['tag1'];
+});
+Widget build(BuildContext context) => SingleChildScrollView(child: Column(children: [
   NgChipList(label: 'Topics', focusController: topics, items: items,
     value: selected, multiple: true, emptyText: 'No topics available',
     removeLabelBuilder: (item) => 'Dismiss ${item.label}',
@@ -109,9 +127,10 @@ Widget build(BuildContext context) => Column(children: [
       items = items.where((item) => item.value != id).toList();
       selected = selected.where((value) => value != id).toList();
     })),
+  NgButton(onPressed: loadTags, child: const Text('Load 500 tags')),
   NgButton(onPressed: () => topics.focus(), child: const Text('Focus topics')),
   NgButton(onPressed: () => topics.focus(itemId: 'web'), child: const Text('Focus Web')),
-]);
+]));
 ```
 
 ## Blazor parameters and events

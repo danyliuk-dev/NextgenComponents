@@ -329,6 +329,7 @@ class _NgChipListState extends State<NgChipList> {
         item.value,
         widget.multiple,
         widget.allowEmpty,
+        maxItems: null,
       );
       if (!listEquals(next, widget.value)) widget.onChanged!(next);
     }
@@ -403,9 +404,8 @@ class _NgChipListState extends State<NgChipList> {
       ];
       nextId = candidates.where(enabled).firstOrNull?.value;
     }
-    final removed = nodes.keys
-        .where((id) => !widget.items.any((x) => x.value == id))
-        .toList();
+    final itemIds = widget.items.map((item) => item.value).toSet();
+    final removed = nodes.keys.where((id) => !itemIds.contains(id)).toList();
     final retired = [for (final id in removed) nodes.remove(id)!];
     if (restore || retired.isNotEmpty)
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -433,18 +433,24 @@ class _NgChipListState extends State<NgChipList> {
     widget.focusController?._attach(this);
     if (widget.emptyText.trim().isEmpty)
       throw ArgumentError("emptyText must be nonblank.");
-    NgSelectionRules.validate(widget.items, widget.value, widget.multiple);
+    NgSelectionRules.validate(
+      widget.items,
+      widget.value,
+      widget.multiple,
+      maxItems: null,
+    );
     NgChipRules.validate(
       widget.size,
       widget.rounded,
       widget.fillMode,
       widget.themeColor,
     );
+    final selectedIds = widget.value.toSet();
     final available = widget.items.where(enabled).toList();
     if (!available.any((item) => item.value == entryId)) {
       entryId =
           (available
-                      .where((item) => widget.value.contains(item.value))
+                      .where((item) => selectedIds.contains(item.value))
                       .firstOrNull ??
                   available.firstOrNull)
               ?.value;
@@ -492,7 +498,27 @@ class _NgChipListState extends State<NgChipList> {
                               onFocusChange: (focused) {
                                 if (mounted)
                                   setState(() {
-                                    if (focused) entryId = item.value;
+                                    if (focused) {
+                                      entryId = item.value;
+                                      WidgetsBinding.instance
+                                          .addPostFrameCallback((_) {
+                                            if (!context.mounted ||
+                                                !focus.hasFocus)
+                                              return;
+                                            Scrollable.ensureVisible(
+                                              context,
+                                              alignmentPolicy:
+                                                  ScrollPositionAlignmentPolicy
+                                                      .keepVisibleAtEnd,
+                                            );
+                                            Scrollable.ensureVisible(
+                                              context,
+                                              alignmentPolicy:
+                                                  ScrollPositionAlignmentPolicy
+                                                      .keepVisibleAtStart,
+                                            );
+                                          });
+                                    }
                                   });
                               },
                               onKeyEvent: (_, e) => key(item, e),
@@ -519,9 +545,7 @@ class _NgChipListState extends State<NgChipList> {
                                         label: item.label,
                                         removeLabel: widget.removeLabelBuilder
                                             ?.call(item),
-                                        value: widget.value.contains(
-                                          item.value,
-                                        ),
+                                        value: selectedIds.contains(item.value),
                                         selectable: widget.selectable,
                                         disabled:
                                             widget.disabled || item.disabled,
@@ -557,6 +581,7 @@ class _NgChipListState extends State<NgChipList> {
                                                       item.value,
                                                       widget.multiple,
                                                       widget.allowEmpty,
+                                                      maxItems: null,
                                                     );
                                                 if (!listEquals(
                                                   next,

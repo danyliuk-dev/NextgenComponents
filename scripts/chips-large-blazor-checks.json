@@ -1,0 +1,124 @@
+{
+  "actions": [
+    {
+      "evaluate": "(()=>{const e=[...document.querySelectorAll(\"button\")].find(e=>e.textContent.trim()==='Load 500 tags');e.setAttribute('data-load','yes')})()"
+    },
+    {
+      "clickSelector": "[data-load=yes]"
+    },
+    {
+      "evaluate": "new Promise(r=>setTimeout(r,1600))"
+    },
+    {
+      "evaluate": "(()=>{if(document.querySelectorAll('[data-chip-id]').length!==500)throw Error('count');document.querySelector('[aria-label=\"Topic 001\"]').scrollIntoView({block:'center',behavior:'instant'})})()"
+    },
+    {
+      "clickSelector": "[aria-label=\"Topic 001\"]"
+    },
+    {
+      "evaluate": "new Promise(r=>setTimeout(r,700))"
+    },
+    {
+      "method": "Input.dispatchKeyEvent",
+      "params": {
+        "type": "keyDown",
+        "key": "End",
+        "code": "End",
+        "windowsVirtualKeyCode": 35
+      }
+    },
+    {
+      "method": "Input.dispatchKeyEvent",
+      "params": {
+        "type": "keyUp",
+        "key": "End",
+        "code": "End",
+        "windowsVirtualKeyCode": 35
+      }
+    },
+    {
+      "evaluate": "new Promise(r=>setTimeout(r,700))"
+    },
+    {
+      "evaluate": "(()=>{const a=document.activeElement;const e=a.matches(\"[aria-label=\\\"Topic 499\\\"]\")?a:a.querySelector(\"[aria-label=\\\"Topic 499\\\"]\");if(!e)throw Error('focus '+a.outerHTML);const r=e.getBoundingClientRect();if(r.top<0||r.bottom>innerHeight)throw Error('focus not visible '+r.top+' '+r.bottom)})()"
+    },
+    {
+      "method": "Input.dispatchKeyEvent",
+      "params": {
+        "type": "keyDown",
+        "key": " ",
+        "code": "Space",
+        "windowsVirtualKeyCode": 32
+      }
+    },
+    {
+      "method": "Input.dispatchKeyEvent",
+      "params": {
+        "type": "keyUp",
+        "key": " ",
+        "code": "Space",
+        "windowsVirtualKeyCode": 32
+      }
+    },
+    {
+      "evaluate": "new Promise(r=>setTimeout(r,700))"
+    },
+    {
+      "evaluate": "(()=>{if(!document.body.textContent.includes('tag499'))throw Error('selection')})()"
+    },
+    {
+      "screenshot": "chips019-blazor-end.png"
+    },
+    {
+      "method": "Input.dispatchKeyEvent",
+      "params": {
+        "type": "keyDown",
+        "key": "Delete",
+        "code": "Delete",
+        "windowsVirtualKeyCode": 46
+      }
+    },
+    {
+      "method": "Input.dispatchKeyEvent",
+      "params": {
+        "type": "keyUp",
+        "key": "Delete",
+        "code": "Delete",
+        "windowsVirtualKeyCode": 46
+      }
+    },
+    {
+      "evaluate": "new Promise(r=>setTimeout(r,700))"
+    },
+    {
+      "evaluate": "(()=>{const a=document.activeElement;const e=a.matches(\"[aria-label=\\\"Topic 498\\\"]\")?a:a.querySelector(\"[aria-label=\\\"Topic 498\\\"]\");if(!e)throw Error('focus '+a.outerHTML);const r=e.getBoundingClientRect();if(r.top<0||r.bottom>innerHeight)throw Error('focus not visible '+r.top+' '+r.bottom)})()"
+    },
+    {
+      "method": "Input.dispatchKeyEvent",
+      "params": {
+        "type": "keyDown",
+        "key": "Home",
+        "code": "Home",
+        "windowsVirtualKeyCode": 36
+      }
+    },
+    {
+      "method": "Input.dispatchKeyEvent",
+      "params": {
+        "type": "keyUp",
+        "key": "Home",
+        "code": "Home",
+        "windowsVirtualKeyCode": 36
+      }
+    },
+    {
+      "evaluate": "new Promise(r=>setTimeout(r,700))"
+    },
+    {
+      "evaluate": "(()=>{const a=document.activeElement;const e=a.matches(\"[aria-label=\\\"Topic 001\\\"]\")?a:a.querySelector(\"[aria-label=\\\"Topic 001\\\"]\");if(!e)throw Error('focus '+a.outerHTML);const r=e.getBoundingClientRect();if(r.top<0||r.bottom>innerHeight)throw Error('focus not visible '+r.top+' '+r.bottom)})()"
+    },
+    {
+      "screenshot": "chips019-blazor-home.png"
+    }
+  ]
+}

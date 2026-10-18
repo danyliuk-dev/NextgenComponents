@@ -99,7 +99,7 @@ class _ChipsGalleryState extends State<ChipsGallery> {
               ),
               const SizedBox(height: 16),
               const Text(
-                'FLUTTER WEB / CHIPS 0.18 · Select topics, remove a tag, or show a compact status. Your application owns every change.',
+                'FLUTTER WEB / CHIPS 0.19 · Select topics, remove a tag, or show a compact status. Your application owns every change.',
               ),
               const SizedBox(height: 28),
               Wrap(
@@ -128,6 +128,22 @@ class _ChipsGalleryState extends State<ChipsGallery> {
                     label: 'Protect Design from removal',
                     value: protect,
                     onChanged: (v) => setState(() => protect = v),
+                  ),
+                  NgButton(
+                    onPressed: () => setState(() {
+                      items = List.generate(
+                        500,
+                        (index) => NgOption(
+                          'tag${index + 1}',
+                          'Topic ${(index + 1).toString().padLeft(3, '0')}',
+                          disabled: (index + 1) % 10 == 0,
+                        ),
+                      );
+                      selected = ['tag1'];
+                      multiple = true;
+                      message = '500 tags loaded; every tenth tag is disabled';
+                    }),
+                    child: const Text('Load 500 tags'),
                   ),
                   NgButton(
                     onPressed: () => setState(() {

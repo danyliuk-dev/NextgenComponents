@@ -1591,3 +1591,26 @@ Widget build(BuildContext context) => Column(children: [
 ]);'''
 
 D['NgChipList']['notes'] = D['NgChipList']['notes'].replace('Tab moves through enabled actions;', 'Tab enters the list once and then leaves; arrows move inside;').replace('focus() requests the first enabled interactive chip, or the container for an empty/all-disabled list.', 'focus() requests the first enabled interactive chip, or the container for an empty/all-disabled list. The Flutter container shows a focus outline when it receives primary focus.')
+
+# 0.19: remove the ChipList-specific collection cap, keeping other controls' limits.
+D['NgChipList']['notes'] = D['NgChipList']['notes'].replace('Up to 50 items are supported.', 'Since 0.19, ChipList has no fixed item-count cap.').replace('The current 50-item limit and keyboard/listbox differences are tracked in the feature parity matrix.', 'ChipList no longer has a fixed item-count cap; remaining keyboard/listbox differences are tracked in the feature parity matrix.')
+D['NgChipList']['notes'] += """
+
+### Larger collections (0.19)
+
+The Web demo and interaction tests cover 500 tags, including disabled items, selection, Home/End and removal with focus recovery. Data-rule tests additionally cover 5,000 records in Flutter; that is not a rendering or performance guarantee. All chips are rendered eagerly and retain their own focus state. There is no virtualization, lazy fetching or automatic paging. For thousands of visible records, filter the application data or use a data-oriented control and measure on your target device. The limit removal does not imply unlimited practical capacity.
+
+IDs still must be unique and valid, labels must be nonblank and at most 120 UTF-16 code units, and selected IDs must exist in the current items. Update items and value together when filtering/removing records; do not leave selected IDs outside the supplied collection. Selection validation and membership checks use sets rather than rescanning the entire list per selected ID. ButtonGroup retains its 50-option limit and Drawer its 100-item limit.
+
+Flutter scrolls focused chips into ancestor scrollable viewports when keyboard or application focus moves. Put the list inside a bounded scrollable page, as in the gallery. Blazor uses native browser scrolling on focus. Keep templates display-only and prefer short labels. The Load 500 tags example resets selection deliberately; adapt this policy to your application.
+"""
+D['NgChipList']['blazor'] = D['NgChipList']['blazor'].replace('<NgButton OnClick="FocusTopics">Focus topics</NgButton>', '<NgButton OnClick="FocusTopics">Focus topics</NgButton>\n<NgButton OnClick="LoadTags">Load 500 tags</NgButton>').replace('    private NgChipList? topics;', '''    private NgChipList? topics;
+    private void LoadTags() {
+        items = Enumerable.Range(1, 500).Select(i => new NgOption($"tag{i}", $"Topic {i}", i % 10 == 0)).ToArray();
+        selected = ["tag1"];
+    }''')
+D['NgChipList']['dart'] = D['NgChipList']['dart'].replace('Widget build(BuildContext context) => Column(children: [', '''void loadTags() => setState(() {
+  items = List.generate(500, (i) => NgOption('tag${i + 1}', 'Topic ${i + 1}', disabled: (i + 1) % 10 == 0));
+  selected = ['tag1'];
+});
+Widget build(BuildContext context) => SingleChildScrollView(child: Column(children: [''').replace("  NgButton(onPressed: () => topics.focus(),", "  NgButton(onPressed: loadTags, child: const Text('Load 500 tags')),\n  NgButton(onPressed: () => topics.focus(),").replace(']);', ']));')

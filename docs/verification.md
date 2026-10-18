@@ -315,3 +315,16 @@ Visible foreground Chrome on local Linux/iMac, separate coordinated profile/CDP 
 Evidence: [Blazor](screenshots/chips018-blazor-focus.png), [Flutter](screenshots/chips018-flutter-focus.png), [Flutter empty focus](screenshots/chips018-flutter-empty.png), [manual example](screenshots/chips018-manual.png). Repeat with `scripts/chips-labels-blazor-checks.json` on a fresh /chips page, or `scripts/chips-labels-flutter-checks.json` after opening Chips and tags with Flutter semantics enabled; run via `scripts/chrome-review.mjs` against a visible, coordinated Chrome on port 9341.
 
 Remaining: listbox/option semantics, generic model binding, collection-size limits, broader public accessibility hooks, full RTL layout and screen-reader validation. This release does not establish complete Telerik parity or native mobile support.
+
+
+## 0.19.0 — Larger ChipList collections and documentation refresh (2026-10-18)
+
+ChipList no longer uses the shared 50-option guard. Both implementations use set-based validation of IDs/selection; the Blazor rendering pass also caches selected membership, and Flutter uses sets for selected membership and retired focus-node detection. ButtonGroup's 50-item and Drawer's 100-item limits remain unchanged. Flutter reveals focused items in scrollable ancestors without scrolling an already visible chip unnecessarily.
+
+Validation: 201 Blazor checks and 95 Flutter tests passed, including 500-item rendering, disabled final items, End/Home, selection and removal recovery. Flutter data rules were also exercised with 5,000 items and invalid/duplicate IDs. Library analyzer and both Web builds passed; the existing Flutter CupertinoIcons warning remains. All 47 Blazor + 47 Flutter manual examples compile/analyze and 94 highlighted snippets are lossless.
+
+Visible Chrome on local Linux/iMac: both galleries loaded 500 tags, focused Topic 499 with End (500 is disabled), selected it with Space, deleted it and focused Topic 498, then returned to visible Topic 001 with Home. See [Blazor](screenshots/chips019-blazor-end.png) and [Flutter](screenshots/chips019-flutter-end.png). Replay `scripts/chips-large-blazor-checks.json` from /chips and `scripts/chips-large-flutter-checks.json` from Chips and tags with semantics enabled.
+
+Documentation was restyled at the user's request: component cover cards, platform badges, numbered section cards, softer navigation, updated API tables and code toolbars. Wrap lines preserves source content and has an explicit pressed state. Copy code, component search, heading links, normal desktop and 390px layouts were checked in visible Chrome; NgChipList and NgDataGrid pages were exercised. The English text, category tree and syntax highlighting remain. Screenshots: [desktop](screenshots/manual019-desktop.png), [wrapped code](screenshots/manual019-wrapped.png), [narrow layout](screenshots/manual019-narrow.png). Repeat `scripts/documentation-design-checks.json` via the CDP review helper. Styling is maintained in `scripts/documentation.css`.
+
+This is eager rendering, not virtualization or a performance guarantee for arbitrary collection sizes. Full listbox/option semantics, generic model binding, remaining accessibility hooks and screen-reader validation remain open. Native mobile is not part of this verification.

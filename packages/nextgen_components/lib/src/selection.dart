@@ -1,21 +1,34 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'components.dart';
-import 'navigation.dart';
 
 abstract final class NgSelectionRules {
+  static final _idPattern = RegExp(r'^[A-Za-z0-9_-]{1,64}$');
   static void validate(
     List<NgOption> items,
     List<String> value,
-    bool multiple,
-  ) {
-    NgNavigationRules.validateDrawer(items, 260);
-    if (items.length > 50 ||
-        (!multiple && value.length > 1) ||
+    bool multiple, {
+    int? maxItems = 50,
+  }) {
+    if (maxItems != null && (maxItems < 0 || items.length > maxItems)) {
+      throw ArgumentError('Option count exceeds the configured limit.');
+    }
+    final ids = <String>{};
+    for (final item in items) {
+      if (!_idPattern.hasMatch(item.value) ||
+          item.label.trim().isEmpty ||
+          item.label.length > 120 ||
+          !ids.add(item.value)) {
+        throw ArgumentError(
+          'Options require unique IDs and nonblank labels of at most 120 characters.',
+        );
+      }
+    }
+    if ((!multiple && value.length > 1) ||
         value.toSet().length != value.length ||
-        value.any((id) => !items.any((item) => item.value == id))) {
+        value.any((id) => !ids.contains(id))) {
       throw ArgumentError(
-        'Use at most 50 options and unique known selected IDs; single selection accepts at most one ID.',
+        'Use unique known selected IDs; single selection accepts at most one ID.',
       );
     }
   }
@@ -25,9 +38,10 @@ abstract final class NgSelectionRules {
     List<String> value,
     String id,
     bool multiple,
-    bool allowEmpty,
-  ) {
-    validate(items, value, multiple);
+    bool allowEmpty, {
+    int? maxItems = 50,
+  }) {
+    validate(items, value, multiple, maxItems: maxItems);
     if (!items.any((item) => item.value == id && !item.disabled))
       return List.unmodifiable(value);
     final selected = value.toSet();

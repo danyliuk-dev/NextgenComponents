@@ -33,7 +33,7 @@ rows = [
 ('Focus after removal / public focus API','Implemented / FocusAsync','Implemented / public controller','0.16: next/previous/container recovery; rejection, outside-focus protection and disabled neighbors tested. 0.18: Flutter public controller supports first-action and stable-ID focus, detachment and ownership guards.'),
 ('Selection listbox/option semantics','Remaining','Remaining','One Tab entry implemented; semantic group still differs from reference listbox. Installed Flutter SDK has no listbox/option roles. Do not claim ARIA parity.'),
 ('Generic field-name model binding','Remaining','Remaining','NgOption adapters only; additional record fields resolved by stable ID.'),
-('Large collections','Remaining','Remaining','Current 50-item guard is an explicit limitation; reference has no documented equivalent cap.'),
+('Large collections','No fixed cap / tested 500','No fixed cap / tested 500','0.19 removes the ChipList 50-item guard. Eager rendering; no virtualization or unlimited performance claim. Other component caps unchanged.'),
 ('Public ID/class/tab index/labelled-by hooks','Remaining','Remaining','Current Label naming only; platform-specific APIs need a documented equivalent.'),
 ('RTL/localized action labels','Label hooks implemented','Label hooks implemented','0.18: configurable remove/empty labels; application supplies translations. RTL arrows tested; full RTL layout and screen-reader audit remain.'),
 ('Screen readers / WCAG certification','Not verified','Not verified','Browser inspection is not certification. Keyboard/focus semantics must be completed first.'),

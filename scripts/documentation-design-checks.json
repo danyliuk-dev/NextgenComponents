@@ -1,0 +1,91 @@
+{
+  "actions": [
+    {
+      "method": "Page.navigate",
+      "params": {
+        "url": "http://127.0.0.1:5182/docs/manual/NgChipList.md"
+      }
+    },
+    {
+      "evaluate": "new Promise(r=>setTimeout(r,700))"
+    },
+    {
+      "evaluate": "(()=>{if(document.querySelectorAll('.doc-section').length<6)throw Error('sections');if(document.querySelectorAll('.code-frame').length!==3)throw Error('code examples');if(document.documentElement.scrollWidth>innerWidth)throw Error('overflow');return document.querySelector('h1').textContent})()"
+    },
+    {
+      "screenshot": "manual019-desktop.png"
+    },
+    {
+      "evaluate": "document.querySelector('#flutter-example').scrollIntoView({behavior:'instant',block:'start'})"
+    },
+    {
+      "evaluate": "new Promise(r=>setTimeout(r,200))"
+    },
+    {
+      "screenshot": "manual019-code.png"
+    },
+    {
+      "evaluate": "(()=>{const section=document.querySelector('#flutter-example').closest('.doc-section');section.scrollIntoView({behavior:'instant'});section.querySelector('button[aria-pressed]').setAttribute('data-wrap','yes');section.querySelector('button[aria-label^=Copy]').setAttribute('data-copy','yes');const s=document.querySelector('#component-search');s.value='chip';s.dispatchEvent(new Event('input'));if([...document.querySelectorAll('[data-component]')].filter(e=>!e.hidden).length!==2)throw Error('search');s.value='';s.dispatchEvent(new Event('input'));for(const a of document.querySelectorAll('.toc a'))if(!document.getElementById(a.hash.slice(1)))throw Error('anchor');})()"
+    },
+    {
+      "clickSelector": "[data-wrap=yes]"
+    },
+    {
+      "evaluate": "new Promise(r=>setTimeout(r,300))"
+    },
+    {
+      "evaluate": "(()=>{const f=document.querySelector('[data-wrap]').closest('.code-frame');if(!f.classList.contains('wrapped')||f.querySelector('pre').scrollWidth>f.querySelector('pre').clientWidth+1)throw Error('wrap');})()"
+    },
+    {
+      "clickSelector": "[data-copy=yes]"
+    },
+    {
+      "evaluate": "new Promise(r=>setTimeout(r,300))"
+    },
+    {
+      "evaluate": "(()=>{if(document.querySelector('[data-copy]').textContent!=='Copied')throw Error('copy');})()"
+    },
+    {
+      "screenshot": "manual019-wrapped.png"
+    },
+    {
+      "method": "Emulation.setDeviceMetricsOverride",
+      "params": {
+        "width": 390,
+        "height": 844,
+        "deviceScaleFactor": 1,
+        "mobile": false
+      }
+    },
+    {
+      "method": "Page.reload"
+    },
+    {
+      "evaluate": "new Promise(r=>setTimeout(r,500))"
+    },
+    {
+      "evaluate": "(()=>{window.scrollTo({top:0,behavior:'instant'});if(document.documentElement.scrollWidth>innerWidth)throw Error('mobile overflow');if(document.querySelector('.documentation-nav').open)throw Error('mobile navigation expanded');})()"
+    },
+    {
+      "screenshot": "manual019-narrow.png"
+    },
+    {
+      "method": "Emulation.clearDeviceMetricsOverride"
+    },
+    {
+      "method": "Page.navigate",
+      "params": {
+        "url": "http://127.0.0.1:5182/docs/manual/NgDataGrid.md"
+      }
+    },
+    {
+      "evaluate": "new Promise(r=>setTimeout(r,500))"
+    },
+    {
+      "evaluate": "(()=>{if(document.querySelector('h1').textContent!=='NgDataGrid')throw Error('other component');if(document.querySelectorAll('.doc-section').length<6)throw Error('sections');})()"
+    },
+    {
+      "screenshot": "manual019-grid.png"
+    }
+  ]
+}

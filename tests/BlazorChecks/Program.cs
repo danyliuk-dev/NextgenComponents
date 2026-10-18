@@ -245,6 +245,14 @@ Rule(chipListHtml.Contains("Remove Alpha")&&!chipListHtml.Contains("Remove Beta"
 await Check<NgChip>(new(){["Label"]="Alpha",["RemoveLabel"]="Dismiss <Alpha>",["OnRemove"]=EventCallback.Factory.Create(new object(),()=>{})},"aria-label=\"Dismiss &lt;Alpha&gt;\"");
 await Check<NgChipList>(new(){["Items"]=options,["RemoveLabel"]=(Func<NgOption,string>)(item=>$"Dismiss {item.Label}"),["OnRemove"]=EventCallback.Factory.Create<string>(new object(),_=>{})},"Dismiss Alpha","Dismiss Beta");
 await Check<NgChipList>(new(){["Items"]=Array.Empty<NgOption>(),["EmptyText"]="No <topics> available"},"No &lt;topics&gt; available");
+var largeChips=Enumerable.Range(1,500).Select(i=>new NgOption($"tag{i}",$"Topic {i}",i%10==0)).ToArray();
+var largeValue=largeChips.Where(x=>!x.Disabled).Select(x=>x.Value).ToArray();
+NgSelectionRules.Validate(largeChips,largeValue,true,maxItems:null);
+Rule(NgSelectionRules.Toggle(largeChips,largeValue,"tag499",true,true,maxItems:null).Count==449,"large chip selection removes one ID");
+Rule(NgSelectionRules.Toggle(largeChips,largeValue,"tag500",true,true,maxItems:null).SequenceEqual(largeValue),"large chip disabled selection unchanged");
+Reject(()=>NgSelectionRules.Validate(largeChips,["missing"],true,maxItems:null),"large collection rejects unknown selection");
+Reject(()=>NgSelectionRules.Validate([..largeChips,largeChips[0]],[],true,maxItems:null),"large collection rejects duplicate IDs");
+await Check<NgChipList>(new(){["Items"]=largeChips,["Value"]=largeValue,["Multiple"]=true},"Topic 500","data-chip-id=\"tag499\"","ng-chip-selected");
 Console.WriteLine($"{count} rendering and data/date-rule checks passed. Browser interaction requires the separate visual run.");
 sealed class NoBrowserJS : IJSRuntime {
  public ValueTask<TValue> InvokeAsync<TValue>(string identifier, object?[]? args) => throw new InvalidOperationException("JS must not execute in SSR");

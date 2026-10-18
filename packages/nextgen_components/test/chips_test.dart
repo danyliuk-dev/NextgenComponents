@@ -4,6 +4,137 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:nextgen_components/nextgen_components.dart';
 
 void main() {
+  test(
+    'uncapped selection validates large collections without weakening ID rules',
+    () {
+      final items = List.generate(
+        5000,
+        (i) => NgOption('tag$i', 'Topic $i', disabled: i == 4999),
+      );
+      final selected = items.take(4999).map((x) => x.value).toList();
+      NgSelectionRules.validate(items, selected, true, maxItems: null);
+      expect(
+        NgSelectionRules.toggle(
+          items,
+          selected,
+          'tag4998',
+          true,
+          true,
+          maxItems: null,
+        ).length,
+        4998,
+      );
+      expect(
+        NgSelectionRules.toggle(
+          items,
+          selected,
+          'tag4999',
+          true,
+          true,
+          maxItems: null,
+        ),
+        selected,
+      );
+      expect(
+        () => NgSelectionRules.validate(items, [], true),
+        throwsArgumentError,
+      );
+      expect(
+        () => NgSelectionRules.validate(
+          [...items, items.first],
+          [],
+          true,
+          maxItems: null,
+        ),
+        throwsArgumentError,
+      );
+      expect(
+        () =>
+            NgSelectionRules.validate(items, ['missing'], true, maxItems: null),
+        throwsArgumentError,
+      );
+      expect(
+        () => NgSelectionRules.validate(
+          items,
+          ['tag0', 'tag0'],
+          true,
+          maxItems: null,
+        ),
+        throwsArgumentError,
+      );
+      expect(
+        () => NgSelectionRules.validate(
+          [const NgOption('bad id', 'Topic')],
+          [],
+          true,
+          maxItems: null,
+        ),
+        throwsArgumentError,
+      );
+    },
+  );
+
+  testWidgets(
+    '500 chips retain End Home selection removal and scroll into view',
+    (t) async {
+      var items = List.generate(
+        500,
+        (i) => NgOption('tag$i', 'Topic $i', disabled: i == 499),
+      );
+      var selected = <String>[];
+      final controller = NgChipListController();
+      final scroll = ScrollController();
+      await t.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: SingleChildScrollView(
+              controller: scroll,
+              child: StatefulBuilder(
+                builder: (context, update) => NgChipList(
+                  items: items,
+                  value: selected,
+                  multiple: true,
+                  focusController: controller,
+                  onChanged: (v) => update(() => selected = v),
+                  onRemove: (id) => update(() {
+                    items = items.where((x) => x.value != id).toList();
+                    selected = selected.where((x) => x != id).toList();
+                  }),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      expect(find.byType(NgChip), findsNWidgets(500));
+      expect(controller.focus(), isTrue);
+      await t.pumpAndSettle();
+      await t.sendKeyEvent(LogicalKeyboardKey.end);
+      await t.pumpAndSettle();
+      expect(FocusManager.instance.primaryFocus?.debugLabel, 'Chip tag498');
+      expect(scroll.offset, greaterThan(0));
+      final last = t.getRect(find.text('Topic 498'));
+      expect(last.top, greaterThanOrEqualTo(0));
+      expect(last.bottom, lessThanOrEqualTo(600));
+      await t.sendKeyEvent(LogicalKeyboardKey.space);
+      await t.pumpAndSettle();
+      expect(selected, ['tag498']);
+      await t.sendKeyEvent(LogicalKeyboardKey.delete);
+      await t.pumpAndSettle();
+      expect(FocusManager.instance.primaryFocus?.debugLabel, 'Chip tag497');
+      expect(selected, isEmpty);
+      expect(items.length, 499);
+      await t.sendKeyEvent(LogicalKeyboardKey.home);
+      await t.pumpAndSettle();
+      expect(FocusManager.instance.primaryFocus?.debugLabel, 'Chip tag0');
+      expect(t.getRect(find.text('Topic 0')).top, greaterThanOrEqualTo(0));
+      expect(scroll.offset, lessThan(20));
+      await t.pumpWidget(const SizedBox());
+      controller.dispose();
+      scroll.dispose();
+    },
+  );
+
   testWidgets(
     'public focus controller targets IDs, swaps and detaches safely',
     (t) async {
