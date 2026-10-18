@@ -1,9 +1,10 @@
 <span id="@Id" @onkeydown="KeyDown" class="@Class ng-chip ng-chip-@Size ng-chip-rounded-@Rounded ng-chip-@FillMode ng-chip-tone-@ThemeColor @(Value?"ng-chip-selected":"") @(Disabled?"ng-chip-disabled":"")">
-@if(Selectable||OnClick.HasDelegate){<button class="ng-chip-label" type="button" tabindex="@TabIndex" aria-label="@Label" aria-labelledby="@AriaLabelledBy" aria-describedby="@AriaDescribedBy" aria-pressed="@(Selectable?(Value?"true":"false"):null)" disabled="@(Disabled||(!ValueChanged.HasDelegate&&!OnClick.HasDelegate))" @onclick="Activate">@Content</button>}
+@if(Selectable||OnClick.HasDelegate){<button class="ng-chip-label" type="button" tabindex="@TabIndex" aria-label="@Label" aria-labelledby="@AriaLabelledBy" aria-describedby="@AriaDescribedBy" role="@(ListOption?"option":null)" aria-selected="@(ListOption?(Value?"true":"false"):null)" aria-pressed="@(Selectable&&!ListOption?(Value?"true":"false"):null)" disabled="@(Disabled||(!ValueChanged.HasDelegate&&!OnClick.HasDelegate))" @onclick="Activate">@Content</button>}
 else {<span role="@(AriaLabelledBy is not null||AriaDescribedBy is not null?"group":null)" class="ng-chip-label" aria-label="@Label" aria-labelledby="@AriaLabelledBy" aria-describedby="@AriaDescribedBy">@Content</span>}
 @if(OnRemove.HasDelegate){<button class="ng-chip-remove" aria-describedby="@AriaDescribedBy" type="button" tabindex="@TabIndex" aria-label="@(RemoveLabel??$"Remove {Label}")" disabled="@Disabled" @onclick="Remove"><span aria-hidden="true">@if(RemoveContent is not null){@RemoveContent}else{<text>×</text>}</span></button>}
 </span>
 @code {
+ [CascadingParameter(Name="NextgenChipListOption")] public bool ListOption {get;set;}
  [Parameter] public int TabIndex {get;set;}
 
  [Parameter] public string? Id {get;set;}

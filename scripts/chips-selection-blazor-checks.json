@@ -1,0 +1,197 @@
+{
+  "actions": [
+    {
+      "method": "Page.navigate",
+      "params": {
+        "url": "http://127.0.0.1:5180/chips"
+      }
+    },
+    {
+      "evaluate": "new Promise(r=>setTimeout(r,1800))"
+    },
+    {
+      "evaluate": "document.querySelector('#selection-example').scrollIntoView({block:'center',behavior:'instant'})"
+    },
+    {
+      "clickSelector": "input[name=semanticRemoval]"
+    },
+    {
+      "clickSelector": "input[name=semanticRemoval]"
+    },
+    {
+      "evaluate": "new Promise(r=>setTimeout(r,250))"
+    },
+    {
+      "method": "Input.dispatchKeyEvent",
+      "params": {
+        "type": "keyDown",
+        "key": "Tab",
+        "code": "Tab",
+        "windowsVirtualKeyCode": 9
+      }
+    },
+    {
+      "method": "Input.dispatchKeyEvent",
+      "params": {
+        "type": "keyUp",
+        "key": "Tab",
+        "code": "Tab",
+        "windowsVirtualKeyCode": 9
+      }
+    },
+    {
+      "evaluate": "new Promise(r=>setTimeout(r,250))"
+    },
+    {
+      "evaluate": "(()=>{const root=document.querySelector('#category-list');const active=document.activeElement;const id=active.closest('[data-chip-id]')?.dataset.chipId;if(id!=='web'||active.getAttribute('aria-selected')!=='true')throw Error('selected initial entry');return 'PASS';})()"
+    },
+    {
+      "method": "Input.dispatchKeyEvent",
+      "params": {
+        "type": "keyDown",
+        "key": "ArrowLeft",
+        "code": "ArrowLeft",
+        "windowsVirtualKeyCode": 37
+      }
+    },
+    {
+      "method": "Input.dispatchKeyEvent",
+      "params": {
+        "type": "keyUp",
+        "key": "ArrowLeft",
+        "code": "ArrowLeft",
+        "windowsVirtualKeyCode": 37
+      }
+    },
+    {
+      "evaluate": "new Promise(r=>setTimeout(r,250))"
+    },
+    {
+      "evaluate": "(()=>{const root=document.querySelector('#category-list');const active=document.activeElement;const id=active.closest('[data-chip-id]')?.dataset.chipId;if(id!=='design'||root.querySelectorAll('[aria-selected=true]').length!==1)throw Error('skip disabled without selecting');return 'PASS';})()"
+    },
+    {
+      "method": "Input.dispatchKeyEvent",
+      "params": {
+        "type": "keyDown",
+        "key": " ",
+        "code": "Space",
+        "windowsVirtualKeyCode": 32
+      }
+    },
+    {
+      "method": "Input.dispatchKeyEvent",
+      "params": {
+        "type": "keyUp",
+        "key": " ",
+        "code": "Space",
+        "windowsVirtualKeyCode": 32
+      }
+    },
+    {
+      "evaluate": "new Promise(r=>setTimeout(r,250))"
+    },
+    {
+      "evaluate": "(()=>{const root=document.querySelector('#category-list');const active=document.activeElement;const id=active.closest('[data-chip-id]')?.dataset.chipId;if(root.querySelectorAll('[aria-selected=true]').length!==2)throw Error('multiple selection');return 'PASS';})()"
+    },
+    {
+      "evaluate": "document.querySelector('input[name=semanticRemoval]').click()"
+    },
+    {
+      "evaluate": "new Promise(r=>setTimeout(r,250))"
+    },
+    {
+      "evaluate": "(()=>{const root=document.querySelector('#category-list');const active=document.activeElement;const id=active.closest('[data-chip-id]')?.dataset.chipId;if(root.role!=='group'||root.querySelector('[role=option]')||root.querySelectorAll('[aria-pressed=true]').length!==2||id!=='design')throw Error('group transition preserves state/focus');return 'PASS';})()"
+    },
+    {
+      "evaluate": "document.querySelector('input[name=semanticRemoval]').click()"
+    },
+    {
+      "evaluate": "new Promise(r=>setTimeout(r,250))"
+    },
+    {
+      "evaluate": "(()=>{const root=document.querySelector('#category-list');const active=document.activeElement;const id=active.closest('[data-chip-id]')?.dataset.chipId;if(root.role!=='listbox'||root.querySelectorAll('[aria-selected=true]').length!==2||root.querySelector('[aria-pressed]')||id!=='design')throw Error('listbox transition preserves state/focus');return 'PASS';})()"
+    },
+    {
+      "evaluate": "document.querySelector('input[name=semanticMultiple]').click()"
+    },
+    {
+      "evaluate": "new Promise(r=>setTimeout(r,250))"
+    },
+    {
+      "evaluate": "(()=>{const root=document.querySelector('#category-list');const active=document.activeElement;const id=active.closest('[data-chip-id]')?.dataset.chipId;if(root.hasAttribute('aria-multiselectable')||root.querySelectorAll('[aria-selected=true]').length!==1)throw Error('single mode');return 'PASS';})()"
+    },
+    {
+      "method": "Input.dispatchKeyEvent",
+      "params": {
+        "type": "keyDown",
+        "key": "End",
+        "code": "End",
+        "windowsVirtualKeyCode": 35
+      }
+    },
+    {
+      "method": "Input.dispatchKeyEvent",
+      "params": {
+        "type": "keyUp",
+        "key": "End",
+        "code": "End",
+        "windowsVirtualKeyCode": 35
+      }
+    },
+    {
+      "evaluate": "new Promise(r=>setTimeout(r,250))"
+    },
+    {
+      "method": "Input.dispatchKeyEvent",
+      "params": {
+        "type": "keyDown",
+        "key": "Enter",
+        "code": "Enter",
+        "windowsVirtualKeyCode": 13,
+        "text": "\r"
+      }
+    },
+    {
+      "method": "Input.dispatchKeyEvent",
+      "params": {
+        "type": "keyUp",
+        "key": "Enter",
+        "code": "Enter",
+        "windowsVirtualKeyCode": 13
+      }
+    },
+    {
+      "evaluate": "new Promise(r=>setTimeout(r,250))"
+    },
+    {
+      "evaluate": "(()=>{const root=document.querySelector('#category-list');const active=document.activeElement;const id=active.closest('[data-chip-id]')?.dataset.chipId;if(id!=='docs'||active.getAttribute('aria-selected')!=='true'||root.querySelectorAll('[aria-selected=true]').length!==1)throw Error('single selection');return 'PASS';})()"
+    },
+    {
+      "method": "Input.dispatchKeyEvent",
+      "params": {
+        "type": "keyDown",
+        "key": "Home",
+        "code": "Home",
+        "windowsVirtualKeyCode": 36
+      }
+    },
+    {
+      "method": "Input.dispatchKeyEvent",
+      "params": {
+        "type": "keyUp",
+        "key": "Home",
+        "code": "Home",
+        "windowsVirtualKeyCode": 36
+      }
+    },
+    {
+      "evaluate": "new Promise(r=>setTimeout(r,250))"
+    },
+    {
+      "evaluate": "(()=>{const root=document.querySelector('#category-list');const active=document.activeElement;const id=active.closest('[data-chip-id]')?.dataset.chipId;if(id!=='design'||root.querySelector('[aria-selected=true]').getAttribute('aria-label')!=='Documentation')throw Error('focus distinct from selection');return 'PASS';})()"
+    },
+    {
+      "screenshot": "chips024-blazor.png"
+    }
+  ]
+}

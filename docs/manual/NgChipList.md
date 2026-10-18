@@ -50,7 +50,7 @@ After accepted removal of the focused item, focus moves to the next enabled item
 
 Since 0.17, the list has one Tab stop. On first entry, focus goes to the first selected enabled interactive chip, otherwise the first available chip. Arrows change the remembered entry without changing selection. Tab leaves the list; Shift+Tab returns to that entry. If it disappears or becomes disabled, the entry falls back to a selected enabled chip or the first available chip. Empty and fully disabled lists add no Tab stop. Use Delete/Backspace to request removal; removal icons remain available to pointer and assistive-technology actions. Custom templates should contain display content, not extra interactive controls.
 
-Single Tab entry does not imply full listbox semantics: Blazor still exposes a group of pressed buttons, Flutter its native chip semantics. Flutter SDK used for this release lacks listbox/option roles. Those roles, public accessibility hooks and screen-reader validation remain explicit gaps in the parity matrix.
+Single Tab entry does not imply full listbox semantics: Blazor uses listbox/options for selection-only lists since 0.24 and a group of pressed buttons for removable lists; Flutter retains native chip semantics. Flutter SDK used for this release lacks listbox/option roles. Remaining role differences and screen-reader validation are tracked in the parity matrix; public identity, naming and help hooks are available since 0.22.
 
 Blazor exposes FocusAsync() on NgChipList via @ref after interactive rendering. It focuses the first available action or the list container. The JS module is initialized automatically and disposed with the component. Flutter owns and disposes internal focus nodes; use the public NgChipListController described below.
 
@@ -114,7 +114,7 @@ Flutter semanticIdentifier identifies a semantics node for automation; it is not
 
 Flutter has no DOM Class or aria-labelledby relationship in this API. Use the existing theme/appearance parameters for styling. For a shared heading, keep one application string and pass it to Text and the list's label; update both together. Use semanticHint for concise guidance and show the same text visibly when it helps users. A hint is not an exact aria-describedby equivalent; assistive-technology announcement varies by platform. Application code owns translations. Do not include secrets or personal data in automation identifiers.
 
-The examples wire contextual help to the list and a standalone command. The Business records demo can update its heading and guidance at runtime while retaining selection and identity. Browser accessibility-tree inspection and widget tests verify the exported information and actions; screen-reader testing/certification remains separate. TabIndex supports -1 and 0 since 0.23; listbox/option roles remain open.
+The examples wire contextual help to the list and a standalone command. The Business records demo can update its heading and guidance at runtime while retaining selection and identity. Browser accessibility-tree inspection and widget tests verify the exported information and actions; screen-reader testing/certification remains separate. TabIndex supports -1 and 0 since 0.23; selection-only Blazor listbox semantics are available since 0.24.
 
 
 ### Participation in Tab navigation (0.23)
@@ -133,9 +133,26 @@ Gap/gap accepts sm (4), md (8, default) and lg (12). Blazor uses CSS pixels; Flu
 Change the preset at runtime without rebuilding records. The Reading direction demo combines a gap selector, RTL switching, skipped Tab traversal and explicit focus. Flutter focus frames add their existing internal padding around each chip, so the visible border-to-border distance is not necessarily identical to Blazor even with equal spacing tokens. Use the controls at narrow widths to assess wrapping with your labels.
 
 
+### Selection semantics and removal (0.24)
+
+Blazor automatically exposes role=listbox when Selectable is true and no OnRemove callback is supplied. Each main action becomes role=option with aria-selected=true/false instead of aria-pressed. The list declares horizontal orientation; Multiple=true adds aria-multiselectable=true. Single selection omits that attribute. Label or AriaLabelledBy names the list and AriaDescribedBy links guidance. Disabled options remain visible to accessibility tools but are skipped by keyboard navigation.
+
+Arrow keys move focus without changing selection. Enter/Space requests selection through ValueChanged; the parent must assign the new value. One remembered Tab entry initially prefers an enabled selected option. Home/End, RTL, TabIndex and FocusAsync keep their existing behavior. This release does not implement type-ahead, range selection or screen-reader certification.
+
+Supplying OnRemove switches the entire list to role=group, even when CanRemove currently rejects every item. Main actions then expose pressed state and removal remains a separately named button. Removing the callback restores listbox semantics without resetting selected IDs or focus. Selectable=false also uses group semantics. ItemTemplate and LeadingTemplate must remain display-only: do not insert links, buttons or inputs into an option. Standalone NgChip retains its button contract.
+
+This boundary follows the WAI-ARIA listbox interaction model, which does not support interactive descendants inside an option. See [W3C listbox guidance](https://www.w3.org/WAI/ARIA/apg/patterns/listbox/). It deliberately leaves removable-list parity open instead of concealing removal actions from accessibility tools.
+
+Flutter keeps Material chip selection semantics (checkbox/checked in the verified Web accessibility tree). The installed SDK does not provide listbox/option SemanticsRole values. Do not depend on equal DOM roles across frameworks or describe this release as full Telerik accessibility parity.
+
+To try the selection-only contract, omit OnRemove/onRemove from the compiled example; keep ValueChanged/onChanged and the state assignment. The Blazor demo's Selection semantics section switches Multiple and removal at runtime so you can compare the exported roles while preserving state.
+
+
 ## Blazor example
 
 ```razor
+<h2>Selection-only listbox</h2>
+<NgChipList Label="Selection-only business topics" Items="data.Items" @bind-Value="selected" Multiple />
 <h2 id="topics-heading">Business topics</h2>
 <p id="topics-help">Choose topics for this workspace.</p>
 <NgCheckBox Label="Right-to-left layout" @bind-Value="rtl" />

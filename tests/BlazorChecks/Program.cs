@@ -229,7 +229,13 @@ await Check<NgButtonGroup>(new(){["Items"]=choices,["Value"]=choiceValue,["Verti
 await Check<NgButtonGroup>(new(),"No options");
 await Check<NgChip>(new(){["Label"]="<unsafe>",["Value"]=true,["Disabled"]=true,["OnRemove"]=EventCallback.Factory.Create(new object(),()=>{})},"&lt;unsafe&gt;","aria-pressed=\"true\"","disabled","Remove &lt;unsafe&gt;");
 await Check<NgChip>(new(){["Label"]="Published",["Selectable"]=false},"aria-label=\"Published\">Published</span>");
-await Check<NgChipList>(new(){["Items"]=Array.Empty<NgOption>()},"No tags","role=\"group\"");
+await Check<NgChipList>(new(){["Items"]=options,["Value"]=new string[]{"a"},["Multiple"]=true},"role=\"listbox\"","role=\"option\"","aria-selected=\"true\"","aria-selected=\"false\"","aria-multiselectable=\"true\"","aria-orientation=\"horizontal\"");
+await Check<NgChipList>(new(){["Items"]=options,["Selectable"]=false},"role=\"group\"");
+var semanticHtml = await renderer.Dispatcher.InvokeAsync(async () => (await renderer.RenderComponentAsync<NgChipList>(ParameterView.FromDictionary(new Dictionary<string,object?>{["Items"]=options}))).ToHtmlString());
+Rule(!semanticHtml.Contains("aria-pressed")&&!semanticHtml.Contains("aria-multiselectable"),"single listbox has selected state without pressed or multiselectable");
+var removableSemanticHtml = await renderer.Dispatcher.InvokeAsync(async () => (await renderer.RenderComponentAsync<NgChipList>(ParameterView.FromDictionary(new Dictionary<string,object?>{["Items"]=options,["OnRemove"]=EventCallback.Factory.Create<string>(new object(),_=>{})}))).ToHtmlString());
+Rule(removableSemanticHtml.Contains("role=\"group\"")&&!removableSemanticHtml.Contains("role=\"option\"")&&removableSemanticHtml.Contains("aria-pressed"),"removable chips retain separate accessible buttons");
+await Check<NgChipList>(new(){["Items"]=Array.Empty<NgOption>()},"No tags","role=\"listbox\"");
 await Check<NgChipList>(new(){["Items"]=options,["Value"]=new string[]{"a"},["OnRemove"]=EventCallback.Factory.Create<string>(new object(),_=>{})},"Remove Alpha","Remove Beta","ng-chip-selected","disabled");
 var enabledChip = await renderer.Dispatcher.InvokeAsync(async () => (await renderer.RenderComponentAsync<NgChip>(ParameterView.FromDictionary(new Dictionary<string,object?>{["Label"]="Tag",["Selectable"]=false,["OnRemove"]=EventCallback.Factory.Create(new object(),()=>{})}))).ToHtmlString());
 Rule(!enabledChip.Contains("disabled="),"enabled chip removal is not disabled");

@@ -1740,3 +1740,25 @@ D['NgChipList']['blazor'] = D['NgChipList']['blazor'].replace('<NgChipList Id=',
 D['NgChipList']['dart'] = D['NgChipList']['dart'].replace("NgChipList(semanticIdentifier:", "NgChipList(gap: 'lg', tabIndex: 0, semanticIdentifier:")
 D['NgChip']['blazor'] = D['NgChip']['blazor'].replace('<NgChip Id="build-status"', '<NgChip TabIndex="0" Id="build-status"')
 D['NgChip']['dart'] = D['NgChip']['dart'].replace("NgChip(semanticIdentifier: 'build-status'", "NgChip(tabIndex: 0, semanticIdentifier: 'build-status'")
+
+# 0.24: selection-only listbox semantics without hiding removal actions.
+D['NgChipList']['notes'] = D['NgChipList']['notes'].replace('Blazor still exposes a group of pressed buttons, Flutter its native chip semantics.', 'Blazor uses listbox/options for selection-only lists since 0.24 and a group of pressed buttons for removable lists; Flutter retains native chip semantics.').replace('TabIndex supports -1 and 0 since 0.23; listbox/option roles remain open.', 'TabIndex supports -1 and 0 since 0.23; selection-only Blazor listbox semantics are available since 0.24.')
+D['NgChipList']['notes'] += """
+
+### Selection semantics and removal (0.24)
+
+Blazor automatically exposes role=listbox when Selectable is true and no OnRemove callback is supplied. Each main action becomes role=option with aria-selected=true/false instead of aria-pressed. The list declares horizontal orientation; Multiple=true adds aria-multiselectable=true. Single selection omits that attribute. Label or AriaLabelledBy names the list and AriaDescribedBy links guidance. Disabled options remain visible to accessibility tools but are skipped by keyboard navigation.
+
+Arrow keys move focus without changing selection. Enter/Space requests selection through ValueChanged; the parent must assign the new value. One remembered Tab entry initially prefers an enabled selected option. Home/End, RTL, TabIndex and FocusAsync keep their existing behavior. This release does not implement type-ahead, range selection or screen-reader certification.
+
+Supplying OnRemove switches the entire list to role=group, even when CanRemove currently rejects every item. Main actions then expose pressed state and removal remains a separately named button. Removing the callback restores listbox semantics without resetting selected IDs or focus. Selectable=false also uses group semantics. ItemTemplate and LeadingTemplate must remain display-only: do not insert links, buttons or inputs into an option. Standalone NgChip retains its button contract.
+
+This boundary follows the WAI-ARIA listbox interaction model, which does not support interactive descendants inside an option. See [W3C listbox guidance](https://www.w3.org/WAI/ARIA/apg/patterns/listbox/). It deliberately leaves removable-list parity open instead of concealing removal actions from accessibility tools.
+
+Flutter keeps Material chip selection semantics (checkbox/checked in the verified Web accessibility tree). The installed SDK does not provide listbox/option SemanticsRole values. Do not depend on equal DOM roles across frameworks or describe this release as full Telerik accessibility parity.
+
+To try the selection-only contract, omit OnRemove/onRemove from the compiled example; keep ValueChanged/onChanged and the state assignment. The Blazor demo's Selection semantics section switches Multiple and removal at runtime so you can compare the exported roles while preserving state.
+"""
+
+D['NgChipList']['notes'] = D['NgChipList']['notes'].replace('Those roles, public accessibility hooks and screen-reader validation remain explicit gaps in the parity matrix.', 'Remaining role differences and screen-reader validation are tracked in the parity matrix; public identity, naming and help hooks are available since 0.22.')
+D['NgChipList']['blazor'] = '<h2>Selection-only listbox</h2>\n<NgChipList Label="Selection-only business topics" Items="data.Items" @bind-Value="selected" Multiple />\n' + D['NgChipList']['blazor']

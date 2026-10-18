@@ -4,7 +4,7 @@ export function bind(root) {
  let current=null, position=0, entry=null;
  const sync=()=>{
   const all=entries();
-  if(!all.includes(entry)||!target(entry))entry=all.find(x=>target(x)?.getAttribute('aria-pressed')==='true')??all.find(x=>target(x));
+  if(!all.includes(entry)||!target(entry))entry=all.find(x=>target(x)?.matches('[aria-pressed="true"],[aria-selected="true"]'))??all.find(x=>target(x));
   for(const item of all)for(const button of item.querySelectorAll('button.ng-chip-label,button.ng-chip-remove'))button.tabIndex=root.dataset.chipTabIndex!=='-1'&&item===entry&&button===target(item)?0:-1;
  };
  const entries=()=>[...root.querySelectorAll('[data-chip-id]')];

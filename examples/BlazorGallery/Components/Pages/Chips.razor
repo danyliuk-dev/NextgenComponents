@@ -2,7 +2,7 @@
 <PageTitle>Nextgen • Chips and tags</PageTitle>
 <div class="ng-scope gallery" data-ng-theme="@(dark?"dark":"light")"><main>
 <nav><a href="/code-examples">Code examples</a><strong>N NEXTGEN COMPONENTS</strong><div class="row"><a href="/">Foundation</a><NgSwitch Label="Dark theme" @bind-Value="dark"/></div></nav>
-<section class="hero"><p class="eyebrow">BLAZOR / CHIPS 0.23</p><h1>Small tags.<br/>Clear choices.</h1><p>Select topics, remove a tag, or show a compact status. Your application owns every change.</p></section>
+<section class="hero"><p class="eyebrow">BLAZOR / CHIPS 0.24</p><h1>Small tags.<br/>Clear choices.</h1><p>Select topics, remove a tag, or show a compact status. Your application owns every change.</p></section>
 <section class="panel"><div class="row"><NgCheckBox Label="Disable controls" @bind-Value="disabled"/><NgCheckBox Label="Multiple selection" Value="multiple" ValueChanged="SetMultiple" ValueExpression="()=>multiple"/><NgCheckBox Label="Enable selection" @bind-Value="selectable"/><NgCheckBox Label="Protect Design from removal" @bind-Value="protect"/><NgButton OnClick="Reset">Reset tags</NgButton><NgButton OnClick="LoadCollection">Load 500 tags</NgButton></div>
 <h2>Appearance and content</h2>
 <div class="row"><NgDropDownList Label="Size" Items="sizes" @bind-Value="size"/><NgDropDownList Label="Rounded" Items="roundings" @bind-Value="rounded"/><NgDropDownList Label="Fill mode" Items="fills" @bind-Value="fill"/><NgCheckBox Label="Custom content" @bind-Value="custom"/></div>
@@ -36,8 +36,20 @@
 </div>
 <NgButton OnClick="()=>{}">After topics</NgButton><p id="direction-status" role="status">Direction: @(rtl?"RTL":"LTR") · Selected: @string.Join(", ",directionSelected) · Tags: @directionItems.Count</p>
 </section>
+<section class="panel" id="selection-example">
+<h2>Selection semantics</h2><p>A selection-only list exposes a horizontal listbox with selected options. Adding removal switches to a group of buttons so each removal action stays accessible. Arrow keys move focus; Enter or Space changes selection.</p>
+<div class="row"><NgCheckBox Label="Multiple categories" Value="semanticMultiple" ValueChanged="SetSemanticMultiple" ValueExpression="()=>semanticMultiple"/><NgCheckBox Label="Allow category removal" @bind-Value="semanticRemoval"/></div>
+<NgChipList Id="category-list" Label="Categories" Items="semanticItems" Value="semanticSelected" ValueChanged="v=>semanticSelected=v" Multiple="semanticMultiple" OnRemove="@(semanticRemoval?EventCallback.Factory.Create<string>(this,RemoveCategory):default)"/>
+<p id="category-status" role="status">Selected: @string.Join(", ",semanticSelected)</p>
+</section>
 <footer>47 CONTROLS / 53 CATALOGUE ENTRIES · WEB FIRST</footer></main></div>
 @code {
+ private bool semanticMultiple=true,semanticRemoval;
+ private IReadOnlyList<NgOption> semanticItems=[new("design","Design"),new("locked","Locked",true),new("web","Web"),new("docs","Documentation")];
+ private IReadOnlyList<string> semanticSelected=["web"];
+ private void SetSemanticMultiple(bool value){semanticMultiple=value;if(!value&&semanticSelected.Count>1)semanticSelected=semanticSelected.Take(1).ToArray();}
+ private void RemoveCategory(string id){semanticItems=semanticItems.Where(x=>x.Value!=id).ToArray();semanticSelected=semanticSelected.Where(x=>x!=id).ToArray();}
+
  private sealed record BusinessTopic(string Id,string Name,string Owner,bool Disabled=false,bool Pinned=false,string Tone="base");
  private static List<BusinessTopic> InitialRecords()=>[new("ops","Operations","Morgan",Tone:"warning"),new("finance","Finance","Alex",Pinned:true,Tone:"success"),new("archive","Archive","Sam",Disabled:true)];
  private List<BusinessTopic> records=InitialRecords();

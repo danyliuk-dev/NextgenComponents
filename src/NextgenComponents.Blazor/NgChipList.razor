@@ -1,6 +1,7 @@
 @implements IAsyncDisposable
 @inject IJSRuntime JS
-<div id="@Id" class="ng-chip-list ng-chip-gap-@Gap @Class" data-chip-tab-index="@TabIndex" role="group" aria-label="@Label" aria-labelledby="@AriaLabelledBy" aria-describedby="@AriaDescribedBy" tabindex="-1" @ref="root">
+<div id="@Id" class="ng-chip-list ng-chip-gap-@Gap @Class" data-chip-tab-index="@TabIndex" role="@(UseListbox?"listbox":"group")" aria-orientation="@(UseListbox?"horizontal":null)" aria-multiselectable="@(UseListbox&&Multiple?"true":null)" aria-label="@Label" aria-labelledby="@AriaLabelledBy" aria-describedby="@AriaDescribedBy" tabindex="-1" @ref="root">
+<CascadingValue Name="NextgenChipListOption" Value="UseListbox">
 @foreach(var item in Items){
  var appearance=ItemAppearance?.Invoke(item);
  <span @key="item.Value" data-chip-id="@item.Value"><NgChip TabIndex="-1" Label="@item.Label" Value="@(selectedIds.Contains(item.Value))" Selectable="Selectable" Disabled="@(Disabled||item.Disabled)"
@@ -10,9 +11,11 @@
  OnClick="@(OnClick.HasDelegate?EventCallback.Factory.Create(this,()=>OnClick.InvokeAsync(item.Value)):default)"
  OnRemove="@(OnRemove.HasDelegate&&(CanRemove?.Invoke(item)??true)?EventCallback.Factory.Create(this,()=>Remove(item.Value)):default)"/></span>
 }
+</CascadingValue>
 @if(Items.Count==0){<span class="ng-muted">@EmptyText</span>}
 </div>
 @code {
+ private bool UseListbox => Selectable && !OnRemove.HasDelegate;
  [Parameter] public int TabIndex {get;set;}
  [Parameter] public string Gap {get;set;}="md";
 

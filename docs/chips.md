@@ -6,7 +6,7 @@ Original implementations with partial feature parity. See the [feature-by-featur
 
 The parent owns selection and removal. A removal callback is a request carrying the stable item ID: accept it by updating items and selected IDs together, or reject it by leaving state unchanged. `CanRemove`/`canRemove` controls whether removal is offered; it does not disable selection or replace request rejection.
 
-The remaining work is substantial: listbox/option semantics, broader traversal compatibility and screen-reader validation. No full-parity claim is made. Icons are application content, not Telerik icon packages; styling is not a verified pixel match.
+The remaining work is substantial: removable-list and Flutter listbox/option semantics, broader traversal compatibility and screen-reader validation. No full-parity claim is made. Icons are application content, not Telerik icon packages; styling is not a verified pixel match.
 
 See [NgChip](manual/NgChip.md) and [NgChipList](manual/NgChipList.md) for compiled examples and exact API. Templates must contain noninteractive content and retain a meaningful label.
 
@@ -25,3 +25,9 @@ See [NgChip](manual/NgChip.md) and [NgChipList](manual/NgChipList.md) for compil
 0.22 adds Blazor Id/Class and accessible-name/description references, plus Flutter semanticIdentifier/semanticHint. Metadata updates are demonstrated alongside stable selection. The manual documents platform differences and target elements; no screen-reader certification or configurable TabIndex is implied. The public API review also records ChipList Gap as remaining work.
 
 0.23 adds sm/md/lg ChipList gap presets and TabIndex/tabIndex -1/0 for Chip and ChipList. A skipped list remains pointer- and programmatically accessible; returning to 0 restores its remembered entry. Positive indices are outside this contract. Detailed lifecycle and spacing examples are in the manual.
+
+## 0.24: Blazor selection-only semantics
+
+Selectable lists without an OnRemove callback now expose a horizontal listbox with selected options, including multiple-selection metadata. Removable lists remain groups of buttons so each remove action stays accessible. Changing the callback or Multiple at runtime preserves selection and remembered focus. Standalone Chip is unchanged. See the manual for the exact contract and the Selection semantics demo for interactive comparison.
+
+Flutter retains its existing native chip semantics; its installed SDK has no listbox/option role values. Type-ahead, removable-list parity and screen-reader validation remain open.
