@@ -114,3 +114,27 @@ Screenshots inspected:
 - [Flutter: initial light editor](screenshots/editor-flutter-initial.png)
 - [Flutter: successful Blazor JSON import](screenshots/editor-flutter-import-success.png)
 - [Flutter: narrow dark preview/read-only](screenshots/editor-flutter-narrow.png)
+
+## 0.7 — interactive diagrams (2026-10-18)
+
+Added NgDiagram and shared validated graph model on Blazor/Flutter: three shapes, straight directed/undirected connections, selection, drag preview with commit on release, Escape cancellation, keyboard moves, zoom/fit/scroll and read-only. Gallery forms cover node/edge CRUD, cascade delete, 20-change undo and JSON. [Capabilities](diagram.md) and [Russian manual](manual/NgDiagram.md) describe the implemented subset and remaining gaps.
+
+Validation:
+
+- .NET solution built without warnings/errors. 114 rendering/model checks passed, including boundary anchors, finite geometry, duplicate IDs, dangling/self links, cascade removal, immutable moves, required JSON coordinates and maximum-size Unicode roundtrip. The JSON limit was raised to 1000000 characters so a valid 100-node/200-edge graph with maximum Unicode labels and long IDs also roundtrips after .NET escaping.
+- Flutter full suite: 51 tests passed. Diagram tests exercise drag committing once, 10/1-unit keyboard movement, Escape, selection, read-only, empty replacement, bounds, JSON and Fit width without horizontal overflow. The latter caught/fixes the viewport's 2px border allowance.
+- All 35 Blazor examples compiled and all 35 Flutter examples passed analysis. Dart analysis found no issues; manual links, theme/contrast checks and 35-component/41-entry catalogue totals passed. Web build includes local renderer assets; the existing unused CupertinoIcons font warning remains.
+- Normal visible foreground Chrome on local Linux `kolizej-iMac`, isolated `/tmp/nextgen-components-review-07`, CDP 9341, coordinated with the other task. No headless/remote-host substitution.
+- Both platforms: pointer drag from (50,180) to (130,220); Escape kept that position; ArrowRight produced (140,220). At 50% zoom a 60×20 CSS-pixel drag produced a 120×40 model-unit change to (260,260). Read-only drag did not change coordinates. Fit width, light/dark and compact at desktop and 390px widths were inspected.
+- Blazor: node rename/add, edge add, self-link rejection, node removal cascading edges, Undo restoring both, invalid import preserving the graph, actual Flutter JSON import. Space selects a focused edge without scrolling the page.
+- Flutter: node rename/add, endpoint selection with arrow keys/Enter, connection creation, selected-edge deletion, invalid JSON rejection, actual Blazor JSON import. Input focus was awaited before typing. One early browser check raced the next render after Add node; it was stopped and the resulting graph was inspected before continuing. Only confirmed state transitions are counted.
+- Exchanged actual gallery JSON in both directions: Blazor → Flutter included 5 nodes/5 edges and a rectangular Archive; Flutter → Blazor included 5 nodes/4 edges and an elliptical Archive. IDs, geometry, text and shape survived the imports.
+- Blazor narrow document width was 375px at a 390px viewport. Flutter Fit width was corrected to account for the 2px viewport border and verified by widget geometry and a final browser check. Fit width still fits the whole canvas, making small graphs tiny on narrow screens; a separate Fit diagram action has been proposed and is not included here.
+- Native mobile, screen reader certification, automatic layout/obstacle routing and export to image/PDF remain unverified/unimplemented as documented. Chrome was closed after final evidence capture; unrelated browser sessions were preserved.
+
+Screenshots inspected:
+
+- [Blazor: Flutter JSON and edge selection](screenshots/diagram-blazor-cross-import.png)
+- [Blazor: narrow dark/compact/read-only](screenshots/diagram-blazor-narrow.png)
+- [Flutter: imported Blazor graph](screenshots/diagram-flutter-import.png)
+- [Flutter: final narrow Fit width](screenshots/diagram-flutter-narrow-final.png)

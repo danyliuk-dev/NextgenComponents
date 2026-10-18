@@ -5,7 +5,7 @@
 <section class="hero"><p class="eyebrow">BLAZOR / DOCUMENTS 0.6</p><h1>Write clearly.<br/>Keep the structure.</h1><p>A structured document editor with block formatting, history and portable JSON. Preview and export contain applied changes.</p></section>
 <section class="panel"><div class="row"><NgCheckBox Label="Read only" @bind-Value="readOnly"/><NgButton OnClick="Reset">Reset sample</NgButton></div><NgEditor Label="Project brief" @bind-Value="document" ReadOnly="readOnly"/></section>
 <section class="panel"><h3>Save and restore</h3><p>JSON stores the editable document. HTML is an export for your application. Paste JSON below and import; errors leave the current document intact.</p><div class="row"><NgButton OnClick="()=>source=document.ToJson()">Export JSON</NgButton><NgButton OnClick="()=>source=document.ToHtml()">Export HTML</NgButton><NgButton Disabled="@readOnly" OnClick="Import">Import JSON</NgButton></div><label class="ng-field">Document source<textarea class="ng-input" aria-label="Document source" rows="7" @bind="source" @bind:event="oninput" maxlength="1000000"></textarea></label><p role="status">@status</p></section>
-<footer class="page-footer">34 CONTROLS / 40 CATALOGUE ENTRIES <span>WEB FIRST</span></footer>
+<footer class="page-footer">35 CONTROLS / 41 CATALOGUE ENTRIES <span>WEB FIRST</span></footer>
 </main></div>
 @code {
  private bool dark,compact,readOnly;

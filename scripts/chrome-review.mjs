@@ -22,6 +22,17 @@ try {
    await command('Input.dispatchMouseEvent',{type:'mouseReleased',x,y,button:'left',clickCount:1});
    console.log('clicked '+action.clickSelector);
   }
+  else if(action.dragSelector){
+   const {selector,dx,dy,cancel}=action.dragSelector;
+   const r=await command('Runtime.evaluate',{expression:`(()=>{const e=document.querySelector(${JSON.stringify(selector)});if(!e)throw Error('Drag target missing');const r=e.getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2};})()`,returnByValue:true});
+   if(r.exceptionDetails)throw Error(JSON.stringify(r.exceptionDetails));
+   const {x,y}=r.result.value;
+   await command('Input.dispatchMouseEvent',{type:'mousePressed',x,y,button:'left',clickCount:1});
+   for(let step=1;step<=5;step++)await command('Input.dispatchMouseEvent',{type:'mouseMoved',x:x+dx*step/5,y:y+dy*step/5,button:'left',buttons:1});
+   if(cancel){await command('Input.dispatchKeyEvent',{type:'keyDown',key:'Escape',code:'Escape',windowsVirtualKeyCode:27});await command('Input.dispatchKeyEvent',{type:'keyUp',key:'Escape',code:'Escape',windowsVirtualKeyCode:27});}
+   await command('Input.dispatchMouseEvent',{type:'mouseReleased',x:x+dx,y:y+dy,button:'left',clickCount:1});
+   console.log('dragged '+selector+(cancel?' (cancelled)':''));
+  }
   else if(action.screenshot){await mkdir('artifacts/browser',{recursive:true});const r=await command('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});await writeFile('artifacts/browser/'+action.screenshot,Buffer.from(r.data,'base64'));console.log(action.screenshot);}
   else {console.log(JSON.stringify(await command(action.method,action.params)));}
  }

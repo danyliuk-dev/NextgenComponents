@@ -119,6 +119,29 @@ Reject(()=>NgDocument.FromJson("{\"version\":1,\"blocks\":[{\"kind\":99}]}"),"do
 Reject(()=>NgDocument.FromJson("{\"version\":1,\"blocks\":[{\"html\":\"unsafe\"}]}"),"document rejects raw HTML property");
 Reject(()=>NgDocument.FromJson("null"),"document rejects null JSON");
 await Check<NgEditor>(new(){["Value"]=doc,["ReadOnly"]=true},"Document preview","readonly","&lt;script&gt;","disabled","Block text");
+var graph = new NgDiagramModel([new("a","Start",10,10),new("b","End",400,10,Shape:NgDiagramShape.Ellipse)],[new("e","a","b","Next")]);
+Rule(NgDiagramModel.FromJson(graph.ToJson()).ToJson()==graph.ToJson(),"diagram JSON roundtrip");
+var moved=graph.Move("a",-100,900);Rule(moved.Nodes[0].X==0&&moved.Nodes[0].Y==520&&graph.Nodes[0].X==10,"diagram immutable move clamps canvas");
+Rule(graph.RemoveNode("a").Edges.Count==0&&graph.Nodes.Count==2,"diagram node deletion cascades only in new graph");
+Rule(graph.RemoveEdge("e").Nodes.Count==2&&graph.RemoveEdge("e").Edges.Count==0,"diagram edge deletion preserves nodes");
+Rule(graph.Line(graph.Edges[0]).Start==new NgDiagramPoint(170,50)&&graph.Line(graph.Edges[0]).End==new NgDiagramPoint(400,50),"diagram anchors on rectangle and ellipse boundaries");
+var diamond=graph.UpsertNode(graph.Nodes[0] with {Shape=NgDiagramShape.Diamond});Rule(diamond.Line(diamond.Edges[0]).Start==new NgDiagramPoint(170,50),"diagram diamond boundary");
+Rule(graph.UpsertEdge(new("e","b","a","Reverse",false)).Edges.Single().From=="b","diagram edge edit retains ID");
+Reject(()=>new NgDiagramModel([graph.Nodes[0],graph.Nodes[0]]),"diagram duplicate node ID");
+Reject(()=>new NgDiagramModel(graph.Nodes,[new("e","a","missing")]),"diagram dangling edge");
+Reject(()=>new NgDiagramModel(graph.Nodes,[new("e","a","a")]),"diagram self link");
+Reject(()=>graph.UpsertNode(graph.Nodes[0] with {X=double.NaN}),"diagram nonfinite bounds");
+Reject(()=>graph.UpsertNode(graph.Nodes[0] with {Width=10}),"diagram invalid size");
+Reject(()=>graph.Move("a",double.PositiveInfinity,0),"diagram nonfinite movement");
+Reject(()=>graph.UpsertNode(new("bad id","Text",0,0)),"diagram invalid ID");
+Reject(()=>NgDiagramModel.FromJson("{\"version\":2,\"width\":1000,\"height\":600,\"nodes\":[],\"edges\":[]}"),"diagram unknown version");
+Reject(()=>NgDiagramModel.FromJson("{\"version\":1,\"width\":1000,\"height\":600,\"nodes\":[{\"id\":\"a\",\"text\":\"A\"}],\"edges\":[]}"),"diagram required coordinates");
+await Check<NgDiagram>(new(){["Value"]=graph,["ReadOnly"]=true,["SelectedNodeId"]="a"},"Node Start","Connection Next: a to b","data-readonly=\"true\"","ng-selected","Fit width");
+await Check<NgDiagram>(new(),"No nodes yet.");
+var largeNodes=Enumerable.Range(0,100).Select(i=>new NgDiagramNode("n"+i.ToString().PadLeft(63,'x'),new string('漢',100),0,0)).ToArray();
+var largeEdges=Enumerable.Range(0,200).Select(i=>new NgDiagramEdge("e"+i.ToString().PadLeft(63,'x'),largeNodes[i%100].Id,largeNodes[(i+1)%100].Id,new string('漢',100))).ToArray();
+var largeGraph=new NgDiagramModel(largeNodes,largeEdges);Rule(largeGraph.ToJson().Length>200000&&NgDiagramModel.FromJson(largeGraph.ToJson()).Edges.Count==200,"maximum Unicode diagram roundtrips within JSON limit");
+
 Console.WriteLine($"{count} rendering and data/date-rule checks passed. Browser interaction requires the separate visual run.");
 sealed class NoBrowserJS : IJSRuntime {
  public ValueTask<TValue> InvokeAsync<TValue>(string identifier, object?[]? args) => throw new InvalidOperationException("JS must not execute in SSR");

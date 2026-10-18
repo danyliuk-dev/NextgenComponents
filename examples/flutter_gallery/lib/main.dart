@@ -1,3 +1,4 @@
+import 'diagram_gallery.dart';
 import 'editor_gallery.dart';
 import 'package:flutter/material.dart';
 import 'forms_gallery.dart';
@@ -21,7 +22,8 @@ class _GalleryState extends State<Gallery> {
       data = false,
       analytics = false,
       workbook = false,
-      editor = false;
+      editor = false,
+      diagram = false;
   @override
   Widget build(BuildContext context) => MaterialApp(
     title: 'Nextgen • Flutter',
@@ -29,7 +31,15 @@ class _GalleryState extends State<Gallery> {
     theme: NgTheme.light(compact: compact),
     darkTheme: NgTheme.dark(compact: compact),
     themeMode: dark ? ThemeMode.dark : ThemeMode.light,
-    home: editor
+    home: diagram
+        ? DiagramGallery(
+            dark: dark,
+            compact: compact,
+            onDark: (v) => setState(() => dark = v),
+            onCompact: (v) => setState(() => compact = v),
+            onBack: () => setState(() => diagram = false),
+          )
+        : editor
         ? EditorGallery(
             dark: dark,
             compact: compact,
@@ -73,6 +83,7 @@ class _GalleryState extends State<Gallery> {
             onForms: () => setState(() => forms = true),
             onData: () => setState(() => data = true),
             onAnalytics: () => setState(() => analytics = true),
+            onDiagram: () => setState(() => diagram = true),
             onEditor: () => setState(() => editor = true),
             onWorkbook: () => setState(() => workbook = true),
             dark: dark,
@@ -85,7 +96,12 @@ class _GalleryState extends State<Gallery> {
 
 class GalleryPage extends StatefulWidget {
   final bool dark, compact;
-  final VoidCallback onForms, onData, onAnalytics, onWorkbook, onEditor;
+  final VoidCallback onForms,
+      onData,
+      onAnalytics,
+      onWorkbook,
+      onEditor,
+      onDiagram;
   final ValueChanged<bool> onDark, onCompact;
   const GalleryPage({
     super.key,
@@ -94,6 +110,7 @@ class GalleryPage extends StatefulWidget {
     required this.onAnalytics,
     required this.onWorkbook,
     required this.onEditor,
+    required this.onDiagram,
     required this.dark,
     required this.compact,
     required this.onDark,
@@ -168,6 +185,10 @@ class _GalleryPageState extends State<GalleryPage> {
                       ),
                     ),
                     TextButton(
+                      onPressed: widget.onDiagram,
+                      child: const Text('Diagram'),
+                    ),
+                    NgButton(
                       onPressed: widget.onEditor,
                       child: const Text('Editor'),
                     ),

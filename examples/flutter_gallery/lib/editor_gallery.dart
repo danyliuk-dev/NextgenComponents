@@ -166,7 +166,7 @@ class _EditorGalleryState extends State<EditorGallery> {
               ),
               Semantics(liveRegion: true, child: Text(status)),
               const SizedBox(height: 24),
-              const Text('34 CONTROLS / 40 CATALOGUE ENTRIES · WEB FIRST'),
+              const Text('35 CONTROLS / 41 CATALOGUE ENTRIES · WEB FIRST'),
             ],
           ),
         ),

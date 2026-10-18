@@ -10,3 +10,4 @@ export 'src/data.dart';
 export 'src/visualization.dart';
 export 'src/workbook.dart';
 export 'src/editor.dart';
+export 'src/diagram.dart';
