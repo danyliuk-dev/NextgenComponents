@@ -3,7 +3,9 @@
 import {readFile,writeFile,mkdir} from 'node:fs/promises';
 const framework=process.argv[2]||'blazor';
 if(!['blazor','flutter'].includes(framework))throw Error('Use blazor or flutter');
-const names=Object.keys(JSON.parse(await readFile('examples/BlazorGallery/wwwroot/component-examples.json','utf8')));
+const allNames=Object.keys(JSON.parse(await readFile('examples/BlazorGallery/wwwroot/component-examples.json','utf8')));
+const names=process.argv[3]?process.argv[3].split(','):allNames;
+if(names.some(name=>!allNames.includes(name)))throw Error('Unknown component filter');
 const targets=await(await fetch('http://127.0.0.1:9341/json/list')).json();
 const ws=new WebSocket(targets.find(t=>t.type==='page').webSocketDebuggerUrl);
 await new Promise(r=>ws.onopen=r);let id=0;const pending=new Map();let errors=[];

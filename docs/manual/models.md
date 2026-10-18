@@ -9,7 +9,7 @@ C# properties generally use PascalCase; Dart uses lowerCamelCase. Replace input 
 | Model | Contract |
 |---|---|
 | NgSelectionRules | Validates ButtonGroup options and selected IDs; Toggle returns a new selection in item order. See [ButtonGroup](NgButtonGroup.md). |
-| NgMenuItem | ID, text, disabled and read-only children; max 3 levels / 100 nodes. See [Menu](NgMenu.md). |
+| NgMenuItem | ID, text, disabled, visible, separator and read-only children; max 3 levels / 100 nodes. See [Menu](NgMenu.md). |
 | NgStep | Label, Disabled, Optional and nullable Valid; see [Stepper](NgStepper.md) and [Wizard](NgWizard.md). |
 | NgPromptResponse | Immutable Id, Prompt, Text; IDs increase within a session. |
 | NgPromptFeedback | Response and Helpful: true, false or null to clear a vote. |
@@ -126,3 +126,9 @@ This is a snapshot of mapped fields, not a deep copy of application records. Reb
 ## Button appearance overrides (0.26)
 
 `NgButtonAppearance` has nullable `Size/size`, `Rounded/rounded`, `FillMode/fillMode` and `ThemeColor/themeColor` fields. Return it from ButtonGroup's `ItemAppearance/itemAppearance` callback. Null fields inherit the corresponding group setting; it does not change the item's ID, command/toggle kind, visibility or selected value. See the [ButtonGroup manual](NgButtonGroup.md) for supported tokens and a compiled mixed-command example.
+
+### Navigation presentation (0.27)
+
+`NgMenuItem` adds optional immutable `Visible/visible` (default true) and `Separator/separator` (default false) alongside ID, text, disabled and children. Separators need unique IDs and labels but cannot contain children or invoke actions. Hidden ancestors make their descendants unreachable. Validation includes hidden items.
+
+Drawer continues to use `NgOption`. `IsVisible/isVisible` and `IsSeparator/isSeparator` are pure predicates over those options. Their labels remain accessible names when item templates replace the displayed content. See the [Menu](NgMenu.md) and [Drawer](NgDrawer.md) manuals for complete examples and lifecycle rules.

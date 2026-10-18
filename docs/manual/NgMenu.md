@@ -14,52 +14,62 @@ The documentation launcher embeds these running examples here. Choose a framewor
 
 ## Behavior and practical rules
 
-### Connect commands to your application
+### Commands and data
 
-Pass a tree of NgMenuItem values. Each item has an ID, visible text, a disabled flag and children. OnInvoke/onInvoke receives only an enabled leaf ID; opening a group does not invoke an action. Store SelectedId/selectedId to mark the last selected command. Use the handler to navigate, export or open a dialog. Text is rendered as plain text; no URL is executed automatically.
+The parent owns SelectedId/selectedId and dispatches enabled leaf IDs from OnInvoke/onInvoke. Opening a group is not a command. A missing handler disables leaf buttons. Models copy their child collections; replace records to change Visible/visible, Disabled/disabled or Separator/separator. Hidden ancestors suppress their entire subtree. Separators have a unique ID and nonempty descriptive Text/text, never invoke, and cannot have children. Validation includes hidden items: at most 100 unique IDs, three levels, IDs of 1–64 ASCII letters/digits/underscore/hyphen and labels of 1–120 characters.
 
-### Keyboard and layout
+### Appearance and accessible templates
 
-Blazor uses a roving Tab stop, Left/Right in the horizontal bar, Up/Down in a submenu or vertical bar, Home/End, Enter/Space to activate and Escape to close a submenu and restore its opener. Down opens a top-level group; Right opens a nested group. Flutter uses Material menu keyboard handling. Vertical switches the root layout. Disabled groups block their descendants. An empty collection displays No commands.
+ItemTemplate/itemBuilder replaces display content; LeadingTemplate/leadingBuilder supplies a decorative icon or image. Text/text remains the accessible name and leading content is excluded from that name. Templates must contain display content only: no buttons, links, inputs or focusable descendants. Automatic URL routing is not provided; handle the leaf callback in the application.
 
-### Data and platform limits
+### Opening, closing and direction
 
-Use globally unique IDs of 1–64 ASCII letters, digits, underscores or hyphens, and nonblank labels of at most 120 UTF-16 code units. Trees allow at most three levels and 100 total items. Children are copied into read-only collections. Replace the root collection when changing configuration. Blazor requires an interactive render mode and browser Popover API support; Chrome Web is the verified target. Icons, arbitrary templates, context menus and automatic router integration are outside this release.
+CloseOnClick/closeOnClick defaults to true. Set false to keep a menu open after choosing an enabled leaf (for repeated commands). Escape, outside clicks and focus traversal still dismiss. Blazor opens on click or keyboard; Flutter uses Material submenu behavior, including pointer hover. Rtl/rtl reverses horizontal keyboard direction and submenu direction; vertical menus retain Up/Down navigation. Blazor provides one root Tab stop and Home/End; Flutter delegates keyboard handling to Material menus. Removing a focused item is an application-level focus concern. Popup animation, hover delay configuration, arbitrary-model field mapping and full screen-reader certification remain outside this implementation.
 
 ## Blazor example
 
 ```razor
-<NgMenu Label="Document commands" Items="commands" SelectedId="@selected" OnInvoke="Invoke" />
-<p>Last command: @selected</p>
+<NgCheckBox Label="Keep menu open" @bind-Value="keepOpen"/>
+<NgCheckBox Label="Right-to-left" @bind-Value="rtl"/>
+<NgMenu Label="Document commands" Items="commands" SelectedId="@selected"
+        OnInvoke="Run" Rtl="rtl" CloseOnClick="@(!keepOpen)">
+  <LeadingTemplate Context="item"><span>◆</span></LeadingTemplate>
+  <ItemTemplate Context="item"><strong>@item.Text</strong></ItemTemplate>
+</NgMenu>
+<p>Last command: @selected · Invocations: @count</p>
 @code {
-    private string? selected;
-    private readonly NgMenuItem[] commands = [
-        new("file", "File", children: [
-            new("new", "New document"),
-            new("export", "Export", children: [new("pdf", "PDF"), new("csv", "CSV")]),
-            new("delete", "Delete", disabled: true)
-        ]), new("help", "Help")
-    ];
-    private void Invoke(string id) { selected = id; /* Dispatch the application action. */ }
+  private bool keepOpen, rtl;
+  private string selected="none"; private int count;
+  private readonly NgMenuItem[] commands=[
+    new("file","File",children:[new("new","New document"),
+      new("exports","Export formats",separator:true),
+      new("export","Export",children:[new("pdf","PDF"),new("csv","CSV")]),
+      new("secret","Internal command",visible:false),new("delete","Delete",disabled:true)]),
+    new("help","Help")];
+  private void Run(string id){selected=id;count++;}
 }
+
 ```
 
 ## Flutter example
 
 ```dart
-String? selected;
-final commands = [
-  NgMenuItem('file', 'File', children: [
-    NgMenuItem('new', 'New document'),
-    NgMenuItem('export', 'Export', children: [NgMenuItem('pdf', 'PDF'), NgMenuItem('csv', 'CSV')]),
-    NgMenuItem('delete', 'Delete', disabled: true),
-  ]), NgMenuItem('help', 'Help'),
-];
-Widget build(BuildContext context) => Column(children: [
-  NgMenu(label: 'Document commands', items: commands, selectedId: selected,
-    onInvoke: (id) => setState(() => selected = id)),
-  Text('Last command: ${selected ?? "None"}'),
+bool keepOpen = false, rtl = false; String selected = 'none'; int count = 0;
+final commands = [NgMenuItem('file','File',children:[
+  NgMenuItem('new','New document'),NgMenuItem('exports','Export formats',separator:true),
+  NgMenuItem('export','Export',children:[NgMenuItem('pdf','PDF'),NgMenuItem('csv','CSV')]),
+  NgMenuItem('secret','Internal command',visible:false),NgMenuItem('delete','Delete',disabled:true)]),
+  NgMenuItem('help','Help')];
+Widget build(BuildContext context) => Column(crossAxisAlignment: CrossAxisAlignment.start, children:[
+  NgCheckBox(label:'Keep menu open',value:keepOpen,onChanged:(v)=>setState(()=>keepOpen=v)),
+  NgCheckBox(label:'Right-to-left',value:rtl,onChanged:(v)=>setState(()=>rtl=v)),
+  NgMenu(label:'Document commands',items:commands,selectedId:selected,rtl:rtl,closeOnClick:!keepOpen,
+    leadingBuilder:(_,item)=>const Icon(Icons.description_outlined,size:18),
+    itemBuilder:(_,item)=>Text(item.text,style:const TextStyle(fontWeight:FontWeight.bold)),
+    onInvoke:(id)=>setState((){selected=id;count++;})),
+  Text('Last command: $selected · Invocations: $count'),
 ]);
+
 ```
 
 ## Blazor parameters and events
@@ -74,6 +84,10 @@ Names are case-sensitive. `?` permits null. `EditorRequired` parameters are mark
 | `OnInvoke` | `EventCallback<string>` | not set | Enabled leaf command ID; dispatch the application action in this handler. |
 | `Vertical` | `bool` | false | Use a vertical root layout; see the component keyboard and layout rules. |
 | `Disabled` | `bool` | false | Disable user interaction. |
+| `Rtl` | `bool` | false | See the behavior rules and model contract above. |
+| `CloseOnClick` | `bool` | true | See the behavior rules and model contract above. |
+| `ItemTemplate` | `RenderFragment<NgMenuItem>?` | not set | See the behavior rules and model contract above. |
+| `LeadingTemplate` | `RenderFragment<NgMenuItem>?` | not set | Decorative leading content for an item; no nested interactive elements. |
 
 ## Flutter parameters and events
 
@@ -87,6 +101,10 @@ Names are case-sensitive. `?` permits null. `EditorRequired` parameters are mark
 | `onInvoke` | `ValueChanged<String>?` | Enabled leaf command ID; dispatch the application action in this handler. |
 | `vertical` | `bool` | Use a vertical root layout; see the component keyboard and layout rules. |
 | `disabled` | `bool` | Disable user interaction. |
+| `rtl` | `bool` | See the behavior rules and model contract above. |
+| `closeOnClick` | `bool` | See the behavior rules and model contract above. |
+| `itemBuilder` | `Widget Function(BuildContext, NgMenuItem)?` | See the behavior rules and model contract above. |
+| `leadingBuilder` | `Widget Function(BuildContext, NgMenuItem)?` | Decorative leading widget for an item; no nested interactive controls. |
 
 ```dart
 const NgMenu({
@@ -97,6 +115,10 @@ const NgMenu({
     this.onInvoke,
     this.vertical = false,
     this.disabled = false,
+    this.rtl = false,
+    this.closeOnClick = true,
+    this.itemBuilder,
+    this.leadingBuilder,
   });
 ```
 

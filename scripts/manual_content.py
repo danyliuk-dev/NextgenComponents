@@ -1896,3 +1896,103 @@ Widget build(BuildContext context) => Column(children: [
   Text('Selected: ${selected.join(",")}. $log'),
 ]);
 '''
+
+# Navigation block: one source for the reference, code browser and live previews.
+D['NgMenu']['notes'] = '''### Commands and data
+
+The parent owns SelectedId/selectedId and dispatches enabled leaf IDs from OnInvoke/onInvoke. Opening a group is not a command. A missing handler disables leaf buttons. Models copy their child collections; replace records to change Visible/visible, Disabled/disabled or Separator/separator. Hidden ancestors suppress their entire subtree. Separators have a unique ID and nonempty descriptive Text/text, never invoke, and cannot have children. Validation includes hidden items: at most 100 unique IDs, three levels, IDs of 1–64 ASCII letters/digits/underscore/hyphen and labels of 1–120 characters.
+
+### Appearance and accessible templates
+
+ItemTemplate/itemBuilder replaces display content; LeadingTemplate/leadingBuilder supplies a decorative icon or image. Text/text remains the accessible name and leading content is excluded from that name. Templates must contain display content only: no buttons, links, inputs or focusable descendants. Automatic URL routing is not provided; handle the leaf callback in the application.
+
+### Opening, closing and direction
+
+CloseOnClick/closeOnClick defaults to true. Set false to keep a menu open after choosing an enabled leaf (for repeated commands). Escape, outside clicks and focus traversal still dismiss. Blazor opens on click or keyboard; Flutter uses Material submenu behavior, including pointer hover. Rtl/rtl reverses horizontal keyboard direction and submenu direction; vertical menus retain Up/Down navigation. Blazor provides one root Tab stop and Home/End; Flutter delegates keyboard handling to Material menus. Removing a focused item is an application-level focus concern. Popup animation, hover delay configuration, arbitrary-model field mapping and full screen-reader certification remain outside this implementation.'''
+D['NgMenu']['blazor'] = '''<NgCheckBox Label="Keep menu open" @bind-Value="keepOpen"/>
+<NgCheckBox Label="Right-to-left" @bind-Value="rtl"/>
+<NgMenu Label="Document commands" Items="commands" SelectedId="@selected"
+        OnInvoke="Run" Rtl="rtl" CloseOnClick="@(!keepOpen)">
+  <LeadingTemplate Context="item"><span>◆</span></LeadingTemplate>
+  <ItemTemplate Context="item"><strong>@item.Text</strong></ItemTemplate>
+</NgMenu>
+<p>Last command: @selected · Invocations: @count</p>
+@code {
+  private bool keepOpen, rtl;
+  private string selected="none"; private int count;
+  private readonly NgMenuItem[] commands=[
+    new("file","File",children:[new("new","New document"),
+      new("exports","Export formats",separator:true),
+      new("export","Export",children:[new("pdf","PDF"),new("csv","CSV")]),
+      new("secret","Internal command",visible:false),new("delete","Delete",disabled:true)]),
+    new("help","Help")];
+  private void Run(string id){selected=id;count++;}
+}
+'''
+D['NgMenu']['dart'] = '''bool keepOpen = false, rtl = false; String selected = 'none'; int count = 0;
+final commands = [NgMenuItem('file','File',children:[
+  NgMenuItem('new','New document'),NgMenuItem('exports','Export formats',separator:true),
+  NgMenuItem('export','Export',children:[NgMenuItem('pdf','PDF'),NgMenuItem('csv','CSV')]),
+  NgMenuItem('secret','Internal command',visible:false),NgMenuItem('delete','Delete',disabled:true)]),
+  NgMenuItem('help','Help')];
+Widget build(BuildContext context) => Column(crossAxisAlignment: CrossAxisAlignment.start, children:[
+  NgCheckBox(label:'Keep menu open',value:keepOpen,onChanged:(v)=>setState(()=>keepOpen=v)),
+  NgCheckBox(label:'Right-to-left',value:rtl,onChanged:(v)=>setState(()=>rtl=v)),
+  NgMenu(label:'Document commands',items:commands,selectedId:selected,rtl:rtl,closeOnClick:!keepOpen,
+    leadingBuilder:(_,item)=>const Icon(Icons.description_outlined,size:18),
+    itemBuilder:(_,item)=>Text(item.text,style:const TextStyle(fontWeight:FontWeight.bold)),
+    onInvoke:(id)=>setState((){selected=id;count++;})),
+  Text('Last command: $selected · Invocations: $count'),
+]);
+'''
+D['NgDrawer']['notes'] = '''### State and selection
+
+Expanded/expanded and SelectedId/selectedId belong to the parent. Store callback values and pass them back. An expanded Overlay requires ExpandedChanged/onExpandedChanged so it can be dismissed. CloseOnSelect/closeOnSelect defaults to true: an enabled selection requests the selected ID, then requests collapse in Overlay mode. False keeps the drawer open. Push mode stays expanded after selection. A missing selection callback disables destination buttons. Disabled/disabled blocks the toggle and destination selection but leaves an already-open drawer dismissible through Close, Escape and the backdrop.
+
+### Layout and direction
+
+Overlay/overlay defaults to true. Position/position accepts `start` (default) or `end`, relative to Rtl/rtl (default false): end is right in LTR and left in RTL. Push panels stack above content below 600 px; the position setting applies to wide side-by-side layouts and overlays. Width/width is 200–400 pixels (default 260); overlays clamp to the viewport. The Flutter push panel is 420 pixels tall with a scrolling destination list. Mini mode and swipe gestures are not implemented.
+
+### Templates and data
+
+HeaderTemplate/header replaces the title content while keeping the Close control. FooterTemplate/footer adds content below the list. ItemTemplate/itemBuilder and LeadingTemplate/leadingBuilder customize destination text and decorative icons. Item labels remain accessible names. Item and leading templates must be display-only, without nested interactive controls; keep durable state in the parent, not in templates. Header and footer should be compact so the destination list remains usable.
+
+IsVisible/isVisible filters destinations without deleting the selected ID. IsSeparator/isSeparator renders a divider instead of a destination; it never selects. These predicates must be pure. Replace Items/items when data changes. Up to 100 unique NgOption IDs (1–64 ASCII letters/digits/underscore/hyphen) and nonempty labels (up to 120 characters) are supported, including hidden/separator entries. The application owns routing and permissions. An unknown, hidden or separator SelectedId has no visible selected destination. Full template replacement, arbitrary data-model mapping, automatic URL routing and screen-reader certification remain unimplemented.'''
+D['NgDrawer']['blazor'] = '''<NgCheckBox Label="Keep drawer open" @bind-Value="keepOpen"/>
+<NgCheckBox Label="Right-to-left" @bind-Value="rtl"/>
+<NgDrawer Label="Workspace navigation" Items="items" @bind-SelectedId="selected"
+          @bind-Expanded="expanded" Position="end" Rtl="rtl" CloseOnSelect="@(!keepOpen)"
+          IsVisible="ShowItem" IsSeparator="IsDivider">
+  <HeaderTemplate><strong>Project workspace</strong></HeaderTemplate>
+  <FooterTemplate><small>Signed in as Morgan</small></FooterTemplate>
+  <LeadingTemplate Context="item"><span>◆</span></LeadingTemplate>
+  <ItemTemplate Context="item"><strong>@item.Label</strong></ItemTemplate>
+  <ChildContent><p>Current section: @selected</p><NgTextBox Label="Draft note" @bind-Value="note"/></ChildContent>
+</NgDrawer>
+@code {
+  private bool expanded,keepOpen,rtl; private string? selected="overview",note;
+  private readonly NgOption[] items=[new("overview","Overview"),new("divider","Workspace sections"),
+    new("reports","Reports"),new("hidden","Internal"),new("locked","Unavailable",true)];
+  private bool ShowItem(NgOption item)=>item.Value!="hidden";
+  private bool IsDivider(NgOption item)=>item.Value=="divider";
+}
+'''
+D['NgDrawer']['dart'] = '''bool expanded = false, keepOpen = false, rtl = false; String? selected = 'overview';
+final note = TextEditingController();
+final items = const [NgOption('overview','Overview'),NgOption('divider','Workspace sections'),
+  NgOption('reports','Reports'),NgOption('hidden','Internal'),NgOption('locked','Unavailable',disabled:true)];
+@override void dispose(){note.dispose();super.dispose();}
+Widget build(BuildContext context) => Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
+  NgCheckBox(label:'Keep drawer open',value:keepOpen,onChanged:(v)=>setState(()=>keepOpen=v)),
+  NgCheckBox(label:'Right-to-left',value:rtl,onChanged:(v)=>setState(()=>rtl=v)),
+  NgDrawer(label:'Workspace navigation',items:items,selectedId:selected,
+    onSelectedIdChanged:(id)=>setState(()=>selected=id),expanded:expanded,
+    onExpandedChanged:(v)=>setState(()=>expanded=v),position:'end',rtl:rtl,closeOnSelect:!keepOpen,
+    isVisible:(item)=>item.value!='hidden',isSeparator:(item)=>item.value=='divider',
+    header:const Text('Project workspace'),footer:const Text('Signed in as Morgan'),
+    leadingBuilder:(_,item)=>const Icon(Icons.folder_outlined,size:18),
+    itemBuilder:(_,item)=>Text(item.label,style:const TextStyle(fontWeight:FontWeight.bold)),
+    child:Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
+      Text('Current section: $selected'),NgTextBox(label:'Draft note',controller:note)])),
+]);
+'''

@@ -4,13 +4,13 @@ from pathlib import Path
 root = Path(__file__).resolve().parents[1]
 catalog = json.loads((root/'docs/catalog.json').read_text())
 lines = ['# Feature parity with Telerik UI for Blazor', '',
-'Verification target: Blazor Web and Flutter Web. Reference audit date: 2026-10-18.', '',
+'Verification target: Blazor Web and Flutter Web. Reference audit date: 2026-10-19.', '',
 'An implemented component is not a completed Telerik equivalent. The catalogue status describes availability only. No component currently has verified full feature parity. Public behavior is the target; API compatibility, exact theme pixels and commercial tooling integration are separate concerns.', '',
 '## Completion rule', '',
 'A component can be marked complete only after every reference feature is recorded, both implementations and detailed English examples exist, meaningful automated checks and visible Chrome scenarios pass, and remaining differences are explicitly accepted. Unknown is not complete. A test pass proves the tested behavior, not all reference behavior.', '',
 '## Current work order', '',
 '1. Chip/ChipList remaining gaps stay tracked below; do not mark full parity or silently accept them. Work is delivered in component blocks, not one release per parameter.',
-'2. Active block: ToggleButton and ButtonGroup together (commands, selection, events, templates, appearance and accessibility). Then audit Menu/Drawer and Stepper/Wizard as paired blocks.',
+'2. ToggleButton/ButtonGroup and Menu/Drawer implementation blocks are delivered with explicit remaining gaps below. Next paired block: Stepper/Wizard. No block is a full-parity verdict.',
 '3. Continue through existing editors/forms, data management, visualization and complex editors. Add new component names only after closing the active group or recording a user-approved exception.', '',
 '## Chip and ChipList feature matrix', '',
 'Sources: [Chip API](https://www.telerik.com/blazor-ui/documentation/api/telerik.blazor.components.telerikchip), [Chip appearance](https://www.telerik.com/blazor-ui/documentation/components/chip/appearance), [Chip events](https://www.telerik.com/blazor-ui/documentation/components/chip/events), [ChipList binding](https://www.telerik.com/blazor-ui/documentation/components/chiplist/data-bind), [ChipList templates](https://www.telerik.com/blazor-ui/documentation/components/chiplist/templates), [ChipList appearance](https://www.telerik.com/blazor-ui/documentation/components/chiplist/appearance), [keyboard demo](https://demos.telerik.com/blazor-ui/chiplist/keyboard-navigation), [RTL reference](https://www.telerik.com/blazor-ui/documentation/globalization/rtl-support), [ARIA reference](https://www.telerik.com/blazor-ui/documentation/components/chiplist/accessibility/wai-aria-support).', '',
@@ -61,6 +61,18 @@ for c in catalog['components']:
     cells=[]
     for platform in ('blazor','flutter'):
         v=c[platform];cells.append('Implemented subset: '+v['component'] if v['component'] else 'Not implemented')
-    lines.append(f"| [{c['name']}]({c['reference']}) | {' | '.join(cells)} | "+('Partial — matrix above' if c['name'] in ('Chip','ChipList','ToggleButton','ButtonGroup') else 'Not assessed')+' |')
-(root/'docs/parity.md').write_text('\n'.join(lines)+'\n')
+    lines.append(f"| [{c['name']}]({c['reference']}) | {' | '.join(cells)} | "+('Partial — matrix above' if c['name'] in ('Chip','ChipList','ToggleButton','ButtonGroup') else 'Partial — navigation matrix below' if c['name'] in ('Menu','Drawer') else 'Not assessed')+' |')
+lines += ['', '## Menu and Drawer audit (0.27)', '',
+'Sources: [Menu overview](https://www.telerik.com/blazor-ui/documentation/components/menu/overview), [Menu binding](https://www.telerik.com/blazor-ui/documentation/components/menu/data-binding/overview), [Menu templates](https://www.telerik.com/blazor-ui/documentation/components/menu/templates), [Drawer overview](https://www.telerik.com/blazor-ui/documentation/components/drawer/overview), [Drawer templates](https://www.telerik.com/blazor-ui/documentation/components/drawer/templates), [mini mode](https://www.telerik.com/blazor-ui/documentation/components/drawer/mini-view).', '',
+'| Feature | Blazor / Flutter Web | Remaining difference |', '|---|---|---|',
+'| Menu nested commands and disabled ancestors | Implemented; three levels / 100 nodes | Fixed model and caps; no arbitrary field mapping or flat-to-tree adapter |',
+'| Menu icons, item display and separators | Leading/item templates and immutable separator model flag | Display-only templates; no built-in icon registry |',
+'| Hidden entries | Menu Visible; Drawer IsVisible predicate | Application must restore focus when removing the focused item |',
+'| Menu close policy and RTL | CloseOnClick; RTL arrows/layout | Blazor click/keyboard opening; Flutter native Material hover. No common hover-delay/animation API |',
+'| Drawer modes, position and selection | Push/Overlay; logical start/end; RTL; CloseOnSelect | Push stacks above content under 600px, Flutter panel height 420px |',
+'| Drawer icons and templates | Item/leading and header/footer slots | No full template replacement or arbitrary model binding |',
+'| Disabled/read-only destinations | Disabled state and missing callback disable selection | An open overlay intentionally remains dismissible |',
+'| Mini mode / swipe / automatic URLs | Not implemented | Routing stays application-owned |',
+'| Accessibility and platforms | Native buttons/dialog or Material semantics; Web checked | Full screen-reader and native mobile validation remain open |', '']
+(root/'docs/parity.md').write_text('\n'.join(lines).rstrip()+'\n')
 print(f"Generated {len(catalog['components'])} parity inventory entries")

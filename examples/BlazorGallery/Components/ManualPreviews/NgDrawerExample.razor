@@ -1,10 +1,19 @@
 @* Generated from scripts/manual_content.py *@
-<NgDrawer Label="Workspace" Items="destinations" @bind-SelectedId="selected" @bind-Expanded="expanded" Overlay="true">
-    <h2>@selected</h2>
-    <NgTextBox Label="Draft note" @bind-Value="note" />
+<NgCheckBox Label="Keep drawer open" @bind-Value="keepOpen"/>
+<NgCheckBox Label="Right-to-left" @bind-Value="rtl"/>
+<NgDrawer Label="Workspace navigation" Items="items" @bind-SelectedId="selected"
+          @bind-Expanded="expanded" Position="end" Rtl="rtl" CloseOnSelect="@(!keepOpen)"
+          IsVisible="ShowItem" IsSeparator="IsDivider">
+  <HeaderTemplate><strong>Project workspace</strong></HeaderTemplate>
+  <FooterTemplate><small>Signed in as Morgan</small></FooterTemplate>
+  <LeadingTemplate Context="item"><span>◆</span></LeadingTemplate>
+  <ItemTemplate Context="item"><strong>@item.Label</strong></ItemTemplate>
+  <ChildContent><p>Current section: @selected</p><NgTextBox Label="Draft note" @bind-Value="note"/></ChildContent>
 </NgDrawer>
 @code {
-    private string? selected = "overview", note;
-    private bool expanded;
-    private readonly NgOption[] destinations = [new("overview", "Overview"), new("reports", "Reports"), new("settings", "Settings", true)];
+  private bool expanded,keepOpen,rtl; private string? selected="overview",note;
+  private readonly NgOption[] items=[new("overview","Overview"),new("divider","Workspace sections"),
+    new("reports","Reports"),new("hidden","Internal"),new("locked","Unavailable",true)];
+  private bool ShowItem(NgOption item)=>item.Value!="hidden";
+  private bool IsDivider(NgOption item)=>item.Value=="divider";
 }

@@ -1,14 +1,20 @@
 @* Generated from scripts/manual_content.py *@
-<NgMenu Label="Document commands" Items="commands" SelectedId="@selected" OnInvoke="Invoke" />
-<p>Last command: @selected</p>
+<NgCheckBox Label="Keep menu open" @bind-Value="keepOpen"/>
+<NgCheckBox Label="Right-to-left" @bind-Value="rtl"/>
+<NgMenu Label="Document commands" Items="commands" SelectedId="@selected"
+        OnInvoke="Run" Rtl="rtl" CloseOnClick="@(!keepOpen)">
+  <LeadingTemplate Context="item"><span>◆</span></LeadingTemplate>
+  <ItemTemplate Context="item"><strong>@item.Text</strong></ItemTemplate>
+</NgMenu>
+<p>Last command: @selected · Invocations: @count</p>
 @code {
-    private string? selected;
-    private readonly NgMenuItem[] commands = [
-        new("file", "File", children: [
-            new("new", "New document"),
-            new("export", "Export", children: [new("pdf", "PDF"), new("csv", "CSV")]),
-            new("delete", "Delete", disabled: true)
-        ]), new("help", "Help")
-    ];
-    private void Invoke(string id) { selected = id; /* Dispatch the application action. */ }
+  private bool keepOpen, rtl;
+  private string selected="none"; private int count;
+  private readonly NgMenuItem[] commands=[
+    new("file","File",children:[new("new","New document"),
+      new("exports","Export formats",separator:true),
+      new("export","Export",children:[new("pdf","PDF"),new("csv","CSV")]),
+      new("secret","Internal command",visible:false),new("delete","Delete",disabled:true)]),
+    new("help","Help")];
+  private void Run(string id){selected=id;count++;}
 }

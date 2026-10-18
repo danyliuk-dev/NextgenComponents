@@ -1,8 +1,8 @@
 @implements IAsyncDisposable
 @inject IJSRuntime JS
-<div class="ng-drawer @(Expanded&&!Overlay?"ng-drawer-push":"")" style="--ng-drawer-width:@(Width)px">
+<div dir="@(Rtl?"rtl":"ltr")" data-position="@Position" class="ng-drawer @(Expanded&&!Overlay?"ng-drawer-push":"")" style="--ng-drawer-width:@(Width)px">
  @if(!Overlay&&Expanded){<aside class="ng-drawer-panel" aria-label="@Label">@Panel</aside>}
- <div class="ng-drawer-content"><NgButton Disabled="@(!ExpandedChanged.HasDelegate)" aria-expanded="@(Expanded?"true":"false")" OnClick="()=>ExpandedChanged.InvokeAsync(!Expanded)">@(Expanded?"Close navigation":"Open navigation")</NgButton><div class="ng-drawer-page">@ChildContent</div></div>
+ <div class="ng-drawer-content"><NgButton Disabled="@(Disabled||!ExpandedChanged.HasDelegate)" aria-expanded="@(Expanded?"true":"false")" OnClick="()=>ExpandedChanged.InvokeAsync(!Expanded)">@(Expanded?"Close navigation":"Open navigation")</NgButton><div class="ng-drawer-page">@ChildContent</div></div>
  <dialog class="ng-drawer-dialog" @ref="dialog" aria-label="@Label" @oncancel="Close" @oncancel:preventDefault="true">@Panel</dialog>
 </div>
 @code {
@@ -14,14 +14,25 @@
  [Parameter] public EventCallback<bool> ExpandedChanged {get;set;}
  [Parameter] public bool Overlay {get;set;}=true;
  [Parameter] public int Width {get;set;}=260;
+ [Parameter] public bool Rtl {get;set;}
+ [Parameter] public string Position {get;set;}="start";
+ [Parameter] public bool CloseOnSelect {get;set;}=true;
+ [Parameter] public bool Disabled {get;set;}
+ [Parameter] public Func<NgOption,bool>? IsVisible {get;set;}
+ [Parameter] public Func<NgOption,bool>? IsSeparator {get;set;}
+ [Parameter] public RenderFragment<NgOption>? ItemTemplate {get;set;}
+ [Parameter] public RenderFragment<NgOption>? LeadingTemplate {get;set;}
+ [Parameter] public RenderFragment? HeaderTemplate {get;set;}
+ [Parameter] public RenderFragment? FooterTemplate {get;set;}
  [Parameter] public RenderFragment? ChildContent {get;set;}
  private ElementReference dialog;private IJSObjectReference? module;private DotNetObjectReference<NgDrawer>? reference;private bool disposed;
- private RenderFragment Panel=>@<div class="ng-drawer-inner"><header><strong>@Label</strong><NgButton aria-label="Close navigation" OnClick="Close">×</NgButton></header><nav aria-label="@Label">
- @foreach(var item in Items){<button type="button" class="ng-drawer-item" disabled="@item.Disabled" aria-current="@(SelectedId==item.Value?"page":null)" @onclick="()=>Select(item.Value)">@item.Label</button>}
- @if(Items.Count==0){<p>No destinations</p>}
- </nav></div>;
- protected override void OnParametersSet(){NgNavigationRules.ValidateDrawer(Items,Width);if(Expanded&&Overlay&&!ExpandedChanged.HasDelegate)throw new ArgumentException("An expanded overlay requires ExpandedChanged to close it.");}
- private async Task Select(string key){if(!Items.Any(x=>x.Value==key&&!x.Disabled))return;await SelectedIdChanged.InvokeAsync(key);if(Overlay&&!disposed)await ExpandedChanged.InvokeAsync(false);}
+ private NgOption[] visibleItems=[];
+ private RenderFragment Panel=>@<div class="ng-drawer-inner"><header><div>@if(HeaderTemplate is not null){@HeaderTemplate}else{<strong>@Label</strong>}</div><NgButton Disabled="@(!ExpandedChanged.HasDelegate)" aria-label="Close navigation" OnClick="Close">×</NgButton></header><nav aria-label="@Label">
+ @foreach(var item in visibleItems){@if(IsSeparator?.Invoke(item)==true){<hr class="ng-drawer-separator"/>}else{<button aria-label="@item.Label" type="button" class="ng-drawer-item" disabled="@(Disabled||item.Disabled||!SelectedIdChanged.HasDelegate)" aria-current="@(SelectedId==item.Value?"page":null)" @onclick="()=>Select(item.Value)"><span class="ng-navigation-caption">@if(LeadingTemplate is not null){<span aria-hidden="true">@LeadingTemplate(item)</span>}<span>@if(ItemTemplate is not null){@ItemTemplate(item)}else{@item.Label}</span></span></button>}}
+ @if(visibleItems.Length==0){<p>No destinations</p>}
+ </nav>@if(FooterTemplate is not null){<footer class="ng-drawer-footer">@FooterTemplate</footer>}</div>;
+ protected override void OnParametersSet(){NgNavigationRules.ValidateDrawer(Items,Width);NgNavigationRules.ValidatePresentation(Label,Position);visibleItems=Items.Where(x=>IsVisible?.Invoke(x)!=false).ToArray();if(Expanded&&Overlay&&!ExpandedChanged.HasDelegate)throw new ArgumentException("An expanded overlay requires ExpandedChanged to close it.");}
+ private async Task Select(string key){if(Disabled||!SelectedIdChanged.HasDelegate||!visibleItems.Any(x=>x.Value==key&&!x.Disabled&&IsSeparator?.Invoke(x)!=true))return;await SelectedIdChanged.InvokeAsync(key);if(Overlay&&CloseOnSelect&&!disposed)await ExpandedChanged.InvokeAsync(false);}
  private Task Close()=>ExpandedChanged.InvokeAsync(false);
  [JSInvokable] public Task Dismiss()=>disposed?Task.CompletedTask:Close();
  protected override async Task OnAfterRenderAsync(bool firstRender){if(disposed)return;module??=await JS.InvokeAsync<IJSObjectReference>("import","./_content/NextgenComponents.Blazor/navigation.js");reference??=DotNetObjectReference.Create(this);await module.InvokeVoidAsync("drawer",dialog,Expanded&&Overlay,reference);}

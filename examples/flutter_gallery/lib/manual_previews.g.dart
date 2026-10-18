@@ -401,33 +401,44 @@ Widget build(BuildContext context) => Column(children: [
 }
 class NgMenuExample extends StatefulWidget { const NgMenuExample({super.key}); @override State<NgMenuExample> createState()=>_NgMenuExampleState(); }
 class _NgMenuExampleState extends State<NgMenuExample> {
-String? selected;
-final commands = [
-  NgMenuItem('file', 'File', children: [
-    NgMenuItem('new', 'New document'),
-    NgMenuItem('export', 'Export', children: [NgMenuItem('pdf', 'PDF'), NgMenuItem('csv', 'CSV')]),
-    NgMenuItem('delete', 'Delete', disabled: true),
-  ]), NgMenuItem('help', 'Help'),
-];
-Widget build(BuildContext context) => Column(children: [
-  NgMenu(label: 'Document commands', items: commands, selectedId: selected,
-    onInvoke: (id) => setState(() => selected = id)),
-  Text('Last command: ${selected ?? "None"}'),
+bool keepOpen = false, rtl = false; String selected = 'none'; int count = 0;
+final commands = [NgMenuItem('file','File',children:[
+  NgMenuItem('new','New document'),NgMenuItem('exports','Export formats',separator:true),
+  NgMenuItem('export','Export',children:[NgMenuItem('pdf','PDF'),NgMenuItem('csv','CSV')]),
+  NgMenuItem('secret','Internal command',visible:false),NgMenuItem('delete','Delete',disabled:true)]),
+  NgMenuItem('help','Help')];
+Widget build(BuildContext context) => Column(crossAxisAlignment: CrossAxisAlignment.start, children:[
+  NgCheckBox(label:'Keep menu open',value:keepOpen,onChanged:(v)=>setState(()=>keepOpen=v)),
+  NgCheckBox(label:'Right-to-left',value:rtl,onChanged:(v)=>setState(()=>rtl=v)),
+  NgMenu(label:'Document commands',items:commands,selectedId:selected,rtl:rtl,closeOnClick:!keepOpen,
+    leadingBuilder:(_,item)=>const Icon(Icons.description_outlined,size:18),
+    itemBuilder:(_,item)=>Text(item.text,style:const TextStyle(fontWeight:FontWeight.bold)),
+    onInvoke:(id)=>setState((){selected=id;count++;})),
+  Text('Last command: $selected · Invocations: $count'),
 ]);
+
 }
 class NgDrawerExample extends StatefulWidget { const NgDrawerExample({super.key}); @override State<NgDrawerExample> createState()=>_NgDrawerExampleState(); }
 class _NgDrawerExampleState extends State<NgDrawerExample> {
-bool expanded = false;
-String? selected = 'overview';
+bool expanded = false, keepOpen = false, rtl = false; String? selected = 'overview';
 final note = TextEditingController();
-@override void dispose() { note.dispose(); super.dispose(); }
-Widget build(BuildContext context) => NgDrawer(
-  label: 'Workspace', items: const [NgOption('overview', 'Overview'), NgOption('reports', 'Reports'), NgOption('settings', 'Settings', disabled: true)],
-  selectedId: selected, onSelectedIdChanged: (id) => setState(() => selected = id),
-  expanded: expanded, onExpandedChanged: (value) => setState(() => expanded = value),
-  overlay: true,
-  child: Column(children: [Text(selected ?? 'Choose a section'), NgTextBox(label: 'Draft note', controller: note)]),
-);
+final items = const [NgOption('overview','Overview'),NgOption('divider','Workspace sections'),
+  NgOption('reports','Reports'),NgOption('hidden','Internal'),NgOption('locked','Unavailable',disabled:true)];
+@override void dispose(){note.dispose();super.dispose();}
+Widget build(BuildContext context) => Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
+  NgCheckBox(label:'Keep drawer open',value:keepOpen,onChanged:(v)=>setState(()=>keepOpen=v)),
+  NgCheckBox(label:'Right-to-left',value:rtl,onChanged:(v)=>setState(()=>rtl=v)),
+  NgDrawer(label:'Workspace navigation',items:items,selectedId:selected,
+    onSelectedIdChanged:(id)=>setState(()=>selected=id),expanded:expanded,
+    onExpandedChanged:(v)=>setState(()=>expanded=v),position:'end',rtl:rtl,closeOnSelect:!keepOpen,
+    isVisible:(item)=>item.value!='hidden',isSeparator:(item)=>item.value=='divider',
+    header:const Text('Project workspace'),footer:const Text('Signed in as Morgan'),
+    leadingBuilder:(_,item)=>const Icon(Icons.folder_outlined,size:18),
+    itemBuilder:(_,item)=>Text(item.label,style:const TextStyle(fontWeight:FontWeight.bold)),
+    child:Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
+      Text('Current section: $selected'),NgTextBox(label:'Draft note',controller:note)])),
+]);
+
 }
 class NgToggleButtonExample extends StatefulWidget { const NgToggleButtonExample({super.key}); @override State<NgToggleButtonExample> createState()=>_NgToggleButtonExampleState(); }
 class _NgToggleButtonExampleState extends State<NgToggleButtonExample> {

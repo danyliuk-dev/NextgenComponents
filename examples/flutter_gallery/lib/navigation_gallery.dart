@@ -16,6 +16,12 @@ class NavigationGallery extends StatefulWidget {
 }
 
 class _NavigationGalleryState extends State<NavigationGallery> {
+  bool rtl = false,
+      end = false,
+      keepMenu = false,
+      keepDrawer = false,
+      hideReports = false,
+      disableDrawer = false;
   bool vertical = false,
       disabled = false,
       empty = false,
@@ -27,6 +33,7 @@ class _NavigationGalleryState extends State<NavigationGallery> {
   final destinations = const [
     NgOption('overview', 'Overview'),
     NgOption('requests', 'Requests'),
+    NgOption('divider', 'Workspace sections'),
     NgOption('reports', 'Reports'),
     NgOption('settings', 'Settings (unavailable)', disabled: true),
   ];
@@ -44,6 +51,8 @@ class _NavigationGalleryState extends State<NavigationGallery> {
             NgMenuItem('csv', 'CSV data'),
           ],
         ),
+        NgMenuItem('menu-divider', 'Navigation section', separator: true),
+        NgMenuItem('internal', 'Internal command', visible: false),
         NgMenuItem('go-reports', 'Open reports'),
         NgMenuItem('delete', 'Delete workspace', disabled: true),
       ],
@@ -95,7 +104,7 @@ class _NavigationGalleryState extends State<NavigationGallery> {
               ),
               const SizedBox(height: 12),
               const Text(
-                'FLUTTER WEB / NAVIGATION 0.12 · Nested commands and an application drawer. The host owns routes, state and action handlers.',
+                'FLUTTER WEB / NAVIGATION 0.27 · Nested commands and an application drawer. The host owns routes, state and action handlers.',
               ),
               const SizedBox(height: 24),
               Wrap(
@@ -112,6 +121,16 @@ class _NavigationGalleryState extends State<NavigationGallery> {
                     onChanged: (v) => setState(() => disabled = v),
                   ),
                   NgCheckBox(
+                    label: 'Right-to-left',
+                    value: rtl,
+                    onChanged: (v) => setState(() => rtl = v),
+                  ),
+                  NgCheckBox(
+                    label: 'Keep menu open',
+                    value: keepMenu,
+                    onChanged: (v) => setState(() => keepMenu = v),
+                  ),
+                  NgCheckBox(
                     label: 'Empty navigation',
                     value: empty,
                     onChanged: (v) => setState(() => empty = v),
@@ -121,6 +140,14 @@ class _NavigationGalleryState extends State<NavigationGallery> {
               const SizedBox(height: 16),
               NgMenu(
                 label: 'Workspace commands',
+                rtl: rtl,
+                closeOnClick: !keepMenu,
+                leadingBuilder: (_, i) =>
+                    const Icon(Icons.description_outlined, size: 18),
+                itemBuilder: (_, i) => Text(
+                  i.text,
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
                 items: empty ? [] : commands,
                 selectedId: command,
                 vertical: vertical,
@@ -141,6 +168,26 @@ class _NavigationGalleryState extends State<NavigationGallery> {
                     value: overlay,
                     onChanged: (v) => setState(() => overlay = v),
                   ),
+                  NgCheckBox(
+                    label: 'End position',
+                    value: end,
+                    onChanged: (v) => setState(() => end = v),
+                  ),
+                  NgCheckBox(
+                    label: 'Keep drawer open',
+                    value: keepDrawer,
+                    onChanged: (v) => setState(() => keepDrawer = v),
+                  ),
+                  NgCheckBox(
+                    label: 'Hide Reports',
+                    value: hideReports,
+                    onChanged: (v) => setState(() => hideReports = v),
+                  ),
+                  NgCheckBox(
+                    label: 'Disable drawer',
+                    value: disableDrawer,
+                    onChanged: (v) => setState(() => disableDrawer = v),
+                  ),
                   NgButton(
                     onPressed: () => setState(() => section = 'reports'),
                     child: const Text('Show reports'),
@@ -150,6 +197,20 @@ class _NavigationGalleryState extends State<NavigationGallery> {
               const SizedBox(height: 16),
               NgDrawer(
                 label: 'Workspace navigation',
+                rtl: rtl,
+                position: end ? 'end' : 'start',
+                closeOnSelect: !keepDrawer,
+                disabled: disableDrawer,
+                isVisible: (i) => !hideReports || i.value != 'reports',
+                isSeparator: (i) => i.value == 'divider',
+                header: const Text('Project workspace'),
+                footer: const Text('Signed in as Morgan'),
+                leadingBuilder: (_, i) =>
+                    const Icon(Icons.folder_outlined, size: 18),
+                itemBuilder: (_, i) => Text(
+                  i.label,
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
                 items: empty ? [] : destinations,
                 selectedId: section,
                 onSelectedIdChanged: (id) => setState(() {
@@ -182,7 +243,7 @@ class _NavigationGalleryState extends State<NavigationGallery> {
                 ),
               ),
               const SizedBox(height: 32),
-              const Text('43 CONTROLS / 49 CATALOGUE ENTRIES · WEB FIRST'),
+              const Text('47 CONTROLS / 53 CATALOGUE ENTRIES · WEB FIRST'),
             ],
           ),
         ),

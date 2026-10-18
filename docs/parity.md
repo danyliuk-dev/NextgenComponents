@@ -1,6 +1,6 @@
 # Feature parity with Telerik UI for Blazor
 
-Verification target: Blazor Web and Flutter Web. Reference audit date: 2026-10-18.
+Verification target: Blazor Web and Flutter Web. Reference audit date: 2026-10-19.
 
 An implemented component is not a completed Telerik equivalent. The catalogue status describes availability only. No component currently has verified full feature parity. Public behavior is the target; API compatibility, exact theme pixels and commercial tooling integration are separate concerns.
 
@@ -11,7 +11,7 @@ A component can be marked complete only after every reference feature is recorde
 ## Current work order
 
 1. Chip/ChipList remaining gaps stay tracked below; do not mark full parity or silently accept them. Work is delivered in component blocks, not one release per parameter.
-2. Active block: ToggleButton and ButtonGroup together (commands, selection, events, templates, appearance and accessibility). Then audit Menu/Drawer and Stepper/Wizard as paired blocks.
+2. ToggleButton/ButtonGroup and Menu/Drawer implementation blocks are delivered with explicit remaining gaps below. Next paired block: Stepper/Wizard. No block is a full-parity verdict.
 3. Continue through existing editors/forms, data management, visualization and complex editors. Add new component names only after closing the active group or recording a user-approved exception.
 
 ## Chip and ChipList feature matrix
@@ -86,10 +86,10 @@ The inventory includes chart modes as separate entries. “Not assessed” means
 | [Chip](https://www.telerik.com/blazor-ui/chip) | Implemented subset: NgChip | Implemented subset: NgChip | Partial — matrix above |
 | [ChipList](https://www.telerik.com/blazor-ui/chiplist) | Implemented subset: NgChipList | Implemented subset: NgChipList | Partial — matrix above |
 | [Context Menu](https://www.telerik.com/blazor-ui/context-menu) | Not implemented | Not implemented | Not assessed |
-| [Drawer](https://www.telerik.com/blazor-ui/drawer) | Implemented subset: NgDrawer | Implemented subset: NgDrawer | Not assessed |
+| [Drawer](https://www.telerik.com/blazor-ui/drawer) | Implemented subset: NgDrawer | Implemented subset: NgDrawer | Partial — navigation matrix below |
 | [DropDownButton](https://www.telerik.com/blazor-ui/dropdownbutton) | Not implemented | Not implemented | Not assessed |
 | [Floating Action Button](https://www.telerik.com/blazor-ui/floating-action-button) | Not implemented | Not implemented | Not assessed |
-| [Menu](https://www.telerik.com/blazor-ui/menu) | Implemented subset: NgMenu | Implemented subset: NgMenu | Not assessed |
+| [Menu](https://www.telerik.com/blazor-ui/menu) | Implemented subset: NgMenu | Implemented subset: NgMenu | Partial — navigation matrix below |
 | [Segmented Control](https://www.telerik.com/blazor-ui/segmented-control) | Not implemented | Not implemented | Not assessed |
 | [Speech-to-Text Button](https://www.telerik.com/blazor-ui/speech-to-text-button) | Not implemented | Not implemented | Not assessed |
 | [Split Button](https://www.telerik.com/blazor-ui/split-button) | Not implemented | Not implemented | Not assessed |
@@ -213,3 +213,19 @@ The inventory includes chart modes as separate entries. “Not assessed” means
 | [SpreadStreamProcessing](https://www.telerik.com/blazor-ui/spreadstreamprocessing) | Not implemented | Not implemented | Not assessed |
 | [WordsProcessing](https://www.telerik.com/blazor-ui/wordprocessing) | Not implemented | Not implemented | Not assessed |
 | [ZipLibrary](https://www.telerik.com/blazor-ui/ziplibrary) | Not implemented | Not implemented | Not assessed |
+
+## Menu and Drawer audit (0.27)
+
+Sources: [Menu overview](https://www.telerik.com/blazor-ui/documentation/components/menu/overview), [Menu binding](https://www.telerik.com/blazor-ui/documentation/components/menu/data-binding/overview), [Menu templates](https://www.telerik.com/blazor-ui/documentation/components/menu/templates), [Drawer overview](https://www.telerik.com/blazor-ui/documentation/components/drawer/overview), [Drawer templates](https://www.telerik.com/blazor-ui/documentation/components/drawer/templates), [mini mode](https://www.telerik.com/blazor-ui/documentation/components/drawer/mini-view).
+
+| Feature | Blazor / Flutter Web | Remaining difference |
+|---|---|---|
+| Menu nested commands and disabled ancestors | Implemented; three levels / 100 nodes | Fixed model and caps; no arbitrary field mapping or flat-to-tree adapter |
+| Menu icons, item display and separators | Leading/item templates and immutable separator model flag | Display-only templates; no built-in icon registry |
+| Hidden entries | Menu Visible; Drawer IsVisible predicate | Application must restore focus when removing the focused item |
+| Menu close policy and RTL | CloseOnClick; RTL arrows/layout | Blazor click/keyboard opening; Flutter native Material hover. No common hover-delay/animation API |
+| Drawer modes, position and selection | Push/Overlay; logical start/end; RTL; CloseOnSelect | Push stacks above content under 600px, Flutter panel height 420px |
+| Drawer icons and templates | Item/leading and header/footer slots | No full template replacement or arbitrary model binding |
+| Disabled/read-only destinations | Disabled state and missing callback disable selection | An open overlay intentionally remains dismissible |
+| Mini mode / swipe / automatic URLs | Not implemented | Routing stays application-owned |
+| Accessibility and platforms | Native buttons/dialog or Material semantics; Web checked | Full screen-reader and native mobile validation remain open |

@@ -2,19 +2,24 @@
 <PageTitle>Nextgen • Menu and drawer</PageTitle>
 <div class="ng-scope gallery" data-ng-theme="@(dark?"dark":"light")"><main>
 <nav><a href="/code-examples">Code examples</a><strong>N NEXTGEN COMPONENTS</strong><div class="row"><a href="/">Foundation</a><NgSwitch Label="Dark theme" @bind-Value="dark"/></div></nav>
-<section class="hero"><p class="eyebrow">BLAZOR / NAVIGATION 0.12</p><h1>Every action.<br/>In its place.</h1><p>Nested commands and a responsive application drawer. The host owns routes, state and action handlers.</p></section>
-<section class="panel"><div class="row"><NgCheckBox Label="Vertical menu" @bind-Value="vertical"/><NgCheckBox Label="Disable menu" @bind-Value="disabled"/><NgCheckBox Label="Empty navigation" @bind-Value="empty"/></div>
-<NgMenu Label="Workspace commands" Items="@(empty?Array.Empty<NgMenuItem>():commands)" SelectedId="@command" Vertical="vertical" Disabled="disabled" OnInvoke="Invoke"/>
+<section class="hero"><p class="eyebrow">BLAZOR / NAVIGATION 0.27</p><h1>Every action.<br/>In its place.</h1><p>Nested commands and a responsive application drawer. The host owns routes, state and action handlers.</p></section>
+<section class="panel"><div class="row"><NgCheckBox Label="Vertical menu" @bind-Value="vertical"/><NgCheckBox Label="Disable menu" @bind-Value="disabled"/><NgCheckBox Label="Right-to-left" @bind-Value="rtl"/><NgCheckBox Label="Keep menu open" @bind-Value="keepMenu"/><NgCheckBox Label="Empty navigation" @bind-Value="empty"/></div>
+<NgMenu Label="Workspace commands" Items="@(empty?Array.Empty<NgMenuItem>():commands)" SelectedId="@command" Vertical="vertical" Disabled="disabled" OnInvoke="Invoke" Rtl="rtl" CloseOnClick="@(!keepMenu)">
+<LeadingTemplate Context="item"><span>◆</span></LeadingTemplate><ItemTemplate Context="item"><strong>@item.Text</strong></ItemTemplate></NgMenu>
 <p id="command-result">Command: @command · Invocations: @invocations</p></section>
-<section class="panel"><div class="row"><NgCheckBox Label="Overlay mode" @bind-Value="overlay"/><NgButton OnClick='()=>section="reports"'>Show reports</NgButton></div>
-<NgDrawer Label="Workspace navigation" Items="@(empty?Array.Empty<NgOption>():destinations)" SelectedId="@(section)" SelectedIdChanged="Select" @bind-Expanded="expanded" Overlay="overlay">
+<section class="panel"><div class="row"><NgCheckBox Label="Overlay mode" @bind-Value="overlay"/><NgCheckBox Label="End position" @bind-Value="end"/><NgCheckBox Label="Keep drawer open" @bind-Value="keepDrawer"/><NgCheckBox Label="Hide Reports" @bind-Value="hideReports"/><NgCheckBox Label="Disable drawer" @bind-Value="disableDrawer"/><NgButton OnClick='()=>section="reports"'>Show reports</NgButton></div>
+<NgDrawer Label="Workspace navigation" Items="@(empty?Array.Empty<NgOption>():destinations)" SelectedId="@(section)" SelectedIdChanged="Select" @bind-Expanded="expanded" Overlay="overlay" Position="@(end?"end":"start")" Rtl="rtl" CloseOnSelect="@(!keepDrawer)" Disabled="disableDrawer" IsVisible="ShowDestination" IsSeparator="IsDivider">
+<HeaderTemplate><strong>Project workspace</strong></HeaderTemplate><FooterTemplate><small>Signed in as Morgan</small></FooterTemplate><LeadingTemplate Context="item"><span>◆</span></LeadingTemplate><ItemTemplate Context="item"><strong>@item.Label</strong></ItemTemplate><ChildContent>
 <h2>Current section: @(section)</h2><p>Navigate with the drawer or use Workspace → Open reports. Unavailable destinations stay disabled.</p>
 <label class="ng-field">Workspace note<input class="ng-input" aria-label="Workspace note" @bind="note" @bind:event="oninput"/></label><p id="drawer-result">Selections: @selections · Note: @note</p>
-</NgDrawer></section><footer>43 CONTROLS / 49 CATALOGUE ENTRIES · WEB FIRST</footer></main></div>
+</ChildContent></NgDrawer></section><footer>47 CONTROLS / 53 CATALOGUE ENTRIES · WEB FIRST</footer></main></div>
 @code {
+ private bool rtl,end,keepMenu,keepDrawer,hideReports,disableDrawer;
+ private bool ShowDestination(NgOption i)=>!hideReports||i.Value!="reports";
+ private bool IsDivider(NgOption i)=>i.Value=="divider";
  private bool dark,vertical,disabled,empty,overlay=true,expanded;private string command="none",section="overview",note="";private int invocations,selections;
- private readonly NgOption[] destinations=[new("overview","Overview"),new("requests","Requests"),new("reports","Reports"),new("settings","Settings (unavailable)",true)];
- private readonly NgMenuItem[] commands=[new("workspace","Workspace",children:[new("create","Create request"),new("export","Export",children:[new("pdf","PDF document"),new("csv","CSV data")]),new("go-reports","Open reports"),new("delete","Delete workspace",disabled:true)]),new("locked","Restricted",disabled:true,children:[new("secret","Restricted action")]),new("help","Help")];
+ private readonly NgOption[] destinations=[new("overview","Overview"),new("requests","Requests"),new("divider","Workspace sections"),new("reports","Reports"),new("settings","Settings (unavailable)",true)];
+ private readonly NgMenuItem[] commands=[new("workspace","Workspace",children:[new("create","Create request"),new("export","Export",children:[new("pdf","PDF document"),new("csv","CSV data")]),new("menu-divider","Navigation section",separator:true),new("internal","Internal command",visible:false),new("go-reports","Open reports"),new("delete","Delete workspace",disabled:true)]),new("locked","Restricted",disabled:true,children:[new("secret","Restricted action")]),new("help","Help")];
  private void Invoke(string id){command=id;invocations++;if(id=="go-reports")section="reports";}
  private void Select(string id){section=id;selections++;}
 }

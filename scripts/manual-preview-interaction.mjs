@@ -25,7 +25,7 @@ try{
  await screenshot('manual-live-flutter');
  await open('NgDialog');await click('button',true);await assert("!!document.querySelector('dialog[open]')",true);await screenshot('manual-live-dialog');
  await send('Input.dispatchKeyEvent',{type:'keyDown',key:'Escape',code:'Escape',windowsVirtualKeyCode:27});await send('Input.dispatchKeyEvent',{type:'keyUp',key:'Escape',code:'Escape',windowsVirtualKeyCode:27});
- await open('NgDrawer');await click('button',true);await assert("!!document.querySelector('dialog[open]')",true);
+ await open('NgDrawer');await click('button',true);await assert("!!document.querySelector('dialog[open]')",true);await screenshot('manual-live-drawer');
  await open('NgButtonGroup');await screenshot('manual-live-blazor');
  await send('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:false});await send('Page.reload');await pause(1100);await evaluate("document.querySelector('#appearance-and-live-example').scrollIntoView()");await pause(900);await assert("document.documentElement.scrollWidth <= innerWidth");await screenshot('manual-live-narrow');
  console.log('PASS embedded Blazor/Flutter interaction, framework switch, reload reset, dialog/drawer opening, narrow manual layout');

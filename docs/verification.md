@@ -417,3 +417,16 @@ All 47 component manuals now embed a runnable appearance example with Blazor / F
 - Visual evidence: [Blazor preview](screenshots/manual-live-blazor.png), [Flutter preview](screenshots/manual-live-flutter.png), [open dialog](screenshots/manual-live-dialog.png), [narrow manual](screenshots/manual-live-narrow.png).
 
 This documentation work does not change the component library API or claim additional Telerik parity. The next planned component block remains Menu and Drawer.
+
+## Menu and Drawer component block (0.27, 2026-10-19)
+
+Original Menu and Drawer implementations were expanded together on both Web platforms. Menu adds immutable visibility/separator flags, decorative-leading and item templates, CloseOnClick and RTL. Drawer adds item/leading/header/footer templates, visibility/separator predicates, logical start/end placement, RTL, CloseOnSelect and global disabled behavior. Missing callbacks disable otherwise inactive destinations; disabling an open drawer does not remove dismissal. Accessible names continue to come from model labels.
+
+- **242 Blazor rendering/data checks passed**. New cases cover hidden ancestor invocation, separator contracts, label/position validation and template/RTL markup.
+- **117 Flutter tests passed**, including all prior tests and four new navigation contract/widget cases. Tested keep-open commands, hidden items, custom accessible labels, divider rendering, end-position RTL mirroring, overlay selection without closing, disabled selection with dismissal and missing callbacks.
+- Blazor gallery build passed with zero warnings/errors. Flutter Web release build and Dart analysis passed; the existing CupertinoIcons build warning remains. **47 Blazor + 47 Flutter manual examples** compile/analyze; **94 highlighting checks** pass.
+- Coordinated visible Chrome review on local Linux/iMac used a dedicated profile and CDP9341. `scripts/navigation-block-check.mjs blazor|flutter` passed nested repeated commands, hidden items, templates, retained Drawer selection, Escape, end position in LTR/RTL, dark theme, Push layout and a 390 px gallery with no horizontal document overflow. Blazor RTL arrow traversal skipped disabled siblings; Flutter nested submenu was opened using native pointer hover (clicking an already-hover-open submenu can toggle it closed) and keyboard opening was inspected separately.
+- Updated live manual previews for Menu/Drawer loaded on both platforms without captured runtime errors. The manual integration check also exercised the new Drawer preview in its embedded frame.
+- Screenshots: [Blazor menu](screenshots/navigation027-blazor-menu.png), [Blazor RTL drawer](screenshots/navigation027-blazor-rtl-dark.png), [Blazor narrow](screenshots/navigation027-blazor-narrow.png), [Flutter menu](screenshots/navigation027-flutter-menu.png), [Flutter RTL drawer](screenshots/navigation027-flutter-rtl-dark.png), [Flutter narrow](screenshots/navigation027-flutter-narrow.png), [manual appearance](screenshots/navigation027-manual.png).
+
+No full Telerik parity or screen-reader/native-mobile certification is claimed. Mini mode, arbitrary model mapping, automatic URL handling, full drawer-template replacement and configurable popup timing/animation remain recorded gaps. The next paired implementation block is Stepper/Wizard.

@@ -213,6 +213,14 @@ Reject(()=>NgNavigationRules.ValidateDrawer([new("a","A"),new("a","Duplicate")],
 Reject(()=>NgNavigationRules.ValidateDrawer([],199),"drawer width limit");
 await Check<NgMenu>(new(){["Items"]=new[]{menuGroup},["Label"]="Commands <safe>"},"menubar","Commands &lt;safe&gt;","aria-haspopup=\"menu\"","popover=\"auto\"");
 await Check<NgDrawer>(new(){["Items"]=new[]{new NgOption("a","Overview")},["Expanded"]=true,["Overlay"]=false,["SelectedId"]="a"},"ng-drawer-push","aria-current=\"page\"","Overview");
+Reject(()=>NgNavigationRules.ValidateMenu([new("sep","Section",separator:true,children:[new("x","X")])]),"separator children rejected");
+Reject(()=>NgNavigationRules.ValidatePresentation(" "),"blank navigation label");
+Reject(()=>NgNavigationRules.ValidatePresentation("Navigation","left"),"invalid logical position");
+Rule(!NgNavigationRules.CanInvoke([new("hidden","Hidden",visible:false,children:[new("x","X")])],"x"),"hidden ancestor cannot invoke");
+Rule(!NgNavigationRules.CanInvoke([new("sep","Section",separator:true)],"sep"),"separator cannot invoke");
+await Check<NgMenu>(new(){["Items"]=new[]{new NgMenuItem("sep","Section",separator:true),new NgMenuItem("go","Go")},["Rtl"]=true,["CloseOnClick"]=false,["ItemTemplate"]=(RenderFragment<NgMenuItem>)(item=>Text("Custom text"))},"role=\"separator\"","dir=\"rtl\"","data-close-on-click=\"false\"","aria-label=\"Go\"","Custom text");
+await Check<NgDrawer>(new(){["Items"]=new[]{new NgOption("a","Overview"),new NgOption("sep","Section")},["Expanded"]=true,["Overlay"]=false,["Position"]="end",["Rtl"]=true,["HeaderTemplate"]=Text("Custom header"),["FooterTemplate"]=Text("Custom footer"),["IsSeparator"]=(Func<NgOption,bool>)(i=>i.Value=="sep"),["ItemTemplate"]=(RenderFragment<NgOption>)(item=>Text("Custom item"))},"data-position=\"end\"","dir=\"rtl\"","ng-drawer-separator","Custom header","Custom footer","aria-label=\"Overview\"","Custom item");
+
 var choices=new NgOption[]{new("a","Alpha"),new("b","Beta"),new("c","Locked",true)};var choiceValue=new List<string>{"a"};
 Rule(NgSelectionRules.Toggle(choices,choiceValue,"b",true,true).SequenceEqual(new[]{"a","b"})&&choiceValue.SequenceEqual(new[]{"a"}),"multi selection preserves caller state");
 Rule(NgSelectionRules.Toggle(choices,choiceValue,"b",false,true).SequenceEqual(new[]{"b"}),"single selection replaces prior choice");

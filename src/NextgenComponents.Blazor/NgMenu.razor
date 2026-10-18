@@ -1,10 +1,10 @@
 @implements IAsyncDisposable
 @inject IJSRuntime JS
-<div class="ng-menu @(Vertical?"ng-menu-vertical":"")" @ref="root">
+<div class="ng-menu @(Vertical?"ng-menu-vertical":"")" @ref="root" dir="@(Rtl?"rtl":"ltr")" data-close-on-click="@(CloseOnClick?"true":"false")">
 <div role="menubar" aria-label="@Label" aria-orientation="@(Vertical?"vertical":"horizontal")">
-@foreach(var item in Items){@Entry(item,true)}
+@foreach(var item in Items.Where(x=>x.Visible)){@Entry(item,true)}
 </div>
-@if(Items.Count==0){<span class="ng-menu-empty">No commands</span>}
+@if(!Items.Any(x=>x.Visible&&!x.Separator)){<span class="ng-menu-empty">No commands</span>}
 </div>
 @code {
  [Parameter] public string Label {get;set;}="Commands";
@@ -13,11 +13,17 @@
  [Parameter] public EventCallback<string> OnInvoke {get;set;}
  [Parameter] public bool Vertical {get;set;}
  [Parameter] public bool Disabled {get;set;}
+ [Parameter] public bool Rtl {get;set;}
+ [Parameter] public bool CloseOnClick {get;set;}=true;
+ [Parameter] public RenderFragment<NgMenuItem>? ItemTemplate {get;set;}
+ [Parameter] public RenderFragment<NgMenuItem>? LeadingTemplate {get;set;}
  private readonly string id="ng-menu-"+Guid.NewGuid().ToString("N");private ElementReference root;private IJSObjectReference? module;private bool disposed;
- protected override void OnParametersSet()=>NgNavigationRules.ValidateMenu(Items);
+ protected override void OnParametersSet(){NgNavigationRules.ValidateMenu(Items);NgNavigationRules.ValidatePresentation(Label);}
  private RenderFragment Entry(NgMenuItem item,bool top)=>@<div class="ng-menu-entry" role="none" @key="item.Id">
- <button type="button" role="menuitem" class="ng-menu-button" data-menu-id="@item.Id" data-selected="@(SelectedId==item.Id?"true":null)" disabled="@(Disabled||item.Disabled)" tabindex="@(top&&item==Items.FirstOrDefault(x=>!x.Disabled)?0:-1)" aria-haspopup="@(item.Children.Count>0?"menu":null)" aria-expanded="@(item.Children.Count>0?"false":null)" aria-controls="@(item.Children.Count>0?$"{id}-{item.Id}":null)" popovertarget="@(item.Children.Count>0?$"{id}-{item.Id}":null)" @onclick="()=>Choose(item.Id)"><span>@item.Text</span><span aria-hidden="true">@(item.Children.Count>0?(top&&!Vertical?"▾":"▸"):SelectedId==item.Id?"✓":"")</span></button>
- @if(item.Children.Count>0){<div id="@($"{id}-{item.Id}")" class="ng-menu-popup" role="menu" aria-label="@item.Text" popover="auto">@foreach(var child in item.Children){@Entry(child,false)}</div>}
+ @if(item.Separator){<div class="ng-menu-separator" role="separator" aria-orientation="@(top&&!Vertical?"vertical":"horizontal")"></div>}else{
+ <button aria-label="@item.Text" type="button" role="menuitem" class="ng-menu-button" data-menu-id="@item.Id" data-selected="@(SelectedId==item.Id?"true":null)" disabled="@(Disabled||item.Disabled||(item.Children.Count==0&&!OnInvoke.HasDelegate))" tabindex="@(top&&item==Items.FirstOrDefault(x=>x.Visible&&!x.Disabled&&!x.Separator&&(x.Children.Count>0||OnInvoke.HasDelegate))?0:-1)" aria-haspopup="@(item.Children.Count>0?"menu":null)" aria-expanded="@(item.Children.Count>0?"false":null)" aria-controls="@(item.Children.Count>0?$"{id}-{item.Id}":null)" popovertarget="@(item.Children.Count>0?$"{id}-{item.Id}":null)" @onclick="()=>Choose(item.Id)"><span class="ng-navigation-caption">@if(LeadingTemplate is not null){<span aria-hidden="true">@LeadingTemplate(item)</span>}<span>@if(ItemTemplate is not null){@ItemTemplate(item)}else{@item.Text}</span></span><span aria-hidden="true">@(item.Children.Count>0?(top&&!Vertical?"▾":Rtl?"◂":"▸"):SelectedId==item.Id?"✓":"")</span></button>
+ @if(item.Children.Count>0){<div id="@($"{id}-{item.Id}")" class="ng-menu-popup" role="menu" aria-label="@item.Text" popover="auto">@foreach(var child in item.Children.Where(x=>x.Visible)){@Entry(child,false)}</div>}
+ }
  </div>;
  private Task Choose(string key)=>!Disabled&&NgNavigationRules.CanInvoke(Items,key)?OnInvoke.InvokeAsync(key):Task.CompletedTask;
  protected override async Task OnAfterRenderAsync(bool firstRender){if(disposed)return;module??=await JS.InvokeAsync<IJSObjectReference>("import","./_content/NextgenComponents.Blazor/navigation.js");await module.InvokeVoidAsync("menu",root,Disabled);}
