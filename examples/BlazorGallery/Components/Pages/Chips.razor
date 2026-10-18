@@ -2,7 +2,7 @@
 <PageTitle>Nextgen • Chips and tags</PageTitle>
 <div class="ng-scope gallery" data-ng-theme="@(dark?"dark":"light")"><main>
 <nav><a href="/code-examples">Code examples</a><strong>N NEXTGEN COMPONENTS</strong><div class="row"><a href="/">Foundation</a><NgSwitch Label="Dark theme" @bind-Value="dark"/></div></nav>
-<section class="hero"><p class="eyebrow">BLAZOR / CHIPS 0.21</p><h1>Small tags.<br/>Clear choices.</h1><p>Select topics, remove a tag, or show a compact status. Your application owns every change.</p></section>
+<section class="hero"><p class="eyebrow">BLAZOR / CHIPS 0.22</p><h1>Small tags.<br/>Clear choices.</h1><p>Select topics, remove a tag, or show a compact status. Your application owns every change.</p></section>
 <section class="panel"><div class="row"><NgCheckBox Label="Disable controls" @bind-Value="disabled"/><NgCheckBox Label="Multiple selection" Value="multiple" ValueChanged="SetMultiple" ValueExpression="()=>multiple"/><NgCheckBox Label="Enable selection" @bind-Value="selectable"/><NgCheckBox Label="Protect Design from removal" @bind-Value="protect"/><NgButton OnClick="Reset">Reset tags</NgButton><NgButton OnClick="LoadCollection">Load 500 tags</NgButton></div>
 <h2>Appearance and content</h2>
 <div class="row"><NgDropDownList Label="Size" Items="sizes" @bind-Value="size"/><NgDropDownList Label="Rounded" Items="roundings" @bind-Value="rounded"/><NgDropDownList Label="Fill mode" Items="fills" @bind-Value="fill"/><NgCheckBox Label="Custom content" @bind-Value="custom"/></div>
@@ -14,11 +14,11 @@
 <RemoveContent>−</RemoveContent>
 </NgChipList>
 <NgButton OnClick="()=>chipList!.FocusAsync()">Focus topics</NgButton><NgButton OnClick="ClearTopics">Clear topics</NgButton><p id="chips-status" role="status">Selected: @(selected.Count==0?"none":string.Join(", ",selected)) · Tags: @items.Count · @message</p>
-<p>Flutter is not removable. Last click: <span id="chip-click">@lastClick</span></p><h2>Status and standalone selection</h2><div class="row"><NgChip Label="Published" Selectable="false"/><NgChip Label="Favourite" @bind-Value="favourite" Disabled="disabled"/></div>
-<NgChip Label="Open activity" Selectable="false" OnClick="OpenActivity" Disabled="disabled"/><p>Removal is a request. Enable protection to reject removal of Design without changing the list.</p></section>
+<p>Flutter is not removable. Last click: <span id="chip-click">@lastClick</span></p><h2>Status and standalone selection</h2><div class="row"><NgChip Id="published-chip" Label="Published" Selectable="false" AriaDescribedBy="published-help"/><NgChip Label="Favourite" @bind-Value="favourite" Disabled="disabled"/></div>
+<p id="published-help">This status is read-only.</p><p id="activity-help">Opens the activity summary.</p><NgChip Id="activity-chip" Class="activity-chip" AriaDescribedBy="activity-help" Label="Open activity" Selectable="false" OnClick="OpenActivity" Disabled="disabled"/><p>Removal is a request. Enable protection to reject removal of Design without changing the list.</p></section>
 <section class="panel">
-<h2>Business records</h2><p>Bind model fields with typed selectors. Templates and events resolve the original record by its stable ID. Finance is pinned; Archive is disabled.</p>
-<NgChipList Label="Business topics" Items="businessData.Items" Value="businessSelected" ValueChanged="v=>businessSelected=v" Multiple CanRemove="businessData.CanRemove" ItemAppearance="businessData.GetAppearance" OnRemove="RemoveBusiness" OnClick="OpenBusiness">
+<h2 id="business-heading">@BusinessHeading</h2><p id="business-help">@BusinessHelp</p><NgButton OnClick="()=>updatedMetadata=!updatedMetadata">Update accessible text</NgButton><p>Bind model fields with typed selectors. Templates and events resolve the original record by its stable ID. Finance is pinned; Archive is disabled.</p>
+<NgChipList Id="business-topics" Class="business-topics" AriaLabelledBy="business-heading" AriaDescribedBy="business-help" Label="Business topics" Items="businessData.Items" Value="businessSelected" ValueChanged="v=>businessSelected=v" Multiple CanRemove="businessData.CanRemove" ItemAppearance="businessData.GetAppearance" OnRemove="RemoveBusiness" OnClick="OpenBusiness">
 <ItemTemplate Context="option">@businessData.GetItem(option.Value).Name <small>· @businessData.GetItem(option.Value).Owner</small></ItemTemplate>
 </NgChipList>
 <div class="row"><NgButton OnClick="RenameBusiness" Disabled="@(!records.Any(x=>x.Id=="ops"))">Rename Operations</NgButton><NgButton OnClick="ReverseBusiness">Reverse records</NgButton><NgButton OnClick="ResetBusiness">Reset records</NgButton></div>
@@ -51,6 +51,9 @@
  private void ReverseBusiness(){records.Reverse();businessData=BindRecords(records);businessMessage="Model order reversed; IDs and selection retained";}
  private void ResetBusiness(){records=InitialRecords();businessSelected=["finance"];businessData=BindRecords(records);businessMessage="3 model records · Finance selected";}
 
+ private bool updatedMetadata;
+ private string BusinessHeading=>updatedMetadata?"Assigned business records":"Business records";
+ private string BusinessHelp=>updatedMetadata?"Choose assigned topics for this workspace.":"Choose topics for this workspace.";
  private bool rtl=true;
  private static NgOption[] DirectionItems()=>[new("design","Design systems"),new("locked","Locked topic",true),new("web","Web components"),new("docs","Documentation")];
  private IReadOnlyList<NgOption> directionItems=DirectionItems();

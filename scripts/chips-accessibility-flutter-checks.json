@@ -1,0 +1,41 @@
+{
+  "actions": [
+    {
+      "method": "Input.dispatchMouseEvent",
+      "params": {
+        "type": "mouseWheel",
+        "x": 1000,
+        "y": 1000,
+        "deltaY": 800,
+        "deltaX": 0
+      }
+    },
+    {
+      "evaluate": "new Promise(r=>setTimeout(r,400))"
+    },
+    {
+      "evaluate": "(()=>{if(!document.querySelector('[flt-semantics-identifier=\"business-topics\"]')||!document.querySelector('[flt-semantics-identifier=\"activity-chip\"]'))throw Error('identifier missing');return 'PASS identifiers';})()"
+    },
+    {
+      "clickSelector": "[aria-label=Operations]"
+    },
+    {
+      "evaluate": "new Promise(r=>setTimeout(r,400))"
+    },
+    {
+      "evaluate": "[...document.querySelectorAll('[role=button]')].find(e=>e.textContent==='Update accessible text').setAttribute('data-update','yes')"
+    },
+    {
+      "clickSelector": "[data-update=yes]"
+    },
+    {
+      "evaluate": "new Promise(r=>setTimeout(r,400))"
+    },
+    {
+      "evaluate": "(()=>{const list=document.querySelector('[flt-semantics-identifier=\"business-topics\"]');if(list.getAttribute('aria-label')!=='Assigned business records')throw Error('updated label');if(document.querySelector('[aria-label=Operations]').getAttribute('aria-checked')!=='true')throw Error('lost selection');return 'PASS update';})()"
+    },
+    {
+      "screenshot": "chips022-flutter.png"
+    }
+  ]
+}

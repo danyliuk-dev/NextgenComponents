@@ -55,16 +55,29 @@ class _ChipsGalleryState extends State<ChipsGallery> {
     businessMessage =
         'Removed ${item.name} · owner ${item.owner} · ${records.length} records';
   });
+  bool updatedMetadata = false;
+  String get businessHeading =>
+      updatedMetadata ? 'Assigned business records' : 'Business records';
+  String get businessHelp => updatedMetadata
+      ? 'Choose assigned topics for this workspace.'
+      : 'Choose topics for this workspace.';
   Widget businessExample() => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
       const SizedBox(height: 28),
-      Text('Business records', style: Theme.of(context).textTheme.titleLarge),
+      Text(businessHeading, style: Theme.of(context).textTheme.titleLarge),
       const Text(
         'Bind model fields with typed selectors. Templates and events resolve the original record by its stable ID. Finance is pinned; Archive is disabled.',
       ),
+      Text(businessHelp),
+      NgButton(
+        onPressed: () => setState(() => updatedMetadata = !updatedMetadata),
+        child: const Text('Update accessible text'),
+      ),
       NgChipList(
-        label: 'Business topics',
+        semanticIdentifier: 'business-topics',
+        semanticHint: businessHelp,
+        label: businessHeading,
         items: businessData.items,
         value: businessSelected,
         multiple: true,
@@ -293,7 +306,7 @@ class _ChipsGalleryState extends State<ChipsGallery> {
               ),
               const SizedBox(height: 16),
               const Text(
-                'FLUTTER WEB / CHIPS 0.21 · Select topics, remove a tag, or show a compact status. Your application owns every change.',
+                'FLUTTER WEB / CHIPS 0.22 · Select topics, remove a tag, or show a compact status. Your application owns every change.',
               ),
               const SizedBox(height: 28),
               Wrap(
@@ -497,6 +510,8 @@ class _ChipsGalleryState extends State<ChipsGallery> {
                 alignment: Alignment.centerLeft,
                 child: NgChip(
                   label: 'Open activity',
+                  semanticIdentifier: 'activity-chip',
+                  semanticHint: 'Opens the activity summary.',
                   selectable: false,
                   disabled: disabled,
                   onClick: () => setState(() => lastClick = 'activity'),

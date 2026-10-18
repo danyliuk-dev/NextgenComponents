@@ -1,6 +1,6 @@
 @implements IAsyncDisposable
 @inject IJSRuntime JS
-<div class="ng-chip-list" role="group" aria-label="@Label" tabindex="-1" @ref="root">
+<div id="@Id" class="ng-chip-list @Class" role="group" aria-label="@Label" aria-labelledby="@AriaLabelledBy" aria-describedby="@AriaDescribedBy" tabindex="-1" @ref="root">
 @foreach(var item in Items){
  var appearance=ItemAppearance?.Invoke(item);
  <span @key="item.Value" data-chip-id="@item.Value"><NgChip Label="@item.Label" Value="@(selectedIds.Contains(item.Value))" Selectable="Selectable" Disabled="@(Disabled||item.Disabled)"
@@ -13,6 +13,11 @@
 @if(Items.Count==0){<span class="ng-muted">@EmptyText</span>}
 </div>
 @code {
+ [Parameter] public string? Id {get;set;}
+ [Parameter] public string? Class {get;set;}
+ [Parameter] public string? AriaLabelledBy {get;set;}
+ [Parameter] public string? AriaDescribedBy {get;set;}
+
  [Parameter] public string EmptyText {get;set;}="No tags";
  [Parameter] public Func<NgOption,string>? RemoveLabel {get;set;}
  [Parameter] public string Label {get;set;}="Tags";
@@ -34,7 +39,7 @@
  [Parameter] public RenderFragment<NgOption>? ItemTemplate {get;set;}
  [Parameter] public RenderFragment<NgOption>? LeadingTemplate {get;set;}
  [Parameter] public RenderFragment? RemoveContent {get;set;}
- protected override void OnParametersSet(){if(string.IsNullOrWhiteSpace(EmptyText))throw new ArgumentException("EmptyText must be nonblank.");NgSelectionRules.Validate(Items,Value,Multiple,maxItems:null);selectedIds=Value.ToHashSet(StringComparer.Ordinal);NgChipRules.Validate(Size,Rounded,FillMode,ThemeColor);}
+ protected override void OnParametersSet(){NgChipRules.ValidateAccessibility(Id,AriaLabelledBy,AriaDescribedBy);if(string.IsNullOrWhiteSpace(EmptyText))throw new ArgumentException("EmptyText must be nonblank.");NgSelectionRules.Validate(Items,Value,Multiple,maxItems:null);selectedIds=Value.ToHashSet(StringComparer.Ordinal);NgChipRules.Validate(Size,Rounded,FillMode,ThemeColor);}
  private HashSet<string> selectedIds=[];
  private Task Select(string id){if(Disabled||!Selectable)return Task.CompletedTask;var next=NgSelectionRules.Toggle(Items,Value,id,Multiple,AllowEmpty,maxItems:null);return next.SequenceEqual(Value)?Task.CompletedTask:ValueChanged.InvokeAsync(next);}
  private bool removing,disposed;private ElementReference root;private IJSObjectReference? module;

@@ -104,12 +104,27 @@ Direction changes layout; it does not translate labels or reverse application st
 The English Reading direction demo includes a constrained wrapping region, decorative leading stars, a disabled record, a static status chip and a runtime direction switch. The rest of the demo remains LTR. Verification covers Chip/ChipList layout and keyboard behavior on Web, not every component or screen-reader pronunciation.
 
 
+### Identity, accessible names and contextual help (0.22)
+
+Blazor Id identifies the outer component element, and Class appends application CSS classes while preserving built-in classes. Neither creates a focus target or changes keyboard behavior. Supply unique IDs per rendered instance; Id must be nonblank and contain no whitespace. Classes can affect layout and contrast, so review custom styles in both themes.
+
+AriaLabelledBy accepts one or more space-separated IDs of existing elements. Browser accessible-name computation gives these references priority over Label. Keep Label meaningful as the visible text/fallback, and ensure every referenced element exists. AriaDescribedBy accepts a similar list for contextual instructions. On ChipList, naming and description apply to the group; they are not duplicated on every item. On a standalone Chip, references apply to its label element/action, and the description also applies to removal. The remove action retains its own RemoveLabel; it never borrows the selection action's name. Static text chips remain noninteractive; when a Blazor static chip has naming/description references, its label becomes a named group without a Tab stop so the references have a semantic target. Null omits a hook; blank reference lists are rejected. The library cannot validate DOM existence or global ID uniqueness during server rendering.
+
+Flutter semanticIdentifier identifies a semantics node for automation; it is not a widget Key, HTML id, user-facing label or selection ID. semanticHint provides contextual guidance in that node's semantics. Both are optional nonblank strings. On Web, the installed Flutter engine exports identifiers as flt-semantics-identifier attributes when semantics are enabled; this is an engine detail, not a CSS styling API. Metadata is additive: it must not replace the child selection/removal actions.
+
+Flutter has no DOM Class or aria-labelledby relationship in this API. Use the existing theme/appearance parameters for styling. For a shared heading, keep one application string and pass it to Text and the list's label; update both together. Use semanticHint for concise guidance and show the same text visibly when it helps users. A hint is not an exact aria-describedby equivalent; assistive-technology announcement varies by platform. Application code owns translations. Do not include secrets or personal data in automation identifiers.
+
+The examples wire contextual help to the list and a standalone command. The Business records demo can update its heading and guidance at runtime while retaining selection and identity. Browser accessibility-tree inspection and widget tests verify the exported information and actions; screen-reader testing/certification remains separate. Configurable TabIndex and listbox/option roles are still not supplied.
+
+
 ## Blazor example
 
 ```razor
+<h2 id="topics-heading">Business topics</h2>
+<p id="topics-help">Choose topics for this workspace.</p>
 <NgCheckBox Label="Right-to-left layout" @bind-Value="rtl" />
 <div dir="@(rtl ? "rtl" : "ltr")">
-<NgChipList Label="Business topics" Items="data.Items" @bind-Value="selected"
+<NgChipList Id="business-topics" Class="business-topics" AriaLabelledBy="topics-heading" AriaDescribedBy="topics-help" Label="Business topics" Items="data.Items" @bind-Value="selected"
     Multiple CanRemove="data.CanRemove" ItemAppearance="data.GetAppearance"
     OnClick="Open" OnRemove="Remove" />
 </div>
@@ -144,6 +159,8 @@ List<({String id, String name, String owner, bool pinned, bool disabled})> recor
   (id: 'archive', name: 'Archive', owner: 'Sam', pinned: false, disabled: true),
 ];
 List<String> selected = ['finance'];
+final heading = 'Business topics';
+final help = 'Choose topics for this workspace.';
 bool rtl = false;
 String message = 'Select a topic';
 late var data = bind();
@@ -152,9 +169,10 @@ NgChipData<({String id, String name, String owner, bool pinned, bool disabled})>
   disabled: (x) => x.disabled, removable: (x) => !x.pinned,
   appearance: (x) => NgChipAppearance(themeColor: x.pinned ? 'success' : 'base'));
 Widget build(BuildContext context) => Column(children: [
+  Text(heading), Text(help),
   NgCheckBox(label: 'Right-to-left layout', value: rtl, onChanged: (v) => setState(() => rtl = v)),
   Directionality(textDirection: rtl ? TextDirection.rtl : TextDirection.ltr,
-    child: NgChipList(label: 'Business topics', items: data.items, value: selected,
+    child: NgChipList(semanticIdentifier: 'business-topics', semanticHint: help, label: heading, items: data.items, value: selected,
     multiple: true, canRemove: data.canRemove, itemAppearance: data.getAppearance,
     onChanged: (v) => setState(() => selected = v),
     onClick: (id) => setState(() => message = 'Owner: ${data.getItem(id).owner}'),
@@ -174,6 +192,10 @@ Names are case-sensitive. `?` permits null. `EditorRequired` parameters are mark
 
 | Parameter | Type | Default / requirement | Purpose |
 |---|---|---|---|
+| `Id` | `string?` | not set | See the behavior rules and model contract above. |
+| `Class` | `string?` | not set | See the behavior rules and model contract above. |
+| `AriaLabelledBy` | `string?` | not set | Space-separated existing DOM IDs for the accessible name; takes precedence over Label. |
+| `AriaDescribedBy` | `string?` | not set | Space-separated existing DOM IDs for contextual guidance; see target-element rules. |
 | `EmptyText` | `string` | "No tags" | See the behavior rules and model contract above. |
 | `RemoveLabel` | `Func<NgOption,string>?` | not set | Complete nonblank accessible removal name; for ChipList, a callback receiving NgOption. |
 | `Label` | `string` | "Tags" | Visible label or accessible name. |
@@ -204,6 +226,8 @@ Names are case-sensitive. `?` permits null. `EditorRequired` parameters are mark
 |---|---|---|
 | `label` | `String` | Visible label or accessible name. |
 | `emptyText` | `String` | See the behavior rules and model contract above. |
+| `semanticIdentifier` | `String?` | Optional nonblank automation identifier in the Flutter semantics tree; not a widget Key or DOM id. |
+| `semanticHint` | `String?` | Optional nonblank contextual guidance in the semantics tree; not a visible tooltip. |
 | `removeLabelBuilder` | `String Function(NgOption)?` | Pure callback supplying a complete accessible removal name for each NgOption. |
 | `focusController` | `NgChipListController?` | Application-owned NgChipListController; one list per controller. See lifecycle and focus rules. |
 | `items` | `List<NgOption>` | Input collection. Replace it when changing records or configuration. |
@@ -229,6 +253,8 @@ Names are case-sensitive. `?` permits null. `EditorRequired` parameters are mark
 const NgChipList({
     super.key,
     this.label = 'Tags',
+    this.semanticIdentifier,
+    this.semanticHint,
     this.emptyText = 'No tags',
     this.removeLabelBuilder,
     this.focusController,

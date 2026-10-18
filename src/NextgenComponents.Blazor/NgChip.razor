@@ -1,9 +1,14 @@
-<span @onkeydown="KeyDown" class="ng-chip ng-chip-@Size ng-chip-rounded-@Rounded ng-chip-@FillMode ng-chip-tone-@ThemeColor @(Value?"ng-chip-selected":"") @(Disabled?"ng-chip-disabled":"")">
-@if(Selectable||OnClick.HasDelegate){<button class="ng-chip-label" type="button" aria-label="@Label" aria-pressed="@(Selectable?(Value?"true":"false"):null)" disabled="@(Disabled||(!ValueChanged.HasDelegate&&!OnClick.HasDelegate))" @onclick="Activate">@Content</button>}
-else {<span class="ng-chip-label" aria-label="@Label">@Content</span>}
-@if(OnRemove.HasDelegate){<button class="ng-chip-remove" type="button" aria-label="@(RemoveLabel??$"Remove {Label}")" disabled="@Disabled" @onclick="Remove"><span aria-hidden="true">@if(RemoveContent is not null){@RemoveContent}else{<text>×</text>}</span></button>}
+<span id="@Id" @onkeydown="KeyDown" class="@Class ng-chip ng-chip-@Size ng-chip-rounded-@Rounded ng-chip-@FillMode ng-chip-tone-@ThemeColor @(Value?"ng-chip-selected":"") @(Disabled?"ng-chip-disabled":"")">
+@if(Selectable||OnClick.HasDelegate){<button class="ng-chip-label" type="button" aria-label="@Label" aria-labelledby="@AriaLabelledBy" aria-describedby="@AriaDescribedBy" aria-pressed="@(Selectable?(Value?"true":"false"):null)" disabled="@(Disabled||(!ValueChanged.HasDelegate&&!OnClick.HasDelegate))" @onclick="Activate">@Content</button>}
+else {<span role="@(AriaLabelledBy is not null||AriaDescribedBy is not null?"group":null)" class="ng-chip-label" aria-label="@Label" aria-labelledby="@AriaLabelledBy" aria-describedby="@AriaDescribedBy">@Content</span>}
+@if(OnRemove.HasDelegate){<button class="ng-chip-remove" aria-describedby="@AriaDescribedBy" type="button" aria-label="@(RemoveLabel??$"Remove {Label}")" disabled="@Disabled" @onclick="Remove"><span aria-hidden="true">@if(RemoveContent is not null){@RemoveContent}else{<text>×</text>}</span></button>}
 </span>
 @code {
+ [Parameter] public string? Id {get;set;}
+ [Parameter] public string? Class {get;set;}
+ [Parameter] public string? AriaLabelledBy {get;set;}
+ [Parameter] public string? AriaDescribedBy {get;set;}
+
  [Parameter,EditorRequired] public string Label {get;set;}="";
  [Parameter] public string? RemoveLabel {get;set;}
  [Parameter] public bool Value {get;set;}
@@ -20,7 +25,7 @@ else {<span class="ng-chip-label" aria-label="@Label">@Content</span>}
  [Parameter] public RenderFragment? ChildContent {get;set;}
  [Parameter] public RenderFragment? RemoveContent {get;set;}
  private RenderFragment Content => @<text>@if(Leading is not null){<span class="ng-chip-leading" aria-hidden="true">@Leading</span>}@if(ChildContent is not null){@ChildContent}else{@Label}</text>;
- protected override void OnParametersSet(){if(string.IsNullOrWhiteSpace(Label)||Label.Length>120)throw new ArgumentException("Use a nonblank label of at most 120 characters.");if(RemoveLabel is not null&&string.IsNullOrWhiteSpace(RemoveLabel))throw new ArgumentException("RemoveLabel must be nonblank when supplied.");NgChipRules.Validate(Size,Rounded,FillMode,ThemeColor);}
+ protected override void OnParametersSet(){NgChipRules.ValidateAccessibility(Id,AriaLabelledBy,AriaDescribedBy);if(string.IsNullOrWhiteSpace(Label)||Label.Length>120)throw new ArgumentException("Use a nonblank label of at most 120 characters.");if(RemoveLabel is not null&&string.IsNullOrWhiteSpace(RemoveLabel))throw new ArgumentException("RemoveLabel must be nonblank when supplied.");NgChipRules.Validate(Size,Rounded,FillMode,ThemeColor);}
  private async Task Activate(){if(Disabled)return;var next=!Value;if(Selectable&&ValueChanged.HasDelegate)await ValueChanged.InvokeAsync(next);await OnClick.InvokeAsync();}
  private bool removing;
  private Task KeyDown(KeyboardEventArgs e)=>e.Key is "Delete" or "Backspace"&&!e.Repeat&&!e.AltKey&&!e.CtrlKey&&!e.MetaKey?Remove():Task.CompletedTask;

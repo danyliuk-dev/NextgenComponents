@@ -66,6 +66,13 @@ class NgChipData<T extends Object> {
 }
 
 abstract final class NgChipRules {
+  static void validateSemantics(String? identifier, String? hint) {
+    if (identifier != null && identifier.trim().isEmpty)
+      throw ArgumentError('semanticIdentifier must be nonblank.');
+    if (hint != null && hint.trim().isEmpty)
+      throw ArgumentError('semanticHint must be nonblank.');
+  }
+
   static void validate(
     String size,
     String rounded,
@@ -85,6 +92,7 @@ abstract final class NgChipRules {
 
 class NgChip extends StatelessWidget {
   final String label;
+  final String? semanticIdentifier, semanticHint;
   final String? removeLabel;
   final bool value, selectable, disabled;
   final ValueChanged<bool>? onChanged;
@@ -94,6 +102,8 @@ class NgChip extends StatelessWidget {
   const NgChip({
     super.key,
     required this.label,
+    this.semanticIdentifier,
+    this.semanticHint,
     this.removeLabel,
     this.value = false,
     this.selectable = true,
@@ -111,6 +121,18 @@ class NgChip extends StatelessWidget {
   });
   @override
   Widget build(BuildContext context) {
+    NgChipRules.validateSemantics(semanticIdentifier, semanticHint);
+    final content = _buildContent(context);
+    return semanticIdentifier == null && semanticHint == null
+        ? content
+        : Semantics(
+            identifier: semanticIdentifier,
+            hint: semanticHint,
+            child: content,
+          );
+  }
+
+  Widget _buildContent(BuildContext context) {
     if (label.trim().isEmpty || label.length > 120) {
       throw ArgumentError('Use a nonblank label of at most 120 characters.');
     }
@@ -299,6 +321,7 @@ class NgChipListController {
 
 class NgChipList extends StatefulWidget {
   final String label, emptyText;
+  final String? semanticIdentifier, semanticHint;
   final String Function(NgOption)? removeLabelBuilder;
   final NgChipListController? focusController;
   final List<NgOption> items;
@@ -314,6 +337,8 @@ class NgChipList extends StatefulWidget {
   const NgChipList({
     super.key,
     this.label = 'Tags',
+    this.semanticIdentifier,
+    this.semanticHint,
     this.emptyText = 'No tags',
     this.removeLabelBuilder,
     this.focusController,
@@ -482,6 +507,10 @@ class _NgChipListState extends State<NgChipList> {
   @override
   Widget build(BuildContext context) {
     widget.focusController?._attach(this);
+    NgChipRules.validateSemantics(
+      widget.semanticIdentifier,
+      widget.semanticHint,
+    );
     if (widget.emptyText.trim().isEmpty)
       throw ArgumentError("emptyText must be nonblank.");
     NgSelectionRules.validate(
@@ -526,6 +555,8 @@ class _NgChipListState extends State<NgChipList> {
           ),
           child: Semantics(
             label: widget.label,
+            identifier: widget.semanticIdentifier,
+            hint: widget.semanticHint,
             container: true,
             explicitChildNodes: true,
             child: widget.items.isEmpty

@@ -1,0 +1,31 @@
+{
+  "actions": [
+    {
+      "evaluate": "document.querySelector('#business-topics').scrollIntoView({behavior:'instant',block:'center'})"
+    },
+    {
+      "evaluate": "new Promise(r=>setTimeout(r,350))"
+    },
+    {
+      "clickSelector": "#business-topics [aria-label=Operations]"
+    },
+    {
+      "evaluate": "new Promise(r=>setTimeout(r,350))"
+    },
+    {
+      "evaluate": "[...document.querySelectorAll('button')].find(e=>e.textContent==='Update accessible text').id='update-accessibility'"
+    },
+    {
+      "clickSelector": "#update-accessibility"
+    },
+    {
+      "evaluate": "new Promise(r=>setTimeout(r,350))"
+    },
+    {
+      "evaluate": "(()=>{const list=document.querySelector('#business-topics');if(!list.classList.contains('business-topics')||list.getAttribute('aria-labelledby')!=='business-heading'||list.getAttribute('aria-describedby')!=='business-help')throw Error('hooks');if(list.querySelector('[aria-label=Operations]').getAttribute('aria-pressed')!=='true')throw Error('selection lost');if(document.querySelector('#business-heading').textContent!=='Assigned business records')throw Error('heading');return 'PASS metadata update';})()"
+    },
+    {
+      "screenshot": "chips022-blazor.png"
+    }
+  ]
+}
