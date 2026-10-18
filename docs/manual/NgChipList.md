@@ -82,26 +82,40 @@ IDs still must be unique and valid, labels must be nonblank and at most 120 UTF-
 Flutter scrolls focused chips into ancestor scrollable viewports when keyboard or application focus moves. Put the list inside a bounded scrollable page, as in the gallery. Blazor uses native browser scrolling on focus. Keep templates display-only and prefer short labels. The Load 500 tags example resets selection deliberately; adapt this policy to your application.
 
 
+### Bind business records (0.20)
+
+Create NgChipData<T> once for each data snapshot. Required value/text selectors map stable IDs and accessible labels. Optional disabled (default false), removable (default true) and appearance selectors map behavior and nullable style overrides. Each selector runs once per record when constructing the adapter. Pass Items/items, CanRemove/canRemove and GetAppearance/getAppearance to ChipList explicitly; the adapter does not attach itself to a widget.
+
+GetItem(id)/getItem(id) returns the original record for templates and click/removal handlers. Resolve it before deleting or rebuilding the snapshot. Unknown IDs throw KeyNotFoundException in Blazor and ArgumentError in Flutter. Duplicate or invalid IDs, blank/oversized labels and invalid appearance values fail at construction. There is no fixed collection cap. IDs are case-sensitive and must be 1–64 ASCII letters, digits, underscores or hyphens.
+
+The options collection is read-only; original records are not deep-cloned. After editing fields, adding, removing or reordering records, construct a new adapter. Keep stable IDs to preserve selection and keyboard identity. When removing records, update the selected IDs in the same state update. Disabled guards belong to ChipList; removable only controls the remove action, not selection. Omit OnRemove/onRemove for a read-only removal policy.
+
+The following example pins Finance, disables Archive and resolves an owner from the clicked record. This is a typed-selector alternative to property-name reflection; there are no string field-name parameters. Icons and additional fields can be rendered through ItemTemplate/itemBuilder using GetItem/getItem. Templates must remain noninteractive. The Business records demo additionally exercises rename, reverse and reset without changing IDs.
+
+
 ## Blazor example
 
 ```razor
-<NgChipList @ref="topics" Label="Topics" Items="items" @bind-Value="selected"
-    Multiple OnRemove="Remove" RemoveLabel="RemoveLabel" EmptyText="No topics available" />
-<NgButton OnClick="FocusTopics">Focus topics</NgButton>
-<NgButton OnClick="LoadTags">Load 500 tags</NgButton>
+<NgChipList Label="Business topics" Items="data.Items" @bind-Value="selected"
+    Multiple CanRemove="data.CanRemove" ItemAppearance="data.GetAppearance"
+    OnClick="Open" OnRemove="Remove" />
+<p role="status">@message</p>
 @code {
-    private NgChipList? topics;
-    private void LoadTags() {
-        items = Enumerable.Range(1, 500).Select(i => new NgOption($"tag{i}", $"Topic {i}", i % 10 == 0)).ToArray();
-        selected = ["tag1"];
-    }
-    private IReadOnlyList<NgOption> items = [new("design", "Design"), new("web", "Web"), new("locked", "Locked", true)];
-    private IReadOnlyList<string> selected = ["design"];
-    private string RemoveLabel(NgOption item) => $"Dismiss {item.Label}";
-    private async Task FocusTopics() { if (topics is not null) await topics.FocusAsync(); }
+    private sealed record Topic(string Id, string Name, string Owner, bool Pinned = false, bool Disabled = false);
+    private List<Topic> records = [new("ops", "Operations", "Morgan"), new("finance", "Finance", "Alex", Pinned: true), new("archive", "Archive", "Sam", Disabled: true)];
+    private IReadOnlyList<string> selected = ["finance"];
+    private NgChipData<Topic> data = default!;
+    private string message = "Select a topic";
+    protected override void OnInitialized() => Rebind();
+    private void Rebind() => data = new(records, x => x.Id, x => x.Name,
+        disabled: x => x.Disabled, removable: x => !x.Pinned,
+        appearance: x => new(ThemeColor: x.Pinned ? "success" : "base"));
+    private void Open(string id) => message = $"Owner: {data.GetItem(id).Owner}";
     private void Remove(string id) {
-        items = items.Where(item => item.Value != id).ToArray();
-        selected = selected.Where(value => value != id).ToArray();
+        message = $"Removed {data.GetItem(id).Name}";
+        records = records.Where(x => x.Id != id).ToList();
+        selected = selected.Where(x => x != id).ToArray();
+        Rebind();
     }
 }
 ```
@@ -109,28 +123,31 @@ Flutter scrolls focused chips into ancestor scrollable viewports when keyboard o
 ## Flutter example
 
 ```dart
-final topics = NgChipListController();
-List<NgOption> items = const [NgOption('design', 'Design'), NgOption('web', 'Web'), NgOption('locked', 'Locked', disabled: true)];
-List<String> selected = ['design'];
-@override
-void dispose() { topics.dispose(); super.dispose(); }
-void loadTags() => setState(() {
-  items = List.generate(500, (i) => NgOption('tag${i + 1}', 'Topic ${i + 1}', disabled: (i + 1) % 10 == 0));
-  selected = ['tag1'];
-});
-Widget build(BuildContext context) => SingleChildScrollView(child: Column(children: [
-  NgChipList(label: 'Topics', focusController: topics, items: items,
-    value: selected, multiple: true, emptyText: 'No topics available',
-    removeLabelBuilder: (item) => 'Dismiss ${item.label}',
+List<({String id, String name, String owner, bool pinned, bool disabled})> records = [
+  (id: 'ops', name: 'Operations', owner: 'Morgan', pinned: false, disabled: false),
+  (id: 'finance', name: 'Finance', owner: 'Alex', pinned: true, disabled: false),
+  (id: 'archive', name: 'Archive', owner: 'Sam', pinned: false, disabled: true),
+];
+List<String> selected = ['finance'];
+String message = 'Select a topic';
+late var data = bind();
+// Explicit record type keeps event handlers statically checked.
+NgChipData<({String id, String name, String owner, bool pinned, bool disabled})> bind() => NgChipData(records, value: (x) => x.id, text: (x) => x.name,
+  disabled: (x) => x.disabled, removable: (x) => !x.pinned,
+  appearance: (x) => NgChipAppearance(themeColor: x.pinned ? 'success' : 'base'));
+Widget build(BuildContext context) => Column(children: [
+  NgChipList(label: 'Business topics', items: data.items, value: selected,
+    multiple: true, canRemove: data.canRemove, itemAppearance: data.getAppearance,
     onChanged: (v) => setState(() => selected = v),
+    onClick: (id) => setState(() => message = 'Owner: ${data.getItem(id).owner}'),
     onRemove: (id) => setState(() {
-      items = items.where((item) => item.value != id).toList();
-      selected = selected.where((value) => value != id).toList();
+      message = 'Removed ${data.getItem(id).name}';
+      records = records.where((x) => x.id != id).toList();
+      selected = selected.where((x) => x != id).toList();
+      data = bind();
     })),
-  NgButton(onPressed: loadTags, child: const Text('Load 500 tags')),
-  NgButton(onPressed: () => topics.focus(), child: const Text('Focus topics')),
-  NgButton(onPressed: () => topics.focus(itemId: 'web'), child: const Text('Focus Web')),
-]));
+  Text(message),
+]);
 ```
 
 ## Blazor parameters and events

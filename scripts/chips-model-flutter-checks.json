@@ -1,0 +1,83 @@
+{
+  "actions": [
+    {
+      "method": "Input.dispatchMouseEvent",
+      "params": {
+        "type": "mouseWheel",
+        "x": 1000,
+        "y": 1100,
+        "deltaY": 650,
+        "deltaX": 0
+      }
+    },
+    {
+      "evaluate": "new Promise(r=>setTimeout(r,500))"
+    },
+    {
+      "evaluate": "(()=>{if(document.querySelector('[aria-label=Archive]').getAttribute('aria-disabled')!=='true')throw Error('disabled');if([...document.querySelectorAll('[role=button]')].some(e=>e.textContent==='Remove Finance'))throw Error('pinned');return \"PASS\";})()"
+    },
+    {
+      "evaluate": "(()=>{const e=[...document.querySelectorAll('[role=button],[role=checkbox]')].find(e=>e.getAttribute('aria-label')===\"Operations\"||e.textContent===\"Operations\");e.setAttribute('data-action','next');})()"
+    },
+    {
+      "clickSelector": "[data-action=next]"
+    },
+    {
+      "evaluate": "document.querySelector('[data-action=next]')?.removeAttribute('data-action')"
+    },
+    {
+      "evaluate": "new Promise(r=>setTimeout(r,400))"
+    },
+    {
+      "evaluate": "(()=>{if(!document.body.textContent.includes('Opened Operations \u00b7 owner Morgan'))throw Error('lookup');return \"PASS\";})()"
+    },
+    {
+      "evaluate": "(()=>{const e=[...document.querySelectorAll('[role=button],[role=checkbox]')].find(e=>e.getAttribute('aria-label')===\"Rename Operations\"||e.textContent===\"Rename Operations\");e.setAttribute('data-action','next');})()"
+    },
+    {
+      "clickSelector": "[data-action=next]"
+    },
+    {
+      "evaluate": "document.querySelector('[data-action=next]')?.removeAttribute('data-action')"
+    },
+    {
+      "evaluate": "new Promise(r=>setTimeout(r,400))"
+    },
+    {
+      "evaluate": "(()=>{if(document.querySelector('[aria-label=\"Operations revised\"]').getAttribute('aria-checked')!=='true')throw Error('selection lost');return \"PASS\";})()"
+    },
+    {
+      "evaluate": "(()=>{const e=[...document.querySelectorAll('[role=button],[role=checkbox]')].find(e=>e.getAttribute('aria-label')===\"Reverse records\"||e.textContent===\"Reverse records\");e.setAttribute('data-action','next');})()"
+    },
+    {
+      "clickSelector": "[data-action=next]"
+    },
+    {
+      "evaluate": "document.querySelector('[data-action=next]')?.removeAttribute('data-action')"
+    },
+    {
+      "evaluate": "new Promise(r=>setTimeout(r,400))"
+    },
+    {
+      "evaluate": "(()=>{if(document.querySelector('[aria-label=\"Business topics\"] [role=checkbox]').getAttribute('aria-label')!=='Archive')throw Error('order');return \"PASS\";})()"
+    },
+    {
+      "screenshot": "chips020-flutter.png"
+    },
+    {
+      "evaluate": "(()=>{const e=[...document.querySelectorAll('[role=button]')].find(e=>e.getAttribute('aria-label')===\"Remove Operations revised\"||e.textContent===\"Remove Operations revised\");e.setAttribute('data-action','next');})()"
+    },
+    {
+      "clickSelector": "[data-action=next]"
+    },
+    {
+      "evaluate": "document.querySelector('[data-action=next]')?.removeAttribute('data-action')"
+    },
+    {
+      "evaluate": "new Promise(r=>setTimeout(r,400))"
+    },
+    {
+      "evaluate": "(()=>{if(!document.body.textContent.includes('Removed Operations revised \u00b7 owner Morgan \u00b7 2 records'))throw Error('remove');return \"PASS\";})()"
+    }
+  ]
+}

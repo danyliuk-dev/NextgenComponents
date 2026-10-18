@@ -116,3 +116,9 @@ UpsertNode/UpsertEdge/RemoveNode/RemoveEdge/Move return a validated new graph. C
 ## Geographic models
 
 NgMapPoint stores latitude/longitude; NgMapView adds zoom. NgMapMarker contains ID/text/position. NgMapPath contains ID/text/copied points and a closed-polygon flag. NgMapModel copies collections and validates shared IDs and bounds. See [Map](NgMap.md) for limits, signatures, clustering and update examples.
+
+## ChipList application records
+
+`NgChipData<T>` maps your records to a read-only list of `NgOption` values. Required selectors provide the stable ID and accessible text; optional selectors provide disabled state, removal permission and `NgChipAppearance`. Pass these mappings explicitly to ChipList. Resolve the original record with `GetItem(id)` (Blazor) or `getItem(id)` (Flutter) in event handlers or templates.
+
+This is a snapshot of mapped fields, not a deep copy of application records. Rebuild after edits or collection changes and update selected IDs together with removed records. Unknown lookup IDs throw; malformed mappings fail during construction. See [ChipList](NgChipList.md) for complete, compiled examples on both platforms.

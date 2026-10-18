@@ -1,0 +1,58 @@
+{
+  "actions": [
+    {
+      "evaluate": "new Promise(r=>setTimeout(r,1200))"
+    },
+    {
+      "evaluate": "(()=>{const s=[...document.querySelectorAll('section')].find(e=>e.textContent.includes('Business records'));s.id='business';s.scrollIntoView();return s.innerText;})()"
+    },
+    {
+      "evaluate": "(()=>{if(document.querySelector('#business [aria-label=\"Remove Finance\"]'))throw Error(\"pinned removal\");if(!document.querySelector('#business [aria-label=\"Archive\"]').disabled)throw Error(\"disabled\");return \"PASS\";})()"
+    },
+    {
+      "clickSelector": "#business [aria-label=\"Operations\"]"
+    },
+    {
+      "evaluate": "new Promise(r=>setTimeout(r,400))"
+    },
+    {
+      "evaluate": "(()=>{if(!document.querySelector(\"#business-status\").textContent.includes(\"Morgan\"))throw Error(\"record lookup\");return \"PASS\";})()"
+    },
+    {
+      "evaluate": "[...document.querySelectorAll('#business button')].find(e=>e.textContent==='Rename Operations').id='rename' "
+    },
+    {
+      "clickSelector": "#rename"
+    },
+    {
+      "evaluate": "new Promise(r=>setTimeout(r,400))"
+    },
+    {
+      "evaluate": "(()=>{if(document.querySelector('#business [aria-label=\"Operations revised\"]').getAttribute(\"aria-pressed\")!==\"true\")throw Error(\"selection lost\");return \"PASS\";})()"
+    },
+    {
+      "evaluate": "[...document.querySelectorAll('#business button')].find(e=>e.textContent==='Reverse records').id='reverse' "
+    },
+    {
+      "clickSelector": "#reverse"
+    },
+    {
+      "evaluate": "new Promise(r=>setTimeout(r,400))"
+    },
+    {
+      "evaluate": "(()=>{if(document.querySelector(\"#business [data-chip-id]\").dataset.chipId!==\"archive\")throw Error(\"order\");return \"PASS\";})()"
+    },
+    {
+      "screenshot": "chips020-blazor.png"
+    },
+    {
+      "clickSelector": "#business [aria-label=\"Remove Operations revised\"]"
+    },
+    {
+      "evaluate": "new Promise(r=>setTimeout(r,400))"
+    },
+    {
+      "evaluate": "(()=>{if(!document.querySelector(\"#business-status\").textContent.includes(\"owner Morgan \u00b7 2 records\"))throw Error(\"removal\");return \"PASS\";})()"
+    }
+  ]
+}

@@ -14,6 +14,57 @@ class NgChipAppearance {
   });
 }
 
+/// Validated mapping snapshot. Selectors run once per record; records retain
+/// identity. Rebuild after changing model fields or collection membership.
+class NgChipData<T extends Object> {
+  final List<NgOption> items;
+  final Map<String, ({T item, bool removable, NgChipAppearance appearance})>
+  _entries;
+  NgChipData._(this.items, this._entries);
+
+  factory NgChipData(
+    Iterable<T> source, {
+    required String Function(T) value,
+    required String Function(T) text,
+    bool Function(T)? disabled,
+    bool Function(T)? removable,
+    NgChipAppearance? Function(T)? appearance,
+  }) {
+    final options = <NgOption>[];
+    final entries =
+        <String, ({T item, bool removable, NgChipAppearance appearance})>{};
+    for (final item in source) {
+      final id = value(item), label = text(item);
+      final blocked = disabled?.call(item) ?? false;
+      final canRemove = removable?.call(item) ?? true;
+      final style = appearance?.call(item) ?? const NgChipAppearance();
+      NgChipRules.validate(
+        style.size ?? 'md',
+        style.rounded ?? 'full',
+        style.fillMode ?? 'outline',
+        style.themeColor ?? 'base',
+      );
+      if (entries.containsKey(id))
+        throw ArgumentError('Chip records require unique IDs.');
+      options.add(NgOption(id, label, disabled: blocked));
+      entries[id] = (item: item, removable: canRemove, appearance: style);
+    }
+    NgSelectionRules.validate(options, const [], true, maxItems: null);
+    return NgChipData._(List.unmodifiable(options), Map.unmodifiable(entries));
+  }
+
+  ({T item, bool removable, NgChipAppearance appearance}) _entry(String id) {
+    final entry = _entries[id];
+    if (entry == null) throw ArgumentError.value(id, 'id', 'Unknown chip ID.');
+    return entry;
+  }
+
+  T getItem(String id) => _entry(id).item;
+  bool canRemove(NgOption option) => _entry(option.value).removable;
+  NgChipAppearance getAppearance(NgOption option) =>
+      _entry(option.value).appearance;
+}
+
 abstract final class NgChipRules {
   static void validate(
     String size,

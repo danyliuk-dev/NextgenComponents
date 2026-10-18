@@ -1614,3 +1614,64 @@ D['NgChipList']['dart'] = D['NgChipList']['dart'].replace('Widget build(BuildCon
   selected = ['tag1'];
 });
 Widget build(BuildContext context) => SingleChildScrollView(child: Column(children: [''').replace("  NgButton(onPressed: () => topics.focus(),", "  NgButton(onPressed: loadTags, child: const Text('Load 500 tags')),\n  NgButton(onPressed: () => topics.focus(),").replace(']);', ']));')
+
+# 0.20: typed application data, with controlled selection and removal.
+D['NgChipList']['notes'] += """
+
+### Bind business records (0.20)
+
+Create NgChipData<T> once for each data snapshot. Required value/text selectors map stable IDs and accessible labels. Optional disabled (default false), removable (default true) and appearance selectors map behavior and nullable style overrides. Each selector runs once per record when constructing the adapter. Pass Items/items, CanRemove/canRemove and GetAppearance/getAppearance to ChipList explicitly; the adapter does not attach itself to a widget.
+
+GetItem(id)/getItem(id) returns the original record for templates and click/removal handlers. Resolve it before deleting or rebuilding the snapshot. Unknown IDs throw KeyNotFoundException in Blazor and ArgumentError in Flutter. Duplicate or invalid IDs, blank/oversized labels and invalid appearance values fail at construction. There is no fixed collection cap. IDs are case-sensitive and must be 1–64 ASCII letters, digits, underscores or hyphens.
+
+The options collection is read-only; original records are not deep-cloned. After editing fields, adding, removing or reordering records, construct a new adapter. Keep stable IDs to preserve selection and keyboard identity. When removing records, update the selected IDs in the same state update. Disabled guards belong to ChipList; removable only controls the remove action, not selection. Omit OnRemove/onRemove for a read-only removal policy.
+
+The following example pins Finance, disables Archive and resolves an owner from the clicked record. This is a typed-selector alternative to property-name reflection; there are no string field-name parameters. Icons and additional fields can be rendered through ItemTemplate/itemBuilder using GetItem/getItem. Templates must remain noninteractive. The Business records demo additionally exercises rename, reverse and reset without changing IDs.
+"""
+D['NgChipList']['blazor'] = '''<NgChipList Label="Business topics" Items="data.Items" @bind-Value="selected"
+    Multiple CanRemove="data.CanRemove" ItemAppearance="data.GetAppearance"
+    OnClick="Open" OnRemove="Remove" />
+<p role="status">@message</p>
+@code {
+    private sealed record Topic(string Id, string Name, string Owner, bool Pinned = false, bool Disabled = false);
+    private List<Topic> records = [new("ops", "Operations", "Morgan"), new("finance", "Finance", "Alex", Pinned: true), new("archive", "Archive", "Sam", Disabled: true)];
+    private IReadOnlyList<string> selected = ["finance"];
+    private NgChipData<Topic> data = default!;
+    private string message = "Select a topic";
+    protected override void OnInitialized() => Rebind();
+    private void Rebind() => data = new(records, x => x.Id, x => x.Name,
+        disabled: x => x.Disabled, removable: x => !x.Pinned,
+        appearance: x => new(ThemeColor: x.Pinned ? "success" : "base"));
+    private void Open(string id) => message = $"Owner: {data.GetItem(id).Owner}";
+    private void Remove(string id) {
+        message = $"Removed {data.GetItem(id).Name}";
+        records = records.Where(x => x.Id != id).ToList();
+        selected = selected.Where(x => x != id).ToArray();
+        Rebind();
+    }
+}'''
+D['NgChipList']['dart'] = '''List<({String id, String name, String owner, bool pinned, bool disabled})> records = [
+  (id: 'ops', name: 'Operations', owner: 'Morgan', pinned: false, disabled: false),
+  (id: 'finance', name: 'Finance', owner: 'Alex', pinned: true, disabled: false),
+  (id: 'archive', name: 'Archive', owner: 'Sam', pinned: false, disabled: true),
+];
+List<String> selected = ['finance'];
+String message = 'Select a topic';
+late var data = bind();
+// Explicit record type keeps event handlers statically checked.
+NgChipData<({String id, String name, String owner, bool pinned, bool disabled})> bind() => NgChipData(records, value: (x) => x.id, text: (x) => x.name,
+  disabled: (x) => x.disabled, removable: (x) => !x.pinned,
+  appearance: (x) => NgChipAppearance(themeColor: x.pinned ? 'success' : 'base'));
+Widget build(BuildContext context) => Column(children: [
+  NgChipList(label: 'Business topics', items: data.items, value: selected,
+    multiple: true, canRemove: data.canRemove, itemAppearance: data.getAppearance,
+    onChanged: (v) => setState(() => selected = v),
+    onClick: (id) => setState(() => message = 'Owner: ${data.getItem(id).owner}'),
+    onRemove: (id) => setState(() {
+      message = 'Removed ${data.getItem(id).name}';
+      records = records.where((x) => x.id != id).toList();
+      selected = selected.where((x) => x != id).toList();
+      data = bind();
+    })),
+  Text(message),
+]);'''

@@ -1,6 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:nextgen_components/nextgen_components.dart';
 
+class _BusinessTopic {
+  final String id, name, owner, tone;
+  final bool disabled, pinned;
+  const _BusinessTopic(
+    this.id,
+    this.name,
+    this.owner, {
+    this.disabled = false,
+    this.pinned = false,
+    this.tone = 'base',
+  });
+}
+
 class ChipsGallery extends StatefulWidget {
   final bool dark;
   final ValueChanged<bool> onDark;
@@ -16,6 +29,110 @@ class ChipsGallery extends StatefulWidget {
 }
 
 class _ChipsGalleryState extends State<ChipsGallery> {
+  static List<_BusinessTopic> initialRecords() => const [
+    _BusinessTopic('ops', 'Operations', 'Morgan', tone: 'warning'),
+    _BusinessTopic('finance', 'Finance', 'Alex', pinned: true, tone: 'success'),
+    _BusinessTopic('archive', 'Archive', 'Sam', disabled: true),
+  ];
+  List<_BusinessTopic> records = initialRecords();
+  List<String> businessSelected = ['finance'];
+  late NgChipData<_BusinessTopic> businessData = bindRecords(records);
+  String businessMessage = '3 model records · Finance selected';
+  static NgChipData<_BusinessTopic> bindRecords(List<_BusinessTopic> source) =>
+      NgChipData(
+        source,
+        value: (x) => x.id,
+        text: (x) => x.name,
+        disabled: (x) => x.disabled,
+        removable: (x) => !x.pinned,
+        appearance: (x) => NgChipAppearance(themeColor: x.tone),
+      );
+  void removeBusiness(String id) => setState(() {
+    final item = businessData.getItem(id);
+    records = records.where((x) => x.id != id).toList();
+    businessSelected = businessSelected.where((x) => x != id).toList();
+    businessData = bindRecords(records);
+    businessMessage =
+        'Removed ${item.name} · owner ${item.owner} · ${records.length} records';
+  });
+  Widget businessExample() => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      const SizedBox(height: 28),
+      Text('Business records', style: Theme.of(context).textTheme.titleLarge),
+      const Text(
+        'Bind model fields with typed selectors. Templates and events resolve the original record by its stable ID. Finance is pinned; Archive is disabled.',
+      ),
+      NgChipList(
+        label: 'Business topics',
+        items: businessData.items,
+        value: businessSelected,
+        multiple: true,
+        onChanged: (v) => setState(() => businessSelected = v),
+        canRemove: businessData.canRemove,
+        itemAppearance: businessData.getAppearance,
+        itemBuilder: (option) {
+          final record = businessData.getItem(option.value);
+          return Text('${record.name} · ${record.owner}');
+        },
+        onClick: (id) => setState(() {
+          final record = businessData.getItem(id);
+          businessMessage = 'Opened ${record.name} · owner ${record.owner}';
+        }),
+        onRemove: removeBusiness,
+      ),
+      Wrap(
+        spacing: 12,
+        runSpacing: 8,
+        children: [
+          NgButton(
+            onPressed: !records.any((x) => x.id == 'ops')
+                ? null
+                : () => setState(() {
+                    records = records
+                        .map(
+                          (x) => x.id == 'ops'
+                              ? _BusinessTopic(
+                                  x.id,
+                                  'Operations revised',
+                                  x.owner,
+                                  disabled: x.disabled,
+                                  pinned: x.pinned,
+                                  tone: x.tone,
+                                )
+                              : x,
+                        )
+                        .toList();
+                    businessData = bindRecords(records);
+                    businessMessage =
+                        'Model updated; IDs and selection retained';
+                  }),
+            child: const Text('Rename Operations'),
+          ),
+          NgButton(
+            onPressed: () => setState(() {
+              records = records.reversed.toList();
+              businessData = bindRecords(records);
+              businessMessage =
+                  'Model order reversed; IDs and selection retained';
+            }),
+            child: const Text('Reverse records'),
+          ),
+          NgButton(
+            onPressed: () => setState(() {
+              records = initialRecords();
+              businessSelected = ['finance'];
+              businessData = bindRecords(records);
+              businessMessage = '3 model records · Finance selected';
+            }),
+            child: const Text('Reset records'),
+          ),
+        ],
+      ),
+      Semantics(liveRegion: true, child: Text(businessMessage)),
+    ],
+  );
+
   bool disabled = false,
       protect = false,
       favourite = false,
@@ -99,7 +216,7 @@ class _ChipsGalleryState extends State<ChipsGallery> {
               ),
               const SizedBox(height: 16),
               const Text(
-                'FLUTTER WEB / CHIPS 0.19 · Select topics, remove a tag, or show a compact status. Your application owns every change.',
+                'FLUTTER WEB / CHIPS 0.20 · Select topics, remove a tag, or show a compact status. Your application owns every change.',
               ),
               const SizedBox(height: 28),
               Wrap(
@@ -312,6 +429,7 @@ class _ChipsGalleryState extends State<ChipsGallery> {
                 'Removal is a request. Enable protection to reject removal of Design without changing the list.',
               ),
               const SizedBox(height: 32),
+              businessExample(),
               const Text('47 CONTROLS / 53 CATALOGUE ENTRIES · WEB FIRST'),
             ],
           ),

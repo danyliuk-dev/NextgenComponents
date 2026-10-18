@@ -253,6 +253,19 @@ Rule(NgSelectionRules.Toggle(largeChips,largeValue,"tag500",true,true,maxItems:n
 Reject(()=>NgSelectionRules.Validate(largeChips,["missing"],true,maxItems:null),"large collection rejects unknown selection");
 Reject(()=>NgSelectionRules.Validate([..largeChips,largeChips[0]],[],true,maxItems:null),"large collection rejects duplicate IDs");
 await Check<NgChipList>(new(){["Items"]=largeChips,["Value"]=largeValue,["Multiple"]=true},"Topic 500","data-chip-id=\"tag499\"","ng-chip-selected");
+var model = new ChipRecord { Id="ops", Name="Operations", Pinned=true };
+var selectorCalls=0;
+var chipData=new NgChipData<ChipRecord>([model],x=>{selectorCalls++;return x.Id;},x=>x.Name,removable:x=>!x.Pinned,appearance:x=>new(ThemeColor:"warning"));
+Rule(ReferenceEquals(chipData.GetItem("ops"),model)&&selectorCalls==1,"chip adapter retains original record and evaluates selector once");
+model.Name="Revised";
+Rule(chipData.Items[0].Label=="Operations"&&!chipData.CanRemove(chipData.Items[0]),"chip adapter snapshots mapped fields");
+Rule(new NgChipData<ChipRecord>([model],x=>x.Id,x=>x.Name).Items[0].Label=="Revised","chip adapter rebuild reads model changes");
+Reject(()=>new NgChipData<ChipRecord>([model,model],x=>x.Id,x=>x.Name),"chip adapter rejects duplicate IDs");
+Reject(()=>new NgChipData<ChipRecord>([model],x=>"bad id",x=>x.Name),"chip adapter rejects invalid ID");
+Reject(()=>new NgChipData<ChipRecord>([model],x=>x.Id,x=>" "),"chip adapter rejects blank label");
+Reject(()=>new NgChipData<ChipRecord>([model],x=>x.Id,x=>x.Name,appearance:x=>new(Size:"xxl")),"chip adapter rejects invalid appearance");
+try{chipData.GetItem("missing");throw new Exception("unknown record accepted");}catch(KeyNotFoundException){Rule(true,"chip adapter rejects unknown lookup");}
+await Check<NgChipList>(new(){["Items"]=chipData.Items,["CanRemove"]=(Func<NgOption,bool>)chipData.CanRemove,["ItemAppearance"]=(Func<NgOption,NgChipAppearance>)chipData.GetAppearance},"Operations","ng-chip-tone-warning");
 Console.WriteLine($"{count} rendering and data/date-rule checks passed. Browser interaction requires the separate visual run.");
 sealed class NoBrowserJS : IJSRuntime {
  public ValueTask<TValue> InvokeAsync<TValue>(string identifier, object?[]? args) => throw new InvalidOperationException("JS must not execute in SSR");
@@ -260,3 +273,5 @@ sealed class NoBrowserJS : IJSRuntime {
 }
 
 sealed class TestNavigation : NavigationManager { public TestNavigation()=>Initialize("http://localhost/","http://localhost/"); protected override void NavigateToCore(string uri,bool forceLoad){} }
+
+sealed class ChipRecord { public string Id {get;set;}=""; public string Name {get;set;}=""; public bool Pinned {get;set;} }
