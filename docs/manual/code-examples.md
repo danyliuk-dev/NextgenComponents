@@ -10,6 +10,7 @@ Every component manual contains **Blazor example** and **Flutter example** secti
 |---|---|
 | Install and create an application | [Getting started](getting-started.md) |
 | Submit validated data | [NgForm](NgForm.md), [NgDateRangePicker](NgDateRangePicker.md) |
+| Toggle settings and formatting | [NgToggleButton](NgToggleButton.md), [NgButtonGroup](NgButtonGroup.md) |
 | Add workspace commands and navigation | [NgMenu](NgMenu.md), [NgDrawer](NgDrawer.md) |
 | Build a multi-step workflow | [NgWizard](NgWizard.md), [NgStepper](NgStepper.md) |
 | Display and select business records | [NgDataGrid](NgDataGrid.md), [NgTreeList](NgTreeList.md) |

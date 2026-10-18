@@ -21,4 +21,4 @@ assert first == (root/'examples/flutter_gallery/assets/component-examples.json')
 for name, example in json.loads(first).items():
     for framework in ['blazor', 'flutter']:
         assert ''.join(t['text'] for t in example[framework+'Tokens']) == example[framework], name
-print('PASS 86 lossless highlighted examples, HTML escaping, plain fallback and identical demo assets')
+print(f'PASS {len(D)*2} lossless highlighted examples, HTML escaping, plain fallback and identical demo assets')

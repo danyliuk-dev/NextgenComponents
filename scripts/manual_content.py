@@ -1255,3 +1255,116 @@ D.update({'NgMenu': {'title': 'Command menu',
                       "  child: Column(children: [Text(selected ?? 'Choose a section'), "
                       "NgTextBox(label: 'Draft note', controller: note)]),\n"
                       ');'}})
+
+D.update({'NgToggleButton': {'title': 'Toggle button',
+                    'use': 'Switch a single setting on or off while keeping the action label visible. '
+                           'Examples include a preview border, a pinned item or a formatting option.',
+                    'notes': '### Bind the current state\n'
+                             '\n'
+                             'Value/value is a Boolean owned by the application. Blazor supports '
+                             '@bind-Value; Flutter uses value with onChanged and setState. Each '
+                             'activation requests the opposite value. The component does not save data '
+                             'or change application state independently. Keep the label stable, such as '
+                             'Show border, so its pressed state clearly explains whether the setting is '
+                             'enabled.\n'
+                             '\n'
+                             '### Keyboard and disabled state\n'
+                             '\n'
+                             'Tab focuses the button. Enter or Space activates it. The control exposes '
+                             'its pressed/checked state to accessibility APIs and keeps focus after a '
+                             'change. Disabled/disabled blocks activation. A missing '
+                             'ValueChanged/onChanged callback also disables the control, while external '
+                             'value changes remain visible. This is a button, not a form submission '
+                             'control.\n'
+                             '\n'
+                             '### Limits and composition\n'
+                             '\n'
+                             'Use a nonblank plain-text label up to 120 UTF-16 code units. Icon-only '
+                             'content, arbitrary templates and separate click events are outside this '
+                             'release. Use NgButtonGroup to coordinate several toggles; use NgSwitch '
+                             'for a switch-shaped control. Web is the verified target; native mobile '
+                             'validation remains separate.',
+                    'blazor': '<NgToggleButton Label="Show border" @bind-Value="showBorder" />\n'
+                              '<p>Border: @(showBorder ? "On" : "Off")</p>\n'
+                              '@code { private bool showBorder; }',
+                    'dart': 'bool showBorder = false;\n'
+                            'Widget build(BuildContext context) => Column(children: [\n'
+                            "  NgToggleButton(label: 'Show border', value: showBorder,\n"
+                            '    onChanged: (value) => setState(() => showBorder = value)),\n'
+                            '  Text(\'Border: ${showBorder ? "On" : "Off"}\'),\n'
+                            ']);'},
+ 'NgButtonGroup': {'title': 'Single and multiple choice buttons',
+                   'use': 'Present a small set of related settings as visible buttons. Use single '
+                          'selection for alignment or a view mode, and multiple selection for '
+                          'independent styles or filters.',
+                   'notes': '### Choose a selection mode\n'
+                            '\n'
+                            'Items/items is a flat list of NgOption values. Value/value is a list of '
+                            'selected IDs even in single-selection mode. Multiple/multiple defaults to '
+                            'false: activating a different option replaces the previous selection. With '
+                            'Multiple/multiple true, options toggle independently. The parent must '
+                            'store ValueChanged/onChanged and pass the new list back. Changes produce a '
+                            'new list in item order; input collections are never modified.\n'
+                            '\n'
+                            '### Decide whether users can clear the selection\n'
+                            '\n'
+                            'AllowEmpty/allowEmpty defaults to true, so clicking the last selected '
+                            'button clears it. Set it to false to prevent a user from removing the last '
+                            'choice. This rule does not create an initial selection and does not reject '
+                            'an empty value supplied by the parent: initialize a value if your '
+                            'application requires one. A prevented action emits no change event. '
+                            'Unknown or disabled activation IDs are ignored by the selection rules.\n'
+                            '\n'
+                            '### Updates, disabled options and validation\n'
+                            '\n'
+                            'Each option has an ID, label and disabled flag. Disabled/disabled disables '
+                            'the whole group; a missing callback also disables all buttons. A disabled '
+                            'selected option remains visible. Selecting another item in single mode '
+                            'replaces the prior selection, even if that prior item is disabled. '
+                            'Programmatic reset remains possible while controls are disabled.\n'
+                            '\n'
+                            'IDs must be unique, contain 1–64 ASCII letters, digits, underscores or '
+                            'hyphens, and labels must be nonblank with at most 120 UTF-16 code units. '
+                            'Supply at most 50 options. Selected IDs must be unique and exist in '
+                            'Items/items; single mode accepts at most one. When removing options or '
+                            'switching to single mode, normalize the selected list in the same parent '
+                            'update. Empty items with an empty value displays No options.\n'
+                            '\n'
+                            '### Layout and keyboard\n'
+                            '\n'
+                            'Horizontal groups wrap onto new lines on narrow screens. Vertical/vertical '
+                            'stacks buttons. Tab and Shift+Tab move between enabled buttons; Enter and '
+                            'Space activate them. Each button exposes its pressed state, and the group '
+                            'has a shared accessible label. This is a group of toggle buttons, not an '
+                            'arrow-key radiogroup. Routes, content panels, mixed command buttons, icons '
+                            'and custom templates are outside this release. Use NgRadioGroup for radio '
+                            'input semantics.',
+                   'blazor': '<NgButtonGroup Label="Text alignment" Items="alignments" '
+                             '@bind-Value="alignment" AllowEmpty="false" />\n'
+                             '<NgButtonGroup Label="Text styles" Items="styles" @bind-Value="format" '
+                             'Multiple />\n'
+                             '<p>Alignment: @string.Join(", ", alignment). Styles: @string.Join(", ", '
+                             'format)</p>\n'
+                             '@code {\n'
+                             '    private IReadOnlyList<string> alignment = ["left"], format = [];\n'
+                             '    private readonly NgOption[] alignments = [new("left", "Left"), '
+                             'new("center", "Center"), new("right", "Right")];\n'
+                             '    private readonly NgOption[] styles = [new("bold", "Bold"), '
+                             'new("italic", "Italic"), new("underline", "Underline", true)];\n'
+                             '}',
+                   'dart': "List<String> alignment = ['left'], format = [];\n"
+                           "final alignments = const [NgOption('left', 'Left'), NgOption('center', "
+                           "'Center'), NgOption('right', 'Right')];\n"
+                           "final styles = const [NgOption('bold', 'Bold'), NgOption('italic', "
+                           "'Italic'), NgOption('underline', 'Underline', disabled: true)];\n"
+                           'Widget build(BuildContext context) => Column(children: [\n'
+                           "  NgButtonGroup(label: 'Text alignment', items: alignments, value: "
+                           'alignment,\n'
+                           '    allowEmpty: false, onChanged: (value) => setState(() => alignment = '
+                           'value)),\n'
+                           "  NgButtonGroup(label: 'Text styles', items: styles, value: format, "
+                           'multiple: true,\n'
+                           '    onChanged: (value) => setState(() => format = value)),\n'
+                           '  Text(\'Alignment: ${alignment.join(", ")}. Styles: ${format.join(", '
+                           '")}\'),\n'
+                           ']);'}})

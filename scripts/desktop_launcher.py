@@ -22,10 +22,26 @@ CSS = ''':root{--ink:#17243b;--muted:#53647a;--line:#dfe5ef;--accent:#bd3d35;--b
 '''
 from code_highlight import highlight, CSS as SYNTAX_CSS
 CSS += SYNTAX_CSS
+CSS += '''.layout{grid-template-columns:290px minmax(0,1fr)}.component-tree,.component-tree ul{list-style:none;padding:0;margin:0}.component-tree li{margin:0}.component-tree .tree-branch{margin-bottom:5px}.sidebar .component-tree summary{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700;line-height:1.4;margin:0;padding:10px 6px;border-radius:7px;color:#324963;list-style:none}.component-tree summary::-webkit-details-marker{display:none}.component-tree summary::before{content:'›';font-size:21px;line-height:16px;width:12px;flex-shrink:0;color:#7185a0;transition:transform .12s}.component-tree details[open]>summary::before{transform:rotate(90deg)}.component-tree summary:hover{background:#eef3fa}.tree-folder{width:14px;height:11px;border:1.5px solid #6a8cc6;border-radius:2px;background:#e5edfb;flex-shrink:0;position:relative}.tree-folder::before{content:'';position:absolute;left:-1.5px;top:-5px;width:7px;height:4px;border:1.5px solid #6a8cc6;border-bottom:0;border-radius:2px 2px 0 0;background:#e5edfb}.tree-count{margin-left:auto;color:#75859c;font-size:11px;font-weight:500}.component-tree details>ul{margin:3px 0 9px 20px;padding-left:11px;border-left:1px solid #d7e1ee}.sidebar .component-tree a{position:relative;font-size:13px;padding:7px 9px}.component-tree a::before{content:'';position:absolute;left:-12px;top:50%;width:8px;border-top:1px solid #d7e1ee}.component-tree summary:focus-visible{outline:3px solid #e18c39;outline-offset:1px}#component-no-results{font-size:13px;color:var(--muted);padding:12px 8px}@media(max-width:1000px){.layout{grid-template-columns:1fr}.sidebar .nav-items{max-height:50vh}}'''
+
 
 SCRIPT = r'''(()=>{
- const search=document.getElementById('component-search');if(search)search.addEventListener('input',()=>{const q=search.value.toLowerCase();document.querySelectorAll('[data-component]').forEach(a=>a.hidden=!a.textContent.toLowerCase().includes(q));});
- if(innerWidth<1000){const d=document.querySelector('.sidebar details');if(d)d.open=false;}
+ const search=document.getElementById('component-search'),branches=[...document.querySelectorAll('[data-category]')];let beforeSearch=null;
+ if(search)search.addEventListener('input',()=>{
+  const q=search.value.trim().toLowerCase();if(q&&beforeSearch===null)beforeSearch=branches.map(branch=>branch.open);
+  let total=0;
+  branches.forEach((branch,index)=>{
+   const categoryMatch=branch.dataset.category.toLowerCase().includes(q);let found=0;
+   branch.querySelectorAll('[data-component]').forEach(item=>{item.hidden=!!q&&!categoryMatch&&!item.textContent.toLowerCase().includes(q);if(!item.hidden)found++;});
+   branch.closest('.tree-branch').hidden=found===0;branch.querySelector('.tree-count').textContent=found;total+=found;
+   if(q)branch.open=found>0;else if(beforeSearch)branch.open=beforeSearch[index];
+  });
+  document.getElementById('component-no-results').hidden=total!==0;if(!q)beforeSearch=null;
+ });
+ document.querySelectorAll('.component-tree summary').forEach(summary=>summary.addEventListener('keydown',event=>{
+  if(event.key==='ArrowRight'||event.key==='ArrowLeft'){event.preventDefault();summary.parentElement.open=event.key==='ArrowRight';}
+ }));
+ if(innerWidth<1000){const d=document.querySelector('.documentation-nav');if(d)d.open=false;}
  const main=document.querySelector('main');
  const headings=[...main.querySelectorAll('h2[id]')];
  if(headings.length){const toc=document.createElement('nav');toc.className='toc';toc.setAttribute('aria-label','On this page');const strong=document.createElement('strong');strong.textContent='On this page';toc.append(strong);const links=document.createElement('div');for(const h of headings){const a=document.createElement('a');a.href='#'+h.id;a.textContent=h.textContent;links.append(a);}toc.append(links);const first=main.querySelector('h2');first.before(toc);}
@@ -36,12 +52,30 @@ SCRIPT = r'''(()=>{
 
 
 def page(title, body):
-    component_links = []
+    categories = {}
+    catalogue = json.loads((ROOT / 'docs/catalog.json').read_text())
+    for entry in catalogue['components']:
+        name = entry['blazor'].get('component')
+        if name:
+            categories.setdefault(name, entry['category'])
+    groups = {}
     for manual in sorted((ROOT / 'docs/manual').glob('Ng*.md')):
         name = manual.stem
-        current = ' class="current" aria-current="page"' if title == name else ''
-        component_links.append(f'<a data-component href="/docs/manual/{name}.md"{current}>{name}</a>')
-    nav = '<aside class="sidebar"><details open><summary>Developer documentation</summary><a href="/docs/manual/getting-started.md">Getting started</a><a href="/docs/manual/code-examples.md">Code examples</a><a href="/docs/manual/models.md">Data models and formulas</a><a href="/docs/catalog.md">Coverage and roadmap</a><div class="nav-title">Components</div><label for="component-search">Find a component</label><input id="component-search" type="search" placeholder="Search components…"><div class="nav-items">' + ''.join(component_links) + '</div></details></aside>'
+        groups.setdefault(categories.get(name, 'Other components'), []).append(name)
+    branches = []
+    for category in dict.fromkeys([entry["category"] for entry in catalogue["components"]] + list(groups)):
+        if category not in groups:
+            continue
+        names = groups[category]
+        links = []
+        for name in names:
+            current = ' class="current" aria-current="page"' if title == name else ''
+            links.append(f'<li data-component><a href="/docs/manual/{name}.md"{current}>{name}</a></li>')
+        opened = ' open' if title in names else ''
+        safe_category = html.escape(category, quote=True)
+        branches.append(f'<li class="tree-branch"><details data-category="{safe_category}"{opened}><summary><span class="tree-folder" aria-hidden="true"></span><span>{safe_category}</span><small class="tree-count">{len(names)}</small></summary><ul>{"".join(links)}</ul></details></li>')
+    tree = '<nav aria-label="Component reference"><ul class="component-tree">' + ''.join(branches) + '</ul><p id="component-no-results" role="status" hidden>No components found.</p></nav>'
+    nav = '<aside class="sidebar"><details class="documentation-nav" open><summary>Developer documentation</summary><a href="/docs/manual/getting-started.md">Getting started</a><a href="/docs/manual/code-examples.md">Code examples</a><a href="/docs/manual/models.md">Data models and formulas</a><a href="/docs/catalog.md">Coverage and roadmap</a><div class="nav-title">Components</div><label for="component-search">Find a component or category</label><input id="component-search" type="search" placeholder="Search components…"><div class="nav-items">' + tree + '</div></details></aside>'
     return f'''<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>{html.escape(title)} · Nextgen Components</title><style>{CSS}</style></head><body><header><a class="brand" href="/">N / NEXTGEN COMPONENTS</a><a href="http://127.0.0.1:5180/">Blazor demo ↗</a><a href="http://127.0.0.1:5181/">Flutter demo ↗</a><a href="/docs/manual/code-examples.md">Code examples</a><a href="/docs/manual/README.md">Documentation</a></header><div class="layout">{nav}<main>{body}<footer>Nextgen Components · Blazor &amp; Flutter Web · Original implementations with documented scope</footer></main></div><script>{SCRIPT}</script></body></html>'''
 
 
@@ -51,7 +85,7 @@ class Handler(BaseHTTPRequestHandler):
         if path == '/health':
             return self.reply(json.dumps({'app': 'nextgen-components-launcher', 'root': str(ROOT)}).encode(), 'application/json')
         if path == '/':
-            return self.reply(page('Demo and documentation', '<p class="eyebrow">Developer hub / 0.12</p><h1>Build your next interface.</h1><p class="hero-copy">43 components. Two frameworks. Working examples that take you from your first button to a complete data workflow.</p><div class="route"><a href="/docs/manual/getting-started.md"><b>01 · Install</b><span>Connect the library and theme.</span></a><a href="/docs/manual/code-examples.md"><b>02 · Run</b><span>Start from a working example.</span></a><a href="/docs/manual/models.md"><b>03 · Connect</b><span>Bind your data and save changes.</span></a></div><div class="cards"><a class="card" href="http://127.0.0.1:5180/"><small>Interactive / .NET</small><strong>Blazor playground ↗</strong>Explore forms, grids, charts, documents and step-by-step workflows.</a><a class="card" href="http://127.0.0.1:5181/"><small>Interactive / Dart</small><strong>Flutter playground ↗</strong>Try the same workflows in a running Flutter Web application.</a><a class="card" href="/docs/manual/code-examples.md"><small>Learn by building</small><strong>Code examples →</strong>Copy real Blazor and Flutter code for state, validation and events.</a><a class="card" href="/docs/manual/README.md"><small>API and behavior</small><strong>Component manual →</strong>Understand parameters, limits, data contracts and integration rules.</a></div><h2 id="workflows">What are you building?</h2><ul><li><a href="/docs/manual/NgWizard.md">A multi-step application with validation</a></li><li><a href="/docs/manual/NgDataGrid.md">A searchable workspace for business records</a></li><li><a href="/docs/manual/NgAIPrompt.md">An AI interface connected to your backend</a></li><li><a href="/docs/manual/NgMap.md">A geographic view with markers and clustering</a></li></ul><div class="tip"><strong>Start small.</strong> Open Getting started, run one example, then connect your application data. Each component page includes both framework versions.</div><p class="muted">Demos run locally. Web is the currently verified target; native mobile validation is a separate phase.</p>').encode())
+            return self.reply(page('Demo and documentation', '<p class="eyebrow">Developer hub / 0.13</p><h1>Build your next interface.</h1><p class="hero-copy">45 components. Two frameworks. Working examples that take you from your first button to a complete data workflow.</p><div class="route"><a href="/docs/manual/getting-started.md"><b>01 · Install</b><span>Connect the library and theme.</span></a><a href="/docs/manual/code-examples.md"><b>02 · Run</b><span>Start from a working example.</span></a><a href="/docs/manual/models.md"><b>03 · Connect</b><span>Bind your data and save changes.</span></a></div><div class="cards"><a class="card" href="http://127.0.0.1:5180/"><small>Interactive / .NET</small><strong>Blazor playground ↗</strong>Explore forms, grids, charts, documents and step-by-step workflows.</a><a class="card" href="http://127.0.0.1:5181/"><small>Interactive / Dart</small><strong>Flutter playground ↗</strong>Try the same workflows in a running Flutter Web application.</a><a class="card" href="/docs/manual/code-examples.md"><small>Learn by building</small><strong>Code examples →</strong>Copy real Blazor and Flutter code for state, validation and events.</a><a class="card" href="/docs/manual/README.md"><small>API and behavior</small><strong>Component manual →</strong>Understand parameters, limits, data contracts and integration rules.</a></div><h2 id="workflows">What are you building?</h2><ul><li><a href="/docs/manual/NgWizard.md">A multi-step application with validation</a></li><li><a href="/docs/manual/NgDataGrid.md">A searchable workspace for business records</a></li><li><a href="/docs/manual/NgAIPrompt.md">An AI interface connected to your backend</a></li><li><a href="/docs/manual/NgMap.md">A geographic view with markers and clustering</a></li></ul><div class="tip"><strong>Start small.</strong> Open Getting started, run one example, then connect your application data. Each component page includes both framework versions.</div><p class="muted">Demos run locally. Web is the currently verified target; native mobile validation is a separate phase.</p>').encode())
         target = (ROOT / path.lstrip('/')).resolve()
         try:
             relative = target.relative_to(ROOT)

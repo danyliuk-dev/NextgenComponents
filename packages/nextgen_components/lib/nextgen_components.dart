@@ -20,3 +20,4 @@ export 'src/prompt.dart';
 export 'src/steps.dart';
 
 export 'src/navigation.dart';
+export 'src/selection.dart';

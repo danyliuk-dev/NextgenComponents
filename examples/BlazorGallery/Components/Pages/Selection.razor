@@ -1,0 +1,22 @@
+@page "/selection"
+<PageTitle>Nextgen • Toggle buttons</PageTitle>
+<div class="ng-scope gallery" data-ng-theme="@(dark?"dark":"light")"><main>
+<nav><a href="/code-examples">Code examples</a><strong>N NEXTGEN COMPONENTS</strong><div class="row"><a href="/">Foundation</a><NgSwitch Label="Dark theme" @bind-Value="dark"/></div></nav>
+<section class="hero"><p class="eyebrow">BLAZOR / SELECTION 0.13</p><h1>Make a choice.<br/>See the change.</h1><p>Use a toggle for one setting, a single-choice group for alignment, and multiple choices for text styles.</p></section>
+<section class="panel"><div class="row"><NgCheckBox Label="Disable controls" @bind-Value="disabled"/><NgCheckBox Label="Vertical groups" @bind-Value="vertical"/><NgCheckBox Label="Allow empty alignment" @bind-Value="allowEmpty"/><NgCheckBox Label="Empty options" @bind-Value="empty"/><NgButton OnClick="Reset">Reset settings</NgButton></div>
+<h2>Preview settings</h2><NgToggleButton Label="Show border" Value="border" ValueChanged="SetBorder" Disabled="disabled"/>
+<h3>Alignment · choose one</h3><NgButtonGroup Label="Text alignment" Items="@(empty?Array.Empty<NgOption>():alignments)" Value="@(empty?Array.Empty<string>():alignment)" ValueChanged="SetAlignment" AllowEmpty="allowEmpty" Disabled="disabled" Vertical="vertical"/>
+<h3>Text styles · choose several</h3><NgButtonGroup Label="Text styles" Items="@(empty?Array.Empty<NgOption>():styles)" Value="@(empty?Array.Empty<string>():format)" ValueChanged="SetFormat" Multiple Disabled="disabled" Vertical="vertical"/>
+<div id="selection-preview" style="margin-top:28px;padding:24px;border:@(border?"2px solid var(--ng-primary)":"2px solid transparent");text-align:@(alignment.FirstOrDefault()??"left");font-weight:@(format.Contains("bold")?"700":"400");font-style:@(format.Contains("italic")?"italic":"normal")">Build something clear and useful.</div>
+<p id="selection-status" role="status">Alignment: @(alignment.FirstOrDefault()??"none") · Styles: @(format.Count==0?"none":string.Join(", ",format)) · Border: @(border?"on":"off") · Changes: @changes</p></section>
+<footer>45 CONTROLS / 51 CATALOGUE ENTRIES · WEB FIRST</footer></main></div>
+@code {
+ private bool dark,disabled,vertical,allowEmpty,empty,border;private int changes;
+ private IReadOnlyList<string> alignment=["left"],format=[];
+ private readonly NgOption[] alignments=[new("left","Left"),new("center","Center"),new("right","Right"),new("justify","Justify (unavailable)",true)];
+ private readonly NgOption[] styles=[new("bold","Bold"),new("italic","Italic"),new("underline","Underline (unavailable)",true)];
+ private void SetBorder(bool value){border=value;changes++;}
+ private void SetAlignment(IReadOnlyList<string> value){alignment=value;changes++;}
+ private void SetFormat(IReadOnlyList<string> value){format=value;changes++;}
+ private void Reset(){border=false;alignment=["left"];format=[];changes=0;}
+}

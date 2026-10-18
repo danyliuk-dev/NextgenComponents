@@ -1,0 +1,9 @@
+<button type="button" class="ng-button ng-toggle-button @(Value?"ng-selected ng-primary":"")" aria-pressed="@(Value?"true":"false")" disabled="@(Disabled||!ValueChanged.HasDelegate)" @onclick="Toggle">@Label</button>
+@code {
+ [Parameter,EditorRequired] public string Label {get;set;}="Toggle";
+ [Parameter] public bool Value {get;set;}
+ [Parameter] public EventCallback<bool> ValueChanged {get;set;}
+ [Parameter] public bool Disabled {get;set;}
+ protected override void OnParametersSet(){if(string.IsNullOrWhiteSpace(Label)||Label.Length>120)throw new ArgumentException("Use a nonblank label of at most 120 characters.");}
+ private Task Toggle()=>Disabled?Task.CompletedTask:ValueChanged.InvokeAsync(!Value);
+}

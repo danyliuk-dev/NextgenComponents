@@ -1,3 +1,4 @@
+import 'selection_gallery.dart';
 import 'navigation_gallery.dart';
 import 'code_gallery.dart';
 import 'steps_gallery.dart';
@@ -35,7 +36,8 @@ class _GalleryState extends State<Gallery> {
       ai = false,
       steps = false,
       code = false,
-      navigation = false;
+      navigation = false,
+      selection = false;
   @override
   Widget build(BuildContext context) => MaterialApp(
     title: 'Nextgen • Flutter',
@@ -43,7 +45,13 @@ class _GalleryState extends State<Gallery> {
     theme: NgTheme.light(compact: compact),
     darkTheme: NgTheme.dark(compact: compact),
     themeMode: dark ? ThemeMode.dark : ThemeMode.light,
-    home: navigation
+    home: selection
+        ? SelectionGallery(
+            dark: dark,
+            onDark: (v) => setState(() => dark = v),
+            onBack: () => setState(() => selection = false),
+          )
+        : navigation
         ? NavigationGallery(
             dark: dark,
             onDark: (v) => setState(() => dark = v),
@@ -128,6 +136,7 @@ class _GalleryState extends State<Gallery> {
             onData: () => setState(() => data = true),
             onAnalytics: () => setState(() => analytics = true),
             onNavigation: () => setState(() => navigation = true),
+            onSelection: () => setState(() => selection = true),
             onCode: () => setState(() => code = true),
             onSteps: () => setState(() => steps = true),
             onAi: () => setState(() => ai = true),
@@ -157,7 +166,8 @@ class GalleryPage extends StatefulWidget {
       onAi,
       onSteps,
       onCode,
-      onNavigation;
+      onNavigation,
+      onSelection;
   final ValueChanged<bool> onDark, onCompact;
   const GalleryPage({
     super.key,
@@ -173,6 +183,7 @@ class GalleryPage extends StatefulWidget {
     required this.onSteps,
     required this.onCode,
     required this.onNavigation,
+    required this.onSelection,
     required this.dark,
     required this.compact,
     required this.onDark,
@@ -245,6 +256,10 @@ class _GalleryPageState extends State<GalleryPage> {
                         fontWeight: FontWeight.bold,
                         letterSpacing: 1,
                       ),
+                    ),
+                    TextButton(
+                      onPressed: widget.onSelection,
+                      child: const Text('Toggle buttons'),
                     ),
                     TextButton(
                       onPressed: widget.onNavigation,

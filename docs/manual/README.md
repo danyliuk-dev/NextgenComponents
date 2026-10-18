@@ -1,6 +1,6 @@
 # Nextgen Components manual
 
-Version 0.12.0. Detailed guidance for every public Blazor and Flutter Web component. This documents the implemented API, not full Telerik feature parity.
+Version 0.13.0. Detailed guidance for every public Blazor and Flutter Web component. This documents the implemented API, not full Telerik feature parity.
 
 Start with [Getting started](getting-started.md) and [Code examples](code-examples.md). See [data models and formulas](models.md) for shared model contracts and [verification](../verification.md) for tested behavior.
 
@@ -13,6 +13,7 @@ Each page contains a Blazor example and a Flutter example, followed by API table
 | [NgAutoComplete](NgAutoComplete.md) | Text suggestions |
 | [NgBreadcrumb](NgBreadcrumb.md) | Breadcrumb |
 | [NgButton](NgButton.md) | Button |
+| [NgButtonGroup](NgButtonGroup.md) | Single and multiple choice buttons |
 | [NgCalendar](NgCalendar.md) | Calendar |
 | [NgChart](NgChart.md) | Chart |
 | [NgCheckBox](NgCheckBox.md) | Checkbox |
@@ -47,6 +48,7 @@ Each page contains a Blazor example and a Flutter example, followed by API table
 | [NgTextArea](NgTextArea.md) | Multiline text |
 | [NgTextBox](NgTextBox.md) | Single-line text |
 | [NgTimePicker](NgTimePicker.md) | Time picker |
+| [NgToggleButton](NgToggleButton.md) | Toggle button |
 | [NgTooltip](NgTooltip.md) | Tooltip |
 | [NgTreeList](NgTreeList.md) | Tree list |
 | [NgTreeView](NgTreeView.md) | Tree view |

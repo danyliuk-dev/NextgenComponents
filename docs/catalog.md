@@ -13,7 +13,7 @@ Snapshot: 2026-10-18. 139 named entries from the [Telerik Blazor index](https://
 | AI Interface | [SmartPasteButton](https://www.telerik.com/blazor-ui/smartpastebutton) | planned | planned | 5 |
 | Navigation | [AppBar](https://www.telerik.com/blazor-ui/appbar) | planned | planned | 2 |
 | Navigation | [Breadcrumb](https://www.telerik.com/blazor-ui/breadcrumb) | foundation: `NgBreadcrumb` | foundation: `NgBreadcrumb` | 3 |
-| Navigation | [Button Group](https://www.telerik.com/blazor-ui/buttongroup) | planned | planned | 2 |
+| Navigation | [Button Group](https://www.telerik.com/blazor-ui/buttongroup) | foundation: `NgButtonGroup` | foundation: `NgButtonGroup` | 2 |
 | Navigation | [Buttons](https://www.telerik.com/blazor-ui/buttons) | foundation: `NgButton` | foundation: `NgButton` | 1 |
 | Navigation | [Chip](https://www.telerik.com/blazor-ui/chip) | planned | planned | 2 |
 | Navigation | [ChipList](https://www.telerik.com/blazor-ui/chiplist) | planned | planned | 2 |
@@ -28,7 +28,7 @@ Snapshot: 2026-10-18. 139 named entries from the [Telerik Blazor index](https://
 | Navigation | [Stepper](https://www.telerik.com/blazor-ui/stepper) | foundation: `NgStepper` | foundation: `NgStepper` | 2 |
 | Navigation | [Switch](https://www.telerik.com/blazor-ui/switch) | foundation: `NgSwitch` | foundation: `NgSwitch` | 1 |
 | Navigation | [TabStrip](https://www.telerik.com/blazor-ui/tabstrip) | foundation: `NgTabs` | foundation: `NgTabs` | 1 |
-| Navigation | [Toggle Button](https://www.telerik.com/blazor-ui/togglebutton) | planned | planned | 2 |
+| Navigation | [Toggle Button](https://www.telerik.com/blazor-ui/togglebutton) | foundation: `NgToggleButton` | foundation: `NgToggleButton` | 2 |
 | Navigation | [ToolBar](https://www.telerik.com/blazor-ui/toolbar) | planned | planned | 2 |
 | Navigation | [TreeView](https://www.telerik.com/blazor-ui/treeview) | foundation: `NgTreeView` | foundation: `NgTreeView` | 3 |
 | Data Management | [Data Grid](https://www.telerik.com/blazor-ui/grid) | foundation: `NgDataGrid` | foundation: `NgDataGrid` | 3 |

@@ -213,6 +213,20 @@ Reject(()=>NgNavigationRules.ValidateDrawer([new("a","A"),new("a","Duplicate")],
 Reject(()=>NgNavigationRules.ValidateDrawer([],199),"drawer width limit");
 await Check<NgMenu>(new(){["Items"]=new[]{menuGroup},["Label"]="Commands <safe>"},"menubar","Commands &lt;safe&gt;","aria-haspopup=\"menu\"","popover=\"auto\"");
 await Check<NgDrawer>(new(){["Items"]=new[]{new NgOption("a","Overview")},["Expanded"]=true,["Overlay"]=false,["SelectedId"]="a"},"ng-drawer-push","aria-current=\"page\"","Overview");
+var choices=new NgOption[]{new("a","Alpha"),new("b","Beta"),new("c","Locked",true)};var choiceValue=new List<string>{"a"};
+Rule(NgSelectionRules.Toggle(choices,choiceValue,"b",true,true).SequenceEqual(new[]{"a","b"})&&choiceValue.SequenceEqual(new[]{"a"}),"multi selection preserves caller state");
+Rule(NgSelectionRules.Toggle(choices,choiceValue,"b",false,true).SequenceEqual(new[]{"b"}),"single selection replaces prior choice");
+Rule(NgSelectionRules.Toggle(choices,choiceValue,"a",false,false).SequenceEqual(choiceValue),"prevent last deselection");
+Rule(NgSelectionRules.Toggle(choices,choiceValue,"a",false,true).Count==0,"allow empty selection");
+Rule(NgSelectionRules.Toggle(choices,choiceValue,"c",true,true).SequenceEqual(choiceValue),"disabled choice ignored");
+Reject(()=>NgSelectionRules.Validate(choices,["a","a"],true),"duplicate selected IDs");
+Reject(()=>NgSelectionRules.Validate(choices,["a","b"],false),"multiple IDs in single mode");
+Reject(()=>NgSelectionRules.Validate(choices,["missing"],true),"unknown selection ID");
+Reject(()=>NgSelectionRules.Validate([choices[0],choices[0]],[],true),"duplicate option IDs");
+Reject(()=>NgSelectionRules.Validate(Enumerable.Range(0,51).Select(i=>new NgOption("n"+i,"Node")).ToArray(),[],true),"selection item limit");
+await Check<NgToggleButton>(new(){["Label"]="Bold <safe>",["Value"]=true},"aria-pressed=\"true\"","Bold &lt;safe&gt;","disabled");
+await Check<NgButtonGroup>(new(){["Items"]=choices,["Value"]=choiceValue,["Vertical"]=true},"role=\"group\"","ng-button-group-vertical","aria-pressed=\"true\"","Locked");
+await Check<NgButtonGroup>(new(),"No options");
 Console.WriteLine($"{count} rendering and data/date-rule checks passed. Browser interaction requires the separate visual run.");
 sealed class NoBrowserJS : IJSRuntime {
  public ValueTask<TValue> InvokeAsync<TValue>(string identifier, object?[]? args) => throw new InvalidOperationException("JS must not execute in SSR");
