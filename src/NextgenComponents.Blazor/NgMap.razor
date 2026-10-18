@@ -1,0 +1,34 @@
+@using System.Text.Json
+@implements IAsyncDisposable
+@inject NavigationManager Navigation
+@inject IJSRuntime JS
+<section class="ng-map" aria-label="@Label"><h3>@Label</h3><iframe @ref="frame" src="@Navigation.ToAbsoluteUri("_content/NextgenComponents.Blazor/map-viewer/index.html")" title="@Label" style="@($"width:100%;height:{Height}px;border:1px solid var(--ng-border,#888);border-radius:4px")"></iframe></section>
+@code {
+ [Parameter] public string Label {get;set;}="Map";
+ [Parameter] public NgMapModel Value {get;set;}=new();
+ [Parameter] public NgMapView View {get;set;}=new();
+ [Parameter] public EventCallback<NgMapView> ViewChanged {get;set;}
+ [Parameter] public string? SelectedId {get;set;}
+ [Parameter] public EventCallback<string?> SelectedIdChanged {get;set;}
+ [Parameter] public EventCallback<NgMapPoint> OnMapClick {get;set;}
+ [Parameter] public string? TileUrlTemplate {get;set;}
+ [Parameter] public string Attribution {get;set;}="";
+ [Parameter] public string? AttributionUrl {get;set;}
+ [Parameter] public bool Dark {get;set;}
+ [Parameter] public int Height {get;set;}=520;
+ private ElementReference frame; private IJSObjectReference? module; private DotNetObjectReference<NgMap>? reference; private string config="",sent="";
+ private string? Resolve(string? url){if(string.IsNullOrWhiteSpace(url))return null;var uri=Navigation.ToAbsoluteUri(url);if(uri.Scheme is not ("http" or "https"))throw new ArgumentException("Map URLs must be relative or HTTP(S).");return uri.ToString();}
+ protected override void OnParametersSet(){
+  ArgumentNullException.ThrowIfNull(Value);ArgumentNullException.ThrowIfNull(View);
+  if(Height<400||Height>1200)throw new ArgumentOutOfRangeException(nameof(Height));
+  if(!string.IsNullOrWhiteSpace(TileUrlTemplate)&&(!new[]{"{z}","{x}","{y}"}.All(TileUrlTemplate.Contains)||string.IsNullOrWhiteSpace(Attribution)))throw new ArgumentException("Tile URL needs {z}, {x}, {y} and visible attribution.");
+  config=JsonSerializer.Serialize(new{model=Value,view=View,SelectedId,tileUrlTemplate=Resolve(TileUrlTemplate),Attribution,attributionUrl=Resolve(AttributionUrl),Dark},new JsonSerializerOptions{PropertyNamingPolicy=JsonNamingPolicy.CamelCase});
+ }
+ protected override async Task OnAfterRenderAsync(bool first){if(first){module=await JS.InvokeAsync<IJSObjectReference>("import","./_content/NextgenComponents.Blazor/map-bridge.js");reference=DotNetObjectReference.Create(this);await module.InvokeVoidAsync("attach",frame,reference);}if(module is not null&&sent!=config){await module.InvokeVoidAsync("update",frame,config);sent=config;}}
+ [JSInvokable] public async Task MapEvent(string json){using var doc=JsonDocument.Parse(json);var e=doc.RootElement;switch(e.GetProperty("kind").GetString()){
+  case "selection":var id=e.GetProperty("id").GetString();if(id is null||Value.Markers.Any(m=>m.Id==id)||Value.Paths.Any(p=>p.Id==id))await SelectedIdChanged.InvokeAsync(id);break;
+  case "view":await ViewChanged.InvokeAsync(new(e.GetProperty("latitude").GetDouble(),e.GetProperty("longitude").GetDouble(),e.GetProperty("zoom").GetInt32()));break;
+  case "click":var lat=e.GetProperty("latitude").GetDouble();if(Math.Abs(lat)<=85.05112878)await OnMapClick.InvokeAsync(new(lat,e.GetProperty("longitude").GetDouble()));break;
+ }}
+ public async ValueTask DisposeAsync(){try{if(module is not null){await module.InvokeVoidAsync("detach",frame);await module.DisposeAsync();}}catch(JSDisconnectedException){}reference?.Dispose();}
+}

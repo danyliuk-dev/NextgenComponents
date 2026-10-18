@@ -45,7 +45,7 @@ Snapshot: 2026-10-18. 139 named entries from the [Telerik Blazor index](https://
 | File Upload & Management | [PDF Viewer](https://www.telerik.com/blazor-ui/pdf-viewer) | foundation: NgPdfViewer | foundation: NgPdfViewer | 5 |
 | File Upload & Management | [Upload](https://www.telerik.com/blazor-ui/upload) | planned | planned | 2 |
 | Diagrams and Maps | [Diagram](https://www.telerik.com/blazor-ui/diagram) | foundation: `NgDiagram` | foundation: `NgDiagram` | 5 |
-| Diagrams and Maps | [Map](https://www.telerik.com/blazor-ui/map) | planned | planned | 5 |
+| Diagrams and Maps | [Map](https://www.telerik.com/blazor-ui/map) | foundation: `NgMap` | foundation: `NgMap` | 5 |
 | Labels | [Badge](https://www.telerik.com/blazor-ui/badge) | planned | planned | 2 |
 | Labels | [FloatingLabel](https://www.telerik.com/blazor-ui/floatinglabel) | planned | planned | 2 |
 | Icons | [FontIcon](https://www.telerik.com/blazor-ui/fonticon) | planned | planned | 2 |

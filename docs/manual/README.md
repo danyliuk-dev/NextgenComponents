@@ -1,6 +1,6 @@
 # Руководство Nextgen Components
 
-Версия 0.8.1. Подробное руководство для всех публичных компонентов Blazor и Flutter Web. Это описание фактически реализованного API, а не обещание полного набора возможностей Telerik.
+Версия 0.9.0. Подробное руководство для всех публичных компонентов Blazor и Flutter Web. Это описание фактически реализованного API, а не обещание полного набора возможностей Telerik.
 
 Начните с [подключения и правил состояния](getting-started.md), затем выберите компонент. Модели и формулы описаны в [справочнике данных](models.md). Реальные ограничения и результаты проверок: [verification](../verification.md).
 
@@ -27,6 +27,7 @@
 | [NgEditor](NgEditor.md) | Редактор структурированного документа |
 | [NgForm](NgForm.md) | Форма и валидация |
 | [NgLinearGauge](NgLinearGauge.md) | Линейный индикатор |
+| [NgMap](NgMap.md) | Интерактивная карта |
 | [NgMultiSelect](NgMultiSelect.md) | Множественный выбор |
 | [NgNotification](NgNotification.md) | Уведомление |
 | [NgNumericTextBox](NgNumericTextBox.md) | Числовое поле |

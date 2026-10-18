@@ -13,3 +13,7 @@ The catalog is an index snapshot, not copied documentation. Names, categories an
 
 ## PDF engine (0.8)
 NgPdfViewer uses unmodified PDF.js 6.4.299 under Apache-2.0. Distribution files, license and bundled font/WASM notices are retained in shared/pdf-viewer/vendor and copied to both component packages. See vendor/PROVENANCE.md. The toolbar, framework wrappers and gallery PDF are original project code/content. The component has a documented limited feature set; this does not import Telerik code.
+
+## Map engine (0.9)
+
+Leaflet 1.9.4 is included under BSD-2-Clause, unchanged from the npm distribution. License and per-file SHA-256 hashes are in `shared/map-viewer/vendor/`; identical copies ship in both framework packages. Map bridge, models, UI and examples are original Nextgen code. Public reference: [Telerik Map](https://www.telerik.com/blazor-ui/documentation/components/map/overview). Demo map imagery is loaded at runtime from OpenStreetMap with linked attribution, not copied into the package.

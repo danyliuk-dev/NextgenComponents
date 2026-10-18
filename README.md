@@ -2,7 +2,7 @@
 
 Blazor and Flutter component libraries with a shared design-token source and a Telerik Blazor component roadmap.
 
-**Current release: 0.8.1 PDF text selection and search highlights, 36 controls on each Web platform (42 catalogue entries including chart modes).** This is not a complete Telerik replacement or API-compatible clone. The [catalog](docs/catalog.md) tracks 139 named entries from the published Telerik Blazor index; chart variants are counted separately. See [foundation capabilities](docs/foundation.md) and [forms/date capabilities](docs/forms-and-dates.md) and [data workspace capabilities and gaps](docs/data-workspace.md) and [analytics/schedule capabilities](docs/analytics-and-schedule.md).
+**Current release: 0.9.0 interactive Map, 37 controls on each Web platform (43 catalogue entries including chart modes).** This is not a complete Telerik replacement or API-compatible clone. The [catalog](docs/catalog.md) tracks 139 named entries from the published Telerik Blazor index; chart variants are counted separately. See [foundation capabilities](docs/foundation.md) and [forms/date capabilities](docs/forms-and-dates.md) and [data workspace capabilities and gaps](docs/data-workspace.md) and [analytics/schedule capabilities](docs/analytics-and-schedule.md).
 
 ## Manual
 
@@ -72,6 +72,7 @@ dotnet build -m:1
 dotnet run --project tests/BlazorChecks
 node tests/pdf/text-search.test.mjs
 python3 scripts/sync_pdf_assets.py --check
+python3 scripts/sync_map_assets.py --check
 cd packages/nextgen_components
 flutter analyze
 flutter test
@@ -85,7 +86,7 @@ flutter test
 2. Forms and dates: 11 more controls and a complete booking example (0.2 implemented subset). Remaining input/layout features stay in the catalogue.
 3. Grid, TreeList, TreeView, Pager and Breadcrumb (0.3 implemented subset); advanced data features remain in the capability matrix.
 4. Charts (six modes), linear/arc gauges and weekly scheduling (0.4 implemented subset); advanced visualization and scheduling remain planned.
-5. Spreadsheet and PivotGrid: linked workbook (0.5 implemented subset). Structured document editor (0.6 implemented subset); see [editor capabilities](docs/editor.md). Interactive diagrams (0.7 implemented subset); see [diagram capabilities](docs/diagram.md). PDF Viewer (0.8 implemented subset); see [PDF capabilities](docs/pdf-viewer.md). Full rich-text editing, maps and AI interfaces remain planned.
+5. Spreadsheet and PivotGrid: linked workbook (0.5 implemented subset). Structured document editor (0.6 implemented subset); see [editor capabilities](docs/editor.md). Interactive diagrams (0.7 implemented subset); see [diagram capabilities](docs/diagram.md). PDF Viewer (0.8 implemented subset); see [PDF capabilities](docs/pdf-viewer.md). Map (0.9 implemented subset); see [Map capabilities](docs/map.md). Full rich-text editing and AI interfaces remain planned.
 
 Each planned component needs a feature-level audit of its reference before implementation. Basic rendering is not completion: sorting/filtering/editing, keyboard behavior, accessibility, localization and performance must be tracked where applicable.
 

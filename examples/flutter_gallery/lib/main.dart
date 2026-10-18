@@ -1,3 +1,4 @@
+import 'map_gallery.dart';
 import 'pdf_gallery.dart';
 import 'diagram_gallery.dart';
 import 'editor_gallery.dart';
@@ -25,7 +26,8 @@ class _GalleryState extends State<Gallery> {
       workbook = false,
       editor = false,
       diagram = false,
-      pdf = false;
+      pdf = false,
+      map = false;
   @override
   Widget build(BuildContext context) => MaterialApp(
     title: 'Nextgen • Flutter',
@@ -33,7 +35,13 @@ class _GalleryState extends State<Gallery> {
     theme: NgTheme.light(compact: compact),
     darkTheme: NgTheme.dark(compact: compact),
     themeMode: dark ? ThemeMode.dark : ThemeMode.light,
-    home: pdf
+    home: map
+        ? MapGallery(
+            dark: dark,
+            onDark: (v) => setState(() => dark = v),
+            onBack: () => setState(() => map = false),
+          )
+        : pdf
         ? PdfGallery(
             dark: dark,
             onDark: (v) => setState(() => dark = v),
@@ -91,6 +99,7 @@ class _GalleryState extends State<Gallery> {
             onForms: () => setState(() => forms = true),
             onData: () => setState(() => data = true),
             onAnalytics: () => setState(() => analytics = true),
+            onMap: () => setState(() => map = true),
             onPdf: () => setState(() => pdf = true),
             onDiagram: () => setState(() => diagram = true),
             onEditor: () => setState(() => editor = true),
@@ -111,7 +120,8 @@ class GalleryPage extends StatefulWidget {
       onWorkbook,
       onEditor,
       onDiagram,
-      onPdf;
+      onPdf,
+      onMap;
   final ValueChanged<bool> onDark, onCompact;
   const GalleryPage({
     super.key,
@@ -122,6 +132,7 @@ class GalleryPage extends StatefulWidget {
     required this.onEditor,
     required this.onDiagram,
     required this.onPdf,
+    required this.onMap,
     required this.dark,
     required this.compact,
     required this.onDark,
@@ -194,6 +205,10 @@ class _GalleryPageState extends State<GalleryPage> {
                         fontWeight: FontWeight.bold,
                         letterSpacing: 1,
                       ),
+                    ),
+                    TextButton(
+                      onPressed: widget.onMap,
+                      child: const Text('Map'),
                     ),
                     TextButton(
                       onPressed: widget.onPdf,

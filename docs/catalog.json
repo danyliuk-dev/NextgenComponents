@@ -594,14 +594,14 @@
       "reference": "https://www.telerik.com/blazor-ui/map",
       "phase": 5,
       "blazor": {
-        "status": "planned",
-        "component": null
+        "status": "foundation",
+        "component": "NgMap"
       },
       "flutter": {
-        "status": "planned",
-        "component": null
+        "status": "foundation",
+        "component": "NgMap"
       },
-      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+      "featureSpec": "docs/map.md"
     },
     {
       "name": "Badge",

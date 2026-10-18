@@ -1,0 +1,147 @@
+# NgMap — Интерактивная карта
+
+[Оглавление](README.md) · [Подключение](getting-started.md) · [Модели](models.md)
+
+## Когда использовать
+
+Показывает географические точки, линии и области. Подходит для объектов на карте и выбора места; маршрут и адрес по координатам рассчитывает приложение.
+
+## Поведение и практические правила
+
+### Подключение и источник карты
+
+Blazor требует интерактивного render mode и static web assets. Общий движок Leaflet 1.9.4 поставляется локально в _content/NextgenComponents.Blazor/map-viewer/ и assets пакета Flutter; CDN и script-теги в приложении не нужны. Flutter: реализован Web, native показывает явное сообщение о неподдерживаемой платформе. Мобильные приложения будут проверяться отдельно.
+
+TileUrlTemplate/tileUrlTemplate — один шаблон растровых XYZ-тайлов с обязательными {z}, {x}, {y}; пример выше использует публичный OpenStreetMap. Поддерживаются относительный URL (от base URI приложения) и HTTP(S). Пустой/null источник показывает сетку и ваши объекты без географической подложки. Attribution/attribution — обязательная непустая подпись для источника тайлов. AttributionUrl/attributionUrl добавляет ссылку; HTML в подписи и тексте объектов не исполняется. Подпись видна в правом нижнем углу карты. Провайдер должен поддерживать zoom 0–19 и разрешать использование тайлов вашим приложением. Headers, bearer-токены, TMS и vector tiles пока не поддерживаются.
+
+Для OpenStreetMap сохраняйте видимую атрибуцию, стандартный Referrer и браузерный cache; не делайте предзагрузку больших областей или offline-скачивание. Сервис best-effort, без SLA: для рабочей нагрузки выберите подходящего провайдера и ознакомьтесь с его условиями. Движок не отправляет подписи ваших объектов провайдеру, но тот получает IP, Referrer и номера просматриваемых тайлов. Политика: https://operations.osmfoundation.org/policies/tiles/ . При CSP нужны локальные frame/script/style assets, inline styles Leaflet и img-src для выбранного источника тайлов; настройте политику в host-приложении.
+
+### Модель данных
+
+NgMapPoint(latitude, longitude) принимает конечные числа: широта ±85.05112878 (Web Mercator), долгота ±180. Сначала широта, затем долгота. NgMapMarker(id, text, position) — точка с подписью и popup. NgMapPath(id, text, points, closed) — прямая ломаная (2+ точки) либо полигон (closed=true, 3+ точки); последнее соединение полигона добавляется автоматически. Это географические линии, а не автомобильный маршрут. Пересечение линии даты и отверстия/мультиполигоны не поддерживаются.
+
+NgMapModel(markers, paths) копирует коллекции и предоставляет их только для чтения. ID уникален среди всех маркеров и линий: 1–64 ASCII буквы/цифры, '-' или '_'. Подпись — 1–200 символов, не только пробелы. Лимиты: 500 маркеров, 100 линий/полигонов, 5000 точек суммарно в линиях. Конструкторы отклоняют нарушения через ArgumentException/ArgumentError. Для обновления замените Value/value новым NgMapModel; не меняйте исходный список на месте. Данные не сохраняются и не загружаются автоматически.
+
+### Навигация и события
+
+View/view задаёт центр и целый zoom 0–19; начальное значение (0,0,2). Drag перемещает карту; колесо, двойной щелчок и +/− меняют масштаб; сфокусированная карта принимает стрелки и +/−. Fit data вписывает все объекты с отступом и ограничением zoom ≤14; при пустой модели кнопка отключена. Изменение данных само по себе не запускает Fit data. Центр ограничивается границами мира.
+
+ViewChanged/onViewChanged вызывается после перемещения, масштабирования, Fit data и программной смены вида. Обновляйте view в родителе, как в примере. SelectedId/selectedId — один ID или null; SelectedIdChanged/onSelectedIdChanged сообщает выбор маркера/линии либо null после Clear selection. Неизвестный ID отображается как отсутствие выбора, родительская переменная при этом автоматически не исправляется. Храните значение события у родителя, чтобы последующие обновления не вернули предыдущий выбор. Кнопки списка Objects доступны с клавиатуры, открывают popup и показывают выбранный объект. Маркеры и линии также выбираются прямо на карте.
+
+OnMapClick/onMapClick сообщает NgMapPoint для свободной области карты; щелчок по объекту не считается щелчком по фону. Для добавления маркера создайте новый NgMapModel из старых маркеров плюс новый NgMapMarker с уникальным ID и передайте его в Value/value. В галереях есть полный пример Add marker on map click. Callback не является геокодированием и не возвращает адрес.
+
+Height/height: 400–1200 px, по умолчанию 520. При ширине до 540 px список объектов перемещается под карту и прокручивается горизонтально. Label/label задаёт заголовок и title iframe. Blazor Dark задаётся явно; Flutter берёт тему из Theme. Смена темы и модели сохраняет iframe и текущий вид, если View/view не изменился; подложка провайдера остаётся исходной (не инвертируется).
+
+### Состояния и ограничения
+
+No objects — пустая модель; No basemap configured — нет источника тайлов. Loading tiles, Tiles loaded и Some map tiles unavailable показывают загрузку текущего набора тайлов. При отказе сети маркеры, линии и выбор продолжают работать; повторная навигация или смена источника запрашивает новые тайлы. Количество объектов всегда отображается отдельно. Отсутствие подложки не означает отсутствие данных.
+
+Одна растровая подложка, точки, линии и простые полигоны — текущий объём. Кластеризация, геокодирование, маршрутизация, GeoJSON import, bubble layers, редактирование геометрии, экспорт и offline-режим пока не реализованы. Для больших данных сначала фильтруйте объекты по области/задаче в приложении. Полный API Telerik не воспроизводится.
+
+## Blazor: рабочий пример
+
+```razor
+<NgMap Label="Объекты" Value="map" @bind-View="view" @bind-SelectedId="selected"
+    OnMapClick="Clicked" TileUrlTemplate="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
+    Attribution="© OpenStreetMap contributors" AttributionUrl="https://www.openstreetmap.org/copyright"/>
+<p>Выбрано: @selected; последняя точка: @last</p>
+@code {
+ private string? selected; private string last="";
+ private NgMapView view=new(50.4501,30.5234,13);
+ private NgMapModel map=new(
+   [new("office","Офис",new(50.4501,30.5234)),new("park","Парк",new(50.4466,30.5410))],
+   [new("line","Линия",[new(50.4501,30.5234),new(50.4466,30.5410)])]);
+ private void Clicked(NgMapPoint p){last=$"{p.Latitude:F4}, {p.Longitude:F4}";}
+}
+```
+
+## Flutter: рабочий пример
+
+```dart
+String? selected;
+String last = '';
+NgMapView view = NgMapView(latitude: 50.4501, longitude: 30.5234, zoom: 13);
+final map = NgMapModel(markers: [
+  NgMapMarker('office', 'Офис', NgMapPoint(50.4501, 30.5234)),
+  NgMapMarker('park', 'Парк', NgMapPoint(50.4466, 30.5410)),
+], paths: [NgMapPath('line', 'Линия', [
+  NgMapPoint(50.4501, 30.5234), NgMapPoint(50.4466, 30.5410),
+])]);
+Widget build(BuildContext context) => NgMap(label: 'Объекты', value: map,
+  view: view, selectedId: selected,
+  onViewChanged: (v) => setState(() => view = v),
+  onSelectedIdChanged: (id) => setState(() => selected = id),
+  onMapClick: (p) => setState(() => last = '${p.latitude}, ${p.longitude}'),
+  tileUrlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+  attribution: '© OpenStreetMap contributors',
+  attributionUrl: 'https://www.openstreetmap.org/copyright');
+```
+
+## Параметры и события Blazor
+
+Имена чувствительны к регистру. `?` в типе разрешает null. Параметры с `EditorRequired` отмечены как обязательные; остальные имеют значение по умолчанию CLR или инициализатор ниже.
+
+| Параметр | Тип | По умолчанию / требование | Назначение |
+|---|---|---|---|
+| `Label` | `string` | "Map" | Подпись элемента или доступное имя. |
+| `Value` | `NgMapModel` | new() | Текущее значение; тип и правила описаны выше. |
+| `View` | `NgMapView` | new() | Смотрите поведение и тип модели выше. |
+| `ViewChanged` | `EventCallback<NgMapView>` | не задан | Смотрите поведение и тип модели выше. |
+| `SelectedId` | `string?` | не задан | ID текущего узла либо null. |
+| `SelectedIdChanged` | `EventCallback<string?>` | не задан | Выбор другого узла. |
+| `OnMapClick` | `EventCallback<NgMapPoint>` | не задан | Смотрите поведение и тип модели выше. |
+| `TileUrlTemplate` | `string?` | не задан | Смотрите поведение и тип модели выше. |
+| `Attribution` | `string` | "" | Смотрите поведение и тип модели выше. |
+| `AttributionUrl` | `string?` | не задан | Смотрите поведение и тип модели выше. |
+| `Dark` | `bool` | false | Смотрите поведение и тип модели выше. |
+| `Height` | `int` | 520 | Смотрите поведение и тип модели выше. |
+
+## Параметры и события Flutter
+
+`required` в конструкторе означает обязательный аргумент, даже если его тип допускает null. `key` — стандартный Flutter Key. Значения по умолчанию приведены в точной сигнатуре ниже.
+
+| Аргумент | Тип | Назначение |
+|---|---|---|
+| `label` | `String` | Подпись элемента или доступное имя. |
+| `value` | `NgMapModel` | Текущее значение; тип и правила описаны выше. |
+| `view` | `NgMapView?` | Смотрите поведение и тип модели выше. |
+| `selectedId` | `String?` | ID текущего узла либо null. |
+| `tileUrlTemplate` | `String?` | Смотрите поведение и тип модели выше. |
+| `attributionUrl` | `String?` | Смотрите поведение и тип модели выше. |
+| `attribution` | `String` | Смотрите поведение и тип модели выше. |
+| `height` | `double` | Смотрите поведение и тип модели выше. |
+| `onViewChanged` | `ValueChanged<NgMapView>?` | Смотрите поведение и тип модели выше. |
+| `onSelectedIdChanged` | `ValueChanged<String?>?` | Смотрите поведение и тип модели выше. |
+| `onMapClick` | `ValueChanged<NgMapPoint>?` | Смотрите поведение и тип модели выше. |
+
+```dart
+const NgMap({
+    super.key,
+    this.label = 'Map',
+    required this.value,
+    this.view,
+    this.selectedId,
+    this.tileUrlTemplate,
+    this.attribution = '',
+    this.attributionUrl,
+    this.height = 520,
+    this.onViewChanged,
+    this.onSelectedIdChanged,
+    this.onMapClick,
+  });
+```
+
+## Интеграция и диагностика
+
+Если интерфейс не обновляется, проверьте, сохраняет ли родитель результат callback и передаёт ли новое значение обратно. Для Blazor нужен интерактивный render mode; для Flutter — setState или используемый менеджер состояния. Данные формы отправляйте только после её успешной валидации.
+
+Проверяйте понятную подпись, пустое состояние, недоступность и размер контейнера. Клавиатурные возможности не означают полной сертификации screen reader. Сейчас проверяется Web в Chrome; нативные мобильные платформы будут проверяться отдельно.
+
+## Исходники и полный сценарий
+
+- [Blazor](../../src/NextgenComponents.Blazor/NgMap.razor)
+- [Flutter](../../packages/nextgen_components/lib/src/map.dart)
+- [Галереи и запуск](../../README.md#run)
+- [Матрица возможностей](../catalog.md)
+
+Версия параметров сгенерирована из текущего исходного кода. Примеры и правила сопровождаются отдельно в `scripts/manual_content.py`; после изменения API выполните `python3 scripts/generate_manual.py`.

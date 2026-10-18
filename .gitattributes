@@ -4,3 +4,7 @@
 shared/pdf-viewer/vendor/** -whitespace
 packages/nextgen_components/assets/pdf-viewer/vendor/** -whitespace
 src/NextgenComponents.Blazor/wwwroot/pdf-viewer/vendor/** -whitespace
+# Preserve pinned Leaflet distribution and license text.
+shared/map-viewer/vendor/** -whitespace
+packages/nextgen_components/assets/map-viewer/vendor/** -whitespace
+src/NextgenComponents.Blazor/wwwroot/map-viewer/vendor/** -whitespace

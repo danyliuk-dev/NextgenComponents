@@ -1,6 +1,6 @@
 name: nextgen_components
 description: Native Flutter components sharing the Nextgen design system with Blazor.
-version: 0.8.1
+version: 0.9.0
 publish_to: none
 environment:
   sdk: '>=3.10.0 <4.0.0'
@@ -20,3 +20,6 @@ flutter:
     - assets/pdf-viewer/vendor/cmaps/
     - assets/pdf-viewer/vendor/standard_fonts/
     - assets/pdf-viewer/vendor/wasm/
+    - assets/map-viewer/
+    - assets/map-viewer/vendor/
+    - assets/map-viewer/vendor/images/

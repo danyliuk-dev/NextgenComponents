@@ -1,0 +1,19 @@
+@page "/map"
+<PageTitle>Nextgen • Map</PageTitle>
+<div class="ng-scope gallery" data-ng-theme="@(dark?"dark":"light")"><main>
+<nav><strong>N NEXTGEN COMPONENTS</strong><div class="row"><a href="/">Foundation</a><NgSwitch Label="Dark theme" @bind-Value="dark"/></div></nav>
+<section class="hero"><p class="eyebrow">BLAZOR / MAP 0.9</p><h1>Places in context.</h1><p>Explore locations, select objects and connect the map to your application.</p></section>
+<section class="panel"><div class="row"><NgButton OnClick="Reset">Reset data</NgButton><NgButton OnClick="()=>{model=new();selected=null;}">Empty data</NgButton><NgButton OnClick='()=>provider="osm"'>OpenStreetMap</NgButton><NgButton OnClick='()=>provider="none"'>No basemap</NgButton><NgButton OnClick='()=>provider="broken"'>Broken tiles</NgButton><NgCheckBox Label="Add marker on map click" @bind-Value="addMarker"/></div>
+<NgMap Label="Kyiv places" Value="model" @bind-View="view" @bind-SelectedId="selected" OnMapClick="Clicked" TileUrlTemplate="@TileUrl" Attribution="© OpenStreetMap contributors" AttributionUrl="https://www.openstreetmap.org/copyright" Dark="dark" Height="560"/>
+<p id="map-events">Selected: @(selected??"none") · Center: @view.Latitude.ToString("F4"), @view.Longitude.ToString("F4") · Zoom: @view.Zoom · Last click: @lastClick</p>
+<p>Lines are geographic overlays, not calculated routes. OpenStreetMap is an external, best-effort tile service.</p></section>
+<footer>37 CONTROLS / 43 CATALOGUE ENTRIES · WEB FIRST</footer></main></div>
+@code {
+ private bool dark,addMarker;private string provider="osm",lastClick="none";private string? selected;private int sequence;
+ private NgMapView view=new(50.4501,30.5234,13);
+ private NgMapModel model=Sample();
+ private string? TileUrl=>provider=="none"?null:provider=="osm"?"https://tile.openstreetmap.org/{z}/{x}/{y}.png":"missing-tiles/{z}/{x}/{y}.png";
+ private static NgMapModel Sample()=>new([new("square","Independence Square",new(50.4501,30.5234)),new("gate","Golden Gate",new(50.4488,30.5133)),new("park","Mariinsky Park",new(50.4466,30.5410))],[new("walk","City walk",[new(50.4488,30.5133),new(50.4501,30.5234),new(50.4466,30.5410)]),new("area","Park area",[new(50.449,30.537),new(50.447,30.545),new(50.443,30.541)],true)]);
+ private void Reset(){model=Sample();selected=null;view=new(50.4501,30.5234,13);sequence=0;}
+ private void Clicked(NgMapPoint p){lastClick=$"{p.Latitude:F4}, {p.Longitude:F4}";if(addMarker&&model.Markers.Count<500)model=new(model.Markers.Append(new("added_"+(++sequence),"Added marker "+sequence,p)),model.Paths);}
+}

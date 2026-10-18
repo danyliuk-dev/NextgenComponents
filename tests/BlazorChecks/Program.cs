@@ -151,6 +151,18 @@ Rule(offsetGraph.FitView(148,98).Zoom==.5,"fit reserves 24px padding and respect
 Reject(()=>offsetGraph.FitView(double.NaN,300),"fit rejects nonfinite viewport");
 await Check<NgPdfViewer>(new(){["Label"]="Invoice",["Source"]="samples/test.pdf",["Dark"]=true},"title=\"Invoice\"","theme=dark","source=http%3A%2F%2Flocalhost%2Fsamples%2Ftest.pdf");
 await Check<NgPdfViewer>(new(),"PDF viewer","source=");
+var mapPoints=new[]{new NgMapPoint(50.45,30.52),new NgMapPoint(50.46,30.54),new NgMapPoint(50.44,30.55)};
+var mapPath=new NgMapPath("area","Park",mapPoints,true);mapPoints[0]=new(0,0);
+Rule(mapPath.Points[0].Latitude==50.45,"map copies caller point collections");
+Reject(()=>new NgMapPoint(double.NaN,0),"map rejects nonfinite coordinate");
+Reject(()=>new NgMapPoint(86,0),"map rejects outside Web Mercator");
+Reject(()=>new NgMapPoint(0,181),"map rejects longitude overflow");
+Reject(()=>new NgMapView(0,0,20),"map rejects unsupported zoom");
+Reject(()=>new NgMapPath("p","Polygon",[new(0,0),new(1,1)],true),"map polygon needs three points");
+Reject(()=>new NgMapModel([new("area","Duplicate",new(0,0))],[mapPath]),"map rejects cross-layer duplicate IDs");
+Reject(()=>new NgMapModel(Enumerable.Range(0,501).Select(i=>new NgMapMarker("m"+i,"Marker",new(0,0)))),"map marker limit");
+Reject(()=>new NgMapMarker("bad id","Marker",new(0,0)),"map rejects invalid IDs");
+await Check<NgMap>(new(){["Label"]="Places <safe>"},"Places &lt;safe&gt;","map-viewer/index.html","height:520px");
 Console.WriteLine($"{count} rendering and data/date-rule checks passed. Browser interaction requires the separate visual run.");
 sealed class NoBrowserJS : IJSRuntime {
  public ValueTask<TValue> InvokeAsync<TValue>(string identifier, object?[]? args) => throw new InvalidOperationException("JS must not execute in SSR");
