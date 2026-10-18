@@ -1,0 +1,25 @@
+<section class="ng-sheet" aria-label="@Label">
+<h3>@Label</h3>
+<div class="ng-sheet-toolbar"><strong aria-live="polite">@address</strong><label class="ng-field ng-formula">Cell value or formula<input class="ng-input" aria-label="Cell value or formula" @bind="draft" @bind:event="oninput" @onkeydown="EditKey" disabled="@ReadOnly" /></label><NgButton Primary OnClick="Apply" Disabled="@ReadOnly">Apply cell</NgButton><NgButton OnClick="()=>History(false)" Disabled="@(ReadOnly||undo.Count==0)">Undo</NgButton><NgButton OnClick="()=>History(true)" Disabled="@(ReadOnly||redo.Count==0)">Redo</NgButton></div>
+<div class="ng-table-scroll"><table class="ng-workbook-table" aria-label="@Label"><thead><tr><th scope="col">Cell</th>@for(var c=0;c<current.Columns;c++){<th scope="col">@((char)('A'+c))</th>}</tr></thead><tbody>
+@for(var r=0;r<current.Rows;r++){var row=r;<tr><th scope="row">@(r+1)</th>@for(var c=0;c<current.Columns;c++){var col=c;var a=NgSheet.Address(row,col);var v=current.Evaluate(a);<td class="@(a==address?"ng-cell-selected":"")"><button type="button" @ref="cellRefs[a]" class="ng-sheet-cell @(v.Error!=null?"ng-cell-error":"")" aria-label="@($"{a}: {v.Text}")" aria-pressed="@(a==address?"true":"false")" title="@current.Raw(a)" @onclick="()=>Select(row,col)" @onkeydown="e=>Navigate(e,row,col)">@v.Text<span class="ng-sr-only">@(v.Text==""?"Empty":"")</span></button></td>}</tr>}
+</tbody></table></div>
+@if(!ReadOnly){<details><summary>Paste cells</summary><label class="ng-field">Tab-separated values<textarea class="ng-input" aria-label="Tab-separated values" rows="3" @bind="paste" @bind:event="oninput"></textarea></label><NgButton OnClick="Paste">Paste at @address</NgButton><small>Tabs separate columns; new lines separate rows. Formulas are kept as entered.</small></details>}
+<p role="status">@message</p>
+</section>
+@code {
+ [Parameter] public string Label{get;set;}="Spreadsheet";
+ [Parameter,EditorRequired] public NgSheet Value{get;set;}=new();
+ [Parameter] public EventCallback<NgSheet> ValueChanged{get;set;}
+ [Parameter] public bool ReadOnly{get;set;}
+ private NgSheet current=new();private string address="A1",draft="",paste="",message="";private readonly List<NgSheet> undo=[],redo=[];
+ protected override void OnParametersSet(){if(!ReferenceEquals(current,Value)){current=Value;undo.Clear();redo.Clear();try{current.Position(address);}catch(ArgumentException){address="A1";}draft=current.Raw(address);}}
+ private void Select(int r,int c){address=NgSheet.Address(Math.Clamp(r,0,current.Rows-1),Math.Clamp(c,0,current.Columns-1));draft=current.Raw(address);message="";}
+ private readonly Dictionary<string,ElementReference> cellRefs=[];
+ private async Task Navigate(KeyboardEventArgs e,int r,int c){switch(e.Key){case "ArrowLeft":Select(r,c-1);break;case "ArrowRight":Select(r,c+1);break;case "ArrowUp":Select(r-1,c);break;case "ArrowDown":Select(r+1,c);break;default:return;}await cellRefs[address].FocusAsync();}
+ private Task EditKey(KeyboardEventArgs e)=>e.Key=="Enter"?Apply():Task.CompletedTask;
+ private async Task Commit(NgSheet next){undo.Add(current);if(undo.Count>50)undo.RemoveAt(0);redo.Clear();current=next;draft=current.Raw(address);message=$"Updated {address}";await ValueChanged.InvokeAsync(current);}
+ private async Task Apply(){if(ReadOnly)return;try{await Commit(current.Set(address,draft));}catch(ArgumentException e){message=e.Message;}}
+ private async Task Paste(){if(ReadOnly)return;try{await Commit(current.Paste(address,paste));}catch(ArgumentException e){message=e.Message;}}
+ private async Task History(bool forward){if(ReadOnly)return;var from=forward?redo:undo;var to=forward?undo:redo;if(from.Count==0)return;to.Add(current);current=from[^1];from.RemoveAt(from.Count-1);draft=current.Raw(address);message=forward?"Redone":"Undone";await ValueChanged.InvokeAsync(current);}
+}

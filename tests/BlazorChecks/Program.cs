@@ -86,6 +86,23 @@ await Check<NgChart>(new(){["Categories"]=new[]{"A","B","C"},["Series"]=signed},
 await Check<NgLinearGauge>(new(){["Value"]=150d},"role=\"meter\"", "aria-valuenow=\"100\"");
 await Check<NgArcGauge>(new(){["Value"]=84d},"84", "<svg");
 await Check<NgScheduler>(new(){["Date"]=new DateTime(2026,12,31),["Items"]=new[]{overnight}},"Overnight", "2027-01-01", "Previous week");
+var sheet=new NgSheet(cells:new Dictionary<string,string>{{"A1","10"},{"A2","20"},{"A3","text"},{"B1","=A1+A2*2"},{"B2","=SUM(A1:A3)"},{"B3","=AVERAGE(A1:A3)"},{"C1","=-(2+3)*4/2"},{"C2","=COUNT(A1:A3)"}});
+Rule(sheet.Evaluate("B1").Number==50&&sheet.Evaluate("B2").Number==30&&sheet.Evaluate("B3").Number==15&&sheet.Evaluate("C1").Number==-10&&sheet.Evaluate("C2").Number==2,"spreadsheet formula precedence and range functions");
+Rule(sheet.Set("A1","50").Evaluate("B1").Number==90&&sheet.Evaluate("B1").Number==50,"immutable edits recalculate dependencies");
+foreach(var (formula,expected) in new Dictionary<string,string>{{"=1/0","#DIV/0!"},{"=Z99","#REF!"},{"=UNKNOWN(1)","#NAME?"},{"=1+","#FORMULA!"},{"=1e309","#NUM!"},{"=A2+1","#VALUE!"},{"=A1","#CYCLE!"}})Rule(new NgSheet(cells:new Dictionary<string,string>{{"A1",formula},{"A2","text"}}).Evaluate("A1").Error==expected,$"formula rejects {formula}");
+Rule(new NgSheet(cells:new Dictionary<string,string>{{"A1","=B1"},{"B1","=A1"}}).Evaluate("A1").Error=="#CYCLE!","indirect formula cycle");
+Rule(new NgSheet(cells:new Dictionary<string,string>{{"A1","1e308"},{"A2","1e308"},{"B1","=AVERAGE(A1:A2)"}}).Evaluate("B1").Number==1e308,"large average stays finite");
+var fanout=new Dictionary<string,string>{{"A1","1"}};for(var r=2;r<=80;r++)fanout[$"A{r}"]=$"=A{r-1}+A{r-1}";
+Rule(new NgSheet(80,2,fanout).Evaluate("A80").Number.HasValue,"shared dependencies are cached");
+Rule(new NgSheet(cells:new Dictionary<string,string>{{"A1","="+new string('(',70)+"1"+new string(')',70)}}).Evaluate("A1").Error=="#LIMIT!","formula nesting limit");
+Rule(sheet.Paste("D1","2\t3\r\n=SUM(D1:E1)\ttext").Evaluate("D2").Number==5,"paste preserves formulas and CRLF");
+Reject(()=>sheet.Paste("F8","1\t2"),"paste beyond bounds rejected atomically");
+NgPivotRecord[] pivot=[new("1",new Dictionary<string,string>{{"Team","A"},{"Quarter","Q1"}},10),new("2",new Dictionary<string,string>{{"Team","A"},{"Quarter","Q1"}},20),new("3",new Dictionary<string,string>{{"Team","B"},{"Quarter","Q2"}},90),new("4",new Dictionary<string,string>{{"Team",""},{"Quarter","Q2"}},null)];
+Rule(NgPivotMath.Aggregate(pivot,NgAggregate.Average)==40&&NgPivotMath.Aggregate(pivot,NgAggregate.Count)==4&&NgPivotMath.Aggregate(pivot,NgAggregate.Sum)==120,"pivot totals aggregate source records, not displayed means");
+Rule(NgPivotMath.Filter(pivot,"Team","Quarter","",null).Count==1&&NgPivotMath.Filter(pivot,"Team","Quarter",null,null).Count==4,"blank pivot dimension differs from total");
+Reject(()=>NgPivotMath.Validate([pivot[0],pivot[0]]),"duplicate pivot IDs rejected");
+await Check<NgSpreadsheet>(new(){["Value"]=sheet},"Apply cell", "A1: 10", "B1: 50", "Undo", "Paste cells");
+await Check<NgPivotGrid>(new(){["Items"]=pivot},"A / Q1: 30", "Total / Total: 120", "(blank)");
 Console.WriteLine($"{count} rendering and data/date-rule checks passed. Browser interaction requires the separate visual run.");
 sealed class NoBrowserJS : IJSRuntime {
  public ValueTask<TValue> InvokeAsync<TValue>(string identifier, object?[]? args) => throw new InvalidOperationException("JS must not execute in SSR");

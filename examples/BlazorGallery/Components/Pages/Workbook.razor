@@ -1,0 +1,23 @@
+@page "/workbook"
+<PageTitle>Nextgen • Workbook</PageTitle>
+<div class="ng-scope gallery" data-ng-theme="@(dark?"dark":"light")" data-ng-density="@(compact?"compact":"normal")"><main>
+<nav><strong><span class="brand-icon">N</span> NEXTGEN COMPONENTS</strong><div class="row"><a href="/">Foundation</a><a href="/analytics">Analytics</a><NgSwitch Label="Dark theme" @bind-Value="dark"/><NgCheckBox Label="Compact" @bind-Value="compact"/></div></nav>
+<section class="hero"><p class="eyebrow">BLAZOR / WORKBOOK 0.5</p><h1>Edit the numbers.<br/>Explore the result.</h1><p>Change hours or rates, calculate delivery costs and inspect the records behind each summary.</p></section>
+<section class="panel"><NgSpreadsheet Label="Delivery workbook" Value="sheet" ValueChanged="SheetChanged"/><p>Rows 2–6 feed the pivot below. Select a cell, edit its value or formula, then Apply cell. Arrow keys move the selection.</p></section>
+<section class="panel"><div class="fields"><NgDropDownList Label="Rows" Items="dimensions" Value="@rowField" ValueExpression="()=>rowField" ValueChanged="v=>Configure(v,columnField,aggregation)"/><NgDropDownList Label="Columns" Items="dimensions" Value="@columnField" ValueExpression="()=>columnField" ValueChanged="v=>Configure(rowField,v,aggregation)"/><NgDropDownList Label="Aggregate" Items="aggregates" Value="@aggregation" ValueExpression="()=>aggregation" ValueChanged="v=>Configure(rowField,columnField,v)"/></div><NgTextBox Label="Filter team" Value="@filter" ValueChanged="Filter" ValueExpression="()=>filter"/><p role="status">@records.Count source rows · @excluded invalid cost rows excluded</p><NgPivotGrid Label="Delivery costs" Items="Filtered" RowField="@rowField" ColumnField="@columnField" Aggregate="Enum.Parse<NgAggregate>(aggregation)" OnCellSelected="p=>selection=p"/></section>
+<section class="panel"><h3>Source records</h3>@if(selection is null){<p>Select any pivot value or total to inspect its records.</p>}else{<p role="status">@(selection.Row??"Total") / @(selection.Column??"Total") · @selection.Records.Count records</p><NgDataGrid TItem="NgPivotRecord" Items="selection.Records" Columns="recordColumns" RowId="r=>r.Id"/>}</section>
+<footer class="page-footer">33 CONTROLS / 39 CATALOGUE ENTRIES <span>WEB FIRST</span></footer>
+</main></div>
+@code {
+ private bool dark,compact;private string rowField="Team",columnField="Quarter",aggregation="Sum";private string? filter="";private NgPivotSelection? selection;private int excluded;
+ private NgSheet sheet=Initial();private List<NgPivotRecord> records=[];
+ private static readonly NgOption[] dimensions=[new("Team","Team"),new("Quarter","Quarter")];private static readonly NgOption[] aggregates=Enum.GetNames<NgAggregate>().Select(x=>new NgOption(x,x)).ToArray();
+ private static readonly NgDataColumn<NgPivotRecord>[] recordColumns=[new("id","Row",r=>r.Id),new("team","Team",r=>r.Dimensions["Team"]),new("quarter","Quarter",r=>r.Dimensions["Quarter"]),new("cost","Cost",r=>r.Value)];
+ protected override void OnInitialized()=>Rebuild();
+ private IReadOnlyList<NgPivotRecord> Filtered=>records.Where(r=>r.Dimensions["Team"].Contains(filter??"",StringComparison.OrdinalIgnoreCase)).ToArray();
+ private void SheetChanged(NgSheet next){sheet=next;Rebuild();}
+ private void Rebuild(){records=[];excluded=0;selection=null;for(var r=1;r<=5;r++){var cost=sheet.Evaluate(NgSheet.Address(r,4));if(cost.Number is null){excluded++;continue;}records.Add(new($"{r+1}",new Dictionary<string,string>{{"Team",sheet.Evaluate(NgSheet.Address(r,0)).Text},{"Quarter",sheet.Evaluate(NgSheet.Address(r,1)).Text}},cost.Number));}}
+ private void Configure(string row,string col,string aggregate){rowField=row;columnField=col;aggregation=aggregate;selection=null;}
+ private void Filter(string? value){filter=value;selection=null;}
+ private static NgSheet Initial(){var cells=new Dictionary<string,string>{{"A1","Team"},{"B1","Quarter"},{"C1","Hours"},{"D1","Rate"},{"E1","Cost"},{"A7","Total"},{"E7","=SUM(E2:E6)"}};string[] teams=["Design","Design","Design","Engineering","Engineering"],quarters=["Q1","Q1","Q2","Q1","Q2"],hours=["10","20","15","30","25"],rates=["100","100","120","150","150"];for(var i=0;i<5;i++){var r=i+2;cells[$"A{r}"]=teams[i];cells[$"B{r}"]=quarters[i];cells[$"C{r}"]=hours[i];cells[$"D{r}"]=rates[i];cells[$"E{r}"]=$"=C{r}*D{r}";}return new(8,5,cells);}
+}

@@ -2,7 +2,7 @@
 
 Snapshot: 2026-10-18. 139 named entries from the [Telerik Blazor index](https://www.telerik.com/blazor-ui). Chart variants count separately.
 
-`foundation` means an implemented subset, not Telerik feature parity. See [foundation](foundation.md), [forms/dates](forms-and-dates.md) [data workspace](data-workspace.md) and [analytics/schedule](analytics-and-schedule.md). `planned` has no implementation yet.
+`foundation` means an implemented subset, not Telerik feature parity. See [foundation](foundation.md), [forms/dates](forms-and-dates.md) [data workspace](data-workspace.md) and [analytics/schedule](analytics-and-schedule.md). [Workbook](workbook.md) covers Spreadsheet/PivotGrid. [User manual](manual/README.md) documents every implemented control. `planned` has no implementation yet.
 
 | Category | Telerik entry | Blazor | Flutter | Phase |
 |---|---|---|---|---|
@@ -35,8 +35,8 @@ Snapshot: 2026-10-18. 139 named entries from the [Telerik Blazor index](https://
 | Data Management | [Filter](https://www.telerik.com/blazor-ui/filter) | planned | planned | 3 |
 | Data Management | [ListView](https://www.telerik.com/blazor-ui/listview) | planned | planned | 3 |
 | Data Management | [Pager](https://www.telerik.com/blazor-ui/pager) | foundation: `NgPager` | foundation: `NgPager` | 3 |
-| Data Management | [PivotGrid](https://www.telerik.com/blazor-ui/pivotgrid) | planned | planned | 5 |
-| Data Management | [Spreadsheet](https://www.telerik.com/blazor-ui/spreadsheet) | planned | planned | 5 |
+| Data Management | [PivotGrid](https://www.telerik.com/blazor-ui/pivotgrid) | foundation: `NgPivotGrid` | foundation: `NgPivotGrid` | 5 |
+| Data Management | [Spreadsheet](https://www.telerik.com/blazor-ui/spreadsheet) | foundation: `NgSpreadsheet` | foundation: `NgSpreadsheet` | 5 |
 | Data Management | [TaskBoard](https://www.telerik.com/blazor-ui/taskboard) | planned | planned | 3 |
 | Data Management | [TreeList](https://www.telerik.com/blazor-ui/treelist) | foundation: `NgTreeList` | foundation: `NgTreeList` | 3 |
 | File Upload & Management | [DropZone](https://www.telerik.com/blazor-ui/dropzone) | planned | planned | 2 |

@@ -1,0 +1,17 @@
+<section aria-label="@Label"><h3>@Label</h3><p>@Aggregate · @RowField × @ColumnField</p>
+@if(Items.Count==0){<p class="ng-empty">No pivot data.</p>}else{<div class="ng-table-scroll"><table class="ng-workbook-table ng-pivot-table"><caption class="ng-sr-only">@Label</caption><thead><tr><th scope="col">@RowField / @ColumnField</th>@foreach(var col in columns){<th scope="col">@Display(col)</th>}<th scope="col">Total</th></tr></thead><tbody>
+@foreach(var row in rows){<tr><th scope="row">@Display(row)</th>@foreach(var col in columns){<td>@Cell(row,col)</td>}<td class="ng-pivot-total">@Cell(row,null)</td></tr>}
+<tr class="ng-pivot-total"><th scope="row">Total</th>@foreach(var col in columns){<td>@Cell(null,col)</td>}<td>@Cell(null,null)</td></tr>
+</tbody></table></div>}</section>
+@code {
+ [Parameter] public string Label{get;set;}="Pivot table";
+ [Parameter] public IReadOnlyList<NgPivotRecord> Items{get;set;}=[];
+ [Parameter] public string RowField{get;set;}="Team";
+ [Parameter] public string ColumnField{get;set;}="Quarter";
+ [Parameter] public NgAggregate Aggregate{get;set;}=NgAggregate.Sum;
+ [Parameter] public EventCallback<NgPivotSelection> OnCellSelected{get;set;}
+ private string[] rows=[],columns=[];
+ protected override void OnParametersSet(){NgPivotMath.Validate(Items);rows=Items.Select(x=>NgPivotMath.Dimension(x,RowField)).Distinct().Order(StringComparer.Ordinal).ToArray();columns=Items.Select(x=>NgPivotMath.Dimension(x,ColumnField)).Distinct().Order(StringComparer.Ordinal).ToArray();}
+ private static string Display(string? value)=>value is null?"Total":value==""?"(blank)":value;
+ private RenderFragment Cell(string? row,string? col)=>b=>{var records=NgPivotMath.Filter(Items,RowField,ColumnField,row,col);var value=NgPivotMath.Aggregate(records,Aggregate);b.OpenElement(0,"button");b.AddAttribute(1,"type","button");b.AddAttribute(2,"class","ng-pivot-cell");b.AddAttribute(3,"aria-label",$"{Display(row)} / {Display(col)}: {(value.HasValue?NgSheet.Format(value.Value):"—")}");b.AddAttribute(4,"onclick",EventCallback.Factory.Create(this,()=>OnCellSelected.InvokeAsync(new(row,col,records))));b.AddContent(5,value.HasValue?NgSheet.Format(value.Value):"—");b.CloseElement();};
+}
