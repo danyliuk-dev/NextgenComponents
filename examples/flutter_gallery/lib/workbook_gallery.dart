@@ -273,7 +273,7 @@ class _WorkbookGalleryState extends State<WorkbookGallery> {
                     ],
                   ),
                 ),
-                const Text('33 CONTROLS / 39 CATALOGUE ENTRIES · WEB FIRST'),
+                const Text('34 CONTROLS / 40 CATALOGUE ENTRIES · WEB FIRST'),
               ],
             ),
           ),

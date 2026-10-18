@@ -90,3 +90,27 @@ Coordinated visible foreground Chrome on Linux iMac, task profile `/tmp/nextgen-
 Representative inspected screenshots: [Blazor workbook](screenshots/workbook-blazor-initial.png), [Blazor pivot/drilldown](screenshots/workbook-blazor-pivot.png), [Blazor narrow fix](screenshots/workbook-blazor-narrow-fixed.png), [Flutter dark pivot](screenshots/workbook-flutter-pivot.png), [Flutter narrow](screenshots/workbook-flutter-narrow.png), [Flutter rejected paste](screenshots/workbook-flutter-paste-error.png).
 
 Scope: two additional controls, 33 controls / 39 catalogue entries. [Workbook matrix](workbook.md) lists remaining XLSX/CSV, formatting, full Excel formulas, OLAP, multiple measures and virtualization work. Other phase-5 components remain planned. Mobile testing remains deferred.
+
+## 0.6 — structured document editor (2026-10-18)
+
+Added NgEditor on both platforms: immutable blocks, paragraphs/headings/lists/quotes, block-level emphasis/alignment, add/delete/reorder, draft application, 50-operation history, read-only, bounded JSON v1 and escaped HTML export. This is a structured editor with separate preview, not full HTML WYSIWYG parity. See [capabilities](editor.md) and [Russian manual](manual/NgEditor.md).
+
+Validation:
+
+- .NET solution build: zero warnings/errors; 95 rendering/model checks passed, including JSON roundtrip, immutable reorder, safe HTML, list grouping, invalid versions/properties/enums and size limits.
+- Flutter: all 47 tests passed; targeted editor widget coverage includes formatting, undo/redo, reorder, add/delete, external replacement/history reset and read-only. Dropdown width overflow caught by the first run was fixed with expanded dropdown content and the tests were rerun successfully.
+- Dart analysis: no issues. Flutter Web release built with local renderer assets. Existing unused CupertinoIcons font warning remains; the editor does not use CupertinoIcons.
+- All 34 Blazor manual examples compiled and all 34 Flutter examples passed analysis. Manual links, 34-component/40-entry catalogue totals, generated themes and contrast checks passed.
+- Normal foreground Chrome on local `kolizej-iMac` (Linux), isolated `/tmp/nextgen-components-review-06`, CDP 9341. The browser slot was coordinated with the other task. X11 active window `0x1600003` identified `google-chrome (/tmp/nextgen-components-review-06)` and `Nextgen • Document editor - Google Chrome`; no headless or remote-host substitution.
+- Blazor: typed text containing `<script>`, applied Bold, checked escaped preview/export; Undo/Redo, Move down, add/apply/delete, JSON export, invalid import preserving the document, successful import clearing history, read-only, heading type and centered alignment.
+- Flutter: typed/applied text, Bold, Undo/Redo, Move down, add/delete, JSON export, invalid import preserving the current document, successful import clearing history, read-only disabling actions. Imported actual Blazor JSON into Flutter; imported actual Flutter JSON back into Blazor with text/order/formatting preserved. The first automated import attempt did not wait for Flutter text-field focus and did not enter the payload; only the retried import with confirmed source text and success state is counted as evidence.
+- Inspected light/wide and dark/compact at 390 CSS px on both platforms. The first Blazor narrow check exposed inherited gallery nav wrapping; fixed the component outline to a non-wrapping vertical scroller. Final outline content width matched client width (286px); document width 375px at viewport 390px. Flutter narrow view showed wrapping content and no visible overflow markers.
+- Closed only the task Chrome profile with `Browser.close`, then released the browser slot. Mobile/desktop-native and screen reader tests remain deferred; screenshots at narrow desktop width do not establish native mobile support.
+
+Screenshots inspected:
+
+- [Blazor: Flutter JSON import and centered heading](screenshots/editor-blazor-cross-import.png)
+- [Blazor: fixed narrow dark editor](screenshots/editor-blazor-narrow-fixed.png)
+- [Flutter: initial light editor](screenshots/editor-flutter-initial.png)
+- [Flutter: successful Blazor JSON import](screenshots/editor-flutter-import-success.png)
+- [Flutter: narrow dark preview/read-only](screenshots/editor-flutter-narrow.png)

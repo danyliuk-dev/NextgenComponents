@@ -45,3 +45,52 @@ add('NgScheduler','Недельное расписание','Показывае�
 @code { private DateTime week=new(2026,10,19); private string? message; private NgScheduleEvent[] events=[new("a","Встреча",new(2026,10,19,10,0,0),new(2026,10,19,11,0,0))]; }'''.replace('OnCreate="day=>message=$"Добавить {day:d}""','OnCreate="day=>message=day.ToShortDateString()"'), "DateTime week = DateTime(2026,10,19);\nWidget build(BuildContext context) => NgScheduler(date: week,\n  items: [NgScheduleEvent('a','Встреча',DateTime(2026,10,19,10),DateTime(2026,10,19,11))],\n  onDateChanged: (v) => setState(() => week = v),\n  onCreate: (day) => debugPrint('Добавить $day'),\n  onEdit: (item) => debugPrint(item.title));",'Начало недели — понедельник. Предыдущая/следующая неделя и Today вызывают callback изменения даты. События имеют уникальный Id/id, непустой Title/title и End/end строго позже Start/start. Пересечение полуночи отображается в обоих днях; конец ровно в 00:00 не добавляет запись следующего дня. Редактор и хранение создаёт приложение: полный Save/Cancel/Delete есть в Analytics gallery. Используются локальные wall-clock значения без конвертации timezone. Это дневные карточки недели, не почасовая сетка. Повторы, ресурсы и drag/drop не реализованы.')
 add('NgSpreadsheet','Электронный лист','Редактирование ячеек, вычисление формул, массовая вставка и история изменений.', '<NgSpreadsheet @bind-Value="sheet"/>\n@code { private NgSheet sheet=new(8,5,new Dictionary<string,string>{{"A1","10"},{"B1","20"},{"C1","=SUM(A1:B1)"}}); }', "NgSheet sheet = NgSheet(rows: 8, columns: 5, cells: {'A1':'10','B1':'20','C1':'=SUM(A1:B1)'});\nWidget build(BuildContext context) => NgSpreadsheet(value: sheet,\n  onChanged: (v) => setState(() => sheet = v));",'Выберите ячейку, измените Cell value or formula, нажмите Apply cell или Enter. Стрелки перемещают выбор. Значение хранится в неизменяемом NgSheet; callback отдаёт целый новый лист. Undo/Redo хранит до 50 операций; независимая замена Value/value родителем очищает историю. ReadOnly/readOnly отключает редактирование. Paste cells принимает TSV (табуляции и строки), вставляет от выбранного адреса, сохраняет формулы буквально и отклоняет выход за границы целиком. Поддерживаются 1–100 строк, 1–26 колонок, до 1000 символов в ячейке. Это один локальный лист: XLSX/CSV-файлы, форматы, объединения, относительное смещение формул и несколько листов не реализованы.')
 add('NgPivotGrid','Сводная таблица','Группировка числовой меры по двум измерениям с итогами и просмотром исходных строк.', '<NgPivotGrid Items="records" RowField="Team" ColumnField="Quarter" Aggregate="NgAggregate.Average" OnCellSelected="p=>count=p.Records.Count"/>\n<p>Исходных строк: @count</p>\n@code { private int count; private NgPivotRecord[] records=[new("a",new Dictionary<string,string>{{"Team","Design"},{"Quarter","Q1"}},100),new("b",new Dictionary<string,string>{{"Team","Design"},{"Quarter","Q1"}},200)]; }', "int count = 0;\nWidget build(BuildContext context) => NgPivotGrid(rowField: 'Team', columnField: 'Quarter',\n  aggregate: NgAggregate.average, items: [\n    NgPivotRecord('a', {'Team':'Design','Quarter':'Q1'},100),\n    NgPivotRecord('b', {'Team':'Design','Quarter':'Q1'},200)],\n  onCellSelected: (p) => setState(() => count = p.records.length));",'NgPivotRecord содержит уникальный ID, словарь строковых измерений и одну числовую Value/value (может быть null). Измерения сортируются по строковым ключам; отсутствующий ключ отображается как (blank). Sum/Average/Min/Max используют только числа; Count считает исходные записи, включая null. Все итоги считаются заново по исходным записям: среднее не является средним средних. Callback ячейки/итога отдаёт оригинальные записи; null Row/Column обозначает итог, пустая строка — пустое измерение. Фильтры применяйте к Items/items до передачи компоненту. Множественные уровни, несколько мер, OLAP и drag/drop конфигуратора отсутствуют.')
+add('NgEditor','Редактор структурированного документа','Для инструкций, описаний проектов, заметок и других небольших документов, которым нужны заголовки, списки и форматирование. Одинаковая модель документа используется в Blazor и Flutter Web.',
+'''<NgEditor Label="Описание проекта" @bind-Value="document"/>
+<NgButton OnClick="Save">Сохранить JSON</NgButton>
+<pre>@saved</pre>
+@code {
+    private NgDocument document = new([
+        new("План проекта", NgBlockKind.Heading1),
+        new("Согласовать требования", NgBlockKind.Bullet),
+        new("Проверить результат", NgBlockKind.Bullet, Bold: true)
+    ]);
+    private string saved = "";
+    private void Save() => saved = document.ToJson();
+}''',
+'''NgDocument document = NgDocument(blocks: const [
+  NgDocumentBlock(text: 'План проекта', kind: NgBlockKind.heading1),
+  NgDocumentBlock(text: 'Согласовать требования', kind: NgBlockKind.bullet),
+  NgDocumentBlock(text: 'Проверить результат', kind: NgBlockKind.bullet, bold: true),
+]);
+String saved = '';
+Widget build(BuildContext context) => Column(children: [
+  NgEditor(label: 'Описание проекта', value: document,
+    onChanged: (v) => setState(() => document = v)),
+  NgButton(onPressed: () => setState(() => saved = document.toJson()),
+    child: const Text('Сохранить JSON')),
+  Text(saved),
+]);''',
+'''### Редактирование
+
+1. Выберите блок в списке слева (на узком экране — сверху).
+2. Введите текст в Block text и нажмите Apply text. До применения это локальный черновик: preview, callback и экспорт содержат прежнее значение.
+3. Block type выбирает абзац, заголовок первого/второго уровня, пункт маркированного/нумерованного списка или цитату. Bold, Italic, Underline и Alignment применяются **ко всему блоку**. Это редактор блоков с отдельным предпросмотром, не редактор произвольного HTML и не форматирование выделенных слов.
+4. Смена блока, типа, выравнивания, форматирования, Add block и Move автоматически применяют черновик. Одно действие создаёт одну запись истории. Add block вставляет пустой абзац после текущего и выбирает его. Move up/down сохраняют выбор на перемещённом блоке.
+5. Delete block удаляет выбранный блок вместе с неприменённым черновиком. При удалении последнего остаётся один пустой абзац. Undo/Redo отменяют/возвращают применённые операции; неприменённый черновик при этом отбрасывается. История хранит последние 50 операций.
+
+### Состояние и сохранение
+
+`Value/value` — неизменяемый `NgDocument`; `ValueChanged/onChanged` возвращает целый новый документ. Родитель обязан сохранить его и передать обратно. Независимая замена документа, например после импорта или загрузки другого файла, сбрасывает локальную историю и черновик. Не создавайте новый эквивалентный объект на каждом render: используйте полученный экземпляр.
+
+`ReadOnly/readOnly` блокирует изменения, сохраняя выбор блоков и просмотр. Уже введённый черновик не сохраняется автоматически при включении этого режима. `NgEditor` не является InputBase/FormField: обязательность и бизнес-правила документа проверяет приложение.
+
+`ToJson()/toJson()` создаёт формат версии 1, одинаковый для обеих платформ. Для восстановления вызовите `NgDocument.FromJson(source)` / `NgDocument.fromJson(source)`; обработайте `ArgumentException` / `ArgumentError` и заменяйте документ только после успешного разбора. Пример полного Save/Restore находится в Editor gallery (`/editor` в Blazor, кнопка Editor во Flutter).
+
+`ToHtml()/toHtml()` экспортирует только применённые блоки. Текст экранируется, соседние пункты одного типа объединяются в ul/ol; переход к другому типу начинает новый список. HTML — фрагмент, без внешней темы и контейнера. Перенос строки внутри блока становится br. JSON храните как исходный редактируемый формат; обратного импорта HTML нет. Компонент не записывает файлы и не отправляет документ на сервер.
+
+### Клавиатура, размеры и ограничения
+
+Поля и кнопки доступны через Tab, кнопки — Enter/Space; textarea поддерживает обычный многострочный ввод. Собственных Ctrl+Z/Ctrl+Y нет: кнопки Undo/Redo управляют документом, системная отмена внутри textarea — только его черновиком. Проверка screen reader и мобильных платформ пока не проведена.
+
+Лимиты: 1–100 блоков, до 10000 UTF-16 единиц в блоке, до 100000 во всём документе; входной JSON — до 1000000. Модель проверяет ограничения при каждой операции. Сохраняются текст, тип блока, три флага форматирования и выравнивание. Вложенные списки, ссылки, изображения, таблицы, шрифты, выделенные диапазоны, импорт HTML/Word, печать/PDF, совместное редактирование и AI пока отсутствуют. Размеры ограничены для локальных небольших документов; виртуализации нет.''')

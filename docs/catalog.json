@@ -1344,14 +1344,14 @@
       "reference": "https://www.telerik.com/blazor-ui/editor",
       "phase": 5,
       "blazor": {
-        "status": "planned",
-        "component": null
+        "status": "foundation",
+        "component": "NgEditor"
       },
       "flutter": {
-        "status": "planned",
-        "component": null
+        "status": "foundation",
+        "component": "NgEditor"
       },
-      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+      "featureSpec": "docs/editor.md"
     },
     {
       "name": "Signature",

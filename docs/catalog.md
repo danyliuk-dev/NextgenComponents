@@ -95,7 +95,7 @@ Snapshot: 2026-10-18. 139 named entries from the [Telerik Blazor index](https://
 | Editors | [Numeric TextBox](https://www.telerik.com/blazor-ui/numeric-textbox) | foundation: `NgNumericTextBox` | foundation: `NgNumericTextBox` | 1 |
 | Editors | [RadioGroup](https://www.telerik.com/blazor-ui/radiogroup) | foundation: `NgRadioGroup` | foundation: `NgRadioGroup` | 1 |
 | Editors | [Rating](https://www.telerik.com/blazor-ui/rating) | planned | planned | 2 |
-| Editors | [Rich Text Editor](https://www.telerik.com/blazor-ui/editor) | planned | planned | 5 |
+| Editors | [Rich Text Editor](https://www.telerik.com/blazor-ui/editor) | foundation: `NgEditor` | foundation: `NgEditor` | 5 |
 | Editors | [Signature](https://www.telerik.com/blazor-ui/signature) | planned | planned | 2 |
 | Editors | [TextArea](https://www.telerik.com/blazor-ui/textarea) | foundation: `NgTextArea` | foundation: `NgTextArea` | 2 |
 | Editors | [TextBox](https://www.telerik.com/blazor-ui/textbox) | foundation: `NgTextBox` | foundation: `NgTextBox` | 1 |

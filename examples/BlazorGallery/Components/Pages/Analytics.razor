@@ -9,7 +9,7 @@
 <div class="fields"><section class="panel"><NgLinearGauge Label="Delivery target" Value="72"/></section><section class="panel"><NgArcGauge Label="Team capacity" Value="84"/></section></div>
 <section class="panel"><NgScheduler Label="Team schedule" @bind-Date="week" Items="events" OnCreate="Create" OnEdit="Edit"/><p role="status">@message</p></section>
 <NgDialog Title="Event details" @bind-Open="editing"><ChildContent>@if(draft is not null){<NgForm @key="draft" Model="draft" OnValidSubmit="Save"><div class="fields"><NgTextBox Label="Event title" @bind-Value="draft.Title"/><NgDateTimePicker Label="Starts" @bind-Value="draft.Start"/><NgDateTimePicker Label="Ends" @bind-Value="draft.End"/></div>@if(error is not null){<p role="alert" class="ng-field-error">@error</p>}<div class="row"><NgButton Primary Type="submit">Save event</NgButton><NgButton OnClick="()=>editing=false">Cancel</NgButton>@if(events.Any(e=>e.Id==draft.Id)){<NgButton OnClick="Delete">Delete event</NgButton>}</div></NgForm>}</ChildContent></NgDialog>
-<footer class="page-footer">31 CONTROLS / 37 CATALOGUE ENTRIES <span>WEB FIRST</span></footer>
+<footer class="page-footer">34 CONTROLS / 40 CATALOGUE ENTRIES <span>WEB FIRST</span></footer>
 </main></div>
 @code {
  private bool dark,compact,empty,editing;private string kind="Column";private string? selection,error,message;private DateTime week=new(2026,10,19);private Draft? draft;

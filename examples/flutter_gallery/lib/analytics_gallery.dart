@@ -308,7 +308,7 @@ class _AnalyticsGalleryState extends State<AnalyticsGallery> {
                   ],
                 ),
               ),
-              const Text('31 CONTROLS / 37 CATALOGUE ENTRIES · WEB FIRST'),
+              const Text('34 CONTROLS / 40 CATALOGUE ENTRIES · WEB FIRST'),
               const SizedBox(height: 24),
             ],
           ),

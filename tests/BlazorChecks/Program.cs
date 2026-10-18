@@ -103,6 +103,22 @@ Rule(NgPivotMath.Filter(pivot,"Team","Quarter","",null).Count==1&&NgPivotMath.Fi
 Reject(()=>NgPivotMath.Validate([pivot[0],pivot[0]]),"duplicate pivot IDs rejected");
 await Check<NgSpreadsheet>(new(){["Value"]=sheet},"Apply cell", "A1: 10", "B1: 50", "Undo", "Paste cells");
 await Check<NgPivotGrid>(new(){["Items"]=pivot},"A / Q1: 30", "Total / Total: 120", "(blank)");
+var doc = new NgDocument([new("Title",NgBlockKind.Heading1),new("<script>alert('x')</script>\n&",NgBlockKind.Bullet,Bold:true),new("Second",NgBlockKind.Bullet),new("Last",NgBlockKind.Numbered)]);
+Rule(NgDocument.FromJson(doc.ToJson()).ToJson()==doc.ToJson(),"document JSON roundtrip");
+Rule(doc.ToHtml().Contains("&lt;script&gt;") && !doc.ToHtml().Contains("<script>"),"document HTML escapes text");
+Rule(doc.ToHtml().Contains("</li></ul><ol>") && doc.ToHtml().Contains("<strong>") && doc.ToHtml().Contains("<br>"),"document groups list types and formats text");
+Rule(doc.Move(0,3).Blocks[3].Text=="Title" && doc.Blocks[0].Text=="Title","document move preserves immutable source");
+Rule(new NgDocument().Remove(0).Blocks.Count==1,"delete last block leaves empty document");
+Rule(doc.InsertAfter(0).Blocks[1].Text=="" && doc.Replace(0,new("Changed")).Blocks[0].Text=="Changed","document insert and replace");
+Reject(()=>new NgDocument([]),"document rejects empty block list");
+Reject(()=>new NgDocument(Enumerable.Repeat(new NgDocumentBlock(),101)),"document block limit");
+Reject(()=>new NgDocument([new(new string('x',10001))]),"document text limit");
+Reject(()=>new NgDocument(Enumerable.Repeat(new NgDocumentBlock(new string('x',10000)),11)),"document total limit");
+Reject(()=>NgDocument.FromJson("{\"version\":2,\"blocks\":[{}]}"),"document rejects unknown version");
+Reject(()=>NgDocument.FromJson("{\"version\":1,\"blocks\":[{\"kind\":99}]}"),"document rejects numeric enum");
+Reject(()=>NgDocument.FromJson("{\"version\":1,\"blocks\":[{\"html\":\"unsafe\"}]}"),"document rejects raw HTML property");
+Reject(()=>NgDocument.FromJson("null"),"document rejects null JSON");
+await Check<NgEditor>(new(){["Value"]=doc,["ReadOnly"]=true},"Document preview","readonly","&lt;script&gt;","disabled","Block text");
 Console.WriteLine($"{count} rendering and data/date-rule checks passed. Browser interaction requires the separate visual run.");
 sealed class NoBrowserJS : IJSRuntime {
  public ValueTask<TValue> InvokeAsync<TValue>(string identifier, object?[]? args) => throw new InvalidOperationException("JS must not execute in SSR");
