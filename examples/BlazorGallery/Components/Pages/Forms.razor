@@ -3,15 +3,16 @@
 <PageTitle>Nextgen • Forms and dates</PageTitle>
 <div class="ng-scope gallery" data-ng-theme="@(dark ? "dark" : "light")" data-ng-density="@(compact ? "compact" : "normal")"><main>
 <nav><a href="/code-examples">Code examples</a><strong><span class="brand-icon">N</span> NEXTGEN COMPONENTS</strong><div class="row"><a href="/data">Data workspace</a><a href="/">Foundation</a><NgSwitch Label="Dark theme" @bind-Value="dark" /><NgCheckBox Label="Compact" @bind-Value="compact" /></div></nav>
-<section class="hero"><p class="eyebrow">BLAZOR / FORMS AND DATES 0.29</p><h1>Every detail.<br />In the right place.</h1><p>Plan a team workshop. Search options, choose dates and validate everything together. Dates use yyyy-mm-dd; Sundays are unavailable for the workshop.</p></section>
+<section class="hero"><p class="eyebrow">BLAZOR / FORMS AND DATES 0.30</p><h1>Every detail.<br />In the right place.</h1><p>Plan a team workshop. Search options, choose dates and validate everything together. Dates use yyyy-mm-dd; Sundays are unavailable for the workshop.</p></section>
 @if(saved is not null) { <section class="panel" role="status" id="saved"><h2>Workshop saved</h2><p>@saved</p></section> }
-<section class="panel"><div class="panel-heading"><h2>Workshop booking</h2><span class="tag">TEXT EDITORS + ASYNC FORM</span></div>
+<section class="panel"><div class="panel-heading"><h2>Workshop booking</h2><span class="tag">SEARCH + SELECTION</span></div>
 <div class="row"><NgCheckBox Label="Read only text" @bind-Value="readOnly"/><NgCheckBox Label="Simulate save failure" @bind-Value="fail"/></div>
+<div class="row"><NgCheckBox Label="Read only choices" @bind-Value="choicesReadOnly"/><NgDropDownList Label="Search mode" Items="filterModes" @bind-Value="filterMode"/></div>
 <NgForm @key="model" Model="model" OnValidSubmit="Save">
 <div class="fields">
 <NgTextBox Label="Workshop name" @bind-Value="model.Name" ReadOnly="readOnly" MaxLength="80" HelperText="Required. Use a descriptive name."><PrefixTemplate><span aria-hidden="true">✎</span></PrefixTemplate></NgTextBox>
-<NgAutoComplete Label="City" Items="cities" @bind-Value="model.City" />
-<NgComboBox Label="Facilitator" Items="people" @bind-Value="model.Person" />
+<NgAutoComplete Label="City" Items="cities" @bind-Value="model.City" FilterMode="@filterMode" MinLength="2" ReadOnly="choicesReadOnly" Placeholder="Type two letters" />
+<NgComboBox Label="Facilitator" Items="people" @bind-Value="model.Person" FilterMode="@filterMode" ReadOnly="choicesReadOnly" ShowClearButton><ItemTemplate Context="person"><strong>@person.Label</strong><small> · Facilitator</small></ItemTemplate></NgComboBox>
 <NgDateInput Label="Registration deadline" @bind-Value="model.Deadline" Min="min" Max="max" />
 <NgDatePicker Label="Workshop date" @bind-Value="model.Date" Min="min" Max="max" DisabledDate="Sunday" />
 <NgTimePicker Label="Start time" @bind-Value="model.Time" Min="new TimeOnly(8,0)" Max="new TimeOnly(18,0)" />
@@ -19,13 +20,13 @@
 <NgDateInput Label="Locked date" Value="locked" ValueExpression="() => locked" Disabled />
 </div>
 <NgDateRangePicker Label="Room reservation" @bind-Value="model.Range" Min="min" Max="max" />
-<div class="fields" style="margin-top:24px"><NgMultiSelect Label="Services" Items="services" @bind-Value="model.Services" MaxSelected="3" /><div><NgCalendar Value="model.Date" ValueChanged="v => model.Date=v" Min="min" Max="max" DisabledDate="Sunday" /></div></div>
+<div class="fields" style="margin-top:24px"><NgMultiSelect Label="Services" Items="services" @bind-Value="model.Services" MaxSelected="3" FilterMode="@filterMode" ReadOnly="choicesReadOnly" ShowActions><ItemTemplate Context="service"><strong>@service.Label</strong></ItemTemplate><TagTemplate Context="service">✓ @service.Label</TagTemplate></NgMultiSelect><div><NgCalendar Value="model.Date" ValueChanged="v => model.Date=v" Min="min" Max="max" DisabledDate="Sunday" /></div></div>
 <NgTextArea Label="Notes" @bind-Value="model.Notes" MaxLength="500" ReadOnly="readOnly" HelperText="Share preparation details with the team." />
 <div class="row actions" style="margin-top:24px"><NgButton Primary Type="submit">Save workshop</NgButton><NgButton OnClick="Reset">Reset example</NgButton></div>
 </NgForm></section><footer class="page-footer">47 COMPONENTS <span>WEB FIRST / BLAZOR + FLUTTER</span></footer>
 </main></div>
 @code {
- private bool dark,compact,readOnly,fail;
+ private bool dark,compact,readOnly,fail,choicesReadOnly;private string filterMode="contains";private readonly NgOption[] filterModes=[new("contains","Contains"),new("startsWith","Starts with"),new("endsWith","Ends with")];
  private string? saved;
  private Booking model=new();
  private DateOnly? locked=new(2026,1,1);

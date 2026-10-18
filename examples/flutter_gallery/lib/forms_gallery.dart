@@ -32,7 +32,8 @@ class _FormsGalleryState extends State<FormsGallery> {
   );
   List<String> services = ['room'];
   int revision = 0;
-  bool readOnly = false, fail = false;
+  bool readOnly = false, fail = false, choicesReadOnly = false;
+  String filterMode = "contains";
   final min = DateTime(2026), max = DateTime(2026, 12, 31);
   static const people = [
     NgOption('alex', 'Alex Morgan'),
@@ -110,7 +111,7 @@ class _FormsGalleryState extends State<FormsGallery> {
               ),
               const SizedBox(height: 40),
               Text(
-                'FLUTTER / FORMS AND DATES 0.29',
+                'FLUTTER / FORMS AND DATES 0.30',
                 style: TextStyle(color: Theme.of(context).colorScheme.primary),
               ),
               const SizedBox(height: 16),
@@ -134,6 +135,29 @@ class _FormsGalleryState extends State<FormsGallery> {
                     label: 'Simulate save failure',
                     value: fail,
                     onChanged: (v) => setState(() => fail = v),
+                  ),
+                ],
+              ),
+              Wrap(
+                spacing: 16,
+                children: [
+                  NgCheckBox(
+                    label: 'Read only choices',
+                    value: choicesReadOnly,
+                    onChanged: (v) => setState(() => choicesReadOnly = v),
+                  ),
+                  SizedBox(
+                    width: 200,
+                    child: NgDropDownList(
+                      label: 'Search mode',
+                      value: filterMode,
+                      items: const [
+                        NgOption('contains', 'Contains'),
+                        NgOption('startsWith', 'Starts with'),
+                        NgOption('endsWith', 'Ends with'),
+                      ],
+                      onChanged: (v) => setState(() => filterMode = v!),
+                    ),
                   ),
                 ],
               ),
@@ -199,6 +223,10 @@ class _FormsGalleryState extends State<FormsGallery> {
                         ),
                         NgAutoComplete(
                           label: 'City',
+                          filterMode: filterMode,
+                          minLength: 2,
+                          readOnly: choicesReadOnly,
+                          placeholder: 'Type two letters',
                           initialValue: city,
                           items: const [
                             'Kyiv',
@@ -211,6 +239,11 @@ class _FormsGalleryState extends State<FormsGallery> {
                         ),
                         NgComboBox(
                           label: 'Facilitator',
+                          filterMode: filterMode,
+                          readOnly: choicesReadOnly,
+                          showClearButton: true,
+                          itemBuilder: (_, o) =>
+                              Text('${o.label} · Facilitator'),
                           value: person,
                           items: people,
                           required: true,
@@ -266,6 +299,11 @@ class _FormsGalleryState extends State<FormsGallery> {
                       fields([
                         NgMultiSelect(
                           label: 'Services',
+                          filterMode: filterMode,
+                          readOnly: choicesReadOnly,
+                          showActions: true,
+                          itemBuilder: (_, o) => Text(o.label),
+                          tagBuilder: (_, o) => Text('✓ ${o.label}'),
                           value: services,
                           items: serviceOptions,
                           maxSelected: 3,

@@ -1,3 +1,5 @@
 @* Generated from scripts/manual_content.py *@
-<NgAutoComplete Label="City" Items="cities" @bind-Value="city"/>
-@code { private string? city; private string[] cities=["Kyiv","Lviv","Odesa"]; }
+<NgCheckBox Label="Read only" @bind-Value="locked"/>
+<NgAutoComplete Label="City" Items="cities" @bind-Value="city" FilterMode="startsWith" MinLength="2" ReadOnly="locked" Placeholder="Type at least two letters"/>
+<p>Current city: @city</p>
+@code { private bool locked;private string? city;private readonly string[] cities=["London","Lisbon","Los Angeles","Berlin"]; }

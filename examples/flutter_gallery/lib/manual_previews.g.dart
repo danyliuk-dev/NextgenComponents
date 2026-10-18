@@ -133,25 +133,34 @@ Widget build(BuildContext context) => NgRadioGroup(label: 'Team', value: team,
 }
 class NgComboBoxExample extends StatefulWidget { const NgComboBoxExample({super.key}); @override State<NgComboBoxExample> createState()=>_NgComboBoxExampleState(); }
 class _NgComboBoxExampleState extends State<NgComboBoxExample> {
-String? team = 'design';
-Widget build(BuildContext context) => NgComboBox(label: 'Team', value: team,
-  items: const [NgOption('design','Design'), NgOption('dev','Engineering'),
-    NgOption('locked','Unavailable', disabled: true)],
-  onChanged: (v) => setState(() => team = v));
+bool locked=false;String? person='a';String status='Not saved';
+List<NgOption> people=[const NgOption('a','Alex'),const NgOption('b','Bella'),const NgOption('x','Blocked',disabled:true)];
+Widget build(BuildContext context)=>Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
+NgCheckBox(label:'Read only',value:locked,onChanged:(v)=>setState(()=>locked=v)),
+NgForm(submitLabel:'Save selection',onValidSubmit:()=>setState(()=>status='Saved ID: $person'),child:
+NgComboBox(label:'Assignee',value:person,items:people,required:true,readOnly:locked,showClearButton:true,filterMode:'startsWith',minLength:1,placeholder:'Search a person',onChanged:(v)=>setState(()=>person=v),itemBuilder:(_,o)=>Text('${o.label} · Team member'))),
+NgButton(onPressed:()=>setState(()=>people=people.map((o)=>o.value==person?NgOption(o.value,'Alex Morgan'):o).toList()),child:const Text('Rename selected')),
+Text(status)]);
+
 }
 class NgAutoCompleteExample extends StatefulWidget { const NgAutoCompleteExample({super.key}); @override State<NgAutoCompleteExample> createState()=>_NgAutoCompleteExampleState(); }
 class _NgAutoCompleteExampleState extends State<NgAutoCompleteExample> {
-String city = '';
-Widget build(BuildContext context) => NgAutoComplete(label: 'City',
-  items: const ['Kyiv','Lviv','Odesa'], initialValue: city,
-  onChanged: (v) => city = v);
+bool locked=false;String city='';
+Widget build(BuildContext context)=>Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
+NgCheckBox(label:'Read only',value:locked,onChanged:(v)=>setState(()=>locked=v)),
+NgAutoComplete(label:'City',items:const ['London','Lisbon','Los Angeles','Berlin'],filterMode:'startsWith',minLength:2,readOnly:locked,placeholder:'Type at least two letters',onChanged:(v)=>setState(()=>city=v)),
+Text('Current city: $city')]);
+
 }
 class NgMultiSelectExample extends StatefulWidget { const NgMultiSelectExample({super.key}); @override State<NgMultiSelectExample> createState()=>_NgMultiSelectExampleState(); }
 class _NgMultiSelectExampleState extends State<NgMultiSelectExample> {
-List<String> selected = [];
-Widget build(BuildContext context) => NgMultiSelect(label: 'Services', value: selected,
-  items: const [NgOption('a','Delivery'),NgOption('b','Assembly')], maxSelected: 2,
-  onChanged: (v) => setState(() => selected = v));
+bool locked=false;List<String> selected=['locked'];
+final services=const [NgOption('a','Alpha'),NgOption('b','Beta'),NgOption('g','Gamma'),NgOption('locked','Mandatory',disabled:true)];
+Widget build(BuildContext context)=>Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
+NgCheckBox(label:'Read only',value:locked,onChanged:(v)=>setState(()=>locked=v)),
+NgMultiSelect(label:'Services',value:selected,items:services,maxSelected:3,showActions:true,readOnly:locked,emptyText:'No matching services',onChanged:(v)=>setState(()=>selected=v),itemBuilder:(_,o)=>Text('${o.label} · service'),tagBuilder:(_,o)=>Text('✓ ${o.label}')),
+Text('Selected IDs: ${selected.join(', ')}')]);
+
 }
 class NgDateInputExample extends StatefulWidget { const NgDateInputExample({super.key}); @override State<NgDateInputExample> createState()=>_NgDateInputExampleState(); }
 class _NgDateInputExampleState extends State<NgDateInputExample> {

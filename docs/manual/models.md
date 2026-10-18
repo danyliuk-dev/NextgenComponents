@@ -140,3 +140,9 @@ Drawer continues to use `NgOption`. `IsVisible/isVisible` and `IsSeparator/isSep
 `NgWizardChange` describes Current/current, Target/target and IsFinish/isFinish. BeforeChange returns an asynchronous boolean; false rejects the request before validation and state callbacks.
 
 `NgWizardActions` provides Value/value, Busy/busy, Finished/finished, IsLast/isLast and CanBack/CanNext/CanFinish (lower camelCase in Dart). BackAsync/NextAsync/FinishAsync in Blazor and back/next/finish in Flutter return tasks/futures using the same guarded transition pipeline. Use IsLast to select a forward action and Can… to determine whether it is enabled. Do not cache these render contexts. See the [Wizard manual](NgWizard.md) for a complete custom action bar.
+
+## Selection input filtering (0.30)
+
+`NgFilterRules` supplies the shared local filtering contract in both libraries. `Validate/validate(mode, minLength)` accepts `contains`, `startsWith` or `endsWith` and a nonnegative minimum query length. `Matches/matches(label, query, mode, minLength)` applies that validated configuration without trimming the query. Matching is case-insensitive and follows platform string rules, not locale-specific collation.
+
+`ValidateItems/validateItems` requires unique nonblank `NgOption.Value/value` IDs and nonblank labels for ComboBox and MultiSelect. Values are IDs, not display labels; renaming a record must retain its ID. Disabled selected MultiSelect records are locked during user removal/clear. The parent may replace controlled selections explicitly and is responsible for reconciling removed records and externally supplied values that exceed a configured user-selection limit.

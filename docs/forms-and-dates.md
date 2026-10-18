@@ -40,3 +40,9 @@ TextBox and TextArea add read-only mode, helper text, prefix/suffix decoration a
 Form awaits asynchronous saving, blocks repeated submissions and shows configurable busy/error text. Failed saves can be retried. Flutter preserves field state when validation summaries appear or disappear. Application-owned drafts, transport cancellation and backend idempotency remain separate. Replace model and key to reset the entire form.
 
 The Forms and dates gallery demonstrates these features with read-only text, simulated save failure and async saving. Detailed examples: [TextBox](manual/NgTextBox.md), [TextArea](manual/NgTextArea.md), [Form](manual/NgForm.md). Full feature gaps are recorded in [parity](parity.md).
+
+## Selection input workbench (0.30)
+
+AutoComplete, ComboBox and MultiSelect add contains/startsWith/endsWith filtering, minimum query lengths and read-only selection behavior. ComboBox adds clear, option templates and selected-label refresh. MultiSelect adds item/tag templates and optional atomic Select filtered / Clear selection actions. Disabled selections stay locked and count against the selection limit; a bulk addition over the limit changes nothing. Flutter validation follows the current controlled selection.
+
+Blazor AutoComplete still uses a browser datalist; Flutter uses a native Material overlay. ComboBox empty popups and disabled-match presentation differ. MultiSelect is still an inline checklist. Remote loading, virtualization, grouping, full popup APIs and accessibility/native certification remain explicit gaps. See [AutoComplete](manual/NgAutoComplete.md), [ComboBox](manual/NgComboBox.md), [MultiSelect](manual/NgMultiSelect.md) and the [parity matrix](parity.md).

@@ -66,12 +66,40 @@ class NgTextArea extends StatelessWidget {
   }
 }
 
-class NgAutoComplete extends StatelessWidget {
-  final String label;
+class NgFilterRules {
+  static void validate(String mode, int minLength) {
+    if (!['contains', 'startsWith', 'endsWith'].contains(mode) || minLength < 0)
+      throw ArgumentError(
+        'Use contains/startsWith/endsWith and a nonnegative minimum length.',
+      );
+  }
+
+  static bool matches(String label, String query, String mode, int minLength) {
+    if (query.length < minLength) return false;
+    final l = label.toLowerCase(), q = query.toLowerCase();
+    return mode == 'startsWith'
+        ? l.startsWith(q)
+        : mode == 'endsWith'
+        ? l.endsWith(q)
+        : l.contains(q);
+  }
+
+  static void validateItems(List<NgOption> items) {
+    if (items.any((o) => o.value.trim().isEmpty || o.label.trim().isEmpty) ||
+        items.map((o) => o.value).toSet().length != items.length)
+      throw ArgumentError(
+        'Options need unique nonempty values and nonempty labels.',
+      );
+  }
+}
+
+class NgAutoComplete extends StatefulWidget {
+  final String label, initialValue, filterMode;
+  final String? placeholder;
   final List<String> items;
-  final String initialValue;
   final ValueChanged<String>? onChanged;
-  final bool enabled;
+  final bool enabled, readOnly;
+  final int minLength;
   const NgAutoComplete({
     super.key,
     this.label = 'Search',
@@ -79,24 +107,67 @@ class NgAutoComplete extends StatelessWidget {
     this.initialValue = '',
     this.onChanged,
     this.enabled = true,
+    this.readOnly = false,
+    this.filterMode = 'contains',
+    this.minLength = 1,
+    this.placeholder,
   });
   @override
-  Widget build(BuildContext context) => Autocomplete<String>(
-    initialValue: TextEditingValue(text: initialValue),
-    optionsBuilder: (v) => v.text.isEmpty
-        ? const Iterable<String>.empty()
-        : items.where((s) => s.toLowerCase().contains(v.text.toLowerCase())),
-    onSelected: onChanged,
-    fieldViewBuilder: (context, controller, focus, onSubmitted) =>
-        TextFormField(
-          controller: controller,
-          focusNode: focus,
-          enabled: enabled,
-          onChanged: onChanged,
-          onFieldSubmitted: (_) => onSubmitted(),
-          decoration: InputDecoration(labelText: label),
-        ),
-  );
+  State<NgAutoComplete> createState() => _NgAutoCompleteState();
+}
+
+class _NgAutoCompleteState extends State<NgAutoComplete> {
+  late final controller = TextEditingController(text: widget.initialValue);
+  final focus = FocusNode();
+  @override
+  void didUpdateWidget(covariant NgAutoComplete old) {
+    super.didUpdateWidget(old);
+    if (widget.readOnly || !widget.enabled) focus.unfocus();
+  }
+
+  @override
+  void dispose() {
+    controller.dispose();
+    focus.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    NgFilterRules.validate(widget.filterMode, widget.minLength);
+    return Autocomplete<String>(
+      textEditingController: controller,
+      focusNode: focus,
+      optionsBuilder: (v) => !widget.enabled || widget.readOnly
+          ? const Iterable<String>.empty()
+          : widget.items.where(
+              (s) => NgFilterRules.matches(
+                s,
+                v.text,
+                widget.filterMode,
+                widget.minLength,
+              ),
+            ),
+      onSelected: (v) {
+        if (widget.enabled && !widget.readOnly) widget.onChanged?.call(v);
+      },
+      fieldViewBuilder: (context, controller, focus, onSubmitted) =>
+          TextFormField(
+            controller: controller,
+            focusNode: focus,
+            enabled: widget.enabled,
+            readOnly: widget.readOnly,
+            onChanged: widget.onChanged,
+            onFieldSubmitted: (_) {
+              if (!widget.readOnly) onSubmitted();
+            },
+            decoration: InputDecoration(
+              labelText: widget.label,
+              hintText: widget.placeholder,
+            ),
+          ),
+    );
+  }
 }
 
 class NgComboBox extends StatefulWidget {
@@ -104,7 +175,11 @@ class NgComboBox extends StatefulWidget {
   final String? value;
   final List<NgOption> items;
   final ValueChanged<String?>? onChanged;
-  final bool enabled, required;
+  final bool enabled, required, readOnly, showClearButton;
+  final String filterMode;
+  final String? placeholder;
+  final int minLength;
+  final Widget Function(BuildContext, NgOption)? itemBuilder;
   const NgComboBox({
     super.key,
     this.label = 'Choose an option',
@@ -113,6 +188,12 @@ class NgComboBox extends StatefulWidget {
     this.onChanged,
     this.enabled = true,
     this.required = false,
+    this.readOnly = false,
+    this.showClearButton = false,
+    this.filterMode = 'contains',
+    this.minLength = 0,
+    this.placeholder,
+    this.itemBuilder,
   });
   @override
   State<NgComboBox> createState() => _NgComboBoxState();
@@ -131,68 +212,127 @@ class _NgComboBoxState extends State<NgComboBox> {
   @override
   void didUpdateWidget(covariant NgComboBox old) {
     super.didUpdateWidget(old);
-    if (old.value != widget.value && controller.text != textFor(widget.value))
+    if (widget.readOnly || !widget.enabled) focus.unfocus();
+    final before = old.items.where((o) => o.value == old.value).firstOrNull;
+    final after = widget.items
+        .where((o) => o.value == widget.value)
+        .firstOrNull;
+    if ((old.value != widget.value || before?.label != after?.label) &&
+        controller.text != textFor(widget.value))
       controller.text = textFor(widget.value);
   }
 
   @override
-  Widget build(BuildContext context) => RawAutocomplete<NgOption>(
-    textEditingController: controller,
-    focusNode: focus,
-    displayStringForOption: (o) => o.label,
-    optionsBuilder: (v) => widget.items.where(
-      (o) =>
-          !o.disabled && o.label.toLowerCase().contains(v.text.toLowerCase()),
-    ),
-    onSelected: (o) => widget.onChanged?.call(o.value),
-    fieldViewBuilder: (context, controller, focus, onSubmitted) =>
-        TextFormField(
-          controller: controller,
-          focusNode: focus,
-          enabled: widget.enabled,
-          autovalidateMode: AutovalidateMode.onUserInteraction,
-          validator: (text) {
-            if (text == null || text.isEmpty)
-              return widget.required ? '${widget.label} is required' : null;
-            return widget.items.any((o) => !o.disabled && o.label == text)
-                ? null
-                : 'Choose an option from the list.';
-          },
-          onFieldSubmitted: (_) => onSubmitted(),
-          onChanged: (text) {
-            final match = widget.items
-                .where((o) => !o.disabled && o.label == text)
-                .firstOrNull;
-            if (match != null || text.isEmpty)
-              widget.onChanged?.call(match?.value);
-          },
-          decoration: InputDecoration(
-            labelText: widget.label,
-            suffixIcon: const Icon(Icons.expand_more),
+  Widget build(BuildContext context) {
+    NgFilterRules.validate(widget.filterMode, widget.minLength);
+    NgFilterRules.validateItems(widget.items);
+    return RawAutocomplete<NgOption>(
+      textEditingController: controller,
+      focusNode: focus,
+      displayStringForOption: (o) => o.label,
+      optionsBuilder: (v) => widget.items.where(
+        (o) =>
+            widget.enabled &&
+            !widget.readOnly &&
+            !o.disabled &&
+            NgFilterRules.matches(
+              o.label,
+              v.text,
+              widget.filterMode,
+              widget.minLength,
+            ),
+      ),
+      onSelected: (o) {
+        if (widget.enabled &&
+            !widget.readOnly &&
+            widget.items.any(
+              (current) =>
+                  current.value == o.value &&
+                  current.label == o.label &&
+                  !current.disabled,
+            ))
+          widget.onChanged?.call(o.value);
+      },
+      fieldViewBuilder: (context, controller, focus, onSubmitted) =>
+          TextFormField(
+            controller: controller,
+            focusNode: focus,
+            enabled: widget.enabled,
+            readOnly: widget.readOnly,
+            autovalidateMode: AutovalidateMode.onUserInteraction,
+            validator: (text) {
+              if (text == null || text.isEmpty)
+                return widget.required ? '${widget.label} is required' : null;
+              return widget.items.any(
+                    (o) =>
+                        !o.disabled &&
+                        o.label.toLowerCase() == text.toLowerCase(),
+                  )
+                  ? null
+                  : 'Choose an option from the list.';
+            },
+            onFieldSubmitted: (_) => onSubmitted(),
+            onChanged: (text) {
+              final match = widget.items
+                  .where(
+                    (o) =>
+                        !o.disabled &&
+                        o.label.toLowerCase() == text.toLowerCase(),
+                  )
+                  .firstOrNull;
+              if (match != null || text.isEmpty)
+                widget.onChanged?.call(match?.value);
+            },
+            decoration: InputDecoration(
+              labelText: widget.label,
+              hintText: widget.placeholder,
+              suffixIcon: widget.showClearButton
+                  ? IconButton(
+                      tooltip: 'Clear ${widget.label}',
+                      onPressed: widget.enabled && !widget.readOnly
+                          ? () {
+                              controller.clear();
+                              widget.onChanged?.call(null);
+                            }
+                          : null,
+                      icon: const Icon(Icons.clear),
+                    )
+                  : const Icon(Icons.expand_more),
+            ),
           ),
-        ),
-    optionsViewBuilder: (context, onSelected, options) => Align(
-      alignment: Alignment.topLeft,
-      child: Material(
-        elevation: 4,
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxHeight: 220, maxWidth: 300),
-          child: ListView(
-            shrinkWrap: true,
-            padding: EdgeInsets.zero,
-            children: options
-                .map(
-                  (o) => ListTile(
-                    title: Text(o.label),
-                    onTap: () => onSelected(o),
-                  ),
-                )
-                .toList(),
+      optionsViewBuilder: (context, onSelected, options) => Align(
+        alignment: Alignment.topLeft,
+        child: Material(
+          elevation: 4,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxHeight: 220, maxWidth: 300),
+            child: ListView(
+              shrinkWrap: true,
+              padding: EdgeInsets.zero,
+              children: options
+                  .map(
+                    (o) => ListTile(
+                      selected:
+                          options.toList().indexOf(o) ==
+                          AutocompleteHighlightedOption.of(context),
+                      title: Semantics(
+                        label: o.label,
+                        excludeSemantics: true,
+                        child:
+                            widget.itemBuilder?.call(context, o) ??
+                            Text(o.label),
+                      ),
+                      onTap: () => onSelected(o),
+                    ),
+                  )
+                  .toList(),
+            ),
           ),
         ),
       ),
-    ),
-  );
+    );
+  }
+
   final FocusNode focus = FocusNode();
   @override
   void dispose() {
@@ -208,7 +348,10 @@ class NgMultiSelect extends StatefulWidget {
   final List<NgOption> items;
   final ValueChanged<List<String>>? onChanged;
   final int? maxSelected;
-  final bool enabled, required;
+  final bool enabled, required, readOnly, showActions;
+  final String filterMode, placeholder, emptyText;
+  final int minLength;
+  final Widget Function(BuildContext, NgOption)? itemBuilder, tagBuilder;
   const NgMultiSelect({
     super.key,
     this.label = 'Options',
@@ -218,6 +361,14 @@ class NgMultiSelect extends StatefulWidget {
     this.maxSelected,
     this.enabled = true,
     this.required = false,
+    this.readOnly = false,
+    this.showActions = false,
+    this.filterMode = 'contains',
+    this.minLength = 0,
+    this.placeholder = 'Filter options…',
+    this.emptyText = 'No matches',
+    this.itemBuilder,
+    this.tagBuilder,
   });
   @override
   State<NgMultiSelect> createState() => _NgMultiSelectState();
@@ -228,7 +379,7 @@ class _NgMultiSelectState extends State<NgMultiSelect> {
   String query = '';
   String? error;
   void toggle(String value) {
-    if (!widget.enabled) return;
+    if (!widget.enabled || widget.readOnly || !canRemove(value)) return;
     final next = [...widget.value];
     error = null;
     if (!next.remove(value)) {
@@ -246,88 +397,189 @@ class _NgMultiSelectState extends State<NgMultiSelect> {
     widget.onChanged?.call(next.toSet().toList());
   }
 
+  bool canToggle(NgOption o) =>
+      widget.enabled &&
+      !widget.readOnly &&
+      !o.disabled &&
+      (widget.value.contains(o.value) ||
+          widget.maxSelected == null ||
+          widget.value.length < widget.maxSelected!);
+  bool canRemove(String value) =>
+      widget.items.where((o) => o.value == value).firstOrNull?.disabled != true;
+  List<NgOption> get filtered => widget.items
+      .where(
+        (o) => NgFilterRules.matches(
+          o.label,
+          query,
+          widget.filterMode,
+          widget.minLength,
+        ),
+      )
+      .toList();
+  void publish(List<String> next) {
+    if (!widget.enabled || widget.readOnly) return;
+    setState(() => error = null);
+    fieldKey.currentState?.didChange([...next]);
+    widget.onChanged?.call([...next]);
+  }
+
+  void selectFiltered() {
+    if (!widget.enabled || widget.readOnly) return;
+    final next = {
+      ...widget.value,
+      ...filtered.where((o) => !o.disabled).map((o) => o.value),
+    }.toList();
+    if (widget.maxSelected != null && next.length > widget.maxSelected!) {
+      setState(() => error = 'Select at most ${widget.maxSelected} options.');
+      return;
+    }
+    publish(next);
+  }
+
   @override
-  Widget build(BuildContext context) => FormField<List<String>>(
-    key: fieldKey,
-    autovalidateMode: AutovalidateMode.onUserInteraction,
-    initialValue: widget.value,
-    enabled: widget.enabled,
-    validator: (current) => widget.required && (current ?? []).isEmpty
-        ? '${widget.label} is required'
-        : null,
-    builder: (field) => InputDecorator(
-      decoration: InputDecoration(
-        labelText: widget.label,
-        errorText: error ?? field.errorText,
-        enabled: widget.enabled,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Wrap(
-            spacing: 6,
-            runSpacing: 4,
-            children: widget.value
-                .map(
-                  (v) => InputChip(
-                    label: Text(
-                      widget.items
+  Widget build(BuildContext context) {
+    NgFilterRules.validate(widget.filterMode, widget.minLength);
+    NgFilterRules.validateItems(widget.items);
+    if (widget.maxSelected != null && widget.maxSelected! <= 0)
+      throw ArgumentError('maxSelected must be positive.');
+    return FormField<List<String>>(
+      key: fieldKey,
+      autovalidateMode: AutovalidateMode.onUserInteraction,
+      initialValue: widget.value,
+      enabled: widget.enabled,
+      validator: (current) => widget.required && widget.value.isEmpty
+          ? '${widget.label} is required'
+          : null,
+      builder: (field) => InputDecorator(
+        decoration: InputDecoration(
+          labelText: widget.label,
+          errorText: error ?? field.errorText,
+          enabled: widget.enabled,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Wrap(
+              spacing: 6,
+              runSpacing: 4,
+              children: widget.value
+                  .map(
+                    (v) => InputChip(
+                      label: Builder(
+                        builder: (context) {
+                          final option = widget.items
                               .where((o) => o.value == v)
-                              .firstOrNull
-                              ?.label ??
-                          v,
-                    ),
-                    onDeleted: widget.enabled ? () => toggle(v) : null,
-                  ),
-                )
-                .toList(),
-          ),
-          TextField(
-            enabled: widget.enabled,
-            decoration: InputDecoration(
-              hintText: 'Filter options…',
-              labelText: 'Filter ${widget.label}',
-            ),
-            onChanged: (v) => setState(() => query = v),
-          ),
-          ConstrainedBox(
-            constraints: const BoxConstraints(maxHeight: 150),
-            child: SingleChildScrollView(
-              child: Wrap(
-                spacing: 12,
-                children: widget.items
-                    .where(
-                      (o) =>
-                          o.label.toLowerCase().contains(query.toLowerCase()),
-                    )
-                    .map(
-                      (o) => NgCheckBox(
-                        label: o.label,
-                        value: widget.value.contains(o.value),
-                        onChanged: !widget.enabled || o.disabled
-                            ? null
-                            : (_) {
-                                toggle(o.value);
-                              },
+                              .firstOrNull;
+                          return Semantics(
+                            label: option?.label ?? v,
+                            excludeSemantics: true,
+                            child: option != null
+                                ? (widget.tagBuilder?.call(context, option) ??
+                                      Text(option.label))
+                                : Text(v),
+                          );
+                        },
                       ),
-                    )
-                    .toList(),
+                      onDeleted:
+                          widget.enabled && !widget.readOnly && canRemove(v)
+                          ? () => toggle(v)
+                          : null,
+                    ),
+                  )
+                  .toList(),
+            ),
+            TextField(
+              enabled: widget.enabled,
+              decoration: InputDecoration(
+                hintText: widget.placeholder,
+                labelText: 'Filter ${widget.label}',
+              ),
+              onChanged: (v) => setState(() => query = v),
+            ),
+            if (widget.showActions)
+              Wrap(
+                spacing: 8,
+                children: [
+                  NgButton(
+                    onPressed:
+                        widget.enabled &&
+                            !widget.readOnly &&
+                            filtered.any(
+                              (o) =>
+                                  !o.disabled &&
+                                  !widget.value.contains(o.value),
+                            )
+                        ? selectFiltered
+                        : null,
+                    child: const Text('Select filtered'),
+                  ),
+                  NgButton(
+                    onPressed:
+                        widget.enabled &&
+                            !widget.readOnly &&
+                            widget.value.any(canRemove)
+                        ? () => publish(
+                            widget.value.where((v) => !canRemove(v)).toList(),
+                          )
+                        : null,
+                    child: const Text('Clear selection'),
+                  ),
+                ],
+              ),
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxHeight: 150),
+              child: SingleChildScrollView(
+                child: Wrap(
+                  spacing: 12,
+                  children: filtered
+                      .map(
+                        (o) => Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Checkbox(
+                              semanticLabel: o.label,
+                              value: widget.value.contains(o.value),
+                              onChanged:
+                                  !widget.enabled ||
+                                      widget.readOnly ||
+                                      o.disabled ||
+                                      (widget.maxSelected != null &&
+                                          widget.value.length >=
+                                              widget.maxSelected! &&
+                                          !widget.value.contains(o.value))
+                                  ? null
+                                  : (_) => toggle(o.value),
+                            ),
+                            Flexible(
+                              child: ExcludeSemantics(
+                                child: GestureDetector(
+                                  onTap: canToggle(o)
+                                      ? () => toggle(o.value)
+                                      : null,
+                                  child:
+                                      widget.itemBuilder?.call(context, o) ??
+                                      Text(o.label),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                      .toList(),
+                ),
               ),
             ),
-          ),
-          if (!widget.items.any(
-            (o) => o.label.toLowerCase().contains(query.toLowerCase()),
-          ))
-            const Text('No matches'),
-          if (widget.maxSelected != null)
-            Text(
-              '${widget.value.length} / ${widget.maxSelected} selected',
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
-        ],
+            if (filtered.isEmpty) Text(widget.emptyText),
+            if (widget.maxSelected != null)
+              Text(
+                '${widget.value.length} / ${widget.maxSelected} selected',
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+          ],
+        ),
       ),
-    ),
-  );
+    );
+  }
 }
 
 class NgForm extends StatefulWidget {

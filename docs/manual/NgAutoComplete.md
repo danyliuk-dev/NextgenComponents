@@ -14,22 +14,35 @@ The documentation launcher embeds these running examples here. Choose a framewor
 
 ## Behavior and practical rules
 
-Text outside the suggestions is allowed. Use ComboBox when the value must be an existing key. Flutter initialValue sets the starting text; recreate the widget with a new Key for a complete external reset. Searching is local; the application owns server requests, debounce and cancellation. Store callbacks before submitting the draft.
+### Free text and filtering
+AutoComplete accepts free text; choosing a suggestion is optional. Blazor uses @bind-Value. Flutter initialValue is a starting draft, not a controlled value; use a new key for a wholesale reset. onChanged reports typing and accepted suggestions. Application validation and persistence remain separate.
+
+FilterMode/filterMode accepts contains, startsWith or endsWith (case-insensitive). MinLength/minLength must be nonnegative; default 1 hides suggestions for empty input. Placeholder is guidance, not an accessible label. ReadOnly/readOnly blocks editing and selection; Disabled/enabled=false blocks normal interaction.
+
+### Native popup differences
+Blazor retains the browser datalist. The supplied options are prefiltered, and Chrome may apply its own additional matching/display behavior. Flutter uses Material Autocomplete and an owned controller/focus node. Suggestion presentation, opening and keyboard behavior remain framework-native. Replace item lists when updating data; type again to refresh an already-open Flutter suggestion list.
+
+No remote async loading, debounce, virtualization, item/header/footer templates, clear action, custom popup API or full screen-reader certification is supplied. Filtering is not locale-aware collation; case folding can differ for non-ASCII strings. Web is the verified platform target.
 
 ## Blazor example
 
 ```razor
-<NgAutoComplete Label="City" Items="cities" @bind-Value="city"/>
-@code { private string? city; private string[] cities=["Kyiv","Lviv","Odesa"]; }
+<NgCheckBox Label="Read only" @bind-Value="locked"/>
+<NgAutoComplete Label="City" Items="cities" @bind-Value="city" FilterMode="startsWith" MinLength="2" ReadOnly="locked" Placeholder="Type at least two letters"/>
+<p>Current city: @city</p>
+@code { private bool locked;private string? city;private readonly string[] cities=["London","Lisbon","Los Angeles","Berlin"]; }
+
 ```
 
 ## Flutter example
 
 ```dart
-String city = '';
-Widget build(BuildContext context) => NgAutoComplete(label: 'City',
-  items: const ['Kyiv','Lviv','Odesa'], initialValue: city,
-  onChanged: (v) => city = v);
+bool locked=false;String city='';
+Widget build(BuildContext context)=>Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
+NgCheckBox(label:'Read only',value:locked,onChanged:(v)=>setState(()=>locked=v)),
+NgAutoComplete(label:'City',items:const ['London','Lisbon','Los Angeles','Berlin'],filterMode:'startsWith',minLength:2,readOnly:locked,placeholder:'Type at least two letters',onChanged:(v)=>setState(()=>city=v)),
+Text('Current city: $city')]);
+
 ```
 
 ## Blazor parameters and events
@@ -43,6 +56,9 @@ Names are case-sensitive. `?` permits null. `EditorRequired` parameters are mark
 | `Placeholder` | `string?` | not set | Hint displayed for empty input. |
 | `Items` | `IReadOnlyList<string>` | [] | Input collection. Replace it when changing records or configuration. |
 | `Disabled` | `bool` | false | Disable user interaction. |
+| `ReadOnly` | `bool` | false | Prevent changes while retaining supported viewing actions. |
+| `FilterMode` | `string` | "contains" | See the behavior rules and model contract above. |
+| `MinLength` | `int` | 1 | See the behavior rules and model contract above. |
 | `Value` | `string?` | model value | Current field value. |
 | `ValueChanged` | `EventCallback<string?>` | not set | Value change callback. |
 | `ValueExpression` | `Expression<Func<string?>>` | required | Supplied by @bind-Value; pass explicitly with manual binding. |
@@ -55,10 +71,14 @@ Names are case-sensitive. `?` permits null. `EditorRequired` parameters are mark
 | Argument | Type | Purpose |
 |---|---|---|
 | `label` | `String` | Visible label or accessible name. |
-| `items` | `List<String>` | Input collection. Replace it when changing records or configuration. |
 | `initialValue` | `String` | Starting field value, not continuous controlled state. |
+| `filterMode` | `String` | See the behavior rules and model contract above. |
+| `placeholder` | `String?` | Hint displayed for empty input. |
+| `items` | `List<String>` | Input collection. Replace it when changing records or configuration. |
 | `onChanged` | `ValueChanged<String>?` | Store the new value using setState or your state manager. |
 | `enabled` | `bool` | See the behavior rules and model contract above. |
+| `readOnly` | `bool` | Prevent changes while retaining supported viewing actions. |
+| `minLength` | `int` | See the behavior rules and model contract above. |
 
 ```dart
 const NgAutoComplete({
@@ -68,6 +88,10 @@ const NgAutoComplete({
     this.initialValue = '',
     this.onChanged,
     this.enabled = true,
+    this.readOnly = false,
+    this.filterMode = 'contains',
+    this.minLength = 1,
+    this.placeholder,
   });
 ```
 

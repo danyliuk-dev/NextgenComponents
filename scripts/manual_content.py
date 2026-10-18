@@ -2112,3 +2112,92 @@ D['NgTextBox']['blazor'] = D['NgTextBox']['blazor'].replace('>@</span>', '>@@</s
 D['NgForm']['blazor'] = D['NgForm']['blazor'].replace('OnClick="()=>{model=new();status="Not saved";}"', 'OnClick="Reset"').replace(' private async Task Save()', ' private void Reset(){model=new();status="Not saved";}\n private async Task Save()')
 for _editor in ('NgTextBox','NgTextArea'):
     D[_editor]['notes'] = '\n'.join(line.rstrip() for line in D[_editor]['notes'].splitlines())
+
+# Local selection input workbench, 0.30.
+D['NgAutoComplete']['notes'] = '''### Free text and filtering
+AutoComplete accepts free text; choosing a suggestion is optional. Blazor uses @bind-Value. Flutter initialValue is a starting draft, not a controlled value; use a new key for a wholesale reset. onChanged reports typing and accepted suggestions. Application validation and persistence remain separate.
+
+FilterMode/filterMode accepts contains, startsWith or endsWith (case-insensitive). MinLength/minLength must be nonnegative; default 1 hides suggestions for empty input. Placeholder is guidance, not an accessible label. ReadOnly/readOnly blocks editing and selection; Disabled/enabled=false blocks normal interaction.
+
+### Native popup differences
+Blazor retains the browser datalist. The supplied options are prefiltered, and Chrome may apply its own additional matching/display behavior. Flutter uses Material Autocomplete and an owned controller/focus node. Suggestion presentation, opening and keyboard behavior remain framework-native. Replace item lists when updating data; type again to refresh an already-open Flutter suggestion list.
+
+No remote async loading, debounce, virtualization, item/header/footer templates, clear action, custom popup API or full screen-reader certification is supplied. Filtering is not locale-aware collation; case folding can differ for non-ASCII strings. Web is the verified platform target.'''
+D['NgAutoComplete']['blazor'] = '''<NgCheckBox Label="Read only" @bind-Value="locked"/>
+<NgAutoComplete Label="City" Items="cities" @bind-Value="city" FilterMode="startsWith" MinLength="2" ReadOnly="locked" Placeholder="Type at least two letters"/>
+<p>Current city: @city</p>
+@code { private bool locked;private string? city;private readonly string[] cities=["London","Lisbon","Los Angeles","Berlin"]; }
+'''
+D['NgAutoComplete']['dart'] = '''bool locked=false;String city='';
+Widget build(BuildContext context)=>Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
+NgCheckBox(label:'Read only',value:locked,onChanged:(v)=>setState(()=>locked=v)),
+NgAutoComplete(label:'City',items:const ['London','Lisbon','Los Angeles','Berlin'],filterMode:'startsWith',minLength:2,readOnly:locked,placeholder:'Type at least two letters',onChanged:(v)=>setState(()=>city=v)),
+Text('Current city: $city')]);
+'''
+D['NgComboBox']['notes'] = '''### IDs, drafts and validation
+Value/value is an option ID, never its display label. Items need unique nonempty IDs and nonempty labels. Replace item collections to publish changes. Renaming the selected item updates its visible label without changing the ID. When the selected item disappears, the editor becomes empty while the parent still owns the old ID: clear or replace that ID in your application. In Flutter, replace the component key to discard an unrelated invalid draft; initial draft state otherwise remains local.
+
+Typing a case-insensitive exact enabled label selects its ID; duplicate labels resolve to the first enabled match. Arbitrary text stays visible and blocks validation without replacing the last valid model ID. Clearing emits null. Disabled items cannot be selected. Use @bind-Value and model annotations in Blazor; required and NgForm/Form in Flutter. Never persist an old ID merely because the draft is invalid: validate the enclosing form first.
+
+### Filtering and presentation
+FilterMode/filterMode is contains, startsWith or endsWith; MinLength/minLength defaults to 0. A positive minimum hides suggestions until enough text is entered. Placeholder labels empty input. ReadOnly/readOnly blocks typing, selection and clear while allowing inspection. ShowClearButton/showClearButton exposes a labelled clear action. The application owns any required-value error after clearing.
+
+ItemTemplate/itemBuilder decorates an option; its accessible name remains NgOption.Label. Keep templates noninteractive. Blazor EmptyText customizes the empty popup message. Flutter RawAutocomplete closes an empty popup; there is no equivalent empty popup template. Blazor shows disabled matches; Flutter omits them. Native keyboard navigation and popup positioning differ; Flutter active options now have a visible highlight.
+
+### Remaining scope
+No remote loading, virtualization, custom values, arbitrary model adapter, debounce, full popup header/footer templates or appearance variants. A parent data refresh can replace the displayed draft; preserve application drafts separately when needed. Web checks do not certify native/mobile or screen-reader parity.'''
+D['NgComboBox']['blazor'] = '''<NgCheckBox Label="Read only" @bind-Value="locked"/>
+<NgForm Model="model" OnValidSubmit="()=>status=$\"Saved ID: {model.Person}\"">
+<NgComboBox Label="Assignee" Items="people" @bind-Value="model.Person" ReadOnly="locked" ShowClearButton FilterMode="startsWith" MinLength="1" Placeholder="Search a person">
+<ItemTemplate Context="person"><strong>@person.Label</strong><small> · Team member</small></ItemTemplate>
+</NgComboBox>
+<NgButton Type="submit" Primary>Save selection</NgButton>
+</NgForm>
+<NgButton OnClick="Rename">Rename selected</NgButton><p>@status</p>
+@code {
+ private bool locked;private string status="Not saved";private Draft model=new();
+ private NgOption[] people=[new("a","Alex"),new("b","Bella"),new("x","Blocked",true)];
+ private void Rename(){people=people.Select(p=>p.Value==model.Person?p with{Label="Alex Morgan"}:p).ToArray();}
+ public class Draft{[System.ComponentModel.DataAnnotations.Required] public string? Person{get;set;}="a";}
+}
+'''
+# Keep Razor callback in a named method so the runnable example is easy to copy.
+D['NgComboBox']['blazor'] = D['NgComboBox']['blazor'].replace('OnValidSubmit="()=>status=$"Saved ID: {model.Person}""','OnValidSubmit="Save"').replace(' private void Rename()', ' private void Save()=>status=$"Saved ID: {model.Person}";\n private void Rename()')
+D['NgComboBox']['dart'] = '''bool locked=false;String? person='a';String status='Not saved';
+List<NgOption> people=[const NgOption('a','Alex'),const NgOption('b','Bella'),const NgOption('x','Blocked',disabled:true)];
+Widget build(BuildContext context)=>Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
+NgCheckBox(label:'Read only',value:locked,onChanged:(v)=>setState(()=>locked=v)),
+NgForm(submitLabel:'Save selection',onValidSubmit:()=>setState(()=>status='Saved ID: $person'),child:
+NgComboBox(label:'Assignee',value:person,items:people,required:true,readOnly:locked,showClearButton:true,filterMode:'startsWith',minLength:1,placeholder:'Search a person',onChanged:(v)=>setState(()=>person=v),itemBuilder:(_,o)=>Text('${o.label} · Team member'))),
+NgButton(onPressed:()=>setState(()=>people=people.map((o)=>o.value==person?NgOption(o.value,'Alex Morgan'):o).toList()),child:const Text('Rename selected')),
+Text(status)]);
+'''
+D['NgMultiSelect']['notes'] = '''### Controlled selection
+Value/value is an array/list of option IDs. Items require unique nonempty IDs and nonempty labels. The parent stores emitted copies and passes them back; never mutate an emitted list or source collection in place. Flutter validation reads the current controlled value, including parent-driven changes. In Blazor use model data annotations for required/minimum selection; Flutter exposes required. MaxSelected/maxSelected must be positive if supplied and limits user additions, not externally supplied values.
+
+Disabled options are locked: they cannot be added, removed through a chip, or cleared by bulk actions. An already-selected disabled ID counts toward the limit. Unknown selected IDs are shown as their raw ID and can be removed; the application decides how to reconcile removed records. ReadOnly/readOnly freezes selection while still allowing the list to be filtered. Disabled/enabled=false also disables filtering.
+
+### Search, templates and bulk actions
+FilterMode/filterMode accepts contains, startsWith or endsWith; MinLength/minLength defaults to 0. Placeholder and EmptyText/emptyText customize search and no-match guidance. Filtering never removes selections. ItemTemplate/itemBuilder and TagTemplate/tagBuilder decorate list items and selected chips while retaining accessible model labels. Use short noninteractive content.
+
+ShowActions/showActions adds Select filtered and Clear selection. Select filtered takes every enabled match plus the existing selection, preserving order and removing duplicates. If the combined selection exceeds MaxSelected, the entire action is rejected with a message: no partial selection. Clear selection removes every unlocked selection, including those hidden by the filter, and retains disabled selections. These bulk actions are original Nextgen behavior, not a claim of Telerik API compatibility.
+
+### Remaining scope
+This implementation is an inline checklist with selected chips, not a popup MultiSelect. Remote data, virtualization, grouping, custom values, summary tags, popup timing/close behavior, localization of every action/status, complete keyboard-focus management and screen-reader/native certification remain open. Case folding follows each platform, not culture-specific collation.'''
+D['NgMultiSelect']['blazor'] = '''<NgCheckBox Label="Read only" @bind-Value="locked"/>
+<NgMultiSelect Label="Services" Items="services" @bind-Value="selected" MaxSelected="3" ShowActions ReadOnly="locked" EmptyText="No matching services">
+<ItemTemplate Context="service"><strong>@service.Label</strong><small> · service</small></ItemTemplate>
+<TagTemplate Context="service"><span>✓ @service.Label</span></TagTemplate>
+</NgMultiSelect>
+<p>Selected IDs: @string.Join(", ",selected)</p>
+@code {private bool locked;private string[] selected=["locked"];private readonly NgOption[] services=[new("a","Alpha"),new("b","Beta"),new("g","Gamma"),new("locked","Mandatory",true)];}
+'''
+D['NgMultiSelect']['dart'] = '''bool locked=false;List<String> selected=['locked'];
+final services=const [NgOption('a','Alpha'),NgOption('b','Beta'),NgOption('g','Gamma'),NgOption('locked','Mandatory',disabled:true)];
+Widget build(BuildContext context)=>Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
+NgCheckBox(label:'Read only',value:locked,onChanged:(v)=>setState(()=>locked=v)),
+NgMultiSelect(label:'Services',value:selected,items:services,maxSelected:3,showActions:true,readOnly:locked,emptyText:'No matching services',onChanged:(v)=>setState(()=>selected=v),itemBuilder:(_,o)=>Text('${o.label} · service'),tagBuilder:(_,o)=>Text('✓ ${o.label}')),
+Text('Selected IDs: ${selected.join(', ')}')]);
+'''
+
+D['NgComboBox']['notes'] += '\n\nFlutter caches the currently computed popup options until the next text edit. After replacing Items or filter configuration, edit the query to recompute suggestions. A stale callback for a removed, renamed or newly disabled option is rejected against the current collection.'

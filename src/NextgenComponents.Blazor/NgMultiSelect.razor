@@ -1,21 +1,34 @@
 @inherits InputBase<string[]>
 <fieldset class="ng-multiselect" disabled="@Disabled"><legend>@Label</legend>
-<div class="ng-chips">@foreach(var selected in Value ?? []) { var option=Items.FirstOrDefault(x=>x.Value==selected);<button type="button" class="ng-chip" disabled="@Disabled" aria-label="@($"Remove {option?.Label ?? selected}")" @onclick="() => Toggle(selected)">@(option?.Label ?? selected) ×</button> }</div>
-<input class="ng-input" aria-label="@($"Filter {Label}")" placeholder="Filter options…" @bind="query" @bind:event="oninput" />
+<div class="ng-chips">@foreach(var selected in Value??[]){var option=Items.FirstOrDefault(x=>x.Value==selected);<button type="button" class="ng-chip" disabled="@(Disabled||ReadOnly||option?.Disabled==true)" aria-label="@($"Remove {option?.Label??selected}")" @onclick="()=>Toggle(selected)">@if(TagTemplate is not null&&option is not null){@TagTemplate(option)}else{@(option?.Label??selected)}@if(!Disabled&&!ReadOnly&&option?.Disabled!=true){<span class="ng-remove-mark" aria-hidden="true">×</span>}</button>}</div>
+<input class="ng-input" aria-label="@($"Filter {Label}")" placeholder="@Placeholder" @bind="query" @bind:event="oninput" />
+@if(ShowActions){<div class="ng-selection-actions"><button type="button" class="ng-button" disabled="@(Disabled||ReadOnly||!Filtered.Any(x=>!x.Disabled&&!(Value??[]).Contains(x.Value)))" @onclick="SelectFiltered">Select filtered</button><button type="button" class="ng-button" disabled="@(Disabled||ReadOnly||!(Value??[]).Any(CanRemove))" @onclick="Clear">Clear selection</button></div>}
 <div class="ng-multiselect-options">
-@foreach(var item in Items.Where(x=>x.Label.Contains(query,StringComparison.CurrentCultureIgnoreCase))) { <label class="ng-check"><input type="checkbox" checked="@((Value??[]).Contains(item.Value))" disabled="@(item.Disabled || Disabled || (MaxSelected is not null && (Value??[]).Length>=MaxSelected && !(Value??[]).Contains(item.Value)))" @onchange="() => Toggle(item.Value)" />@item.Label</label> }
-@if(!Items.Any(x=>x.Label.Contains(query,StringComparison.CurrentCultureIgnoreCase))) { <span class="ng-empty">No matches</span> }
+@foreach(var item in Filtered){<label class="ng-check"><input type="checkbox" aria-label="@item.Label" checked="@((Value??[]).Contains(item.Value))" disabled="@(item.Disabled||Disabled||ReadOnly||(MaxSelected is not null&&(Value??[]).Length>=MaxSelected&&!(Value??[]).Contains(item.Value)))" @onchange="()=>Toggle(item.Value)"/>@if(ItemTemplate is not null){@ItemTemplate(item)}else{@item.Label}</label>}
+@if(Filtered.Count==0){<span class="ng-empty">@EmptyText</span>}
 </div>
-@if(MaxSelected is not null) { <small>@((Value??[]).Length) / @MaxSelected selected</small> }
-@if(error is not null) { <span role="status" class="ng-field-error">@error</span> }
+@if(MaxSelected is not null){<small>@((Value??[]).Length) / @MaxSelected selected</small>}
+@if(error is not null){<span role="status" class="ng-field-error">@error</span>}
 </fieldset>
 @code {
- [Parameter] public string Label { get; set; } = "Options";
- [Parameter] public IReadOnlyList<NgOption> Items { get; set; } = [];
- [Parameter] public int? MaxSelected { get; set; }
- [Parameter] public bool Disabled { get; set; }
- private string query="";
- private string? error;
- private void Toggle(string item) { if(Disabled)return;var next=(Value??[]).ToList();error=null;if(!next.Remove(item)){if(Items.FirstOrDefault(x=>x.Value==item)?.Disabled==true)return;if(MaxSelected is not null && next.Count>=MaxSelected){error=$"Select at most {MaxSelected} options.";return;}next.Add(item);}CurrentValue=next.Distinct().ToArray(); }
- protected override bool TryParseValueFromString(string? value,out string[] result,[System.Diagnostics.CodeAnalysis.NotNullWhen(false)] out string? validationErrorMessage) { result=[]; validationErrorMessage=null;return true; }
+ [Parameter] public string Label {get;set;}="Options";
+ [Parameter] public IReadOnlyList<NgOption> Items {get;set;}=[];
+ [Parameter] public int? MaxSelected {get;set;}
+ [Parameter] public bool Disabled {get;set;}
+ [Parameter] public bool ReadOnly {get;set;}
+ [Parameter] public bool ShowActions {get;set;}
+ [Parameter] public string FilterMode {get;set;}="contains";
+ [Parameter] public int MinLength {get;set;}
+ [Parameter] public string Placeholder {get;set;}="Filter options…";
+ [Parameter] public string EmptyText {get;set;}="No matches";
+ [Parameter] public RenderFragment<NgOption>? ItemTemplate {get;set;}
+ [Parameter] public RenderFragment<NgOption>? TagTemplate {get;set;}
+ private string query="";private string? error;
+ private List<NgOption> Filtered=>Items.Where(x=>NgFilterRules.Matches(x.Label,query,FilterMode,MinLength)).ToList();
+ protected override void OnParametersSet(){base.OnParametersSet();NgFilterRules.Validate(FilterMode,MinLength);NgFilterRules.ValidateItems(Items);if(MaxSelected is <=0)throw new ArgumentOutOfRangeException(nameof(MaxSelected));}
+ private bool CanRemove(string id)=>Items.FirstOrDefault(x=>x.Value==id)?.Disabled!=true;
+ private void Clear(){if(Disabled||ReadOnly)return;error=null;CurrentValue=(Value??[]).Where(x=>!CanRemove(x)).ToArray();}
+ private void SelectFiltered(){if(Disabled||ReadOnly)return;var next=(Value??[]).Concat(Filtered.Where(x=>!x.Disabled).Select(x=>x.Value)).Distinct().ToArray();if(MaxSelected is not null&&next.Length>MaxSelected){error=$"Select at most {MaxSelected} options.";return;}error=null;CurrentValue=next;}
+ private void Toggle(string item){if(Disabled||ReadOnly||!CanRemove(item))return;var next=(Value??[]).ToList();error=null;if(!next.Remove(item)){if(!Items.Any(x=>x.Value==item))return;if(MaxSelected is not null&&next.Count>=MaxSelected){error=$"Select at most {MaxSelected} options.";return;}next.Add(item);}CurrentValue=next.Distinct().ToArray();}
+ protected override bool TryParseValueFromString(string? value,out string[] result,[System.Diagnostics.CodeAnalysis.NotNullWhen(false)] out string? validationErrorMessage){result=[];validationErrorMessage=null;return true;}
 }

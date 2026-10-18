@@ -164,3 +164,4 @@ textarea.ng-input { resize:vertical; min-height:80px; }
 .ng-form-fields{border:0;padding:0;margin:0;min-width:0}.ng-form-error{color:var(--ng-error)}
 
 .ng-text-field{margin-block-end:12px}
+.ng-selection-actions{display:flex;flex-wrap:wrap;gap:8px;margin-block:8px}.ng-combo-editor{display:flex;gap:8px;min-width:0}.ng-combo-editor>.ng-input{flex:1;min-width:0}.ng-remove-mark{margin-inline-start:6px}

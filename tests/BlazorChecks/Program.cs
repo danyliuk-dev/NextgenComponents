@@ -34,6 +34,10 @@ await Check<NgTabs>(new() { ["Items"] = new NgTab[] { new("One", Text("First")),
 await Check<NgDialog>(new() { ["Title"] = "Preview", ["ChildContent"] = Text("Details") }, "<dialog", "aria-labelledby", "Preview", "Details");
 await Check<NgTooltip>(new() { ["Text"] = "Help" }, "role=\"tooltip\"", "aria-describedby", "Help");
 await Check<NgNotification>(new() { ["Visible"] = true, ["Tone"] = "error", ["ChildContent"] = Text("Failed") }, "role=\"alert\"", "Dismiss notification", "Failed");
+await Check<NgAutoComplete>(new(){["Value"]="Lo",["ValueExpression"]=(Expression<Func<string?>>)(()=>name),["Items"]=new[]{"London","Lisbon"},["FilterMode"]="startsWith",["MinLength"]=2,["ReadOnly"]=true},"London","readonly");
+await Check<NgComboBox>(new(){["Value"]="a",["ValueExpression"]=(Expression<Func<string?>>)(()=>name),["Items"]=options,["ReadOnly"]=true,["ShowClearButton"]=true},"Alpha","readonly","Clear Choose an option");
+string[] selectedInputs=["b"];
+await Check<NgMultiSelect>(new(){["Value"]=selectedInputs,["ValueExpression"]=(Expression<Func<string[]>>)(()=>selectedInputs),["Items"]=options,["ShowActions"]=true,["ItemTemplate"]=(RenderFragment<NgOption>)(o=>Text("Item "+o.Label)),["TagTemplate"]=(RenderFragment<NgOption>)(o=>Text("Tag "+o.Label))},"Item Alpha","Tag Beta","Select filtered","Clear selection","aria-label=\"Remove Beta\"");
 DateOnly? date=new(2026,10,22);
 TimeOnly? time=new(9,30);
 DateTime? stamp=new(2026,10,22,9,30,0);
@@ -43,6 +47,10 @@ await Check<NgDatePicker>(new(){["Value"]=date,["ValueExpression"]=(Expression<F
 await Check<NgTimePicker>(new(){["Value"]=time,["ValueExpression"]=(Expression<Func<TimeOnly?>>)(()=>time)},"09:30", "type=\"time\"");
 await Check<NgDateTimePicker>(new(){["Value"]=stamp,["ValueExpression"]=(Expression<Func<DateTime?>>)(()=>stamp)},"2026-10-22", "datetime-local");
 void Rule(bool condition,string name){if(!condition)throw new Exception(name);count++;Console.WriteLine($"PASS {name}");}
+Rule(NgFilterRules.Matches("Alpha","PH","contains",2)&&!NgFilterRules.Matches("Alpha","ph","startsWith",0)&&NgFilterRules.Matches("Alpha","HA","endsWith",0),"selection filter operators");
+Rule(!NgFilterRules.Matches("Alpha","a","contains",2),"selection minimum query length");
+try{NgFilterRules.Validate("bad",0);throw new Exception("bad filter accepted");}catch(ArgumentException){Rule(true,"reject unsupported filter");}
+try{NgFilterRules.ValidateItems([new("a","First"),new("a","Second")]);throw new Exception("duplicate IDs accepted");}catch(ArgumentException){Rule(true,"reject duplicate selection IDs");}
 Rule(NgDateRules.TryDate("2024-02-29",out _),"leap day");
 foreach(var invalid in new[]{"2026-02-29","2026-04-31","2026-13-01","2026-1-01"}) Rule(!NgDateRules.TryDate(invalid,out _),$"reject {invalid}");
 Rule(!NgDateRules.TryTime("24:00",out _),"reject midnight overflow");

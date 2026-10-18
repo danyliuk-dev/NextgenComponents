@@ -10,7 +10,7 @@ lines = ['# Feature parity with Telerik UI for Blazor', '',
 'A component can be marked complete only after every reference feature is recorded, both implementations and detailed English examples exist, meaningful automated checks and visible Chrome scenarios pass, and remaining differences are explicitly accepted. Unknown is not complete. A test pass proves the tested behavior, not all reference behavior.', '',
 '## Current work order', '',
 '1. Chip/ChipList remaining gaps stay tracked below; do not mark full parity or silently accept them. Work is delivered in component blocks, not one release per parameter.',
-'2. ToggleButton/ButtonGroup and Menu/Drawer implementation blocks are delivered with explicit remaining gaps below. Stepper/Wizard is also delivered below; TextBox/TextArea/Form is delivered in 0.29; next work moves to existing selection inputs (AutoComplete, ComboBox, MultiSelect). No block is a full-parity verdict.',
+'2. ToggleButton/ButtonGroup and Menu/Drawer implementation blocks are delivered with explicit remaining gaps below. Stepper/Wizard is also delivered below; TextBox/TextArea/Form is delivered in 0.29; AutoComplete/ComboBox/MultiSelect is delivered in 0.30; next work moves to existing numeric and date/time inputs. No block is a full-parity verdict.',
 '3. Continue through existing editors/forms, data management, visualization and complex editors. Add new component names only after closing the active group or recording a user-approved exception.', '',
 '## Chip and ChipList feature matrix', '',
 'Sources: [Chip API](https://www.telerik.com/blazor-ui/documentation/api/telerik.blazor.components.telerikchip), [Chip appearance](https://www.telerik.com/blazor-ui/documentation/components/chip/appearance), [Chip events](https://www.telerik.com/blazor-ui/documentation/components/chip/events), [ChipList binding](https://www.telerik.com/blazor-ui/documentation/components/chiplist/data-bind), [ChipList templates](https://www.telerik.com/blazor-ui/documentation/components/chiplist/templates), [ChipList appearance](https://www.telerik.com/blazor-ui/documentation/components/chiplist/appearance), [keyboard demo](https://demos.telerik.com/blazor-ui/chiplist/keyboard-navigation), [RTL reference](https://www.telerik.com/blazor-ui/documentation/globalization/rtl-support), [ARIA reference](https://www.telerik.com/blazor-ui/documentation/components/chiplist/accessibility/wai-aria-support).', '',
@@ -61,7 +61,7 @@ for c in catalog['components']:
     cells=[]
     for platform in ('blazor','flutter'):
         v=c[platform];cells.append('Implemented subset: '+v['component'] if v['component'] else 'Not implemented')
-    lines.append(f"| [{c['name']}]({c['reference']}) | {' | '.join(cells)} | "+('Partial — matrix above' if c['name'] in ('Chip','ChipList','ToggleButton','ButtonGroup') else 'Partial — navigation matrix below' if c['name'] in ('Menu','Drawer') else 'Partial — wizard matrix below' if c['name'] in ('Stepper','Wizard') else 'Partial — text/form matrix below' if c['name'] in ('TextBox','TextArea','Form') else 'Not assessed')+' |')
+    lines.append(f"| [{c['name']}]({c['reference']}) | {' | '.join(cells)} | "+('Partial — matrix above' if c['name'] in ('Chip','ChipList','ToggleButton','ButtonGroup') else 'Partial — navigation matrix below' if c['name'] in ('Menu','Drawer') else 'Partial — wizard matrix below' if c['name'] in ('Stepper','Wizard') else 'Partial — text/form matrix below' if c['name'] in ('TextBox','TextArea','Form') else 'Partial — selection input matrix below' if c['name'] in ('AutoComplete','ComboBox','MultiSelect') else 'Not assessed')+' |')
 lines += ['', '## Menu and Drawer audit (0.27)', '',
 'Sources: [Menu overview](https://www.telerik.com/blazor-ui/documentation/components/menu/overview), [Menu binding](https://www.telerik.com/blazor-ui/documentation/components/menu/data-binding/overview), [Menu templates](https://www.telerik.com/blazor-ui/documentation/components/menu/templates), [Drawer overview](https://www.telerik.com/blazor-ui/documentation/components/drawer/overview), [Drawer templates](https://www.telerik.com/blazor-ui/documentation/components/drawer/templates), [mini mode](https://www.telerik.com/blazor-ui/documentation/components/drawer/mini-view).', '',
 '| Feature | Blazor / Flutter Web | Remaining difference |', '|---|---|---|',
@@ -98,5 +98,18 @@ lines += ['', '## TextBox, TextArea and Form audit (0.29)', '',
 '| Appearance and advanced text APIs | Shared original theme | Size/fill variants, clear/password modes and debounce remain open |',
 '| Form layout/schema | Explicit children | Automatic model fields, conditional schema, templates and column API remain open |',
 '| Certification | Web scenario checks | Native/mobile and full screen-reader audit deferred |', '']
+lines += ['', '## AutoComplete, ComboBox and MultiSelect audit (0.30)', '',
+'Sources: [AutoComplete filtering](https://www.telerik.com/blazor-ui/documentation/components/autocomplete/filter), [ComboBox templates](https://www.telerik.com/blazor-ui/documentation/components/combobox/templates), [ComboBox overview](https://www.telerik.com/blazor-ui/documentation/components/combobox/overview), [MultiSelect API](https://www.telerik.com/blazor-ui/documentation/api/telerik.blazor.components.telerikmultiselect-2).', '',
+'| Capability | Both Web implementations | Difference / open scope |', '|---|---|---|',
+'| Local filtering | contains/startsWith/endsWith; nonnegative minimum query length | Native datalist may further filter; no locale-specific collation |',
+'| Value contracts | AutoComplete free text; ComboBox IDs and invalid draft validation; MultiSelect copied ID lists | No arbitrary model mapping or custom values in ComboBox/MultiSelect |',
+'| Read-only and disabled | Editors block selection changes; readonly MultiSelect still filters | Native focus/popup behavior differs |',
+'| Templates | ComboBox items; MultiSelect items and tags; model accessible names retained | No AutoComplete, header/footer or summary templates |',
+'| Clear and bulk actions | ComboBox clear; MultiSelect atomic Select filtered and Clear selection | Bulk is original Nextgen behavior; disabled selections stay locked |',
+'| Limits and dynamic data | Positive selection limits, unique IDs, selected-label refresh and controlled validation | Parent owns missing IDs and external over-limit values |',
+'| Empty state and popup | Blazor ComboBox and both MultiSelect empty text | Flutter ComboBox closes empty popup; MultiSelect remains inline checklist |',
+'| Keyboard and accessibility | Native traversal; Flutter ComboBox active-option highlight | Full focus and screen-reader audit, mobile/native remain open |',
+'| Remote data and performance | Local collections only | OnRead, cancellation/debounce, virtualization and ValueMapper remain open |',
+'| Appearance and advanced behavior | Original shared theme | Grouping, popup settings/close events, full localization and appearance variants remain open |', '']
 (root/'docs/parity.md').write_text('\n'.join(lines).rstrip()+'\n')
 print(f"Generated {len(catalog['components'])} parity inventory entries")

@@ -14,22 +14,42 @@ The documentation launcher embeds these running examples here. Choose a framewor
 
 ## Behavior and practical rules
 
-Value is a collection of keys, not labels. The callback supplies a new list; replace the parent collection. MaxSelected limits additions while removal remains available. Flutter required demands at least one selection; in Blazor define the rule in the form model. Search is local; large-list virtualization and remote loading are not implemented.
+### Controlled selection
+Value/value is an array/list of option IDs. Items require unique nonempty IDs and nonempty labels. The parent stores emitted copies and passes them back; never mutate an emitted list or source collection in place. Flutter validation reads the current controlled value, including parent-driven changes. In Blazor use model data annotations for required/minimum selection; Flutter exposes required. MaxSelected/maxSelected must be positive if supplied and limits user additions, not externally supplied values.
+
+Disabled options are locked: they cannot be added, removed through a chip, or cleared by bulk actions. An already-selected disabled ID counts toward the limit. Unknown selected IDs are shown as their raw ID and can be removed; the application decides how to reconcile removed records. ReadOnly/readOnly freezes selection while still allowing the list to be filtered. Disabled/enabled=false also disables filtering.
+
+### Search, templates and bulk actions
+FilterMode/filterMode accepts contains, startsWith or endsWith; MinLength/minLength defaults to 0. Placeholder and EmptyText/emptyText customize search and no-match guidance. Filtering never removes selections. ItemTemplate/itemBuilder and TagTemplate/tagBuilder decorate list items and selected chips while retaining accessible model labels. Use short noninteractive content.
+
+ShowActions/showActions adds Select filtered and Clear selection. Select filtered takes every enabled match plus the existing selection, preserving order and removing duplicates. If the combined selection exceeds MaxSelected, the entire action is rejected with a message: no partial selection. Clear selection removes every unlocked selection, including those hidden by the filter, and retains disabled selections. These bulk actions are original Nextgen behavior, not a claim of Telerik API compatibility.
+
+### Remaining scope
+This implementation is an inline checklist with selected chips, not a popup MultiSelect. Remote data, virtualization, grouping, custom values, summary tags, popup timing/close behavior, localization of every action/status, complete keyboard-focus management and screen-reader/native certification remain open. Case folding follows each platform, not culture-specific collation.
 
 ## Blazor example
 
 ```razor
-<NgMultiSelect Label="Services" Items="options" MaxSelected="2" @bind-Value="selected"/>
-@code { private string[] selected=[]; private NgOption[] options=[new("a","Delivery"),new("b","Assembly")]; }
+<NgCheckBox Label="Read only" @bind-Value="locked"/>
+<NgMultiSelect Label="Services" Items="services" @bind-Value="selected" MaxSelected="3" ShowActions ReadOnly="locked" EmptyText="No matching services">
+<ItemTemplate Context="service"><strong>@service.Label</strong><small> · service</small></ItemTemplate>
+<TagTemplate Context="service"><span>✓ @service.Label</span></TagTemplate>
+</NgMultiSelect>
+<p>Selected IDs: @string.Join(", ",selected)</p>
+@code {private bool locked;private string[] selected=["locked"];private readonly NgOption[] services=[new("a","Alpha"),new("b","Beta"),new("g","Gamma"),new("locked","Mandatory",true)];}
+
 ```
 
 ## Flutter example
 
 ```dart
-List<String> selected = [];
-Widget build(BuildContext context) => NgMultiSelect(label: 'Services', value: selected,
-  items: const [NgOption('a','Delivery'),NgOption('b','Assembly')], maxSelected: 2,
-  onChanged: (v) => setState(() => selected = v));
+bool locked=false;List<String> selected=['locked'];
+final services=const [NgOption('a','Alpha'),NgOption('b','Beta'),NgOption('g','Gamma'),NgOption('locked','Mandatory',disabled:true)];
+Widget build(BuildContext context)=>Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
+NgCheckBox(label:'Read only',value:locked,onChanged:(v)=>setState(()=>locked=v)),
+NgMultiSelect(label:'Services',value:selected,items:services,maxSelected:3,showActions:true,readOnly:locked,emptyText:'No matching services',onChanged:(v)=>setState(()=>selected=v),itemBuilder:(_,o)=>Text('${o.label} · service'),tagBuilder:(_,o)=>Text('✓ ${o.label}')),
+Text('Selected IDs: ${selected.join(', ')}')]);
+
 ```
 
 ## Blazor parameters and events
@@ -42,6 +62,14 @@ Names are case-sensitive. `?` permits null. `EditorRequired` parameters are mark
 | `Items` | `IReadOnlyList<NgOption>` | [] | Input collection. Replace it when changing records or configuration. |
 | `MaxSelected` | `int?` | not set | See the behavior rules and model contract above. |
 | `Disabled` | `bool` | false | Disable user interaction. |
+| `ReadOnly` | `bool` | false | Prevent changes while retaining supported viewing actions. |
+| `ShowActions` | `bool` | false | See the behavior rules and model contract above. |
+| `FilterMode` | `string` | "contains" | See the behavior rules and model contract above. |
+| `MinLength` | `int` | 0 | See the behavior rules and model contract above. |
+| `Placeholder` | `string` | "Filter options…" | Hint displayed for empty input. |
+| `EmptyText` | `string` | "No matches" | See the behavior rules and model contract above. |
+| `ItemTemplate` | `RenderFragment<NgOption>?` | not set | See the behavior rules and model contract above. |
+| `TagTemplate` | `RenderFragment<NgOption>?` | not set | See the behavior rules and model contract above. |
 | `Value` | `string[]` | model value | Current field value. |
 | `ValueChanged` | `EventCallback<string[]>` | not set | Value change callback. |
 | `ValueExpression` | `Expression<Func<string[]>>` | required | Supplied by @bind-Value; pass explicitly with manual binding. |
@@ -60,6 +88,14 @@ Names are case-sensitive. `?` permits null. `EditorRequired` parameters are mark
 | `maxSelected` | `int?` | See the behavior rules and model contract above. |
 | `enabled` | `bool` | See the behavior rules and model contract above. |
 | `required` | `bool` | Require a nonempty/selected value during form validation. |
+| `readOnly` | `bool` | Prevent changes while retaining supported viewing actions. |
+| `showActions` | `bool` | See the behavior rules and model contract above. |
+| `filterMode` | `String` | See the behavior rules and model contract above. |
+| `placeholder` | `String` | Hint displayed for empty input. |
+| `emptyText` | `String` | See the behavior rules and model contract above. |
+| `minLength` | `int` | See the behavior rules and model contract above. |
+| `itemBuilder` | `Widget Function(BuildContext, NgOption)?` | See the behavior rules and model contract above. |
+| `tagBuilder` | `Widget Function(BuildContext, NgOption)?` | See the behavior rules and model contract above. |
 
 ```dart
 const NgMultiSelect({
@@ -71,6 +107,14 @@ const NgMultiSelect({
     this.maxSelected,
     this.enabled = true,
     this.required = false,
+    this.readOnly = false,
+    this.showActions = false,
+    this.filterMode = 'contains',
+    this.minLength = 0,
+    this.placeholder = 'Filter options…',
+    this.emptyText = 'No matches',
+    this.itemBuilder,
+    this.tagBuilder,
   });
 ```
 

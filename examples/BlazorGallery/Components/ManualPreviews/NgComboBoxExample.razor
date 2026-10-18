@@ -1,3 +1,16 @@
 @* Generated from scripts/manual_content.py *@
-<NgComboBox Label="Team" Items="options" @bind-Value="team"/>
-@code { private string? team="design"; private NgOption[] options=[new("design","Design"),new("dev","Engineering"),new("locked","Unavailable",true)]; }
+<NgCheckBox Label="Read only" @bind-Value="locked"/>
+<NgForm Model="model" OnValidSubmit="Save">
+<NgComboBox Label="Assignee" Items="people" @bind-Value="model.Person" ReadOnly="locked" ShowClearButton FilterMode="startsWith" MinLength="1" Placeholder="Search a person">
+<ItemTemplate Context="person"><strong>@person.Label</strong><small> · Team member</small></ItemTemplate>
+</NgComboBox>
+<NgButton Type="submit" Primary>Save selection</NgButton>
+</NgForm>
+<NgButton OnClick="Rename">Rename selected</NgButton><p>@status</p>
+@code {
+ private bool locked;private string status="Not saved";private Draft model=new();
+ private NgOption[] people=[new("a","Alex"),new("b","Bella"),new("x","Blocked",true)];
+ private void Save()=>status=$"Saved ID: {model.Person}";
+ private void Rename(){people=people.Select(p=>p.Value==model.Person?p with{Label="Alex Morgan"}:p).ToArray();}
+ public class Draft{[System.ComponentModel.DataAnnotations.Required] public string? Person{get;set;}="a";}
+}

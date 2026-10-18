@@ -1,3 +1,8 @@
 @* Generated from scripts/manual_content.py *@
-<NgMultiSelect Label="Services" Items="options" MaxSelected="2" @bind-Value="selected"/>
-@code { private string[] selected=[]; private NgOption[] options=[new("a","Delivery"),new("b","Assembly")]; }
+<NgCheckBox Label="Read only" @bind-Value="locked"/>
+<NgMultiSelect Label="Services" Items="services" @bind-Value="selected" MaxSelected="3" ShowActions ReadOnly="locked" EmptyText="No matching services">
+<ItemTemplate Context="service"><strong>@service.Label</strong><small> · service</small></ItemTemplate>
+<TagTemplate Context="service"><span>✓ @service.Label</span></TagTemplate>
+</NgMultiSelect>
+<p>Selected IDs: @string.Join(", ",selected)</p>
+@code {private bool locked;private string[] selected=["locked"];private readonly NgOption[] services=[new("a","Alpha"),new("b","Beta"),new("g","Gamma"),new("locked","Mandatory",true)];}

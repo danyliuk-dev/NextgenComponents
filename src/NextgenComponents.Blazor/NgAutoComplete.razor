@@ -1,7 +1,7 @@
 @inherits InputBase<string?>
 <div class="ng-field"><label for="@Id">@Label</label>
-<input @attributes="AdditionalAttributes" id="@Id" class="ng-input @CssClass" list="@(Id+"-suggestions")" value="@CurrentValueAsString" @oninput="e => CurrentValueAsString=e.Value?.ToString()" disabled="@Disabled" autocomplete="off" placeholder="@Placeholder" />
-<datalist id="@(Id+"-suggestions")">@foreach(var item in Items) { <option value="@item"></option> }</datalist>
+<input @attributes="AdditionalAttributes" id="@Id" class="ng-input @CssClass" list="@(Id+"-suggestions")" value="@CurrentValueAsString" readonly="@ReadOnly" @oninput="Input" disabled="@Disabled" autocomplete="off" placeholder="@Placeholder" />
+<datalist id="@(Id+"-suggestions")">@foreach(var item in Items.Where(x=>NgFilterRules.Matches(x,CurrentValueAsString??"",FilterMode,MinLength))) { <option value="@item"></option> }</datalist>
 </div>
 @code {
  [Parameter] public string Id { get; set; } = "ng-"+Guid.NewGuid().ToString("N");
@@ -9,5 +9,10 @@
  [Parameter] public string? Placeholder { get; set; }
  [Parameter] public IReadOnlyList<string> Items { get; set; } = [];
  [Parameter] public bool Disabled { get; set; }
+ [Parameter] public bool ReadOnly {get;set;}
+ [Parameter] public string FilterMode {get;set;}="contains";
+ [Parameter] public int MinLength {get;set;}=1;
+ protected override void OnParametersSet(){base.OnParametersSet();NgFilterRules.Validate(FilterMode,MinLength);}
+ private void Input(ChangeEventArgs e){if(!Disabled&&!ReadOnly)CurrentValueAsString=e.Value?.ToString();}
  protected override bool TryParseValueFromString(string? value,out string? result,[System.Diagnostics.CodeAnalysis.NotNullWhen(false)] out string? validationErrorMessage) { result=value; validationErrorMessage=null; return true; }
 }
