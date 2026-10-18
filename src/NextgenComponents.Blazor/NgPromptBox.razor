@@ -1,0 +1,22 @@
+<div class="ng-prompt-box" aria-busy="@(Busy?"true":"false")">
+ <label class="ng-field">@Label<textarea class="ng-input" aria-label="@Label" rows="3" maxlength="@MaxLength" placeholder="@Placeholder" value="@draft" @oninput="Edit" readonly="@(ReadOnly||Busy)"></textarea></label>
+ <div class="ng-prompt-actions"><small>@draft.Length / @MaxLength · Enter adds a new line</small>
+ @if(Busy){<NgButton OnClick="()=>OnCancel.InvokeAsync()" Disabled="@(!OnCancel.HasDelegate)">Cancel</NgButton>}
+ else{<NgButton Primary OnClick="Submit" Disabled="@(ReadOnly||string.IsNullOrWhiteSpace(draft)||!OnSubmit.HasDelegate)">Send</NgButton>}
+ </div>
+</div>
+@code {
+ [Parameter] public string Label {get;set;}="Prompt";
+ [Parameter] public string Value {get;set;}="";
+ [Parameter] public EventCallback<string> ValueChanged {get;set;}
+ [Parameter] public string Placeholder {get;set;}="Describe what you need…";
+ [Parameter] public int MaxLength {get;set;}=8000;
+ [Parameter] public bool Busy {get;set;}
+ [Parameter] public bool ReadOnly {get;set;}
+ [Parameter] public EventCallback<string> OnSubmit {get;set;}
+ [Parameter] public EventCallback OnCancel {get;set;}
+ private string draft="";private string? incoming;
+ protected override void OnParametersSet(){if(MaxLength<1||MaxLength>8000||Value is null||Value.Length>MaxLength)throw new ArgumentException("Use MaxLength 1–8000 and a Value within that limit.");if(Value!=incoming){draft=Value;incoming=Value;}}
+ private async Task Edit(ChangeEventArgs e){if(Busy||ReadOnly)return;draft=e.Value?.ToString()??"";await ValueChanged.InvokeAsync(draft);}
+ private async Task Submit(){if(!Busy&&!ReadOnly&&!string.IsNullOrWhiteSpace(draft)&&draft.Length<=MaxLength)await OnSubmit.InvokeAsync(draft.Trim());}
+}

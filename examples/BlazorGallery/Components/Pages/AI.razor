@@ -1,0 +1,19 @@
+@page "/ai"
+<PageTitle>Nextgen • AI interface</PageTitle>
+<div class="ng-scope gallery" data-ng-theme="@(dark?"dark":"light")"><main>
+<nav><strong>N NEXTGEN COMPONENTS</strong><div class="row"><a href="/">Foundation</a><NgSwitch Label="Dark theme" @bind-Value="dark"/></div></nav>
+<section class="hero"><p class="eyebrow">BLAZOR / AI INTERFACE 0.10</p><h1>From prompt<br/>to response.</h1><p>Local demonstration handler. No AI provider is connected and no prompts leave this app.</p></section>
+<section class="panel"><div class="row"><NgCheckBox Label="Read only" @bind-Value="readOnly"/><NgCheckBox Label="Simulate error" @bind-Value="fail"/><NgCheckBox Label="Ignore cancellation (demo)" @bind-Value="ignoreCancellation"/><NgButton OnClick='()=>prompt="External prompt replacement"'>Replace prompt</NgButton></div>
+<NgAIPrompt Label="Writing assistant" @bind-Value="prompt" Generate="Generate" ReadOnly="readOnly" Suggestions="suggestions" OnCompleted="Completed" OnFeedback="Feedback"/>
+<p id="ai-events">Started: @started · Completed: @completed · Feedback: @feedback</p></section>
+<section class="panel"><h2>Standalone PromptBox</h2><NgPromptBox Label="Standalone prompt" @bind-Value="quick" OnSubmit="text=>quickStatus=text"/><p>Submitted: @quickStatus</p></section>
+<footer>39 CONTROLS / 45 CATALOGUE ENTRIES · WEB FIRST</footer></main></div>
+@code {
+ private bool dark,readOnly,fail,ignoreCancellation;
+ private string prompt="Draft a welcome message",quick="",quickStatus="none",feedback="none";
+ private int started,completed;
+ private readonly string[] suggestions=["Draft a welcome message","Summarize the project goals","Suggest three next steps"];
+ private async Task<string> Generate(string text,CancellationToken token){started++;var error=fail;var ignore=ignoreCancellation;await Task.Delay(ignore?4000:1100,ignore?CancellationToken.None:token);if(error)throw new InvalidOperationException("Simulated provider failure");return $"Local demo response\n\nRequest: {text}\n\n1. Clarify the intended audience.\n2. State the main idea in a short paragraph.\n3. Review the result before sharing.\n\nConnect your application handler to generate a real AI response.";}
+ private void Completed(NgPromptResponse response)=>completed++;
+ private void Feedback(NgPromptFeedback value)=>feedback=$"Response {value.Response.Id}: {(value.Helpful is null?"cleared":value.Helpful.Value?"helpful":"not helpful")}";
+}

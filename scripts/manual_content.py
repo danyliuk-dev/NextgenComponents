@@ -234,3 +234,97 @@ ClusterMarkers/clusterMarkers (по умолчанию false) объединяе
 No objects — пустая модель; No basemap configured — нет источника тайлов. Loading tiles, Tiles loaded и Some map tiles unavailable показывают загрузку текущего набора тайлов. При отказе сети маркеры, линии и выбор продолжают работать; повторная навигация или смена источника запрашивает новые тайлы. Количество объектов всегда отображается отдельно. Отсутствие подложки не означает отсутствие данных.
 
 Одна растровая подложка, точки, линии и простые полигоны — текущий объём. Геокодирование, маршрутизация, GeoJSON import, bubble layers, редактирование геометрии, экспорт и offline-режим пока не реализованы. Для больших данных сначала фильтруйте объекты по области/задаче в приложении. Полный API Telerik не воспроизводится.''')
+
+add('NgPromptBox','Поле запроса','Многострочное поле для запроса или сообщения с кнопками Send/Cancel. Подходит для собственного чата, AI-формы или поиска с асинхронной обработкой.',
+'''<NgPromptBox Label="Запрос" @bind-Value="prompt" Busy="busy" OnSubmit="Submit" OnCancel="Cancel"/>
+<p>@result</p>
+@code {
+ private string prompt="",result=""; private bool busy; private int revision;
+ private async Task Submit(string text) {
+  var request=++revision; busy=true;
+  await Task.Delay(700); // Локальный пример; замените обработчиком приложения.
+  if(request!=revision)return;
+  result=$"Получен запрос: {text}"; busy=false;
+ }
+ private void Cancel(){revision++;busy=false;result="Отменено";}
+}''',
+"""String prompt = '', result = '';
+bool busy = false;
+int revision = 0;
+Future<void> submit(String text) async {
+  final request = ++revision;
+  setState(() => busy = true);
+  await Future<void>.delayed(const Duration(milliseconds: 700));
+  if (!mounted || request != revision) return;
+  setState(() { result = 'Получен запрос: $text'; busy = false; });
+}
+Widget build(BuildContext context) => NgPromptBox(label: 'Запрос', value: prompt,
+  onChanged: (v) => setState(() => prompt = v), busy: busy,
+  onSubmit: submit,
+  onCancel: () => setState(() { revision++; busy = false; result = 'Отменено'; }));""",
+'''Value/value — текст, ValueChanged/onChanged — изменение при вводе. Сохраняйте новое значение у родителя, как в примере. Для внешней замены передайте другое значение. Поле имеет локальный черновик; повторная передача того же внешнего значения не сбрасывает его. Label/label задаёт доступное имя, Placeholder/placeholder — подсказку внутри пустого поля.
+
+MaxLength/maxLength — 1–8000 UTF-16 code units, по умолчанию 8000. Emoji может занимать две единицы; обе платформы используют одинаковую границу. Слишком длинный внешний Value/value отклоняется, ввод ограничивается в поле. Текст не превращается в HTML. Enter добавляет новую строку; Tab переводит фокус на кнопку, Enter/Space нажимает её. Автоматической отправки по Enter нет. Blazor поле начинается с трёх строк и меняется по высоте мышью; Flutter — 3–6 строк со внутренней прокруткой.
+
+OnSubmit/onSubmit получает текст с обрезанными пробелами по краям. Пустой/пробельный запрос и отсутствие обработчика отключают Send. Компонент не очищает поле после отправки. Busy/busy блокирует редактирование и заменяет Send на Cancel; OnCancel/onCancel должен отменять работу приложения. ReadOnly/readOnly запрещает ввод и отправку; Cancel остаётся доступным для уже выполняемой работы. Без обработчика отмены Cancel отключён.
+
+PromptBox сам не выполняет HTTP-запрос, не знает состояния генерации и не гарантирует отмену провайдера. Родитель должен сразу установить Busy/busy перед первым await, обработать ошибку и убрать busy в finally. Пример показывает игнорирование запоздалого результата по номеру запроса; транспортную отмену нужно реализовать в адаптере. Для готового управления историей, отменой и ошибками используйте NgAIPrompt.
+
+Текущий объём — многострочный текст, счётчик, отправка/отмена, readonly и внешнее обновление. Вложения, speech-to-text, режим Auto/SingleLine, пользовательские adornments и streaming пока не реализованы. Проверен Web; мобильные платформы отдельно.''')
+
+add('NgAIPrompt','Работа с AI-запросами','Интерфейс запроса и ответа с подсказками, историей, отменой, повтором и оценкой. Модель AI не встроена: генерацию выполняет переданный обработчик приложения.',
+'''<NgAIPrompt Label="Помощник" @bind-Value="prompt" Generate="Generate"
+    Suggestions="suggestions" OnCompleted="Completed" OnFeedback="Feedback"/>
+<p>@status</p>
+@code {
+ private string prompt="Составь план встречи",status="";
+ private string[] suggestions=["Составь план встречи","Предложи следующие шаги"];
+ private async Task<string> Generate(string text,CancellationToken cancellation) {
+  await Task.Delay(600,cancellation);
+  return $"Локальный пример ответа на: {text}"; // Здесь подключите сервис приложения.
+ }
+ private void Completed(NgPromptResponse response){status=$"Ответ {response.Id} готов";}
+ private void Feedback(NgPromptFeedback feedback){status=$"Оценка ответа {feedback.Response.Id}: {feedback.Helpful}";}
+}''',
+"""String prompt = 'Составь план встречи', status = '';
+Future<String> generate(String text, NgPromptCancellation cancellation) async {
+  await Future<void>.delayed(const Duration(milliseconds: 600));
+  cancellation.throwIfCancelled();
+  return 'Локальный пример ответа на: $text'; // Замените сервисом приложения.
+}
+Widget build(BuildContext context) => NgAIPrompt(label: 'Помощник', value: prompt,
+  onChanged: (v) => setState(() => prompt = v), generate: generate,
+  suggestions: const ['Составь план встречи', 'Предложи следующие шаги'],
+  onCompleted: (r) => setState(() => status = 'Ответ ${r.id} готов'),
+  onFeedback: (f) => setState(() => status = 'Оценка ответа ${f.response.id}: ${f.helpful}'));""",
+'''### Подключение генерации
+
+Blazor Generate — Func<string, CancellationToken, Task<string>>. Flutter generate — NgPromptGenerator, то есть Future<String> Function(String, NgPromptCancellation). Обработчик получает зафиксированный, обрезанный по краям запрос и возвращает готовый текст ответа. Без обработчика поле отключено и показано Connect a generation handler. Примеры в этом руководстве и галерея используют локальную задержку и предсказуемый ответ, а не настоящую модель AI.
+
+Подключите обработчик к API своего приложения: он отвечает за аутентификацию, выбор модели, лимиты запросов, таймаут и вызов провайдера. Не помещайте секретный ключ провайдера в Flutter Web или Blazor WebAssembly; вызов с ключом выполняйте на своём сервере. Компонент сам ничего не отправляет в сеть. Для Blazor передавайте полученный CancellationToken в HTTP/AI SDK. Для Flutter подключайте cancellation.whenCancelled к отмене HTTP-клиента; cancellation.isCancelled и throwIfCancelled() позволяют проверить отмену перед дальнейшими действиями. Простая проверка после await не останавливает сетевой запрос — она лишь прекращает обработку его результата.
+
+### Ввод и жизненный цикл
+
+Value/value и ValueChanged/onChanged управляют черновиком, как у NgPromptBox. Лимит запроса — 8000 UTF-16 code units. Suggestions/suggestions — до восьми непустых подсказок по 200 единиц каждая. Подсказка заполняет поле, но не отправляет запрос автоматически. Отправка происходит кнопкой Send; Enter в поле создаёт новую строку. Повторный Send блокируется до окончания работы. Во время запроса нельзя менять текст через поле или подсказки, но родитель может передать новый Value/value; это изменит следующий черновик, а не уже отправленный запрос.
+
+Cancel сразу возвращает интерфейс в состояние готовности и сигнализирует провайдеру отмену. После этого можно отправить новый запрос. Если старый обработчик проигнорировал отмену и позднее завершился, его ответ или ошибка не попадут в историю и не заменят новый результат. При удалении компонента также отменяется текущая работа. ReadOnly/readOnly или удаление Generate/generate во время запроса отменяет его; история остаётся доступной для просмотра и копирования. Отмена интерфейса не гарантирует прекращения расходов/работы внешнего сервиса — транспортный адаптер должен использовать сигнал отмены.
+
+Ошибка провайдера показывает Generation failed. Try again.; детали исключения не выводятся. Логируйте их в обработчике приложения. Retry request повторяет последний неудачный запрос, даже если текущий черновик уже изменился. Пустой ответ и ответ длиннее 32000 UTF-16 единиц также считаются ошибкой. Предыдущая история при ошибке сохраняется. Таймаут задаётся приложением; без него зависший обработчик остаётся активным до Cancel.
+
+### Ответ, история и события
+
+Ответ отображается как обычный выбираемый текст: HTML/Markdown не исполняются, ссылки не открываются автоматически. Copy response копирует выбранный ответ; при недоступном clipboard показывается подсказка выделить текст вручную. История хранит до 20 последних успешных ответов; старейший удаляется автоматически. Нажатие на запись показывает соответствующий ответ. Regenerate повторяет запрос выбранной записи и создаёт новую запись с новым ID. Номера уникальны только в пределах экземпляра компонента, не являются серверными ключами и не сбрасываются при Clear history.
+
+OnCompleted/onCompleted вызывается только для принятого успешного ответа. NgPromptResponse содержит Id/id (int), Prompt/prompt и Text/text (строки). Отменённые, ошибочные и запоздалые ответы не вызывают событие. Сохранение и отправка данных на сервер остаются у приложения. Обработчик события не является частью вызова AI; ошибки ваших callbacks обрабатывайте в приложении.
+
+Helpful / Not helpful переключают оценку выбранного ответа. Повторное нажатие активной оценки очищает её. OnFeedback/onFeedback получает NgPromptFeedback: Response/response и Helpful/helpful (true, false или null). Оценка локальная, без автоматической отправки провайдеру; сохраняйте её в своём callback при необходимости. ReadOnly запрещает отправку, повтор, очистку и оценку, но сохраняет выбор старого ответа и копирование.
+
+Clear history удаляет ответы и оценки; в UI кнопка отключена во время генерации. Черновик остаётся. История и оценки живут только в памяти компонента и исчезают при его удалении/перезагрузке страницы. Для сохранения используйте OnCompleted/onCompleted и своё хранилище; загрузка внешней истории пока не поддерживается.
+
+### Модель сессии и границы
+
+NgPromptSession доступна для собственной оболочки: RunAsync/run, Cancel/cancel, Select/select, Clear/clear, Dispose/dispose; Responses/responses — неизменяемая коллекция, Selected/selected, IsBusy/isBusy, Error/error, Status/status — состояние. C#: Changed; Flutter: ChangeNotifier. Используйте сессию в UI-контексте, освобождайте её при завершении. Прямой Clear/clear сессии отменяет работу и не допускает позднего восстановления истории. NgAIPrompt сам создаёт и освобождает свою сессию.
+
+Blazor нужен интерактивный render mode; Flutter использует текущую тему. При ширине менее 760 px ввод, история и ответ располагаются вертикально. Веб-буфер обмена обычно требует HTTPS либо localhost. Статус операции объявляется через live region; полная сертификация screen reader не заявляется.
+
+В этой версии нет streaming, tool calling, автодействий по ответу модели, команд/кастомных вкладок, вложений, speech-to-text, сохранения истории между сессиями или встроенной интеграции с конкретным AI SDK. PromptBox и AIPrompt покрывают ограниченный рабочий набор возможностей Telerik, без API-совместимости. Проверен Web в Chrome, native mobile остаётся отдельным этапом.''')

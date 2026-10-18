@@ -34,7 +34,7 @@ Widget build(BuildContext context) => NgSpreadsheet(value: sheet,
 | `Label` | `string` | "Spreadsheet" | Подпись элемента или доступное имя. |
 | `Value` | `NgSheet` | обязательный | Текущее значение; тип и правила описаны выше. |
 | `ValueChanged` | `EventCallback<NgSheet>` | не задан | Новое значение для родителя; сохраните его в модели. |
-| `ReadOnly` | `bool` | false | Запрещает редактирование и историю, сохраняя просмотр. |
+| `ReadOnly` | `bool` | false | Запрещает изменение данных, сохраняя просмотр; точное поведение описано выше. |
 
 ## Параметры и события Flutter
 
@@ -45,7 +45,7 @@ Widget build(BuildContext context) => NgSpreadsheet(value: sheet,
 | `label` | `String` | Подпись элемента или доступное имя. |
 | `value` | `NgSheet` | Текущее значение; тип и правила описаны выше. |
 | `onChanged` | `ValueChanged<NgSheet>?` | Новое значение для родителя; обновите состояние через setState. |
-| `readOnly` | `bool` | Запрещает редактирование и историю, сохраняя просмотр. |
+| `readOnly` | `bool` | Запрещает изменение данных, сохраняя просмотр; точное поведение описано выше. |
 
 ```dart
 const NgSpreadsheet({

@@ -76,7 +76,7 @@ Widget build(BuildContext context) => Column(children: [
 | `Label` | `string` | "Document editor" | Подпись элемента или доступное имя. |
 | `Value` | `NgDocument` | обязательный | Текущее значение; тип и правила описаны выше. |
 | `ValueChanged` | `EventCallback<NgDocument>` | не задан | Новое значение для родителя; сохраните его в модели. |
-| `ReadOnly` | `bool` | false | Запрещает редактирование и историю, сохраняя просмотр. |
+| `ReadOnly` | `bool` | false | Запрещает изменение данных, сохраняя просмотр; точное поведение описано выше. |
 
 ## Параметры и события Flutter
 
@@ -87,7 +87,7 @@ Widget build(BuildContext context) => Column(children: [
 | `label` | `String` | Подпись элемента или доступное имя. |
 | `value` | `NgDocument` | Текущее значение; тип и правила описаны выше. |
 | `onChanged` | `ValueChanged<NgDocument>` | Новое значение для родителя; обновите состояние через setState. |
-| `readOnly` | `bool` | Запрещает редактирование и историю, сохраняя просмотр. |
+| `readOnly` | `bool` | Запрещает изменение данных, сохраняя просмотр; точное поведение описано выше. |
 
 ```dart
 const NgEditor({

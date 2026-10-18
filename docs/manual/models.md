@@ -6,6 +6,9 @@
 
 | Модель | Состав и правила |
 |---|---|
+| NgPromptResponse | Id/id, Prompt/prompt, Text/text. Неизменяемый ответ; ID возрастает в пределах сессии. |
+| NgPromptFeedback | Response/response и Helpful/helpful: true, false или null (снятие оценки). |
+| NgPromptSession | Состояние запроса и история последних 20 ответов; отмена исключает поздний результат. См. [NgAIPrompt](NgAIPrompt.md). |
 | NgOption | Blazor `new NgOption(value,label,disabled)`; Flutter `NgOption(value,label,disabled: true)`. Ключ уникален, подпись отображается пользователю. |
 | NgTab | Подпись и содержимое: RenderFragment в Blazor, Widget во Flutter. |
 | NgDateRange | Начало и конец: DateOnly? в Blazor, DateTime? во Flutter. Частично заполненный черновик допустим, правило формы решает, можно ли его отправлять. |

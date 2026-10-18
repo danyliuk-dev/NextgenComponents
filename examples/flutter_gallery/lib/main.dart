@@ -1,3 +1,4 @@
+import 'ai_gallery.dart';
 import 'map_gallery.dart';
 import 'pdf_gallery.dart';
 import 'diagram_gallery.dart';
@@ -27,7 +28,8 @@ class _GalleryState extends State<Gallery> {
       editor = false,
       diagram = false,
       pdf = false,
-      map = false;
+      map = false,
+      ai = false;
   @override
   Widget build(BuildContext context) => MaterialApp(
     title: 'Nextgen • Flutter',
@@ -35,7 +37,13 @@ class _GalleryState extends State<Gallery> {
     theme: NgTheme.light(compact: compact),
     darkTheme: NgTheme.dark(compact: compact),
     themeMode: dark ? ThemeMode.dark : ThemeMode.light,
-    home: map
+    home: ai
+        ? AiGallery(
+            dark: dark,
+            onDark: (v) => setState(() => dark = v),
+            onBack: () => setState(() => ai = false),
+          )
+        : map
         ? MapGallery(
             dark: dark,
             onDark: (v) => setState(() => dark = v),
@@ -99,6 +107,7 @@ class _GalleryState extends State<Gallery> {
             onForms: () => setState(() => forms = true),
             onData: () => setState(() => data = true),
             onAnalytics: () => setState(() => analytics = true),
+            onAi: () => setState(() => ai = true),
             onMap: () => setState(() => map = true),
             onPdf: () => setState(() => pdf = true),
             onDiagram: () => setState(() => diagram = true),
@@ -121,7 +130,8 @@ class GalleryPage extends StatefulWidget {
       onEditor,
       onDiagram,
       onPdf,
-      onMap;
+      onMap,
+      onAi;
   final ValueChanged<bool> onDark, onCompact;
   const GalleryPage({
     super.key,
@@ -133,6 +143,7 @@ class GalleryPage extends StatefulWidget {
     required this.onDiagram,
     required this.onPdf,
     required this.onMap,
+    required this.onAi,
     required this.dark,
     required this.compact,
     required this.onDark,
@@ -205,6 +216,10 @@ class _GalleryPageState extends State<GalleryPage> {
                         fontWeight: FontWeight.bold,
                         letterSpacing: 1,
                       ),
+                    ),
+                    TextButton(
+                      onPressed: widget.onAi,
+                      child: const Text('AI interface'),
                     ),
                     TextButton(
                       onPressed: widget.onMap,

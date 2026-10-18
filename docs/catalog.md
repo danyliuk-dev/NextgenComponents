@@ -6,10 +6,10 @@ Snapshot: 2026-10-18. 139 named entries from the [Telerik Blazor index](https://
 
 | Category | Telerik entry | Blazor | Flutter | Phase |
 |---|---|---|---|---|
-| AI Interface | [AI Prompt](https://www.telerik.com/blazor-ui/ai-prompt) | planned | planned | 5 |
+| AI Interface | [AI Prompt](https://www.telerik.com/blazor-ui/ai-prompt) | foundation: `NgAIPrompt` | foundation: `NgAIPrompt` | 5 |
 | AI Interface | [Inline AI Prompt](https://www.telerik.com/blazor-ui/inline-ai-prompt) | planned | planned | 5 |
 | AI Interface | [LLM Kit](https://www.telerik.com/blazor-ui/llm-kit) | planned | planned | 5 |
-| AI Interface | [PromptBox](https://www.telerik.com/blazor-ui/promptbox) | planned | planned | 5 |
+| AI Interface | [PromptBox](https://www.telerik.com/blazor-ui/promptbox) | foundation: `NgPromptBox` | foundation: `NgPromptBox` | 5 |
 | AI Interface | [SmartPasteButton](https://www.telerik.com/blazor-ui/smartpastebutton) | planned | planned | 5 |
 | Navigation | [AppBar](https://www.telerik.com/blazor-ui/appbar) | planned | planned | 2 |
 | Navigation | [Breadcrumb](https://www.telerik.com/blazor-ui/breadcrumb) | foundation: `NgBreadcrumb` | foundation: `NgBreadcrumb` | 3 |

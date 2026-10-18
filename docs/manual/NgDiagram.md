@@ -79,7 +79,7 @@ Widget build(BuildContext context) => NgDiagram(label: 'Процесс', value: 
 | `SelectedNodeIdChanged` | `EventCallback<string?>` | не задан | Смотрите поведение и тип модели выше. |
 | `SelectedEdgeId` | `string?` | не задан | Смотрите поведение и тип модели выше. |
 | `SelectedEdgeIdChanged` | `EventCallback<string?>` | не задан | Смотрите поведение и тип модели выше. |
-| `ReadOnly` | `bool` | false | Запрещает редактирование и историю, сохраняя просмотр. |
+| `ReadOnly` | `bool` | false | Запрещает изменение данных, сохраняя просмотр; точное поведение описано выше. |
 
 ## Параметры и события Flutter
 
@@ -94,7 +94,7 @@ Widget build(BuildContext context) => NgDiagram(label: 'Процесс', value: 
 | `selectedEdgeId` | `String?` | Смотрите поведение и тип модели выше. |
 | `onSelectedNodeIdChanged` | `ValueChanged<String?>?` | Смотрите поведение и тип модели выше. |
 | `onSelectedEdgeIdChanged` | `ValueChanged<String?>?` | Смотрите поведение и тип модели выше. |
-| `readOnly` | `bool` | Запрещает редактирование и историю, сохраняя просмотр. |
+| `readOnly` | `bool` | Запрещает изменение данных, сохраняя просмотр; точное поведение описано выше. |
 
 ```dart
 const NgDiagram({

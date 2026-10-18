@@ -1,6 +1,6 @@
 # Руководство Nextgen Components
 
-Версия 0.9.1. Подробное руководство для всех публичных компонентов Blazor и Flutter Web. Это описание фактически реализованного API, а не обещание полного набора возможностей Telerik.
+Версия 0.10.0. Подробное руководство для всех публичных компонентов Blazor и Flutter Web. Это описание фактически реализованного API, а не обещание полного набора возможностей Telerik.
 
 Начните с [подключения и правил состояния](getting-started.md), затем выберите компонент. Модели и формулы описаны в [справочнике данных](models.md). Реальные ограничения и результаты проверок: [verification](../verification.md).
 
@@ -8,6 +8,7 @@
 
 | Компонент | Назначение |
 |---|---|
+| [NgAIPrompt](NgAIPrompt.md) | Работа с AI-запросами |
 | [NgArcGauge](NgArcGauge.md) | Дуговой индикатор |
 | [NgAutoComplete](NgAutoComplete.md) | Текст с подсказками |
 | [NgBreadcrumb](NgBreadcrumb.md) | Навигационная цепочка |
@@ -34,6 +35,7 @@
 | [NgPager](NgPager.md) | Страницы данных |
 | [NgPdfViewer](NgPdfViewer.md) | Просмотр PDF |
 | [NgPivotGrid](NgPivotGrid.md) | Сводная таблица |
+| [NgPromptBox](NgPromptBox.md) | Поле запроса |
 | [NgRadioGroup](NgRadioGroup.md) | Группа вариантов |
 | [NgScheduler](NgScheduler.md) | Недельное расписание |
 | [NgSpreadsheet](NgSpreadsheet.md) | Электронный лист |

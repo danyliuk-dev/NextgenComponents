@@ -14,3 +14,5 @@ export 'src/diagram.dart';
 export 'src/pdf_viewer.dart';
 
 export 'src/map.dart';
+
+export 'src/prompt.dart';

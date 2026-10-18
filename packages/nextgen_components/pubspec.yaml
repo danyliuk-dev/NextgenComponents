@@ -1,6 +1,6 @@
 name: nextgen_components
 description: Native Flutter components sharing the Nextgen design system with Blazor.
-version: 0.9.1
+version: 0.10.0
 publish_to: none
 environment:
   sdk: '>=3.10.0 <4.0.0'

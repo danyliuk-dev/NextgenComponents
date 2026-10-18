@@ -168,6 +168,29 @@ foreach(var radius in new[]{19,121}) {
  catch(ArgumentOutOfRangeException){Rule(true,"map rejects cluster radius "+radius);}
 }
 await Check<NgMap>(new(){["ClusterMarkers"]=true,["ClusterRadius"]=120},"map-viewer/index.html");
+await Check<NgPromptBox>(new(){["Value"]="<unsafe>",["Busy"]=true},"&lt;unsafe&gt;","readonly","Cancel","8000");
+await Check<NgAIPrompt>(new(){["Suggestions"]=new[]{"First suggestion"},["Value"]="Bound initial prompt"},"Bound initial prompt","No responses yet","Connect a generation handler","First suggestion");
+using(var prompts=new NgPromptSession()) {
+ var pending=new TaskCompletionSource<string>();CancellationToken captured=default;
+ var first=prompts.RunAsync("  old request  ",(p,t)=>{captured=t;return pending.Task;});
+ Rule(prompts.IsBusy,"prompt busy immediately");
+ Rule(await prompts.RunAsync("duplicate",(_,_)=>Task.FromResult("duplicate")) is null,"prompt prevents concurrent duplicate");
+ prompts.Cancel();Rule(captured.IsCancellationRequested&&!prompts.IsBusy,"prompt cancellation reaches provider");
+ await prompts.RunAsync("new request",(_,_)=>Task.FromResult("new response"));pending.SetResult("late old response");
+ Rule(await first is null&&prompts.Responses.Count==1&&prompts.Selected!.Text=="new response","late cancelled response cannot overwrite new result");
+ await prompts.RunAsync("failure",(_,_)=>throw new Exception("provider secret detail"));
+ Rule(prompts.Error=="Generation failed. Try again."&&prompts.Responses.Count==1,"provider errors do not leak details or erase history");
+ await prompts.RunAsync("empty",(_,_)=>Task.FromResult(" "));
+ Rule(prompts.Error is not null,"empty prompt response rejected");
+ await prompts.RunAsync("large",(_,_)=>Task.FromResult(new string('a',32001)));
+ Rule(prompts.Error is not null,"oversized response rejected");
+ for(var i=0;i<22;i++)await prompts.RunAsync("history "+i,(_,_)=>Task.FromResult("ok"));
+ Rule(prompts.Responses.Count==20&&prompts.Responses[0].Prompt=="history 2","prompt history retains latest 20 results");
+ var last=new TaskCompletionSource<string>();var clearing=prompts.RunAsync("clear me",(_,_)=>last.Task);prompts.Clear();last.SetResult("late");
+ Rule(await clearing is null&&prompts.Responses.Count==0&&prompts.Selected is null,"clear prevents late repopulation");
+ try{await prompts.RunAsync("   ",(_,_)=>Task.FromResult("invalid"));throw new Exception("blank accepted");}catch(ArgumentException){Rule(true,"blank prompt rejected");}
+}
+var disposedPrompts=new NgPromptSession();var afterDispose=new TaskCompletionSource<string>();var outstanding=disposedPrompts.RunAsync("dispose",(_,_)=>afterDispose.Task);disposedPrompts.Dispose();afterDispose.SetResult("late");Rule(await outstanding is null,"disposed prompt session ignores late result");
 Console.WriteLine($"{count} rendering and data/date-rule checks passed. Browser interaction requires the separate visual run.");
 sealed class NoBrowserJS : IJSRuntime {
  public ValueTask<TValue> InvokeAsync<TValue>(string identifier, object?[]? args) => throw new InvalidOperationException("JS must not execute in SSR");
