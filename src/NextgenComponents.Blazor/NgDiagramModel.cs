@@ -7,6 +7,7 @@ public enum NgDiagramShape { Rectangle, Ellipse, Diamond }
 public sealed record NgDiagramNode([property: JsonRequired] string Id, [property: JsonRequired] string Text, [property: JsonRequired] double X, [property: JsonRequired] double Y, double Width = 160, double Height = 80, NgDiagramShape Shape = NgDiagramShape.Rectangle);
 public sealed record NgDiagramEdge([property: JsonRequired] string Id, [property: JsonRequired] string From, [property: JsonRequired] string To, string Text = "", bool Directed = true);
 public sealed record NgDiagramPoint(double X, double Y);
+public sealed record NgDiagramView(double Zoom, double ScrollX, double ScrollY);
 public sealed record NgDiagramLine(NgDiagramPoint Start, NgDiagramPoint End);
 
 /// <summary>Immutable, validated graph. Removing a node also removes its incident edges.</summary>
@@ -42,6 +43,18 @@ public sealed class NgDiagramModel
         var n = Nodes.FirstOrDefault(n => n.Id == id) ?? throw new ArgumentException("Unknown node ID.");
         if (!double.IsFinite(x) || !double.IsFinite(y)) throw new ArgumentException("Coordinates must be finite.");
         return UpsertNode(n with { X = Math.Clamp(x, 0, Width - n.Width), Y = Math.Clamp(y, 0, Height - n.Height) });
+    }
+    /// <summary>Fits occupied node bounds with 24px padding, at 25–200% zoom. Empty graphs return the origin at 100%.</summary>
+    public NgDiagramView FitView(double viewportWidth, double viewportHeight)
+    {
+        if (!double.IsFinite(viewportWidth) || !double.IsFinite(viewportHeight) || viewportWidth <= 0 || viewportHeight <= 0) throw new ArgumentException("Viewport dimensions must be positive and finite.");
+        if (Nodes.Count == 0) return new(1, 0, 0);
+        var left = Nodes.Min(n => n.X); var top = Nodes.Min(n => n.Y);
+        var right = Nodes.Max(n => n.X + n.Width); var bottom = Nodes.Max(n => n.Y + n.Height);
+        var scale = Math.Clamp(Math.Min((viewportWidth - 48) / (right - left), (viewportHeight - 48) / (bottom - top)), .25, 2);
+        return new(scale,
+            Math.Clamp((left + right) / 2 * scale - viewportWidth / 2, 0, Math.Max(0, Width * scale - viewportWidth)),
+            Math.Clamp((top + bottom) / 2 * scale - viewportHeight / 2, 0, Math.Max(0, Height * scale - viewportHeight)));
     }
     public NgDiagramLine Line(NgDiagramEdge edge)
     {

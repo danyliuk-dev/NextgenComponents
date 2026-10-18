@@ -138,3 +138,12 @@ Screenshots inspected:
 - [Blazor: narrow dark/compact/read-only](screenshots/diagram-blazor-narrow.png)
 - [Flutter: imported Blazor graph](screenshots/diagram-flutter-import.png)
 - [Flutter: final narrow Fit width](screenshots/diagram-flutter-narrow-final.png)
+
+## 0.7.1 — Fit diagram (2026-10-18)
+
+- .NET build and 119 rendering/model checks passed; Flutter web build, 53 tests and analyzer passed.
+- All 35 Blazor and 35 Flutter manual examples compiled/analyzed; theme asset/contrast checks passed.
+- Foreground Google Chrome on local Linux iMac, isolated profile/CDP 9341 coordinated with the other task: Fit diagram showed all four sample nodes at 116%; dragging after fitting updated Blazor coordinates to 84.6/197.3 and Flutter to 111/206. Graph coordinates are unchanged by fitting itself.
+- 390px web viewport reviewed in both implementations; toolbar wraps and the sample nodes remain visible at reduced zoom. Automated Flutter widget coverage additionally verifies scrolling to a distant node in a 5000×5000 canvas in read-only mode; model tests cover padding, zoom bounds, empty data and invalid viewport sizes.
+- Inspected screenshots: [Blazor](screenshots/fit-blazor.png), [Flutter](screenshots/fit-flutter.png), [Blazor narrow](screenshots/fit-blazor-narrow.png), [Flutter narrow](screenshots/fit-flutter-narrow.png).
+- Native mobile remains untested. Fit includes node bounds, not overflow from long connection labels; 25% minimum can leave very large graphs partly outside the viewport.

@@ -11,6 +11,56 @@ NgDiagramModel sample() => NgDiagramModel(
   edges: const [NgDiagramEdge('e', 'a', 'b', text: 'Next')],
 );
 void main() {
+  test(
+    'fit bounds centers distant nodes, clamps zoom and validates viewport',
+    () {
+      final d = NgDiagramModel(
+        nodes: const [
+          NgDiagramNode('fit', 'Fit', 3000, 3000, width: 200, height: 100),
+        ],
+        width: 5000,
+        height: 5000,
+      );
+      final view = d.fitView(448, 248);
+      expect([view.zoom, view.scrollX, view.scrollY], [2, 5976, 5976]);
+      expect(d.fitView(148, 98).zoom, .5);
+      expect(d.fitView(1, 1).zoom, .25);
+      expect(NgDiagramModel().fitView(300, 200).scrollX, 0);
+      expect(() => d.fitView(double.nan, 200), throwsArgumentError);
+    },
+  );
+  testWidgets(
+    'fit scrolls distant node into view and preserves read-only graph',
+    (tester) async {
+      final d = NgDiagramModel(
+        nodes: const [NgDiagramNode('fit', 'Fit', 3000, 3000)],
+        width: 5000,
+        height: 5000,
+      );
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: SingleChildScrollView(
+              child: NgDiagram(
+                value: d,
+                readOnly: true,
+                onChanged: (_) => fail("Navigation changed graph"),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.tap(find.text('Fit diagram'));
+      await tester.pumpAndSettle();
+      final node = tester.getRect(find.text('Fit'));
+      expect(node.left, greaterThanOrEqualTo(0));
+      expect(node.right, lessThanOrEqualTo(800));
+      expect(node.top, greaterThan(0));
+      expect(node.bottom, lessThanOrEqualTo(600));
+      expect(d.nodes.single.x, 3000);
+    },
+  );
+
   test('maximum Unicode graph JSON roundtrip', () {
     final nodes = List.generate(
       100,

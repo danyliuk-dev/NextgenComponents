@@ -4,7 +4,7 @@
 <section class="ng-diagram" aria-label="@Label">
 <h3>@Label</h3>
 <div class="ng-diagram-toolbar" role="group" aria-label="Diagram navigation">
-<NgButton OnClick="()=>ZoomBy(-.25)" Disabled="@(zoom<=.25)">Zoom out</NgButton><strong>@($"{zoom:P0}")</strong><NgButton OnClick="()=>ZoomBy(.25)" Disabled="@(zoom>=2)">Zoom in</NgButton><NgButton OnClick="Fit">Fit width</NgButton><NgButton OnClick="()=>zoom=1">100%</NgButton>
+<NgButton OnClick="()=>ZoomBy(-.25)" Disabled="@(zoom<=.25)">Zoom out</NgButton><strong>@($"{zoom:P0}")</strong><NgButton OnClick="()=>ZoomBy(.25)" Disabled="@(zoom>=2)">Zoom in</NgButton><NgButton OnClick="Fit">Fit width</NgButton><NgButton OnClick="FitDiagram" Disabled="@(Value.Nodes.Count==0)">Fit diagram</NgButton><NgButton OnClick="()=>zoom=1">100%</NgButton>
 </div>
 <p>Choose a node or connection. Drag a node to move it; Escape cancels. Arrow keys move a focused node by 10 (Shift: 1). Scroll to explore.</p>
 <div class="ng-diagram-viewport" @ref="viewport" tabindex="0" aria-label="Diagram scroll area">
@@ -28,6 +28,7 @@
  [Parameter] public EventCallback<string?> SelectedEdgeIdChanged { get; set; }
  [Parameter] public bool ReadOnly { get; set; }
  private double zoom=1;
+ private NgDiagramView? pendingView;
  private string message="";
  private readonly string marker="ng-arrow-"+Guid.NewGuid().ToString("N");
  private ElementReference svg,viewport;
@@ -36,12 +37,14 @@
  private NgDiagramModel? previous;
  protected override async Task OnAfterRenderAsync(bool firstRender) {
   if(firstRender){module=await JS.InvokeAsync<IJSObjectReference>("import","./_content/NextgenComponents.Blazor/diagram.js");reference=DotNetObjectReference.Create(this);await module.InvokeVoidAsync("attach",svg,reference);}
+  if(module is not null && pendingView is {} view){pendingView=null;await module.InvokeVoidAsync("scroll",viewport,view.ScrollX,view.ScrollY);}
   if(module is not null && !ReferenceEquals(previous,Value)){previous=Value;await module.InvokeVoidAsync("cancel",svg);}
  }
  private static string F(double n)=>n.ToString("0.###",CultureInfo.InvariantCulture);
  private static string Short(string s,int count)=>s.Length>count?s[..(count-1)]+"…":s;
  private void ZoomBy(double step)=>zoom=Math.Clamp(zoom+step,.25,2);
  private async Task Fit(){if(module is not null)zoom=Math.Clamp(await module.InvokeAsync<double>("width",viewport)/Value.Width,.25,2);}
+ private async Task FitDiagram(){if(module is null||Value.Nodes.Count==0)return;var size=await module.InvokeAsync<double[]>("size",viewport);pendingView=Value.FitView(size[0],size[1]);zoom=pendingView.Zoom;await module.InvokeVoidAsync("cancel",svg);}
  private async Task SelectNode(string id){await SelectedEdgeIdChanged.InvokeAsync(null);await SelectedNodeIdChanged.InvokeAsync(id);}
  private async Task SelectEdge(string id){await SelectedNodeIdChanged.InvokeAsync(null);await SelectedEdgeIdChanged.InvokeAsync(id);}
  [JSInvokable] public async Task MoveNode(string id,double x,double y){if(ReadOnly||!Value.Nodes.Any(n=>n.Id==id))return;var next=Value.Move(id,x,y);await SelectNode(id);if(next.Nodes.First(n=>n.Id==id)!=Value.Nodes.First(n=>n.Id==id))await ValueChanged.InvokeAsync(next);message=$"Moved {id}.";StateHasChanged();}

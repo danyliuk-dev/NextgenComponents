@@ -142,6 +142,13 @@ var largeNodes=Enumerable.Range(0,100).Select(i=>new NgDiagramNode("n"+i.ToStrin
 var largeEdges=Enumerable.Range(0,200).Select(i=>new NgDiagramEdge("e"+i.ToString().PadLeft(63,'x'),largeNodes[i%100].Id,largeNodes[(i+1)%100].Id,new string('漢',100))).ToArray();
 var largeGraph=new NgDiagramModel(largeNodes,largeEdges);Rule(largeGraph.ToJson().Length>200000&&NgDiagramModel.FromJson(largeGraph.ToJson()).Edges.Count==200,"maximum Unicode diagram roundtrips within JSON limit");
 
+var offsetGraph=new NgDiagramModel([new("fit","Fit",3000,3000,200,100)],width:5000,height:5000);
+var fitView=offsetGraph.FitView(448,248);
+Rule(fitView==new NgDiagramView(2,5976,5976),"fit occupied bounds centers distant node at maximum zoom");
+Rule(new NgDiagramModel().FitView(400,300)==new NgDiagramView(1,0,0),"empty fit resets origin");
+Rule(new NgDiagramModel([new("first","First",0,0),new("last","Last",4800,4800)],width:5000,height:5000).FitView(300,200).Zoom==.25,"fit honors minimum zoom");
+Rule(offsetGraph.FitView(148,98).Zoom==.5,"fit reserves 24px padding and respects both dimensions");
+Reject(()=>offsetGraph.FitView(double.NaN,300),"fit rejects nonfinite viewport");
 Console.WriteLine($"{count} rendering and data/date-rule checks passed. Browser interaction requires the separate visual run.");
 sealed class NoBrowserJS : IJSRuntime {
  public ValueTask<TValue> InvokeAsync<TValue>(string identifier, object?[]? args) => throw new InvalidOperationException("JS must not execute in SSR");

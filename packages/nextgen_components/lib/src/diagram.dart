@@ -70,7 +70,44 @@ class NgDiagramLine {
   const NgDiagramLine(this.start, this.end);
 }
 
+class NgDiagramView {
+  final double zoom, scrollX, scrollY;
+  const NgDiagramView(this.zoom, this.scrollX, this.scrollY);
+}
+
 class NgDiagramModel {
+  /// Fits node bounds with 24px padding at 25–200%; empty graphs use 100%.
+  NgDiagramView fitView(double viewportWidth, double viewportHeight) {
+    if (!viewportWidth.isFinite ||
+        !viewportHeight.isFinite ||
+        viewportWidth <= 0 ||
+        viewportHeight <= 0) {
+      throw ArgumentError('Viewport dimensions must be positive and finite.');
+    }
+    if (nodes.isEmpty) return const NgDiagramView(1, 0, 0);
+    final left = nodes.map((n) => n.x).reduce(math.min);
+    final top = nodes.map((n) => n.y).reduce(math.min);
+    final right = nodes.map((n) => n.x + n.width).reduce(math.max);
+    final bottom = nodes.map((n) => n.y + n.height).reduce(math.max);
+    final scale = math
+        .min(
+          (viewportWidth - 48) / (right - left),
+          (viewportHeight - 48) / (bottom - top),
+        )
+        .clamp(.25, 2.0);
+    return NgDiagramView(
+      scale,
+      ((left + right) / 2 * scale - viewportWidth / 2).clamp(
+        0.0,
+        math.max(0.0, width * scale - viewportWidth),
+      ),
+      ((top + bottom) / 2 * scale - viewportHeight / 2).clamp(
+        0.0,
+        math.max(0.0, height * scale - viewportHeight),
+      ),
+    );
+  }
+
   final double width, height;
   final List<NgDiagramNode> nodes;
   final List<NgDiagramEdge> edges;
@@ -286,6 +323,26 @@ class NgDiagram extends StatefulWidget {
 
 class _NgDiagramState extends State<NgDiagram> {
   double zoom = 1;
+  void fitDiagram(double width) {
+    final view = widget.value.fitView(width, 418);
+    setState(() {
+      zoom = view.zoom;
+      dragging = null;
+      ghost = null;
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      if (horizontal.hasClients)
+        horizontal.jumpTo(
+          view.scrollX.clamp(0.0, horizontal.position.maxScrollExtent),
+        );
+      if (vertical.hasClients)
+        vertical.jumpTo(
+          view.scrollY.clamp(0.0, vertical.position.maxScrollExtent),
+        );
+    });
+  }
+
   final horizontal = ScrollController(), vertical = ScrollController();
   final Map<String, FocusNode> focus = {};
   String? dragging;
@@ -540,6 +597,12 @@ class _NgDiagramState extends State<NgDiagram> {
                   ghost = null;
                 }),
                 child: const Text('Fit width'),
+              ),
+              NgButton(
+                onPressed: d.nodes.isEmpty
+                    ? null
+                    : () => fitDiagram(c.maxWidth - 2),
+                child: const Text('Fit diagram'),
               ),
               NgButton(
                 onPressed: () => setState(() {

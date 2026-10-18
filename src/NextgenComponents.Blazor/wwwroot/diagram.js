@@ -1,5 +1,7 @@
 // Pointer capture stays in the browser; only the completed move crosses Blazor interop.
 const states = new WeakMap();
+export function size(element) { return [element.clientWidth, element.clientHeight]; }
+export function scroll(element, x, y) { element.scrollTo({left:x, top:y, behavior:"instant"}); }
 export function width(element) { return element.clientWidth; }
 export function cancel(svg) { states.get(svg)?.cancel(); }
 export function attach(svg, reference) {
