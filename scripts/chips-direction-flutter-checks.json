@@ -1,0 +1,285 @@
+{
+  "actions": [
+    {
+      "method": "Input.dispatchMouseEvent",
+      "params": {
+        "type": "mouseWheel",
+        "x": 1100,
+        "y": 1000,
+        "deltaY": 900,
+        "deltaX": 0
+      }
+    },
+    {
+      "evaluate": "new Promise(r=>setTimeout(r,500))"
+    },
+    {
+      "evaluate": "(()=>{const r=[...document.querySelectorAll('[aria-label=\"Directional topics\"] [role=checkbox]')].map(e=>e.getBoundingClientRect());if(!(r[0].x>r[1].x&&r[2].y>r[0].y))throw Error('RTL rows');const chip=document.querySelector('[aria-label=\"Design systems\"]'),btn=chip.querySelector('[role=button]');if(btn.getBoundingClientRect().x>=chip.getBoundingClientRect().x+chip.getBoundingClientRect().width/2)throw Error('RTL removal');return \"PASS\";})()"
+    },
+    {
+      "clickSelector": "[aria-label=\"Design systems\"]"
+    },
+    {
+      "evaluate": "new Promise(r=>setTimeout(r,350))"
+    },
+    {
+      "method": "Input.dispatchKeyEvent",
+      "params": {
+        "type": "keyDown",
+        "key": "ArrowLeft",
+        "code": "ArrowLeft",
+        "windowsVirtualKeyCode": 37
+      }
+    },
+    {
+      "method": "Input.dispatchKeyEvent",
+      "params": {
+        "type": "keyUp",
+        "key": "ArrowLeft",
+        "code": "ArrowLeft",
+        "windowsVirtualKeyCode": 37
+      }
+    },
+    {
+      "evaluate": "new Promise(r=>setTimeout(r,350))"
+    },
+    {
+      "method": "Input.dispatchKeyEvent",
+      "params": {
+        "type": "keyDown",
+        "key": " ",
+        "code": " ",
+        "windowsVirtualKeyCode": 32
+      }
+    },
+    {
+      "method": "Input.dispatchKeyEvent",
+      "params": {
+        "type": "keyUp",
+        "key": " ",
+        "code": " ",
+        "windowsVirtualKeyCode": 32
+      }
+    },
+    {
+      "evaluate": "new Promise(r=>setTimeout(r,350))"
+    },
+    {
+      "evaluate": "(()=>{if(document.querySelector('[aria-label=\"Web components\"]').getAttribute('aria-checked')!=='true')throw Error('RTL keyboard');return \"PASS\";})()"
+    },
+    {
+      "clickSelector": "[aria-label=\"Right-to-left layout\"]"
+    },
+    {
+      "evaluate": "new Promise(r=>setTimeout(r,350))"
+    },
+    {
+      "evaluate": "(()=>{const r=[...document.querySelectorAll('[aria-label=\"Directional topics\"] [role=checkbox]')].map(e=>e.getBoundingClientRect());if(!(r[0].x<r[1].x))throw Error('LTR rows');if(document.querySelector('[aria-label=\"Web components\"]').getAttribute('aria-checked')!=='true')throw Error('lost selection');return \"PASS\";})()"
+    },
+    {
+      "clickSelector": "[aria-label=\"Design systems\"]"
+    },
+    {
+      "evaluate": "new Promise(r=>setTimeout(r,350))"
+    },
+    {
+      "method": "Input.dispatchKeyEvent",
+      "params": {
+        "type": "keyDown",
+        "key": "ArrowRight",
+        "code": "ArrowRight",
+        "windowsVirtualKeyCode": 39
+      }
+    },
+    {
+      "method": "Input.dispatchKeyEvent",
+      "params": {
+        "type": "keyUp",
+        "key": "ArrowRight",
+        "code": "ArrowRight",
+        "windowsVirtualKeyCode": 39
+      }
+    },
+    {
+      "evaluate": "new Promise(r=>setTimeout(r,350))"
+    },
+    {
+      "method": "Input.dispatchKeyEvent",
+      "params": {
+        "type": "keyDown",
+        "key": " ",
+        "code": " ",
+        "windowsVirtualKeyCode": 32
+      }
+    },
+    {
+      "method": "Input.dispatchKeyEvent",
+      "params": {
+        "type": "keyUp",
+        "key": " ",
+        "code": " ",
+        "windowsVirtualKeyCode": 32
+      }
+    },
+    {
+      "evaluate": "new Promise(r=>setTimeout(r,350))"
+    },
+    {
+      "evaluate": "(()=>{if(document.querySelector('[aria-label=\"Web components\"]').getAttribute('aria-checked')!=='false')throw Error('LTR keyboard');return \"PASS\";})()"
+    },
+    {
+      "clickSelector": "[aria-label=\"Right-to-left layout\"]"
+    },
+    {
+      "evaluate": "new Promise(r=>setTimeout(r,350))"
+    },
+    {
+      "clickSelector": "[aria-label=\"Web components\"]"
+    },
+    {
+      "evaluate": "new Promise(r=>setTimeout(r,350))"
+    },
+    {
+      "method": "Input.dispatchKeyEvent",
+      "params": {
+        "type": "keyDown",
+        "key": "End",
+        "code": "End",
+        "windowsVirtualKeyCode": 35
+      }
+    },
+    {
+      "method": "Input.dispatchKeyEvent",
+      "params": {
+        "type": "keyUp",
+        "key": "End",
+        "code": "End",
+        "windowsVirtualKeyCode": 35
+      }
+    },
+    {
+      "evaluate": "new Promise(r=>setTimeout(r,350))"
+    },
+    {
+      "method": "Input.dispatchKeyEvent",
+      "params": {
+        "type": "keyDown",
+        "key": "Delete",
+        "code": "Delete",
+        "windowsVirtualKeyCode": 46
+      }
+    },
+    {
+      "method": "Input.dispatchKeyEvent",
+      "params": {
+        "type": "keyUp",
+        "key": "Delete",
+        "code": "Delete",
+        "windowsVirtualKeyCode": 46
+      }
+    },
+    {
+      "evaluate": "new Promise(r=>setTimeout(r,350))"
+    },
+    {
+      "evaluate": "(()=>{if(document.querySelector('[aria-label=Documentation]'))throw Error('RTL delete');return \"PASS\";})()"
+    },
+    {
+      "method": "Input.dispatchKeyEvent",
+      "params": {
+        "type": "keyDown",
+        "key": " ",
+        "code": " ",
+        "windowsVirtualKeyCode": 32
+      }
+    },
+    {
+      "method": "Input.dispatchKeyEvent",
+      "params": {
+        "type": "keyUp",
+        "key": " ",
+        "code": " ",
+        "windowsVirtualKeyCode": 32
+      }
+    },
+    {
+      "evaluate": "new Promise(r=>setTimeout(r,350))"
+    },
+    {
+      "evaluate": "(()=>{if(document.querySelector('[aria-label=\"Web components\"]').getAttribute('aria-checked')!=='false')throw Error('removal focus');return \"PASS\";})()"
+    },
+    {
+      "screenshot": "chips021-flutter-rtl.png"
+    },
+    {
+      "method": "Emulation.setDeviceMetricsOverride",
+      "params": {
+        "width": 390,
+        "height": 844,
+        "deviceScaleFactor": 1,
+        "mobile": false
+      }
+    },
+    {
+      "method": "Network.enable"
+    },
+    {
+      "method": "Network.setCacheDisabled",
+      "params": {
+        "cacheDisabled": true
+      }
+    },
+    {
+      "method": "Network.clearBrowserCache"
+    },
+    {
+      "method": "Page.navigate",
+      "params": {
+        "url": "http://127.0.0.1:5181/"
+      }
+    },
+    {
+      "evaluate": "new Promise(r=>setTimeout(r,2500))"
+    },
+    {
+      "evaluate": "document.querySelector('flt-semantics-placeholder')?.click()"
+    },
+    {
+      "evaluate": "new Promise(r=>setTimeout(r,500))"
+    },
+    {
+      "evaluate": "Array.from(document.querySelectorAll('[role=button]')).map(x=>({text:x.textContent,label:x.getAttribute('aria-label')}))"
+    },
+    {
+      "evaluate": "[...document.querySelectorAll('[role=button]')].find(e=>e.textContent==='Chips and tags').setAttribute('data-click','chips')"
+    },
+    {
+      "clickSelector": "[data-click=chips]"
+    },
+    {
+      "evaluate": "new Promise(r=>setTimeout(r,400))"
+    },
+    {
+      "method": "Input.dispatchMouseEvent",
+      "params": {
+        "type": "mouseWheel",
+        "x": 200,
+        "y": 600,
+        "deltaY": 4000,
+        "deltaX": 0
+      }
+    },
+    {
+      "evaluate": "new Promise(r=>setTimeout(r,1800))"
+    },
+    {
+      "evaluate": "(()=>{const r=[...document.querySelectorAll('[aria-label=\"Directional topics\"] [role=checkbox]')].map(e=>e.getBoundingClientRect());if(r.length!==4||r.some(e=>e.x<0||e.right>innerWidth||e.bottom>innerHeight)||r[1].y<=r[0].y)throw Error('narrow RTL');return 'PASS narrow RTL';})()"
+    },
+    {
+      "screenshot": "chips021-flutter-narrow.png"
+    },
+    {
+      "method": "Emulation.clearDeviceMetricsOverride"
+    }
+  ]
+}

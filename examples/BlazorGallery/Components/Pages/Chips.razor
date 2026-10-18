@@ -2,7 +2,7 @@
 <PageTitle>Nextgen • Chips and tags</PageTitle>
 <div class="ng-scope gallery" data-ng-theme="@(dark?"dark":"light")"><main>
 <nav><a href="/code-examples">Code examples</a><strong>N NEXTGEN COMPONENTS</strong><div class="row"><a href="/">Foundation</a><NgSwitch Label="Dark theme" @bind-Value="dark"/></div></nav>
-<section class="hero"><p class="eyebrow">BLAZOR / CHIPS 0.20</p><h1>Small tags.<br/>Clear choices.</h1><p>Select topics, remove a tag, or show a compact status. Your application owns every change.</p></section>
+<section class="hero"><p class="eyebrow">BLAZOR / CHIPS 0.21</p><h1>Small tags.<br/>Clear choices.</h1><p>Select topics, remove a tag, or show a compact status. Your application owns every change.</p></section>
 <section class="panel"><div class="row"><NgCheckBox Label="Disable controls" @bind-Value="disabled"/><NgCheckBox Label="Multiple selection" Value="multiple" ValueChanged="SetMultiple" ValueExpression="()=>multiple"/><NgCheckBox Label="Enable selection" @bind-Value="selectable"/><NgCheckBox Label="Protect Design from removal" @bind-Value="protect"/><NgButton OnClick="Reset">Reset tags</NgButton><NgButton OnClick="LoadCollection">Load 500 tags</NgButton></div>
 <h2>Appearance and content</h2>
 <div class="row"><NgDropDownList Label="Size" Items="sizes" @bind-Value="size"/><NgDropDownList Label="Rounded" Items="roundings" @bind-Value="rounded"/><NgDropDownList Label="Fill mode" Items="fills" @bind-Value="fill"/><NgCheckBox Label="Custom content" @bind-Value="custom"/></div>
@@ -24,6 +24,17 @@
 <div class="row"><NgButton OnClick="RenameBusiness" Disabled="@(!records.Any(x=>x.Id=="ops"))">Rename Operations</NgButton><NgButton OnClick="ReverseBusiness">Reverse records</NgButton><NgButton OnClick="ResetBusiness">Reset records</NgButton></div>
 <p id="business-status" role="status">@businessMessage</p>
 </section>
+<section class="panel" id="direction-example">
+<h2>Reading direction</h2><p>The same collection inherits direction from its container. Start/end, icons and removal mirror together; Left/Right follow the reading direction. Home/End keep data order.</p>
+<div class="row"><NgCheckBox Label="Right-to-left layout" @bind-Value="rtl"/><NgButton OnClick="ResetDirection">Reset direction example</NgButton></div>
+<div dir="@(rtl?"rtl":"ltr")" style="max-width:420px;margin-block:16px">
+<NgChipList Label="Directional topics" Items="directionItems" Value="directionSelected" ValueChanged="v=>directionSelected=v" Multiple OnRemove="RemoveDirection" RemoveLabel="ActionLabel">
+<LeadingTemplate><span aria-hidden="true">★</span></LeadingTemplate>
+</NgChipList>
+<NgChip Label="Pinned status" Selectable="false"><Leading><span aria-hidden="true">★</span></Leading></NgChip>
+</div>
+<p id="direction-status" role="status">Direction: @(rtl?"RTL":"LTR") · Selected: @string.Join(", ",directionSelected) · Tags: @directionItems.Count</p>
+</section>
 <footer>47 CONTROLS / 53 CATALOGUE ENTRIES · WEB FIRST</footer></main></div>
 @code {
  private sealed record BusinessTopic(string Id,string Name,string Owner,bool Disabled=false,bool Pinned=false,string Tone="base");
@@ -40,6 +51,12 @@
  private void ReverseBusiness(){records.Reverse();businessData=BindRecords(records);businessMessage="Model order reversed; IDs and selection retained";}
  private void ResetBusiness(){records=InitialRecords();businessSelected=["finance"];businessData=BindRecords(records);businessMessage="3 model records · Finance selected";}
 
+ private bool rtl=true;
+ private static NgOption[] DirectionItems()=>[new("design","Design systems"),new("locked","Locked topic",true),new("web","Web components"),new("docs","Documentation")];
+ private IReadOnlyList<NgOption> directionItems=DirectionItems();
+ private IReadOnlyList<string> directionSelected=["design"];
+ private void RemoveDirection(string id){directionItems=directionItems.Where(x=>x.Value!=id).ToArray();directionSelected=directionSelected.Where(x=>x!=id).ToArray();}
+ private void ResetDirection(){directionItems=DirectionItems();directionSelected=["design"];rtl=true;}
  private bool dark,disabled,protect,favourite,multiple=true,selectable=true;
  private NgChipList? chipList;
  private bool CanRemove(NgOption item)=>item.Value!="flutter";

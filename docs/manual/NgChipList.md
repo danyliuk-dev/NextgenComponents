@@ -93,14 +93,29 @@ The options collection is read-only; original records are not deep-cloned. After
 The following example pins Finance, disables Archive and resolves an owner from the clicked record. This is a typed-selector alternative to property-name reflection; there are no string field-name parameters. Icons and additional fields can be rendered through ItemTemplate/itemBuilder using GetItem/getItem. Templates must remain noninteractive. The Business records demo additionally exercises rename, reverse and reset without changing IDs.
 
 
+### Right-to-left layout (0.21)
+
+Blazor inherits the nearest HTML dir attribute. Wrap a component or a group in a div with dir="rtl" (or dir="ltr"). Flutter inherits Directionality: wrap a component or group with Directionality(textDirection: TextDirection.rtl, child: ...). Keep the direction wrapper outside NgChipList so layout and keyboard handling read the same direction. No data reversal is required. Mixed LTR/RTL regions may coexist; omit the wrapper to inherit the application setting.
+
+Chips start at the reading edge and wrap in source order. Leading content appears at the reading start, removal at the reading end, and the Blazor separator follows that edge. Changing direction at runtime preserves stable IDs, selection and the remembered keyboard entry. In RTL, Left moves to the next enabled record and Right to the previous; Home/End still target the first/last enabled record in data order. Removal keeps the existing next/previous focus policy, including wrapped rows. Up/Down spatial navigation is not provided.
+
+Direction changes layout; it does not translate labels or reverse application strings. Supply translated labels and RemoveLabel/removeLabel (or the list callback) and EmptyText/emptyText yourself. Use bdi/dir on a Blazor template or a nested Directionality/Text.textDirection in Flutter to isolate mixed-direction identifiers when appropriate. Directional custom icons are application-owned; they are not automatically mirrored. Keep templates noninteractive.
+
+The English Reading direction demo includes a constrained wrapping region, decorative leading stars, a disabled record, a static status chip and a runtime direction switch. The rest of the demo remains LTR. Verification covers Chip/ChipList layout and keyboard behavior on Web, not every component or screen-reader pronunciation.
+
+
 ## Blazor example
 
 ```razor
+<NgCheckBox Label="Right-to-left layout" @bind-Value="rtl" />
+<div dir="@(rtl ? "rtl" : "ltr")">
 <NgChipList Label="Business topics" Items="data.Items" @bind-Value="selected"
     Multiple CanRemove="data.CanRemove" ItemAppearance="data.GetAppearance"
     OnClick="Open" OnRemove="Remove" />
+</div>
 <p role="status">@message</p>
 @code {
+    private bool rtl = false;
     private sealed record Topic(string Id, string Name, string Owner, bool Pinned = false, bool Disabled = false);
     private List<Topic> records = [new("ops", "Operations", "Morgan"), new("finance", "Finance", "Alex", Pinned: true), new("archive", "Archive", "Sam", Disabled: true)];
     private IReadOnlyList<string> selected = ["finance"];
@@ -129,6 +144,7 @@ List<({String id, String name, String owner, bool pinned, bool disabled})> recor
   (id: 'archive', name: 'Archive', owner: 'Sam', pinned: false, disabled: true),
 ];
 List<String> selected = ['finance'];
+bool rtl = false;
 String message = 'Select a topic';
 late var data = bind();
 // Explicit record type keeps event handlers statically checked.
@@ -136,7 +152,9 @@ NgChipData<({String id, String name, String owner, bool pinned, bool disabled})>
   disabled: (x) => x.disabled, removable: (x) => !x.pinned,
   appearance: (x) => NgChipAppearance(themeColor: x.pinned ? 'success' : 'base'));
 Widget build(BuildContext context) => Column(children: [
-  NgChipList(label: 'Business topics', items: data.items, value: selected,
+  NgCheckBox(label: 'Right-to-left layout', value: rtl, onChanged: (v) => setState(() => rtl = v)),
+  Directionality(textDirection: rtl ? TextDirection.rtl : TextDirection.ltr,
+    child: NgChipList(label: 'Business topics', items: data.items, value: selected,
     multiple: true, canRemove: data.canRemove, itemAppearance: data.getAppearance,
     onChanged: (v) => setState(() => selected = v),
     onClick: (id) => setState(() => message = 'Owner: ${data.getItem(id).owner}'),
@@ -145,7 +163,7 @@ Widget build(BuildContext context) => Column(children: [
       records = records.where((x) => x.id != id).toList();
       selected = selected.where((x) => x != id).toList();
       data = bind();
-    })),
+    }))),
   Text(message),
 ]);
 ```

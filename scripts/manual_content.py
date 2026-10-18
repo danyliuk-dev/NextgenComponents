@@ -1675,3 +1675,21 @@ Widget build(BuildContext context) => Column(children: [
     })),
   Text(message),
 ]);'''
+
+
+# 0.21: direction is inherited from a scoped platform container.
+for name in ('NgChip', 'NgChipList'):
+    D[name]['notes'] += """
+
+### Right-to-left layout (0.21)
+
+Blazor inherits the nearest HTML dir attribute. Wrap a component or a group in a div with dir="rtl" (or dir="ltr"). Flutter inherits Directionality: wrap a component or group with Directionality(textDirection: TextDirection.rtl, child: ...). Keep the direction wrapper outside NgChipList so layout and keyboard handling read the same direction. No data reversal is required. Mixed LTR/RTL regions may coexist; omit the wrapper to inherit the application setting.
+
+Chips start at the reading edge and wrap in source order. Leading content appears at the reading start, removal at the reading end, and the Blazor separator follows that edge. Changing direction at runtime preserves stable IDs, selection and the remembered keyboard entry. In RTL, Left moves to the next enabled record and Right to the previous; Home/End still target the first/last enabled record in data order. Removal keeps the existing next/previous focus policy, including wrapped rows. Up/Down spatial navigation is not provided.
+
+Direction changes layout; it does not translate labels or reverse application strings. Supply translated labels and RemoveLabel/removeLabel (or the list callback) and EmptyText/emptyText yourself. Use bdi/dir on a Blazor template or a nested Directionality/Text.textDirection in Flutter to isolate mixed-direction identifiers when appropriate. Directional custom icons are application-owned; they are not automatically mirrored. Keep templates noninteractive.
+
+The English Reading direction demo includes a constrained wrapping region, decorative leading stars, a disabled record, a static status chip and a runtime direction switch. The rest of the demo remains LTR. Verification covers Chip/ChipList layout and keyboard behavior on Web, not every component or screen-reader pronunciation.
+"""
+D['NgChipList']['blazor'] = '<NgCheckBox Label="Right-to-left layout" @bind-Value="rtl" />\n<div dir="@(rtl ? "rtl" : "ltr")">\n' + D['NgChipList']['blazor'].replace('<p role="status">', '</div>\n<p role="status">').replace('@code {', '@code {\n    private bool rtl = false;')
+D['NgChipList']['dart'] = D['NgChipList']['dart'].replace("String message = 'Select a topic';", "bool rtl = false;\nString message = 'Select a topic';").replace("  NgChipList(label: 'Business topics'", "  NgCheckBox(label: 'Right-to-left layout', value: rtl, onChanged: (v) => setState(() => rtl = v)),\n  Directionality(textDirection: rtl ? TextDirection.rtl : TextDirection.ltr,\n    child: NgChipList(label: 'Business topics'").replace('      data = bind();\n    })),', '      data = bind();\n    }))),')

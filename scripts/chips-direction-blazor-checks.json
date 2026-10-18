@@ -1,0 +1,160 @@
+{
+  "actions": [
+    {
+      "method": "Network.enable"
+    },
+    {
+      "method": "Network.setCacheDisabled",
+      "params": {
+        "cacheDisabled": true
+      }
+    },
+    {
+      "method": "Page.reload"
+    },
+    {
+      "evaluate": "new Promise(r=>setTimeout(r,1300))"
+    },
+    {
+      "evaluate": "document.querySelector('#direction-example').scrollIntoView()"
+    },
+    {
+      "evaluate": "new Promise(r=>setTimeout(r,350))"
+    },
+    {
+      "evaluate": "(()=>{const root=document.querySelector('[aria-label=\"Directional topics\"]');const chips=[...root.querySelectorAll('[data-chip-id]')];const r=chips.map(e=>e.getBoundingClientRect());if(!(r[0].x>r[1].x&&r[2].y>r[0].y))throw Error('RTL rows');const btn=chips[0].querySelector('.ng-chip-remove'),label=chips[0].querySelector('.ng-chip-label');const style=getComputedStyle(btn);if(style.borderRightWidth!=='1px'||style.borderLeftWidth!=='0px'||btn.getBoundingClientRect().x>=label.getBoundingClientRect().x)throw Error('RTL remove divider');if(chips[0].querySelector('.ng-chip-leading').getBoundingClientRect().x<label.getBoundingClientRect().x)throw Error('leading');return \"PASS\";})()"
+    },
+    {
+      "clickSelector": "#direction-example [data-chip-id=design] .ng-chip-label"
+    },
+    {
+      "evaluate": "new Promise(r=>setTimeout(r,350))"
+    },
+    {
+      "method": "Input.dispatchKeyEvent",
+      "params": {
+        "type": "keyDown",
+        "key": "ArrowLeft",
+        "code": "ArrowLeft",
+        "windowsVirtualKeyCode": 37
+      }
+    },
+    {
+      "method": "Input.dispatchKeyEvent",
+      "params": {
+        "type": "keyUp",
+        "key": "ArrowLeft",
+        "code": "ArrowLeft",
+        "windowsVirtualKeyCode": 37
+      }
+    },
+    {
+      "evaluate": "new Promise(r=>setTimeout(r,350))"
+    },
+    {
+      "evaluate": "(()=>{if(document.activeElement.closest('[data-chip-id]')?.dataset.chipId!=='web')throw Error('skip disabled RTL');return \"PASS\";})()"
+    },
+    {
+      "method": "Input.dispatchKeyEvent",
+      "params": {
+        "type": "keyDown",
+        "key": " ",
+        "code": " ",
+        "windowsVirtualKeyCode": 32
+      }
+    },
+    {
+      "method": "Input.dispatchKeyEvent",
+      "params": {
+        "type": "keyUp",
+        "key": " ",
+        "code": " ",
+        "windowsVirtualKeyCode": 32
+      }
+    },
+    {
+      "evaluate": "new Promise(r=>setTimeout(r,350))"
+    },
+    {
+      "evaluate": "(()=>{if(document.querySelector('#direction-example [data-chip-id=web] .ng-chip-label').getAttribute('aria-pressed')!=='true')throw Error('selection');return \"PASS\";})()"
+    },
+    {
+      "evaluate": "document.querySelector('#direction-example input').id='rtl-toggle'"
+    },
+    {
+      "clickSelector": "#rtl-toggle"
+    },
+    {
+      "evaluate": "new Promise(r=>setTimeout(r,350))"
+    },
+    {
+      "evaluate": "(()=>{const root=document.querySelector('[aria-label=\"Directional topics\"]');const r=[...root.querySelectorAll('[data-chip-id]')].map(e=>e.getBoundingClientRect());const style=getComputedStyle(root.querySelector('.ng-chip-remove'));if(!(r[0].x<r[1].x)||style.borderLeftWidth!=='1px'||style.borderRightWidth!=='0px')throw Error('LTR divider');if(root.querySelector('[data-chip-id=web] button').getAttribute('aria-pressed')!=='true')throw Error('lost selection');if(root.querySelector('button[tabindex=\"0\"]').closest('[data-chip-id]').dataset.chipId!=='web')throw Error('lost entry');return \"PASS\";})()"
+    },
+    {
+      "clickSelector": "#rtl-toggle"
+    },
+    {
+      "evaluate": "new Promise(r=>setTimeout(r,350))"
+    },
+    {
+      "evaluate": "document.querySelector('#direction-example [data-chip-id=web] .ng-chip-label').focus()"
+    },
+    {
+      "method": "Input.dispatchKeyEvent",
+      "params": {
+        "type": "keyDown",
+        "key": "End",
+        "code": "End",
+        "windowsVirtualKeyCode": 35
+      }
+    },
+    {
+      "method": "Input.dispatchKeyEvent",
+      "params": {
+        "type": "keyUp",
+        "key": "End",
+        "code": "End",
+        "windowsVirtualKeyCode": 35
+      }
+    },
+    {
+      "evaluate": "new Promise(r=>setTimeout(r,350))"
+    },
+    {
+      "method": "Input.dispatchKeyEvent",
+      "params": {
+        "type": "keyDown",
+        "key": "Delete",
+        "code": "Delete",
+        "windowsVirtualKeyCode": 46
+      }
+    },
+    {
+      "method": "Input.dispatchKeyEvent",
+      "params": {
+        "type": "keyUp",
+        "key": "Delete",
+        "code": "Delete",
+        "windowsVirtualKeyCode": 46
+      }
+    },
+    {
+      "evaluate": "new Promise(r=>setTimeout(r,350))"
+    },
+    {
+      "evaluate": "(()=>{if(document.activeElement.closest('[data-chip-id]')?.dataset.chipId!=='web'||document.querySelector('#direction-example [data-chip-id=docs]'))throw Error('removal recovery');return \"PASS\";})()"
+    },
+    {
+      "screenshot": "chips021-blazor-rtl.png"
+    },
+    {
+      "evaluate": "document.querySelector('#direction-example [dir]').style.maxWidth='250px'"
+    },
+    {
+      "evaluate": "(()=>{const r=[...document.querySelectorAll('#direction-example [data-chip-id]')].map(e=>e.getBoundingClientRect());if(!(r[1].y>r[0].y&&r[2].y>r[1].y))throw Error('narrow wrapping');return \"PASS\";})()"
+    },
+    {
+      "screenshot": "chips021-blazor-narrow.png"
+    }
+  ]
+}

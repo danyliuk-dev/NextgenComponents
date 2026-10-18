@@ -133,6 +133,83 @@ class _ChipsGalleryState extends State<ChipsGallery> {
     ],
   );
 
+  bool rtl = true;
+  static List<NgOption> directionOptions() => const [
+    NgOption('design', 'Design systems'),
+    NgOption('locked', 'Locked topic', disabled: true),
+    NgOption('web', 'Web components'),
+    NgOption('docs', 'Documentation'),
+  ];
+  List<NgOption> directionItems = directionOptions();
+  List<String> directionSelected = ['design'];
+  Widget directionExample() => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      const SizedBox(height: 28),
+      Text('Reading direction', style: Theme.of(context).textTheme.titleLarge),
+      const Text(
+        'The same collection inherits direction from its container. Start/end, icons and removal mirror together; Left/Right follow the reading direction. Home/End keep data order.',
+      ),
+      Wrap(
+        spacing: 12,
+        children: [
+          NgCheckBox(
+            label: 'Right-to-left layout',
+            value: rtl,
+            onChanged: (v) => setState(() => rtl = v),
+          ),
+          NgButton(
+            onPressed: () => setState(() {
+              rtl = true;
+              directionItems = directionOptions();
+              directionSelected = ['design'];
+            }),
+            child: const Text('Reset direction example'),
+          ),
+        ],
+      ),
+      SizedBox(
+        width: 420,
+        child: Directionality(
+          textDirection: rtl ? TextDirection.rtl : TextDirection.ltr,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              NgChipList(
+                label: 'Directional topics',
+                items: directionItems,
+                value: directionSelected,
+                multiple: true,
+                leadingBuilder: (_) => const Icon(Icons.star, size: 16),
+                removeLabelBuilder: (x) => 'Dismiss ${x.label}',
+                onChanged: (v) => setState(() => directionSelected = v),
+                onRemove: (id) => setState(() {
+                  directionItems = directionItems
+                      .where((x) => x.value != id)
+                      .toList();
+                  directionSelected = directionSelected
+                      .where((x) => x != id)
+                      .toList();
+                }),
+              ),
+              const NgChip(
+                label: 'Pinned status',
+                selectable: false,
+                leading: Icon(Icons.star, size: 16),
+              ),
+            ],
+          ),
+        ),
+      ),
+      Semantics(
+        liveRegion: true,
+        child: Text(
+          'Direction: ${rtl ? "RTL" : "LTR"} · Selected: ${directionSelected.join(", ")} · Tags: ${directionItems.length}',
+        ),
+      ),
+    ],
+  );
+
   bool disabled = false,
       protect = false,
       favourite = false,
@@ -216,7 +293,7 @@ class _ChipsGalleryState extends State<ChipsGallery> {
               ),
               const SizedBox(height: 16),
               const Text(
-                'FLUTTER WEB / CHIPS 0.20 · Select topics, remove a tag, or show a compact status. Your application owns every change.',
+                'FLUTTER WEB / CHIPS 0.21 · Select topics, remove a tag, or show a compact status. Your application owns every change.',
               ),
               const SizedBox(height: 28),
               Wrap(
@@ -430,6 +507,7 @@ class _ChipsGalleryState extends State<ChipsGallery> {
               ),
               const SizedBox(height: 32),
               businessExample(),
+              directionExample(),
               const Text('47 CONTROLS / 53 CATALOGUE ENTRIES · WEB FIRST'),
             ],
           ),
