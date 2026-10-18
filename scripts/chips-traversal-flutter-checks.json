@@ -1,0 +1,237 @@
+{
+  "actions": [
+    {
+      "method": "Input.dispatchMouseEvent",
+      "params": {
+        "type": "mouseWheel",
+        "x": 1000,
+        "y": 1000,
+        "deltaY": 1500,
+        "deltaX": 0
+      }
+    },
+    {
+      "evaluate": "new Promise(r=>setTimeout(r,400))"
+    },
+    {
+      "evaluate": "[...document.querySelectorAll('[role=button]')].find(e=>e.textContent==='After topics').setAttribute('data-after','yes');[...document.querySelectorAll('[role=button]')].find(e=>e.textContent==='Focus directional topics').setAttribute('data-before','yes')"
+    },
+    {
+      "clickSelector": "[aria-label=\"Skip topics with Tab\"]"
+    },
+    {
+      "evaluate": "new Promise(r=>setTimeout(r,400))"
+    },
+    {
+      "clickSelector": "[data-after=yes]"
+    },
+    {
+      "evaluate": "new Promise(r=>setTimeout(r,400))"
+    },
+    {
+      "method": "Input.dispatchKeyEvent",
+      "params": {
+        "type": "keyDown",
+        "key": "Shift",
+        "code": "ShiftLeft",
+        "windowsVirtualKeyCode": 16,
+        "modifiers": 8
+      }
+    },
+    {
+      "method": "Input.dispatchKeyEvent",
+      "params": {
+        "type": "keyDown",
+        "key": "Tab",
+        "code": "Tab",
+        "windowsVirtualKeyCode": 9,
+        "modifiers": 8
+      }
+    },
+    {
+      "method": "Input.dispatchKeyEvent",
+      "params": {
+        "type": "keyUp",
+        "key": "Tab",
+        "code": "Tab",
+        "windowsVirtualKeyCode": 9,
+        "modifiers": 8
+      }
+    },
+    {
+      "method": "Input.dispatchKeyEvent",
+      "params": {
+        "type": "keyUp",
+        "key": "Shift",
+        "code": "ShiftLeft",
+        "windowsVirtualKeyCode": 16,
+        "modifiers": 0
+      }
+    },
+    {
+      "evaluate": "new Promise(r=>setTimeout(r,400))"
+    },
+    {
+      "evaluate": "(()=>{if(document.activeElement.textContent!=='Focus directional topics')throw Error('skip reverse');return \"PASS\";})()"
+    },
+    {
+      "method": "Input.dispatchKeyEvent",
+      "params": {
+        "type": "keyDown",
+        "key": "Tab",
+        "code": "Tab",
+        "windowsVirtualKeyCode": 9,
+        "modifiers": 0
+      }
+    },
+    {
+      "method": "Input.dispatchKeyEvent",
+      "params": {
+        "type": "keyUp",
+        "key": "Tab",
+        "code": "Tab",
+        "windowsVirtualKeyCode": 9,
+        "modifiers": 0
+      }
+    },
+    {
+      "evaluate": "new Promise(r=>setTimeout(r,400))"
+    },
+    {
+      "evaluate": "(()=>{if(document.activeElement.textContent!=='After topics')throw Error('skip forward');return \"PASS\";})()"
+    },
+    {
+      "clickSelector": "[data-before=yes]"
+    },
+    {
+      "evaluate": "new Promise(r=>setTimeout(r,400))"
+    },
+    {
+      "method": "Input.dispatchKeyEvent",
+      "params": {
+        "type": "keyDown",
+        "key": "ArrowLeft",
+        "code": "ArrowLeft",
+        "windowsVirtualKeyCode": 37,
+        "modifiers": 0
+      }
+    },
+    {
+      "method": "Input.dispatchKeyEvent",
+      "params": {
+        "type": "keyUp",
+        "key": "ArrowLeft",
+        "code": "ArrowLeft",
+        "windowsVirtualKeyCode": 37,
+        "modifiers": 0
+      }
+    },
+    {
+      "evaluate": "new Promise(r=>setTimeout(r,400))"
+    },
+    {
+      "method": "Input.dispatchKeyEvent",
+      "params": {
+        "type": "keyDown",
+        "key": " ",
+        "code": " ",
+        "windowsVirtualKeyCode": 32,
+        "modifiers": 0
+      }
+    },
+    {
+      "method": "Input.dispatchKeyEvent",
+      "params": {
+        "type": "keyUp",
+        "key": " ",
+        "code": " ",
+        "windowsVirtualKeyCode": 32,
+        "modifiers": 0
+      }
+    },
+    {
+      "evaluate": "new Promise(r=>setTimeout(r,400))"
+    },
+    {
+      "evaluate": "(()=>{if(document.querySelector('[aria-label=\"Web components\"]').getAttribute('aria-checked')!=='true')throw Error('programmatic focus and selection');return \"PASS\";})()"
+    },
+    {
+      "clickSelector": "[aria-label=\"Skip topics with Tab\"]"
+    },
+    {
+      "evaluate": "new Promise(r=>setTimeout(r,400))"
+    },
+    {
+      "clickSelector": "[data-after=yes]"
+    },
+    {
+      "evaluate": "new Promise(r=>setTimeout(r,400))"
+    },
+    {
+      "method": "Input.dispatchKeyEvent",
+      "params": {
+        "type": "keyDown",
+        "key": "Shift",
+        "code": "ShiftLeft",
+        "windowsVirtualKeyCode": 16,
+        "modifiers": 8
+      }
+    },
+    {
+      "method": "Input.dispatchKeyEvent",
+      "params": {
+        "type": "keyDown",
+        "key": "Tab",
+        "code": "Tab",
+        "windowsVirtualKeyCode": 9,
+        "modifiers": 8
+      }
+    },
+    {
+      "method": "Input.dispatchKeyEvent",
+      "params": {
+        "type": "keyUp",
+        "key": "Tab",
+        "code": "Tab",
+        "windowsVirtualKeyCode": 9,
+        "modifiers": 8
+      }
+    },
+    {
+      "method": "Input.dispatchKeyEvent",
+      "params": {
+        "type": "keyUp",
+        "key": "Shift",
+        "code": "ShiftLeft",
+        "windowsVirtualKeyCode": 16
+      }
+    },
+    {
+      "evaluate": "new Promise(r=>setTimeout(r,400))"
+    },
+    {
+      "evaluate": "(()=>{const e=document.activeElement;if(e.getAttribute('aria-label')!=='Web components'&&!e.querySelector('[aria-label=\"Web components\"]'))throw Error('restored remembered entry');return 'PASS';})()"
+    },
+    {
+      "evaluate": "window.chipGapBefore=(()=>{const r=[...document.querySelectorAll('[aria-label=\"Directional topics\"] [role=checkbox]')].map(e=>e.getBoundingClientRect());return r[0].x-r[1].right;})();[...document.querySelectorAll('[role=button]')].filter(e=>e.textContent==='md').at(-1).setAttribute('data-gap','yes')"
+    },
+    {
+      "clickSelector": "[data-gap=yes]"
+    },
+    {
+      "evaluate": "new Promise(r=>setTimeout(r,400))"
+    },
+    {
+      "clickSelector": "[role=menuitem][aria-label=lg]"
+    },
+    {
+      "evaluate": "new Promise(r=>setTimeout(r,500))"
+    },
+    {
+      "evaluate": "(()=>{const r=[...document.querySelectorAll('[aria-label=\"Directional topics\"] [role=checkbox]')].map(e=>e.getBoundingClientRect());if(Math.abs((r[0].x-r[1].right)-window.chipGapBefore-4)>.2)throw Error('gap did not increase by 4');if(document.querySelector('[aria-label=\"Web components\"]').getAttribute('aria-checked')!=='true')throw Error('gap lost selection');return \"PASS\";})()"
+    },
+    {
+      "screenshot": "chips023-flutter.png"
+    }
+  ]
+}

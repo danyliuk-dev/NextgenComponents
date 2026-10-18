@@ -266,12 +266,18 @@ Reject(()=>new NgChipData<ChipRecord>([model],x=>x.Id,x=>" "),"chip adapter reje
 Reject(()=>new NgChipData<ChipRecord>([model],x=>x.Id,x=>x.Name,appearance:x=>new(Size:"xxl")),"chip adapter rejects invalid appearance");
 try{chipData.GetItem("missing");throw new Exception("unknown record accepted");}catch(KeyNotFoundException){Rule(true,"chip adapter rejects unknown lookup");}
 await Check<NgChipList>(new(){["Items"]=chipData.Items,["CanRemove"]=(Func<NgOption,bool>)chipData.CanRemove,["ItemAppearance"]=(Func<NgOption,NgChipAppearance>)chipData.GetAppearance},"Operations","ng-chip-tone-warning");
-await Check<NgChipList>(new(){["Items"]=options,["Id"]="business-topics",["Class"]="custom-list",["AriaLabelledBy"]="heading extra",["AriaDescribedBy"]="help"},"id=\"business-topics\"","ng-chip-list custom-list","aria-labelledby=\"heading extra\"","aria-describedby=\"help\"");
+await Check<NgChipList>(new(){["Items"]=options,["Id"]="business-topics",["Class"]="custom-list",["AriaLabelledBy"]="heading extra",["AriaDescribedBy"]="help"},"id=\"business-topics\"","ng-chip-list ng-chip-gap-md custom-list","aria-labelledby=\"heading extra\"","aria-describedby=\"help\"");
 await Check<NgChip>(new(){["Label"]="Activity",["Id"]="activity-chip",["Class"]="custom-chip",["AriaLabelledBy"]="heading",["AriaDescribedBy"]="help",["OnClick"]=EventCallback.Factory.Create(new object(),()=>{})},"id=\"activity-chip\"","custom-chip ng-chip","aria-labelledby=\"heading\"","aria-describedby=\"help\"");
 Reject(()=>NgChipRules.ValidateAccessibility("bad id",null,null),"chip DOM ID rejects whitespace");
 Reject(()=>NgChipRules.ValidateAccessibility(null," ",null),"chip labelled-by rejects blank");
 Reject(()=>NgChipRules.ValidateAccessibility(null,null," "),"chip described-by rejects blank");
 await Check<NgChip>(new(){["Label"]="Published",["Selectable"]=false,["AriaDescribedBy"]="status-help"},"role=\"group\"","aria-describedby=\"status-help\"");
+Rule(NgChipRules.GapPixels("sm")==4&&NgChipRules.GapPixels("md")==8&&NgChipRules.GapPixels("lg")==12,"chip spacing presets");
+Reject(()=>NgChipRules.GapPixels("xl"),"chip gap rejects invalid preset");
+Reject(()=>NgChipRules.ValidateTabIndex(1),"chip tab rejects positive index");
+Reject(()=>NgChipRules.ValidateTabIndex(-2),"chip tab rejects other negative index");
+await Check<NgChipList>(new(){["Items"]=options,["Gap"]="lg",["TabIndex"]=-1},"ng-chip-gap-lg","data-chip-tab-index=\"-1\"");
+await Check<NgChip>(new(){["Label"]="Skipped",["TabIndex"]=-1,["OnClick"]=EventCallback.Factory.Create(new object(),()=>{})},"tabindex=\"-1\"");
 Console.WriteLine($"{count} rendering and data/date-rule checks passed. Browser interaction requires the separate visual run.");
 sealed class NoBrowserJS : IJSRuntime {
  public ValueTask<TValue> InvokeAsync<TValue>(string identifier, object?[]? args) => throw new InvalidOperationException("JS must not execute in SSR");

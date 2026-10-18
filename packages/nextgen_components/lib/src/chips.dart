@@ -66,6 +66,18 @@ class NgChipData<T extends Object> {
 }
 
 abstract final class NgChipRules {
+  static void validateTabIndex(int tabIndex) {
+    if (tabIndex != -1 && tabIndex != 0)
+      throw ArgumentError('tabIndex supports only -1 or 0.');
+  }
+
+  static double gapPixels(String gap) => switch (gap) {
+    'sm' => 4,
+    'md' => 8,
+    'lg' => 12,
+    _ => throw ArgumentError('gap must be sm, md or lg.'),
+  };
+
   static void validateSemantics(String? identifier, String? hint) {
     if (identifier != null && identifier.trim().isEmpty)
       throw ArgumentError('semanticIdentifier must be nonblank.');
@@ -93,6 +105,7 @@ abstract final class NgChipRules {
 class NgChip extends StatelessWidget {
   final String label;
   final String? semanticIdentifier, semanticHint;
+  final int tabIndex;
   final String? removeLabel;
   final bool value, selectable, disabled;
   final ValueChanged<bool>? onChanged;
@@ -102,6 +115,7 @@ class NgChip extends StatelessWidget {
   const NgChip({
     super.key,
     required this.label,
+    this.tabIndex = 0,
     this.semanticIdentifier,
     this.semanticHint,
     this.removeLabel,
@@ -121,15 +135,17 @@ class NgChip extends StatelessWidget {
   });
   @override
   Widget build(BuildContext context) {
+    NgChipRules.validateTabIndex(tabIndex);
     NgChipRules.validateSemantics(semanticIdentifier, semanticHint);
     final content = _buildContent(context);
-    return semanticIdentifier == null && semanticHint == null
+    final annotated = semanticIdentifier == null && semanticHint == null
         ? content
         : Semantics(
             identifier: semanticIdentifier,
             hint: semanticHint,
             child: content,
           );
+    return ExcludeFocusTraversal(excluding: tabIndex == -1, child: annotated);
   }
 
   Widget _buildContent(BuildContext context) {
@@ -321,7 +337,9 @@ class NgChipListController {
 
 class NgChipList extends StatefulWidget {
   final String label, emptyText;
+  final String gap;
   final String? semanticIdentifier, semanticHint;
+  final int tabIndex;
   final String Function(NgOption)? removeLabelBuilder;
   final NgChipListController? focusController;
   final List<NgOption> items;
@@ -337,6 +355,8 @@ class NgChipList extends StatefulWidget {
   const NgChipList({
     super.key,
     this.label = 'Tags',
+    this.gap = 'md',
+    this.tabIndex = 0,
     this.semanticIdentifier,
     this.semanticHint,
     this.emptyText = 'No tags',
@@ -506,6 +526,8 @@ class _NgChipListState extends State<NgChipList> {
 
   @override
   Widget build(BuildContext context) {
+    NgChipRules.validateTabIndex(widget.tabIndex);
+    final spacing = NgChipRules.gapPixels(widget.gap);
     widget.focusController?._attach(this);
     NgChipRules.validateSemantics(
       widget.semanticIdentifier,
@@ -536,6 +558,7 @@ class _NgChipListState extends State<NgChipList> {
               ?.value;
     }
     return FocusScope(
+      skipTraversal: widget.tabIndex == -1 || available.isEmpty,
       node: scope,
       child: Focus(
         focusNode: fallback,
@@ -562,8 +585,8 @@ class _NgChipListState extends State<NgChipList> {
             child: widget.items.isEmpty
                 ? Text(widget.emptyText)
                 : Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
+                    spacing: spacing,
+                    runSpacing: spacing,
                     children: [
                       for (final item in widget.items)
                         Builder(
@@ -576,7 +599,9 @@ class _NgChipListState extends State<NgChipList> {
                             return Focus(
                               focusNode: focus,
                               canRequestFocus: enabled(item),
-                              skipTraversal: item.value != entryId,
+                              skipTraversal:
+                                  widget.tabIndex == -1 ||
+                                  item.value != entryId,
                               onFocusChange: (focused) {
                                 if (mounted)
                                   setState(() {

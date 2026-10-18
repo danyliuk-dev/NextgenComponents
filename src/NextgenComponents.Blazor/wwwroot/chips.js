@@ -5,7 +5,7 @@ export function bind(root) {
  const sync=()=>{
   const all=entries();
   if(!all.includes(entry)||!target(entry))entry=all.find(x=>target(x)?.getAttribute('aria-pressed')==='true')??all.find(x=>target(x));
-  for(const item of all)for(const button of item.querySelectorAll('button.ng-chip-label,button.ng-chip-remove'))button.tabIndex=item===entry&&button===target(item)?0:-1;
+  for(const item of all)for(const button of item.querySelectorAll('button.ng-chip-label,button.ng-chip-remove'))button.tabIndex=root.dataset.chipTabIndex!=='-1'&&item===entry&&button===target(item)?0:-1;
  };
  const entries=()=>[...root.querySelectorAll('[data-chip-id]')];
  const target=item=>item?.querySelector('button.ng-chip-label:not(:disabled)')??item?.querySelector('button.ng-chip-remove:not(:disabled)');
@@ -37,7 +37,7 @@ export function bind(root) {
  });
  sync();
  root.addEventListener('focusin',remember);root.addEventListener('keydown',key);
- observer.observe(root,{childList:true,subtree:true,attributes:true,attributeFilter:['disabled']});
+ observer.observe(root,{childList:true,subtree:true,attributes:true,attributeFilter:['disabled','data-chip-tab-index']});
  lists.set(root,{observer,remember,key});
 }
 export function dispose(root){const s=lists.get(root);if(!s)return;s.observer.disconnect();root.removeEventListener('focusin',s.remember);root.removeEventListener('keydown',s.key);lists.delete(root);}

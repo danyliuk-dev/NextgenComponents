@@ -114,7 +114,23 @@ Flutter semanticIdentifier identifies a semantics node for automation; it is not
 
 Flutter has no DOM Class or aria-labelledby relationship in this API. Use the existing theme/appearance parameters for styling. For a shared heading, keep one application string and pass it to Text and the list's label; update both together. Use semanticHint for concise guidance and show the same text visibly when it helps users. A hint is not an exact aria-describedby equivalent; assistive-technology announcement varies by platform. Application code owns translations. Do not include secrets or personal data in automation identifiers.
 
-The examples wire contextual help to the list and a standalone command. The Business records demo can update its heading and guidance at runtime while retaining selection and identity. Browser accessibility-tree inspection and widget tests verify the exported information and actions; screen-reader testing/certification remains separate. Configurable TabIndex and listbox/option roles are still not supplied.
+The examples wire contextual help to the list and a standalone command. The Business records demo can update its heading and guidance at runtime while retaining selection and identity. Browser accessibility-tree inspection and widget tests verify the exported information and actions; screen-reader testing/certification remains separate. TabIndex supports -1 and 0 since 0.23; listbox/option roles remain open.
+
+
+### Participation in Tab navigation (0.23)
+
+TabIndex/tabIndex defaults to 0. Set -1 to skip the component during forward and reverse Tab traversal. Only -1 and 0 are accepted; positive indices and other negative values throw. This deliberately limited cross-platform contract does not reproduce every integer value of Telerik Chip.TabIndex. Use the application's layout/traversal policy to establish logical order instead of positive indices.
+
+For a standalone Chip, the setting applies to both its main action and removal action. Static labels and disabled actions never acquire a Tab stop. For ChipList, 0 retains one remembered enabled entry; -1 excludes the entire collection from Tab traversal. The list container remains a programmatic fallback, not an additional Tab stop. Individual items inside a list do not expose independent traversal indices.
+
+Exclusion does not disable the control: mouse/touch, accessibility activation, application focus, arrow navigation and removal continue to work. A focused item is not blurred when the setting changes. FocusAsync()/NgChipListController.focus() can still enter a skipped list, and Tab then leaves it. Returning the setting to 0 restores its remembered enabled entry. Selection and collection state remain parent-owned. Provide another accessible way to enter a list when excluding it; the demo includes a Focus directional topics button.
+
+
+### Space between tags (0.23)
+
+Gap/gap accepts sm (4), md (8, default) and lg (12). Blazor uses CSS pixels; Flutter uses logical pixels. The preset applies to both horizontal spacing and the distance between wrapped rows. It does not alter chip padding, font size, focus-outline padding or data order. Invalid strings throw. These are Nextgen spacing tokens; exact Telerik theme pixel matching is not claimed.
+
+Change the preset at runtime without rebuilding records. The Reading direction demo combines a gap selector, RTL switching, skipped Tab traversal and explicit focus. Flutter focus frames add their existing internal padding around each chip, so the visible border-to-border distance is not necessarily identical to Blazor even with equal spacing tokens. Use the controls at narrow widths to assess wrapping with your labels.
 
 
 ## Blazor example
@@ -124,7 +140,7 @@ The examples wire contextual help to the list and a standalone command. The Busi
 <p id="topics-help">Choose topics for this workspace.</p>
 <NgCheckBox Label="Right-to-left layout" @bind-Value="rtl" />
 <div dir="@(rtl ? "rtl" : "ltr")">
-<NgChipList Id="business-topics" Class="business-topics" AriaLabelledBy="topics-heading" AriaDescribedBy="topics-help" Label="Business topics" Items="data.Items" @bind-Value="selected"
+<NgChipList Gap="lg" TabIndex="0" Id="business-topics" Class="business-topics" AriaLabelledBy="topics-heading" AriaDescribedBy="topics-help" Label="Business topics" Items="data.Items" @bind-Value="selected"
     Multiple CanRemove="data.CanRemove" ItemAppearance="data.GetAppearance"
     OnClick="Open" OnRemove="Remove" />
 </div>
@@ -172,7 +188,7 @@ Widget build(BuildContext context) => Column(children: [
   Text(heading), Text(help),
   NgCheckBox(label: 'Right-to-left layout', value: rtl, onChanged: (v) => setState(() => rtl = v)),
   Directionality(textDirection: rtl ? TextDirection.rtl : TextDirection.ltr,
-    child: NgChipList(semanticIdentifier: 'business-topics', semanticHint: help, label: heading, items: data.items, value: selected,
+    child: NgChipList(gap: 'lg', tabIndex: 0, semanticIdentifier: 'business-topics', semanticHint: help, label: heading, items: data.items, value: selected,
     multiple: true, canRemove: data.canRemove, itemAppearance: data.getAppearance,
     onChanged: (v) => setState(() => selected = v),
     onClick: (id) => setState(() => message = 'Owner: ${data.getItem(id).owner}'),
@@ -192,6 +208,8 @@ Names are case-sensitive. `?` permits null. `EditorRequired` parameters are mark
 
 | Parameter | Type | Default / requirement | Purpose |
 |---|---|---|---|
+| `TabIndex` | `int` | 0 | 0 keeps normal Tab participation; -1 skips forward/reverse Tab while preserving pointer/application focus. Other values are rejected. |
+| `Gap` | `string` | "md" | ChipList spacing preset: sm=4, md=8 (default), lg=12; applies to columns and wrapped rows. |
 | `Id` | `string?` | not set | See the behavior rules and model contract above. |
 | `Class` | `string?` | not set | See the behavior rules and model contract above. |
 | `AriaLabelledBy` | `string?` | not set | Space-separated existing DOM IDs for the accessible name; takes precedence over Label. |
@@ -226,8 +244,10 @@ Names are case-sensitive. `?` permits null. `EditorRequired` parameters are mark
 |---|---|---|
 | `label` | `String` | Visible label or accessible name. |
 | `emptyText` | `String` | See the behavior rules and model contract above. |
+| `gap` | `String` | ChipList spacing preset: sm=4, md=8 (default), lg=12; applies to columns and wrapped rows. |
 | `semanticIdentifier` | `String?` | Optional nonblank automation identifier in the Flutter semantics tree; not a widget Key or DOM id. |
 | `semanticHint` | `String?` | Optional nonblank contextual guidance in the semantics tree; not a visible tooltip. |
+| `tabIndex` | `int` | 0 keeps normal Tab participation; -1 skips forward/reverse Tab while preserving pointer/application focus. Other values are rejected. |
 | `removeLabelBuilder` | `String Function(NgOption)?` | Pure callback supplying a complete accessible removal name for each NgOption. |
 | `focusController` | `NgChipListController?` | Application-owned NgChipListController; one list per controller. See lifecycle and focus rules. |
 | `items` | `List<NgOption>` | Input collection. Replace it when changing records or configuration. |
@@ -253,6 +273,8 @@ Names are case-sensitive. `?` permits null. `EditorRequired` parameters are mark
 const NgChipList({
     super.key,
     this.label = 'Tags',
+    this.gap = 'md',
+    this.tabIndex = 0,
     this.semanticIdentifier,
     this.semanticHint,
     this.emptyText = 'No tags',

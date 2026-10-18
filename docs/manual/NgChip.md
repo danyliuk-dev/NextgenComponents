@@ -57,14 +57,23 @@ Flutter semanticIdentifier identifies a semantics node for automation; it is not
 
 Flutter has no DOM Class or aria-labelledby relationship in this API. Use the existing theme/appearance parameters for styling. For a shared heading, keep one application string and pass it to Text and the list's label; update both together. Use semanticHint for concise guidance and show the same text visibly when it helps users. A hint is not an exact aria-describedby equivalent; assistive-technology announcement varies by platform. Application code owns translations. Do not include secrets or personal data in automation identifiers.
 
-The examples wire contextual help to the list and a standalone command. The Business records demo can update its heading and guidance at runtime while retaining selection and identity. Browser accessibility-tree inspection and widget tests verify the exported information and actions; screen-reader testing/certification remains separate. Configurable TabIndex and listbox/option roles are still not supplied.
+The examples wire contextual help to the list and a standalone command. The Business records demo can update its heading and guidance at runtime while retaining selection and identity. Browser accessibility-tree inspection and widget tests verify the exported information and actions; screen-reader testing/certification remains separate. TabIndex supports -1 and 0 since 0.23; listbox/option roles remain open.
+
+
+### Participation in Tab navigation (0.23)
+
+TabIndex/tabIndex defaults to 0. Set -1 to skip the component during forward and reverse Tab traversal. Only -1 and 0 are accepted; positive indices and other negative values throw. This deliberately limited cross-platform contract does not reproduce every integer value of Telerik Chip.TabIndex. Use the application's layout/traversal policy to establish logical order instead of positive indices.
+
+For a standalone Chip, the setting applies to both its main action and removal action. Static labels and disabled actions never acquire a Tab stop. For ChipList, 0 retains one remembered enabled entry; -1 excludes the entire collection from Tab traversal. The list container remains a programmatic fallback, not an additional Tab stop. Individual items inside a list do not expose independent traversal indices.
+
+Exclusion does not disable the control: mouse/touch, accessibility activation, application focus, arrow navigation and removal continue to work. A focused item is not blurred when the setting changes. FocusAsync()/NgChipListController.focus() can still enter a skipped list, and Tab then leaves it. Returning the setting to 0 restores its remembered enabled entry. Selection and collection state remain parent-owned. Provide another accessible way to enter a list when excluding it; the demo includes a Focus directional topics button.
 
 
 ## Blazor example
 
 ```razor
 <p id="build-help">Opens the build activity summary.</p>
-<NgChip Id="build-status" Class="build-status" AriaDescribedBy="build-help" Label="Build succeeded" Selectable="false" ThemeColor="success" FillMode="solid" Size="lg" Rounded="md" OnClick="()=>clicks++">
+<NgChip TabIndex="0" Id="build-status" Class="build-status" AriaDescribedBy="build-help" Label="Build succeeded" Selectable="false" ThemeColor="success" FillMode="solid" Size="lg" Rounded="md" OnClick="()=>clicks++">
     <Leading><span>✓</span></Leading>
     <ChildContent><strong>Build succeeded</strong></ChildContent>
 </NgChip>
@@ -86,7 +95,7 @@ The examples wire contextual help to the list and a standalone command. The Busi
 bool selected = false, visible = true;
 int clicks = 0;
 Widget build(BuildContext context) => Wrap(spacing: 8, children: [
-  NgChip(semanticIdentifier: 'build-status', semanticHint: 'Opens the build activity summary.', label: 'Build succeeded', selectable: false, themeColor: 'success',
+  NgChip(tabIndex: 0, semanticIdentifier: 'build-status', semanticHint: 'Opens the build activity summary.', label: 'Build succeeded', selectable: false, themeColor: 'success',
     fillMode: 'solid', size: 'lg', rounded: 'md', leading: const Icon(Icons.check, size: 18),
     child: const Text('Build succeeded'), onClick: () => setState(() => clicks++)),
   if (visible) NgChip(label: 'Favourite', value: selected,
@@ -103,6 +112,7 @@ Names are case-sensitive. `?` permits null. `EditorRequired` parameters are mark
 
 | Parameter | Type | Default / requirement | Purpose |
 |---|---|---|---|
+| `TabIndex` | `int` | 0 | 0 keeps normal Tab participation; -1 skips forward/reverse Tab while preserving pointer/application focus. Other values are rejected. |
 | `Id` | `string?` | not set | See the behavior rules and model contract above. |
 | `Class` | `string?` | not set | See the behavior rules and model contract above. |
 | `AriaLabelledBy` | `string?` | not set | Space-separated existing DOM IDs for the accessible name; takes precedence over Label. |
@@ -132,6 +142,7 @@ Names are case-sensitive. `?` permits null. `EditorRequired` parameters are mark
 | `label` | `String` | Visible label or accessible name. |
 | `semanticIdentifier` | `String?` | Optional nonblank automation identifier in the Flutter semantics tree; not a widget Key or DOM id. |
 | `semanticHint` | `String?` | Optional nonblank contextual guidance in the semantics tree; not a visible tooltip. |
+| `tabIndex` | `int` | 0 keeps normal Tab participation; -1 skips forward/reverse Tab while preserving pointer/application focus. Other values are rejected. |
 | `removeLabel` | `String?` | Complete nonblank accessible removal name; for ChipList, a callback receiving NgOption. |
 | `value` | `bool` | Current value; see state ownership and model rules above. |
 | `selectable` | `bool` | See the behavior rules and model contract above. |
@@ -151,6 +162,7 @@ Names are case-sensitive. `?` permits null. `EditorRequired` parameters are mark
 const NgChip({
     super.key,
     required this.label,
+    this.tabIndex = 0,
     this.semanticIdentifier,
     this.semanticHint,
     this.removeLabel,

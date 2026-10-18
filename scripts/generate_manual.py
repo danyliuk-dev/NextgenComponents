@@ -5,6 +5,8 @@ from manual_content import D
 root=Path(__file__).resolve().parents[1]
 out=root/'docs/manual';out.mkdir(exist_ok=True)
 help={
+'gap':'ChipList spacing preset: sm=4, md=8 (default), lg=12; applies to columns and wrapped rows.',
+'tabindex':'0 keeps normal Tab participation; -1 skips forward/reverse Tab while preserving pointer/application focus. Other values are rejected.',
 'arialabelledby':'Space-separated existing DOM IDs for the accessible name; takes precedence over Label.',
 'ariadescribedby':'Space-separated existing DOM IDs for contextual guidance; see target-element rules.',
 'semanticidentifier':'Optional nonblank automation identifier in the Flutter semantics tree; not a widget Key or DOM id.',
@@ -66,7 +68,7 @@ for p in (root/'packages/nextgen_components/lib/src').glob('*.dart'):
  for m in re.finditer(r'class (Ng\w+)(?:<[^\n]+>)? extends (?:StatefulWidget|StatelessWidget)',s):
   end=s.find('@override',m.end());flutter[m[1]]=(p,s[m.end():end])
 def md(s):return s.replace('|','\\|').replace('\n',' ')
-index=['# Nextgen Components manual','','Version 0.22.0. Detailed guidance for every public Blazor and Flutter Web component. This documents the implemented API, not full Telerik feature parity.','','Start with [Getting started](getting-started.md) and [Code examples](code-examples.md). See [data models and formulas](models.md) for shared model contracts and [verification](../verification.md) for tested behavior.','','Each page contains a Blazor example and a Flutter example, followed by API tables and integration rules. Flutter snippets belong inside a State class with the Material and Nextgen imports; the getting-started page supplies the full application shell.','','| Component | Purpose |','|---|---|']
+index=['# Nextgen Components manual','','Version 0.23.0. Detailed guidance for every public Blazor and Flutter Web component. This documents the implemented API, not full Telerik feature parity.','','Start with [Getting started](getting-started.md) and [Code examples](code-examples.md). See [data models and formulas](models.md) for shared model contracts and [verification](../verification.md) for tested behavior.','','Each page contains a Blazor example and a Flutter example, followed by API tables and integration rules. Flutter snippets belong inside a State class with the Material and Nextgen imports; the getting-started page supplies the full application shell.','','| Component | Purpose |','|---|---|']
 for p in sorted((root/'src/NextgenComponents.Blazor').glob('Ng*.razor')):
  n=p.stem;d=D[n];source=p.read_text();fp,fs=flutter[n]
  lines=[f'# {n} — {d["title"]}','','[Manual](README.md) · [Getting started](getting-started.md) · [Code examples](code-examples.md) · [Models](models.md)','','## When to use it','',d['use'],'','## Behavior and practical rules','',d['notes'],'','## Blazor example','','```razor',d['blazor'],'```','','## Flutter example','','```dart',d['dart'],'```','','## Blazor parameters and events','','Names are case-sensitive. `?` permits null. `EditorRequired` parameters are marked required; other values use the initializer or CLR default.','','| Parameter | Type | Default / requirement | Purpose |','|---|---|---|---|']

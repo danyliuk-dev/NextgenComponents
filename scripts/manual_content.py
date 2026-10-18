@@ -1714,3 +1714,29 @@ D['NgChip']['blazor'] = '<p id="build-help">Opens the build activity summary.</p
 D['NgChip']['dart'] = D['NgChip']['dart'].replace("NgChip(label: 'Build succeeded',", "NgChip(semanticIdentifier: 'build-status', semanticHint: 'Opens the build activity summary.', label: 'Build succeeded',")
 D['NgChipList']['blazor'] = '<h2 id="topics-heading">Business topics</h2>\n<p id="topics-help">Choose topics for this workspace.</p>\n' + D['NgChipList']['blazor'].replace('<NgChipList Label="Business topics"', '<NgChipList Id="business-topics" Class="business-topics" AriaLabelledBy="topics-heading" AriaDescribedBy="topics-help" Label="Business topics"')
 D['NgChipList']['dart'] = D['NgChipList']['dart'].replace('bool rtl = false;', "final heading = 'Business topics';\nfinal help = 'Choose topics for this workspace.';\nbool rtl = false;").replace('Widget build(BuildContext context) => Column(children: [', 'Widget build(BuildContext context) => Column(children: [\n  Text(heading), Text(help),').replace("NgChipList(label: 'Business topics'", "NgChipList(semanticIdentifier: 'business-topics', semanticHint: help, label: heading")
+
+# 0.23: safe traversal participation and spacing presets.
+for name in ('NgChip', 'NgChipList'):
+    D[name]['notes'] = D[name]['notes'].replace('Configurable TabIndex and listbox/option roles are still not supplied.', 'TabIndex supports -1 and 0 since 0.23; listbox/option roles remain open.')
+    D[name]['notes'] += """
+
+### Participation in Tab navigation (0.23)
+
+TabIndex/tabIndex defaults to 0. Set -1 to skip the component during forward and reverse Tab traversal. Only -1 and 0 are accepted; positive indices and other negative values throw. This deliberately limited cross-platform contract does not reproduce every integer value of Telerik Chip.TabIndex. Use the application's layout/traversal policy to establish logical order instead of positive indices.
+
+For a standalone Chip, the setting applies to both its main action and removal action. Static labels and disabled actions never acquire a Tab stop. For ChipList, 0 retains one remembered enabled entry; -1 excludes the entire collection from Tab traversal. The list container remains a programmatic fallback, not an additional Tab stop. Individual items inside a list do not expose independent traversal indices.
+
+Exclusion does not disable the control: mouse/touch, accessibility activation, application focus, arrow navigation and removal continue to work. A focused item is not blurred when the setting changes. FocusAsync()/NgChipListController.focus() can still enter a skipped list, and Tab then leaves it. Returning the setting to 0 restores its remembered enabled entry. Selection and collection state remain parent-owned. Provide another accessible way to enter a list when excluding it; the demo includes a Focus directional topics button.
+"""
+D['NgChipList']['notes'] += """
+
+### Space between tags (0.23)
+
+Gap/gap accepts sm (4), md (8, default) and lg (12). Blazor uses CSS pixels; Flutter uses logical pixels. The preset applies to both horizontal spacing and the distance between wrapped rows. It does not alter chip padding, font size, focus-outline padding or data order. Invalid strings throw. These are Nextgen spacing tokens; exact Telerik theme pixel matching is not claimed.
+
+Change the preset at runtime without rebuilding records. The Reading direction demo combines a gap selector, RTL switching, skipped Tab traversal and explicit focus. Flutter focus frames add their existing internal padding around each chip, so the visible border-to-border distance is not necessarily identical to Blazor even with equal spacing tokens. Use the controls at narrow widths to assess wrapping with your labels.
+"""
+D['NgChipList']['blazor'] = D['NgChipList']['blazor'].replace('<NgChipList Id=', '<NgChipList Gap="lg" TabIndex="0" Id=')
+D['NgChipList']['dart'] = D['NgChipList']['dart'].replace("NgChipList(semanticIdentifier:", "NgChipList(gap: 'lg', tabIndex: 0, semanticIdentifier:")
+D['NgChip']['blazor'] = D['NgChip']['blazor'].replace('<NgChip Id="build-status"', '<NgChip TabIndex="0" Id="build-status"')
+D['NgChip']['dart'] = D['NgChip']['dart'].replace("NgChip(semanticIdentifier: 'build-status'", "NgChip(tabIndex: 0, semanticIdentifier: 'build-status'")

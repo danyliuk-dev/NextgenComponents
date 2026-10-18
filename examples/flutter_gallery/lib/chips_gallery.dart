@@ -146,6 +146,9 @@ class _ChipsGalleryState extends State<ChipsGallery> {
     ],
   );
 
+  final directionFocus = NgChipListController();
+  String gap = 'md';
+  bool skipTab = false;
   bool rtl = true;
   static List<NgOption> directionOptions() => const [
     NgOption('design', 'Design systems'),
@@ -174,12 +177,32 @@ class _ChipsGalleryState extends State<ChipsGallery> {
           NgButton(
             onPressed: () => setState(() {
               rtl = true;
+              gap = 'md';
+              skipTab = false;
               directionItems = directionOptions();
               directionSelected = ['design'];
             }),
             child: const Text('Reset direction example'),
           ),
         ],
+      ),
+      Wrap(
+        spacing: 12,
+        children: [
+          choice('Tag gap', gap, ['sm', 'md', 'lg'], (v) => gap = v),
+          NgCheckBox(
+            label: 'Skip topics with Tab',
+            value: skipTab,
+            onChanged: (v) => setState(() => skipTab = v),
+          ),
+        ],
+      ),
+      const Text(
+        'Tab skips the list when enabled; mouse and Focus directional topics still work. Gap changes both columns and rows.',
+      ),
+      NgButton(
+        onPressed: () => directionFocus.focus(),
+        child: const Text('Focus directional topics'),
       ),
       SizedBox(
         width: 420,
@@ -190,6 +213,9 @@ class _ChipsGalleryState extends State<ChipsGallery> {
             children: [
               NgChipList(
                 label: 'Directional topics',
+                gap: gap,
+                tabIndex: skipTab ? -1 : 0,
+                focusController: directionFocus,
                 items: directionItems,
                 value: directionSelected,
                 multiple: true,
@@ -214,6 +240,7 @@ class _ChipsGalleryState extends State<ChipsGallery> {
           ),
         ),
       ),
+      NgButton(onPressed: () {}, child: const Text('After topics')),
       Semantics(
         liveRegion: true,
         child: Text(
@@ -235,6 +262,7 @@ class _ChipsGalleryState extends State<ChipsGallery> {
   @override
   void dispose() {
     chipFocus.dispose();
+    directionFocus.dispose();
     super.dispose();
   }
 
@@ -306,7 +334,7 @@ class _ChipsGalleryState extends State<ChipsGallery> {
               ),
               const SizedBox(height: 16),
               const Text(
-                'FLUTTER WEB / CHIPS 0.22 · Select topics, remove a tag, or show a compact status. Your application owns every change.',
+                'FLUTTER WEB / CHIPS 0.23 · Select topics, remove a tag, or show a compact status. Your application owns every change.',
               ),
               const SizedBox(height: 28),
               Wrap(
@@ -511,6 +539,7 @@ class _ChipsGalleryState extends State<ChipsGallery> {
                 child: NgChip(
                   label: 'Open activity',
                   semanticIdentifier: 'activity-chip',
+                  tabIndex: skipTab ? -1 : 0,
                   semanticHint: 'Opens the activity summary.',
                   selectable: false,
                   disabled: disabled,
