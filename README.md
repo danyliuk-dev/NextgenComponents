@@ -6,7 +6,7 @@ Blazor and Flutter component libraries with a shared design-token source and a T
 
 ## Manual
 
-[Подробное руководство на русском](docs/manual/README.md): все 36 компонентов, параметры и события, примеры Blazor/Flutter, правила состояния, формы, модели, формулы и ограничения.
+[Подробное руководство на русском](docs/manual/README.md): все 37 компонентов, параметры и события, примеры Blazor/Flutter, правила состояния, формы, модели, формулы и ограничения.
 
 ## Layout
 
@@ -38,6 +38,18 @@ For a standalone web build (including local renderer assets):
 flutter build web --no-web-resources-cdn
 python3 -m http.server 5181 --bind 127.0.0.1 --directory build/web
 ```
+
+## Linux desktop launcher
+
+```sh
+python3 scripts/install_desktop_launcher.py
+```
+
+Creates **Nextgen Components** on the desktop and in the applications menu. Open it to launch a local page with Blazor demo, Flutter demo and the Russian manual rendered with tables and code examples. The shortcut context menu also has direct actions for each destination.
+
+The launcher starts missing services on loopback ports 5180–5182 through the user systemd manager and reuses running galleries. It does not replace unrelated processes on occupied ports. Logs: `artifacts/launcher/`. Existing demo builds are reused; after source changes rebuild the galleries using the commands above. Missing builds are built on first launch (.NET/Flutter SDK required). Documentation reads the current Markdown files without a separate build.
+
+Requirements: Linux desktop with Google Chrome, user systemd, Python 3 and `markdown_it` (Ubuntu package `python3-markdown-it`). Optional `notify-send` reports launch errors. Install again if the repository moves. The launcher does not run at login. To stop servers it started: `systemctl --user stop nextgen-components-blazor nextgen-components-flutter nextgen-components-documentation`. Previously running servers are left under their original owner.
 
 ## Use in Blazor
 
