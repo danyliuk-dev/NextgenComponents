@@ -1,0 +1,39 @@
+@implements IDisposable
+<section class="ng-wizard" aria-label="@Label" aria-busy="@(busy?"true":"false")">
+<NgStepper Label="@Label" Items="Items" Value="Value" ValueChanged="Move" Linear="Linear" Vertical="Vertical" Disabled="@(Disabled||busy||finished)"/>
+<div class="ng-wizard-content" role="region" aria-label="@Items[Value].Label">@ChildContent(Value)</div>
+@if(error is not null){<p role="alert" class="ng-wizard-error">@error</p>}
+<p role="status">@(busy?"Checking…":finished?"Completed.":$"Step {Value+1} of {Items.Count}")</p>
+<div class="ng-wizard-actions"><NgButton Disabled="@(Disabled||busy||finished||Previous<0)" OnClick="()=>Move(Previous)">Back</NgButton>
+@if(Next>=0){<NgButton Primary Disabled="@(Disabled||busy||finished)" OnClick="()=>Move(Next)">Next</NgButton>}
+else{<NgButton Primary Disabled="@(Disabled||busy||finished||!OnFinish.HasDelegate)" OnClick="Finish">Finish</NgButton>}
+</div></section>
+@code {
+ [Parameter] public string Label {get;set;}="Wizard";
+ [Parameter,EditorRequired] public IReadOnlyList<NgStep> Items {get;set;}=[];
+ [Parameter] public int Value {get;set;}
+ [Parameter] public EventCallback<int> ValueChanged {get;set;}
+ [Parameter] public bool Linear {get;set;}=true;
+ [Parameter] public bool Vertical {get;set;}
+ [Parameter] public bool Disabled {get;set;}
+ [Parameter] public Func<int,Task<string?>>? ValidateStep {get;set;}
+ [Parameter] public EventCallback OnFinish {get;set;}
+ [Parameter,EditorRequired] public RenderFragment<int> ChildContent {get;set;}=default!;
+ private bool busy,finished,disposed;private string? error;private int revision;
+ private int incoming=-1;private NgStep[] snapshot=[];private bool wasDisabled;
+ private int Previous=>NgStepRules.Adjacent(Items,Value,-1);private int Next=>NgStepRules.Adjacent(Items,Value,1);
+ protected override void OnParametersSet(){NgStepRules.Validate(Items,Value);if(ChildContent is null)throw new ArgumentException("ChildContent is required.");if(incoming!=Value||!snapshot.SequenceEqual(Items)||wasDisabled!=Disabled){revision++;busy=false;finished=false;error=null;incoming=Value;snapshot=Items.ToArray();wasDisabled=Disabled;}}
+ private Task Move(int target)=>NgStepRules.CanMove(Items,Value,target,Linear)?Act(target,false):Task.CompletedTask;
+ private Task Finish()=>Next<0&&OnFinish.HasDelegate?Act(Value,true):Task.CompletedTask;
+ private async Task Act(int target,bool finish){
+  if(Disabled||busy||finished||disposed)return;var version=++revision;var source=Value;busy=true;error=null;
+  try{
+   if((target>source||finish)&&ValidateStep is not null){var message=await ValidateStep(source);if(version!=revision||disposed)return;if(!string.IsNullOrEmpty(message)){error=message;return;}}
+   if(version!=revision||disposed)return;
+   if(finish){await OnFinish.InvokeAsync();if(version==revision&&!disposed)finished=true;}
+   else await ValueChanged.InvokeAsync(target);
+  }catch(Exception){if(version==revision&&!disposed)error="Unable to complete this action. Try again.";}
+  finally{if(version==revision&&!disposed)busy=false;}
+ }
+ public void Dispose(){disposed=true;revision++;}
+}

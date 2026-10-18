@@ -1,61 +1,61 @@
-# NgNumericTextBox — Числовое поле
+# NgNumericTextBox — Numeric input
 
-[Оглавление](README.md) · [Подключение](getting-started.md) · [Модели](models.md)
+[Manual](README.md) · [Getting started](getting-started.md) · [Code examples](code-examples.md) · [Models](models.md)
 
-## Когда использовать
+## When to use it
 
-Ввод количества или суммы с границами и сохранением последнего корректного значения.
+Edit a nullable number with range validation.
 
-## Поведение и практические правила
+## Behavior and practical rules
 
-Типы различаются: Blazor decimal?, Flutter double?. Пустое необязательное поле соответствует null. Flutter сохраняет некорректный черновик, но не публикует его как число; NgForm.validate блокирует отправку. Во Flutter required: true запрещает пустое значение; в Blazor добавьте Required/Range к модели формы. Step имеется только в Blazor API. Это не форматтер валют и не финансовый движок.
+Min/Max are inclusive. Invalid text must not silently submit the last valid number: submit through NgForm so the displayed draft is validated. Empty optional input is null. Blazor uses its declared numeric type and InputBase expression binding; Flutter uses double?. Keep storage precision and business rounding in the application. Do not treat a numeric input as a currency or timezone service.
 
-## Blazor: рабочий пример
+## Blazor example
 
 ```razor
-<NgNumericTextBox Label="Количество" Min="0" Max="100" Step="1" @bind-Value="quantity"/>
+<NgNumericTextBox Label="Quantity" Min="0" Max="100" Step="1" @bind-Value="quantity"/>
 @code { private decimal? quantity=5; }
 ```
 
-## Flutter: рабочий пример
+## Flutter example
 
 ```dart
 double? quantity = 5;
-Widget build(BuildContext context) => NgNumericTextBox(label: 'Количество',
+Widget build(BuildContext context) => NgNumericTextBox(label: 'Quantity',
   value: quantity, min: 0, max: 100, required: true,
   onChanged: (v) => setState(() => quantity = v));
 ```
 
-## Параметры и события Blazor
+## Blazor parameters and events
 
-Имена чувствительны к регистру. `?` в типе разрешает null. Параметры с `EditorRequired` отмечены как обязательные; остальные имеют значение по умолчанию CLR или инициализатор ниже.
+Names are case-sensitive. `?` permits null. `EditorRequired` parameters are marked required; other values use the initializer or CLR default.
 
-| Параметр | Тип | По умолчанию / требование | Назначение |
+| Parameter | Type | Default / requirement | Purpose |
 |---|---|---|---|
-| `Id` | `string` | "ng-" + Guid.NewGuid().ToString("N") | Уникальный HTML ID; по умолчанию генерируется. |
-| `Label` | `string` | "" | Подпись элемента или доступное имя. |
-| `Value` | `decimal?` | не задан | Текущее значение; тип и правила описаны выше. |
-| `ValueChanged` | `EventCallback<decimal?>` | не задан | Новое значение для родителя; сохраните его в модели. |
-| `ValueExpression` | `System.Linq.Expressions.Expression<Func<decimal?>>?` | не задан | Выражение поля модели для валидации. @bind-Value создаёт автоматически; при ручных Value/ValueChanged передайте явно, даже вне формы. |
-| `Min` | `decimal?` | не задан | Нижняя включительная граница. |
-| `Max` | `decimal?` | не задан | Верхняя включительная граница. |
-| `Step` | `decimal` | 1 | Шаг числового ввода. |
-| `Disabled` | `bool` | false | true запрещает действия пользователя. |
-| `AdditionalAttributes` | `Dictionary<string,object>?` | не задан | Дополнительные HTML/ARIA атрибуты; не используйте для обхода проверок модели. |
+| `Id` | `string` | "ng-" + Guid.NewGuid().ToString("N") | See the behavior rules and model contract above. |
+| `Label` | `string` | "" | Visible label or accessible name. |
+| `Value` | `decimal?` | not set | Current value; see state ownership and model rules above. |
+| `ValueChanged` | `EventCallback<decimal?>` | not set | New value for the parent to store and pass back. |
+| `ValueExpression` | `System.Linq.Expressions.Expression<Func<decimal?>>?` | not set | Expression identifying the model field; @bind-Value supplies it automatically. |
+| `Min` | `decimal?` | not set | Inclusive minimum. |
+| `Max` | `decimal?` | not set | Inclusive maximum. |
+| `Step` | `decimal` | 1 | See the behavior rules and model contract above. |
+| `Disabled` | `bool` | false | Disable user interaction. |
+| `AdditionalAttributes` | `Dictionary<string,object>?` | not set | Additional HTML/ARIA attributes; do not bypass component validation. |
 
-## Параметры и события Flutter
+## Flutter parameters and events
 
-`required` в конструкторе означает обязательный аргумент, даже если его тип допускает null. `key` — стандартный Flutter Key. Значения по умолчанию приведены в точной сигнатуре ниже.
+`required` marks a mandatory argument even if its type is nullable. `key` is the standard Flutter Key. The exact constructor below specifies defaults.
 
-| Аргумент | Тип | Назначение |
+| Argument | Type | Purpose |
 |---|---|---|
-| `label` | `String` | Подпись элемента или доступное имя. |
-| `value` | `double?` | Текущее значение; тип и правила описаны выше. |
-| `min` | `double?` | Нижняя включительная граница. |
-| `max` | `double?` | Верхняя включительная граница. |
-| `onChanged` | `ValueChanged<double?>?` | Новое значение для родителя; обновите состояние через setState. |
-| `enabled` | `bool` | false запрещает действия пользователя. |
-| `required` | `bool` | true требует непустое значение при проверке формы. |
+| `label` | `String` | Visible label or accessible name. |
+| `value` | `double?` | Current value; see state ownership and model rules above. |
+| `min` | `double?` | Inclusive minimum. |
+| `max` | `double?` | Inclusive maximum. |
+| `onChanged` | `ValueChanged<double?>?` | Store the new value using setState or your state manager. |
+| `enabled` | `bool` | See the behavior rules and model contract above. |
+| `required` | `bool` | Require a nonempty/selected value during form validation. |
 
 ```dart
 const NgNumericTextBox({
@@ -70,17 +70,17 @@ const NgNumericTextBox({
   });
 ```
 
-## Интеграция и диагностика
+## Integration and troubleshooting
 
-Если интерфейс не обновляется, проверьте, сохраняет ли родитель результат callback и передаёт ли новое значение обратно. Для Blazor нужен интерактивный render mode; для Flutter — setState или используемый менеджер состояния. Данные формы отправляйте только после её успешной валидации.
+If the UI does not update, confirm that the parent stores callback values and passes them back. Blazor event handlers need interactive rendering; Flutter requires setState or a state manager. Submit form data only after successful validation.
 
-Проверяйте понятную подпись, пустое состояние, недоступность и размер контейнера. Клавиатурные возможности не означают полной сертификации screen reader. Сейчас проверяется Web в Chrome; нативные мобильные платформы будут проверяться отдельно.
+Check accessible labels, empty/invalid states, disabled actions and narrow layouts. Keyboard support is not full screen-reader certification. Current visual verification targets Web in visible Chrome on Linux/iMac; native mobile platforms are a separate phase.
 
-## Исходники и полный сценарий
+## Source and complete examples
 
-- [Blazor](../../src/NextgenComponents.Blazor/NgNumericTextBox.razor)
-- [Flutter](../../packages/nextgen_components/lib/src/components.dart)
-- [Галереи и запуск](../../README.md#run)
-- [Матрица возможностей](../catalog.md)
+- [Blazor source](../../src/NextgenComponents.Blazor/NgNumericTextBox.razor)
+- [Flutter source](../../packages/nextgen_components/lib/src/components.dart)
+- [Galleries and launch commands](../../README.md#run)
+- [Capability matrix](../catalog.md)
 
-Версия параметров сгенерирована из текущего исходного кода. Примеры и правила сопровождаются отдельно в `scripts/manual_content.py`; после изменения API выполните `python3 scripts/generate_manual.py`.
+API declarations are generated from current source. Curated examples and behavior live in `scripts/manual_content.py`; regenerate with `python3 scripts/generate_manual.py`.

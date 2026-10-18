@@ -16,7 +16,7 @@ command = f'{quote(sys.executable)} {quote(root / "scripts/desktop_launcher.py")
 content = f'''[Desktop Entry]
 Type=Application
 Name=Nextgen Components
-Comment=Demo Blazor, Flutter Web и документация
+Comment=Blazor and Flutter Web demos, code examples and documentation
 Exec={command}
 Icon={root / 'scripts/nextgen-icon.svg'}
 Terminal=false
@@ -33,7 +33,7 @@ Name=Flutter demo
 Exec={command} --page flutter
 
 [Desktop Action Manual]
-Name=Документация
+Name=Documentation
 Exec={command} --page manual
 '''
 for directory in (desktop, applications):

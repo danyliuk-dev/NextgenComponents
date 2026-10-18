@@ -1,49 +1,51 @@
-# Руководство Nextgen Components
+# Nextgen Components manual
 
-Версия 0.10.0. Подробное руководство для всех публичных компонентов Blazor и Flutter Web. Это описание фактически реализованного API, а не обещание полного набора возможностей Telerik.
+Version 0.11.0. Detailed guidance for every public Blazor and Flutter Web component. This documents the implemented API, not full Telerik feature parity.
 
-Начните с [подключения и правил состояния](getting-started.md), затем выберите компонент. Модели и формулы описаны в [справочнике данных](models.md). Реальные ограничения и результаты проверок: [verification](../verification.md).
+Start with [Getting started](getting-started.md) and [Code examples](code-examples.md). See [data models and formulas](models.md) for shared model contracts and [verification](../verification.md) for tested behavior.
 
-Примеры Blazor — содержимое Razor-страницы с `@using NextgenComponents.Blazor`. Flutter-примеры — поля и методы внутри `State` после `import package:nextgen_components/nextgen_components.dart`; `build` возвращает отдельный компонент, оберните страницу в MaterialApp/Scaffold, как в начальном руководстве.
+Each page contains a Blazor example and a Flutter example, followed by API tables and integration rules. Flutter snippets belong inside a State class with the Material and Nextgen imports; the getting-started page supplies the full application shell.
 
-| Компонент | Назначение |
+| Component | Purpose |
 |---|---|
-| [NgAIPrompt](NgAIPrompt.md) | Работа с AI-запросами |
-| [NgArcGauge](NgArcGauge.md) | Дуговой индикатор |
-| [NgAutoComplete](NgAutoComplete.md) | Текст с подсказками |
-| [NgBreadcrumb](NgBreadcrumb.md) | Навигационная цепочка |
-| [NgButton](NgButton.md) | Кнопка |
-| [NgCalendar](NgCalendar.md) | Календарь |
-| [NgChart](NgChart.md) | Диаграмма |
-| [NgCheckBox](NgCheckBox.md) | Флажок |
-| [NgComboBox](NgComboBox.md) | Выбор с поиском |
-| [NgDataGrid](NgDataGrid.md) | Таблица записей |
-| [NgDateInput](NgDateInput.md) | Ручной ввод даты |
-| [NgDatePicker](NgDatePicker.md) | Дата с календарём |
-| [NgDateRangePicker](NgDateRangePicker.md) | Диапазон дат |
-| [NgDateTimePicker](NgDateTimePicker.md) | Дата и время |
-| [NgDiagram](NgDiagram.md) | Интерактивная схема |
-| [NgDialog](NgDialog.md) | Модальное окно |
-| [NgDropDownList](NgDropDownList.md) | Выпадающий список |
-| [NgEditor](NgEditor.md) | Редактор структурированного документа |
-| [NgForm](NgForm.md) | Форма и валидация |
-| [NgLinearGauge](NgLinearGauge.md) | Линейный индикатор |
-| [NgMap](NgMap.md) | Интерактивная карта |
-| [NgMultiSelect](NgMultiSelect.md) | Множественный выбор |
-| [NgNotification](NgNotification.md) | Уведомление |
-| [NgNumericTextBox](NgNumericTextBox.md) | Числовое поле |
-| [NgPager](NgPager.md) | Страницы данных |
-| [NgPdfViewer](NgPdfViewer.md) | Просмотр PDF |
-| [NgPivotGrid](NgPivotGrid.md) | Сводная таблица |
-| [NgPromptBox](NgPromptBox.md) | Поле запроса |
-| [NgRadioGroup](NgRadioGroup.md) | Группа вариантов |
-| [NgScheduler](NgScheduler.md) | Недельное расписание |
-| [NgSpreadsheet](NgSpreadsheet.md) | Электронный лист |
-| [NgSwitch](NgSwitch.md) | Переключатель |
-| [NgTabs](NgTabs.md) | Вкладки |
-| [NgTextArea](NgTextArea.md) | Многострочный текст |
-| [NgTextBox](NgTextBox.md) | Однострочный текст |
-| [NgTimePicker](NgTimePicker.md) | Время |
-| [NgTooltip](NgTooltip.md) | Подсказка |
-| [NgTreeList](NgTreeList.md) | Дерево с колонками |
-| [NgTreeView](NgTreeView.md) | Дерево |
+| [NgAIPrompt](NgAIPrompt.md) | AI prompt interface |
+| [NgArcGauge](NgArcGauge.md) | Arc gauge |
+| [NgAutoComplete](NgAutoComplete.md) | Text suggestions |
+| [NgBreadcrumb](NgBreadcrumb.md) | Breadcrumb |
+| [NgButton](NgButton.md) | Button |
+| [NgCalendar](NgCalendar.md) | Calendar |
+| [NgChart](NgChart.md) | Chart |
+| [NgCheckBox](NgCheckBox.md) | Checkbox |
+| [NgComboBox](NgComboBox.md) | Searchable selection |
+| [NgDataGrid](NgDataGrid.md) | Data grid |
+| [NgDateInput](NgDateInput.md) | Date input |
+| [NgDatePicker](NgDatePicker.md) | Date picker |
+| [NgDateRangePicker](NgDateRangePicker.md) | Date range |
+| [NgDateTimePicker](NgDateTimePicker.md) | Date and time |
+| [NgDiagram](NgDiagram.md) | Interactive diagram |
+| [NgDialog](NgDialog.md) | Modal dialog |
+| [NgDropDownList](NgDropDownList.md) | Dropdown list |
+| [NgEditor](NgEditor.md) | Structured document editor |
+| [NgForm](NgForm.md) | Form validation |
+| [NgLinearGauge](NgLinearGauge.md) | Linear gauge |
+| [NgMap](NgMap.md) | Interactive map |
+| [NgMultiSelect](NgMultiSelect.md) | Multiple selection |
+| [NgNotification](NgNotification.md) | Notification |
+| [NgNumericTextBox](NgNumericTextBox.md) | Numeric input |
+| [NgPager](NgPager.md) | Pagination |
+| [NgPdfViewer](NgPdfViewer.md) | PDF viewer |
+| [NgPivotGrid](NgPivotGrid.md) | Pivot grid |
+| [NgPromptBox](NgPromptBox.md) | Prompt input |
+| [NgRadioGroup](NgRadioGroup.md) | Radio group |
+| [NgScheduler](NgScheduler.md) | Weekly scheduler |
+| [NgSpreadsheet](NgSpreadsheet.md) | Spreadsheet |
+| [NgStepper](NgStepper.md) | Step progress |
+| [NgSwitch](NgSwitch.md) | Switch |
+| [NgTabs](NgTabs.md) | Tabs |
+| [NgTextArea](NgTextArea.md) | Multiline text |
+| [NgTextBox](NgTextBox.md) | Single-line text |
+| [NgTimePicker](NgTimePicker.md) | Time picker |
+| [NgTooltip](NgTooltip.md) | Tooltip |
+| [NgTreeList](NgTreeList.md) | Tree list |
+| [NgTreeView](NgTreeView.md) | Tree view |
+| [NgWizard](NgWizard.md) | Multi-step wizard |

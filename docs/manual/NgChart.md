@@ -1,55 +1,55 @@
-# NgChart — Диаграмма
+# NgChart — Chart
 
-[Оглавление](README.md) · [Подключение](getting-started.md) · [Модели](models.md)
+[Manual](README.md) · [Getting started](getting-started.md) · [Code examples](code-examples.md) · [Models](models.md)
 
-## Когда использовать
+## When to use it
 
-Сравнение категорий и серий; шесть режимов: column, bar, line, area, pie, donut.
+Visualize local series as column, bar, line, area, pie or donut charts.
 
-## Поведение и практические правила
+## Behavior and practical rules
 
-Число Values/values в каждой серии должно совпадать с Categories/categories. null создаёт разрыв линии; NaN/Infinity не допускаются. Pie/Donut принимают одну неотрицательную серию; нулевой итог показывает пустое состояние. Легенда скрывает серию; callback точки содержит индекс и имя категории/серии и число. Для клавиатуры используйте Chart data (в Blazor также SVG-точки Enter/Space). В Flutter прямой клик canvas и доступные кнопки списка разделены. Стэкинг, zoom, export и автоматическая раскладка длинных подписей отсутствуют.
+Categories define the shared domain; every series must have the same number of nullable numeric values. Null breaks a line instead of becoming zero. Point selection returns NgChartSelection with zero-based series/point indices, their names, the number and a ready-to-use label. The application chooses what to do with a point. Keep units explicit. See [analytics and scheduling](../analytics-and-schedule.md) for mode-specific constraints; advanced axes, export, remote aggregation and broad chart-type parity are not implemented.
 
-## Blazor: рабочий пример
+## Blazor example
 
 ```razor
-<NgChart Title="Продажи" Kind="NgChartKind.Line" Categories="categories" Series="series" OnPointSelected="p=>selected=p.Label"/>
+<NgChart Title="Sales" Kind="NgChartKind.Line" Categories="categories" Series="series" OnPointSelected="p=>selected=p.Label"/>
 <p>@selected</p>
-@code { private string? selected; private string[] categories=["Пн","Вт","Ср"]; private NgChartSeries[] series=[new("Заказы",[10,null,25])]; }
+@code { private string? selected; private string[] categories=["Mon","Tue","Wed"]; private NgChartSeries[] series=[new("Orders",[10,null,25])]; }
 ```
 
-## Flutter: рабочий пример
+## Flutter example
 
 ```dart
 String? selected;
-Widget build(BuildContext context) => NgChart(title: 'Продажи', kind: NgChartKind.line,
-  categories: const ['Пн','Вт','Ср'], series: const [NgChartSeries('Заказы',[10,null,25])],
+Widget build(BuildContext context) => NgChart(title: 'Sales', kind: NgChartKind.line,
+  categories: const ['Mon','Tue','Wed'], series: const [NgChartSeries('Orders',[10,null,25])],
   onPointSelected: (p) => setState(() => selected = p.label));
 ```
 
-## Параметры и события Blazor
+## Blazor parameters and events
 
-Имена чувствительны к регистру. `?` в типе разрешает null. Параметры с `EditorRequired` отмечены как обязательные; остальные имеют значение по умолчанию CLR или инициализатор ниже.
+Names are case-sensitive. `?` permits null. `EditorRequired` parameters are marked required; other values use the initializer or CLR default.
 
-| Параметр | Тип | По умолчанию / требование | Назначение |
+| Parameter | Type | Default / requirement | Purpose |
 |---|---|---|---|
-| `Title` | `string` | "Chart" | Заголовок блока или окна. |
-| `Kind` | `NgChartKind` | NgChartKind.Column | Режим диаграммы NgChartKind. |
-| `Categories` | `IReadOnlyList<string>` | [] | Подписи категорий в порядке значений. |
-| `Series` | `IReadOnlyList<NgChartSeries>` | [] | Набор NgChartSeries с равным категориям числом значений. |
-| `OnPointSelected` | `EventCallback<NgChartSelection>` | не задан | Выбранная точка NgChartSelection. |
+| `Title` | `string` | "Chart" | Heading for the section or dialog. |
+| `Kind` | `NgChartKind` | NgChartKind.Column | See the behavior rules and model contract above. |
+| `Categories` | `IReadOnlyList<string>` | [] | See the behavior rules and model contract above. |
+| `Series` | `IReadOnlyList<NgChartSeries>` | [] | See the behavior rules and model contract above. |
+| `OnPointSelected` | `EventCallback<NgChartSelection>` | not set | See the behavior rules and model contract above. |
 
-## Параметры и события Flutter
+## Flutter parameters and events
 
-`required` в конструкторе означает обязательный аргумент, даже если его тип допускает null. `key` — стандартный Flutter Key. Значения по умолчанию приведены в точной сигнатуре ниже.
+`required` marks a mandatory argument even if its type is nullable. `key` is the standard Flutter Key. The exact constructor below specifies defaults.
 
-| Аргумент | Тип | Назначение |
+| Argument | Type | Purpose |
 |---|---|---|
-| `title` | `String` | Заголовок блока или окна. |
-| `kind` | `NgChartKind` | Режим диаграммы NgChartKind. |
-| `categories` | `List<String>` | Подписи категорий в порядке значений. |
-| `series` | `List<NgChartSeries>` | Набор NgChartSeries с равным категориям числом значений. |
-| `onPointSelected` | `ValueChanged<NgChartSelection>?` | Выбранная точка NgChartSelection. |
+| `title` | `String` | Heading for the section or dialog. |
+| `kind` | `NgChartKind` | See the behavior rules and model contract above. |
+| `categories` | `List<String>` | See the behavior rules and model contract above. |
+| `series` | `List<NgChartSeries>` | See the behavior rules and model contract above. |
+| `onPointSelected` | `ValueChanged<NgChartSelection>?` | See the behavior rules and model contract above. |
 
 ```dart
 const NgChart({
@@ -62,17 +62,17 @@ const NgChart({
   });
 ```
 
-## Интеграция и диагностика
+## Integration and troubleshooting
 
-Если интерфейс не обновляется, проверьте, сохраняет ли родитель результат callback и передаёт ли новое значение обратно. Для Blazor нужен интерактивный render mode; для Flutter — setState или используемый менеджер состояния. Данные формы отправляйте только после её успешной валидации.
+If the UI does not update, confirm that the parent stores callback values and passes them back. Blazor event handlers need interactive rendering; Flutter requires setState or a state manager. Submit form data only after successful validation.
 
-Проверяйте понятную подпись, пустое состояние, недоступность и размер контейнера. Клавиатурные возможности не означают полной сертификации screen reader. Сейчас проверяется Web в Chrome; нативные мобильные платформы будут проверяться отдельно.
+Check accessible labels, empty/invalid states, disabled actions and narrow layouts. Keyboard support is not full screen-reader certification. Current visual verification targets Web in visible Chrome on Linux/iMac; native mobile platforms are a separate phase.
 
-## Исходники и полный сценарий
+## Source and complete examples
 
-- [Blazor](../../src/NextgenComponents.Blazor/NgChart.razor)
-- [Flutter](../../packages/nextgen_components/lib/src/visualization.dart)
-- [Галереи и запуск](../../README.md#run)
-- [Матрица возможностей](../catalog.md)
+- [Blazor source](../../src/NextgenComponents.Blazor/NgChart.razor)
+- [Flutter source](../../packages/nextgen_components/lib/src/visualization.dart)
+- [Galleries and launch commands](../../README.md#run)
+- [Capability matrix](../catalog.md)
 
-Версия параметров сгенерирована из текущего исходного кода. Примеры и правила сопровождаются отдельно в `scripts/manual_content.py`; после изменения API выполните `python3 scripts/generate_manual.py`.
+API declarations are generated from current source. Curated examples and behavior live in `scripts/manual_content.py`; regenerate with `python3 scripts/generate_manual.py`.

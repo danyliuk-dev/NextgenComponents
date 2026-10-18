@@ -1,7 +1,7 @@
 @page "/ai"
 <PageTitle>Nextgen • AI interface</PageTitle>
 <div class="ng-scope gallery" data-ng-theme="@(dark?"dark":"light")"><main>
-<nav><strong>N NEXTGEN COMPONENTS</strong><div class="row"><a href="/">Foundation</a><NgSwitch Label="Dark theme" @bind-Value="dark"/></div></nav>
+<nav><a href="/code-examples">Code examples</a><strong>N NEXTGEN COMPONENTS</strong><div class="row"><a href="/">Foundation</a><NgSwitch Label="Dark theme" @bind-Value="dark"/></div></nav>
 <section class="hero"><p class="eyebrow">BLAZOR / AI INTERFACE 0.10</p><h1>From prompt<br/>to response.</h1><p>Local demonstration handler. No AI provider is connected and no prompts leave this app.</p></section>
 <section class="panel"><div class="row"><NgCheckBox Label="Read only" @bind-Value="readOnly"/><NgCheckBox Label="Simulate error" @bind-Value="fail"/><NgCheckBox Label="Ignore cancellation (demo)" @bind-Value="ignoreCancellation"/><NgButton OnClick='()=>prompt="External prompt replacement"'>Replace prompt</NgButton></div>
 <NgAIPrompt Label="Writing assistant" @bind-Value="prompt" Generate="Generate" ReadOnly="readOnly" Suggestions="suggestions" OnCompleted="Completed" OnFeedback="Feedback"/>

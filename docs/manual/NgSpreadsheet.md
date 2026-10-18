@@ -1,23 +1,23 @@
-# NgSpreadsheet — Электронный лист
+# NgSpreadsheet — Spreadsheet
 
-[Оглавление](README.md) · [Подключение](getting-started.md) · [Модели](models.md)
+[Manual](README.md) · [Getting started](getting-started.md) · [Code examples](code-examples.md) · [Models](models.md)
 
-## Когда использовать
+## When to use it
 
-Редактирование ячеек, вычисление формул, массовая вставка и история изменений.
+Edit a small local worksheet with formulas and undo/redo.
 
-## Поведение и практические правила
+## Behavior and practical rules
 
-Выберите ячейку, измените Cell value or formula, нажмите Apply cell или Enter. Стрелки перемещают выбор. Значение хранится в неизменяемом NgSheet; callback отдаёт целый новый лист. Undo/Redo хранит до 50 операций; независимая замена Value/value родителем очищает историю. ReadOnly/readOnly отключает редактирование. Paste cells принимает TSV (табуляции и строки), вставляет от выбранного адреса, сохраняет формулы буквально и отклоняет выход за границы целиком. Поддерживаются 1–100 строк, 1–26 колонок, до 1000 символов в ячейке. Это один локальный лист: XLSX/CSV-файлы, форматы, объединения, относительное смещение формул и несколько листов не реализованы.
+Select a cell, edit Cell value or formula, then press Apply cell or Enter. Arrow keys move selection. NgSheet is immutable; save the entire new sheet from the callback. Undo/Redo keeps up to 50 operations; an independent parent Value replacement clears local history. ReadOnly disables edits. Paste cells accepts rectangular TSV from the selected address, preserves formula text literally and rejects an out-of-bounds paste as a whole. Limits: 1–100 rows, 1–26 columns, 1,000 characters per cell. See [models and formulas](models.md) for operators/functions/errors. One sheet only: no XLSX/CSV files, formatting, merges, relative formula adjustment or multi-sheet workbook.
 
-## Blazor: рабочий пример
+## Blazor example
 
 ```razor
 <NgSpreadsheet @bind-Value="sheet"/>
 @code { private NgSheet sheet=new(8,5,new Dictionary<string,string>{{"A1","10"},{"B1","20"},{"C1","=SUM(A1:B1)"}}); }
 ```
 
-## Flutter: рабочий пример
+## Flutter example
 
 ```dart
 NgSheet sheet = NgSheet(rows: 8, columns: 5, cells: {'A1':'10','B1':'20','C1':'=SUM(A1:B1)'});
@@ -25,27 +25,27 @@ Widget build(BuildContext context) => NgSpreadsheet(value: sheet,
   onChanged: (v) => setState(() => sheet = v));
 ```
 
-## Параметры и события Blazor
+## Blazor parameters and events
 
-Имена чувствительны к регистру. `?` в типе разрешает null. Параметры с `EditorRequired` отмечены как обязательные; остальные имеют значение по умолчанию CLR или инициализатор ниже.
+Names are case-sensitive. `?` permits null. `EditorRequired` parameters are marked required; other values use the initializer or CLR default.
 
-| Параметр | Тип | По умолчанию / требование | Назначение |
+| Parameter | Type | Default / requirement | Purpose |
 |---|---|---|---|
-| `Label` | `string` | "Spreadsheet" | Подпись элемента или доступное имя. |
-| `Value` | `NgSheet` | обязательный | Текущее значение; тип и правила описаны выше. |
-| `ValueChanged` | `EventCallback<NgSheet>` | не задан | Новое значение для родителя; сохраните его в модели. |
-| `ReadOnly` | `bool` | false | Запрещает изменение данных, сохраняя просмотр; точное поведение описано выше. |
+| `Label` | `string` | "Spreadsheet" | Visible label or accessible name. |
+| `Value` | `NgSheet` | required | Current value; see state ownership and model rules above. |
+| `ValueChanged` | `EventCallback<NgSheet>` | not set | New value for the parent to store and pass back. |
+| `ReadOnly` | `bool` | false | Prevent changes while retaining supported viewing actions. |
 
-## Параметры и события Flutter
+## Flutter parameters and events
 
-`required` в конструкторе означает обязательный аргумент, даже если его тип допускает null. `key` — стандартный Flutter Key. Значения по умолчанию приведены в точной сигнатуре ниже.
+`required` marks a mandatory argument even if its type is nullable. `key` is the standard Flutter Key. The exact constructor below specifies defaults.
 
-| Аргумент | Тип | Назначение |
+| Argument | Type | Purpose |
 |---|---|---|
-| `label` | `String` | Подпись элемента или доступное имя. |
-| `value` | `NgSheet` | Текущее значение; тип и правила описаны выше. |
-| `onChanged` | `ValueChanged<NgSheet>?` | Новое значение для родителя; обновите состояние через setState. |
-| `readOnly` | `bool` | Запрещает изменение данных, сохраняя просмотр; точное поведение описано выше. |
+| `label` | `String` | Visible label or accessible name. |
+| `value` | `NgSheet` | Current value; see state ownership and model rules above. |
+| `onChanged` | `ValueChanged<NgSheet>?` | Store the new value using setState or your state manager. |
+| `readOnly` | `bool` | Prevent changes while retaining supported viewing actions. |
 
 ```dart
 const NgSpreadsheet({
@@ -57,17 +57,17 @@ const NgSpreadsheet({
   });
 ```
 
-## Интеграция и диагностика
+## Integration and troubleshooting
 
-Если интерфейс не обновляется, проверьте, сохраняет ли родитель результат callback и передаёт ли новое значение обратно. Для Blazor нужен интерактивный render mode; для Flutter — setState или используемый менеджер состояния. Данные формы отправляйте только после её успешной валидации.
+If the UI does not update, confirm that the parent stores callback values and passes them back. Blazor event handlers need interactive rendering; Flutter requires setState or a state manager. Submit form data only after successful validation.
 
-Проверяйте понятную подпись, пустое состояние, недоступность и размер контейнера. Клавиатурные возможности не означают полной сертификации screen reader. Сейчас проверяется Web в Chrome; нативные мобильные платформы будут проверяться отдельно.
+Check accessible labels, empty/invalid states, disabled actions and narrow layouts. Keyboard support is not full screen-reader certification. Current visual verification targets Web in visible Chrome on Linux/iMac; native mobile platforms are a separate phase.
 
-## Исходники и полный сценарий
+## Source and complete examples
 
-- [Blazor](../../src/NextgenComponents.Blazor/NgSpreadsheet.razor)
-- [Flutter](../../packages/nextgen_components/lib/src/workbook.dart)
-- [Галереи и запуск](../../README.md#run)
-- [Матрица возможностей](../catalog.md)
+- [Blazor source](../../src/NextgenComponents.Blazor/NgSpreadsheet.razor)
+- [Flutter source](../../packages/nextgen_components/lib/src/workbook.dart)
+- [Galleries and launch commands](../../README.md#run)
+- [Capability matrix](../catalog.md)
 
-Версия параметров сгенерирована из текущего исходного кода. Примеры и правила сопровождаются отдельно в `scripts/manual_content.py`; после изменения API выполните `python3 scripts/generate_manual.py`.
+API declarations are generated from current source. Curated examples and behavior live in `scripts/manual_content.py`; regenerate with `python3 scripts/generate_manual.py`.

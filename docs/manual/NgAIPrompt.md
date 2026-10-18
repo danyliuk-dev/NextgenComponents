@@ -1,108 +1,98 @@
-# NgAIPrompt — Работа с AI-запросами
+# NgAIPrompt — AI prompt interface
 
-[Оглавление](README.md) · [Подключение](getting-started.md) · [Модели](models.md)
+[Manual](README.md) · [Getting started](getting-started.md) · [Code examples](code-examples.md) · [Models](models.md)
 
-## Когда использовать
+## When to use it
 
-Интерфейс запроса и ответа с подсказками, историей, отменой, повтором и оценкой. Модель AI не встроена: генерацию выполняет переданный обработчик приложения.
+Compose requests, inspect responses and manage retries, history and feedback.
 
-## Поведение и практические правила
+## Behavior and practical rules
 
-### Подключение генерации
+### Provider contract
+Blazor Generate is Func<string,CancellationToken,Task<string>>; Flutter generate is NgPromptGenerator: Future<String> Function(String,NgPromptCancellation). The handler receives a captured, trimmed prompt and returns complete response text. Without it the input is disabled. The example/gallery uses a deterministic delayed local handler, not an AI model.
 
-Blazor Generate — Func<string, CancellationToken, Task<string>>. Flutter generate — NgPromptGenerator, то есть Future<String> Function(String, NgPromptCancellation). Обработчик получает зафиксированный, обрезанный по краям запрос и возвращает готовый текст ответа. Без обработчика поле отключено и показано Connect a generation handler. Примеры в этом руководстве и галерея используют локальную задержку и предсказуемый ответ, а не настоящую модель AI.
+The application owns authentication, model choice, rate limits, timeouts and provider calls. Keep provider credentials on your backend. In Blazor pass CancellationToken into the HTTP/AI client. In Flutter connect cancellation.whenCancelled to transport cancellation; isCancelled and throwIfCancelled detect cancellation. Checking after await stops result processing, not the remote request or billing. The component itself makes no network requests.
 
-Подключите обработчик к API своего приложения: он отвечает за аутентификацию, выбор модели, лимиты запросов, таймаут и вызов провайдера. Не помещайте секретный ключ провайдера в Flutter Web или Blazor WebAssembly; вызов с ключом выполняйте на своём сервере. Компонент сам ничего не отправляет в сеть. Для Blazor передавайте полученный CancellationToken в HTTP/AI SDK. Для Flutter подключайте cancellation.whenCancelled к отмене HTTP-клиента; cancellation.isCancelled и throwIfCancelled() позволяют проверить отмену перед дальнейшими действиями. Простая проверка после await не останавливает сетевой запрос — она лишь прекращает обработку его результата.
+### Draft and request lifecycle
+Value/value and change callbacks control the draft. Maximum prompt: 8000 UTF-16 units. Up to 8 nonempty suggestions, each at most 200 units. Suggestions fill the draft without sending. Enter inserts a newline; Send submits. Duplicate submission is blocked while busy. The user cannot edit during a request, but an external Value replacement changes the next draft, not the captured request.
 
-### Ввод и жизненный цикл
+Cancel immediately releases the UI and signals cancellation. A new request may start immediately. Even if an older handler ignores cancellation, its late result/error cannot enter history or replace newer state. Disposal, ReadOnly or removing the handler also cancels pending work. ReadOnly keeps history browsing/copying available. Transport cancellation is the application's responsibility.
 
-Value/value и ValueChanged/onChanged управляют черновиком, как у NgPromptBox. Лимит запроса — 8000 UTF-16 code units. Suggestions/suggestions — до восьми непустых подсказок по 200 единиц каждая. Подсказка заполняет поле, но не отправляет запрос автоматически. Отправка происходит кнопкой Send; Enter в поле создаёт новую строку. Повторный Send блокируется до окончания работы. Во время запроса нельзя менять текст через поле или подсказки, но родитель может передать новый Value/value; это изменит следующий черновик, а не уже отправленный запрос.
+Provider exceptions show a generic Generation failed. Try again. message; log details in your handler. Retry request uses the last failed prompt even if the draft changed. Empty/whitespace responses and responses over 32000 UTF-16 units are errors. Previous successful history survives failures. Timeouts belong to the application.
 
-Cancel сразу возвращает интерфейс в состояние готовности и сигнализирует провайдеру отмену. После этого можно отправить новый запрос. Если старый обработчик проигнорировал отмену и позднее завершился, его ответ или ошибка не попадут в историю и не заменят новый результат. При удалении компонента также отменяется текущая работа. ReadOnly/readOnly или удаление Generate/generate во время запроса отменяет его; история остаётся доступной для просмотра и копирования. Отмена интерфейса не гарантирует прекращения расходов/работы внешнего сервиса — транспортный адаптер должен использовать сигнал отмены.
+### Responses and events
+The last 20 successful responses are kept in memory; oldest entries are evicted. IDs increase throughout the component session, including after Clear history. Selecting history changes the displayed response. Regenerate runs that response's original prompt. Clear removes history/selection/votes and cancels work in the public session API; the UI button is disabled while busy. History is not durable and is lost on component disposal.
 
-Ошибка провайдера показывает Generation failed. Try again.; детали исключения не выводятся. Логируйте их в обработчике приложения. Retry request повторяет последний неудачный запрос, даже если текущий черновик уже изменился. Пустой ответ и ответ длиннее 32000 UTF-16 единиц также считаются ошибкой. Предыдущая история при ошибке сохраняется. Таймаут задаётся приложением; без него зависший обработчик остаётся активным до Cancel.
+NgPromptResponse contains Id/id, Prompt/prompt and Text/text. OnCompleted fires once for each accepted successful response, never for cancellation/failure. NgPromptFeedback contains the response and Helpful/helpful: true, false or null for a cleared vote. Clicking the same vote toggles it off; votes do not call the provider. Callback exceptions belong to the host application.
 
-### Ответ, история и события
+Responses render as plain text, with no HTML/Markdown execution. Copy response uses the browser/platform clipboard; when unavailable, select the text manually. Clipboard permissions and secure-context rules depend on the host. There are no attachments, speech, command templates, streaming, provider SDKs, model picker, durable conversations or automatic moderation.
 
-Ответ отображается как обычный выбираемый текст: HTML/Markdown не исполняются, ссылки не открываются автоматически. Copy response копирует выбранный ответ; при недоступном clipboard показывается подсказка выделить текст вручную. История хранит до 20 последних успешных ответов; старейший удаляется автоматически. Нажатие на запись показывает соответствующий ответ. Regenerate повторяет запрос выбранной записи и создаёт новую запись с новым ID. Номера уникальны только в пределах экземпляра компонента, не являются серверными ключами и не сбрасываются при Clear history.
+### Session API and integration
+NgPromptSession exposes read-only Responses/responses, Selected/selected, IsBusy/isBusy, Error/error and Status/status. RunAsync/run invokes a handler; Cancel/cancel invalidates pending work; Select/select changes selection; Clear/clear resets history; Dispose/dispose ends the session. Blazor Changed and Flutter ChangeNotifier report state changes. Use it on the UI thread, dispose it in its owner, and do not mutate response collections. The component owns its own session; use the public session only when building a separate custom interface. Native mobile and full accessibility certification remain separate.
 
-OnCompleted/onCompleted вызывается только для принятого успешного ответа. NgPromptResponse содержит Id/id (int), Prompt/prompt и Text/text (строки). Отменённые, ошибочные и запоздалые ответы не вызывают событие. Сохранение и отправка данных на сервер остаются у приложения. Обработчик события не является частью вызова AI; ошибки ваших callbacks обрабатывайте в приложении.
-
-Helpful / Not helpful переключают оценку выбранного ответа. Повторное нажатие активной оценки очищает её. OnFeedback/onFeedback получает NgPromptFeedback: Response/response и Helpful/helpful (true, false или null). Оценка локальная, без автоматической отправки провайдеру; сохраняйте её в своём callback при необходимости. ReadOnly запрещает отправку, повтор, очистку и оценку, но сохраняет выбор старого ответа и копирование.
-
-Clear history удаляет ответы и оценки; в UI кнопка отключена во время генерации. Черновик остаётся. История и оценки живут только в памяти компонента и исчезают при его удалении/перезагрузке страницы. Для сохранения используйте OnCompleted/onCompleted и своё хранилище; загрузка внешней истории пока не поддерживается.
-
-### Модель сессии и границы
-
-NgPromptSession доступна для собственной оболочки: RunAsync/run, Cancel/cancel, Select/select, Clear/clear, Dispose/dispose; Responses/responses — неизменяемая коллекция, Selected/selected, IsBusy/isBusy, Error/error, Status/status — состояние. C#: Changed; Flutter: ChangeNotifier. Используйте сессию в UI-контексте, освобождайте её при завершении. Прямой Clear/clear сессии отменяет работу и не допускает позднего восстановления истории. NgAIPrompt сам создаёт и освобождает свою сессию.
-
-Blazor нужен интерактивный render mode; Flutter использует текущую тему. При ширине менее 760 px ввод, история и ответ располагаются вертикально. Веб-буфер обмена обычно требует HTTPS либо localhost. Статус операции объявляется через live region; полная сертификация screen reader не заявляется.
-
-В этой версии нет streaming, tool calling, автодействий по ответу модели, команд/кастомных вкладок, вложений, speech-to-text, сохранения истории между сессиями или встроенной интеграции с конкретным AI SDK. PromptBox и AIPrompt покрывают ограниченный рабочий набор возможностей Telerik, без API-совместимости. Проверен Web в Chrome, native mobile остаётся отдельным этапом.
-
-## Blazor: рабочий пример
+## Blazor example
 
 ```razor
-<NgAIPrompt Label="Помощник" @bind-Value="prompt" Generate="Generate"
+<NgAIPrompt Label="Assistant" @bind-Value="prompt" Generate="Generate"
     Suggestions="suggestions" OnCompleted="Completed" OnFeedback="Feedback"/>
 <p>@status</p>
 @code {
- private string prompt="Составь план встречи",status="";
- private string[] suggestions=["Составь план встречи","Предложи следующие шаги"];
+ private string prompt="Draft a meeting agenda",status="";
+ private string[] suggestions=["Draft a meeting agenda","Suggest next steps"];
  private async Task<string> Generate(string text,CancellationToken cancellation) {
   await Task.Delay(600,cancellation);
-  return $"Локальный пример ответа на: {text}"; // Здесь подключите сервис приложения.
+  return $"Local example response to: {text}"; // Connect your application service here.
  }
- private void Completed(NgPromptResponse response){status=$"Ответ {response.Id} готов";}
- private void Feedback(NgPromptFeedback feedback){status=$"Оценка ответа {feedback.Response.Id}: {feedback.Helpful}";}
+ private void Completed(NgPromptResponse response){status=$"Response {response.Id} ready";}
+ private void Feedback(NgPromptFeedback feedback){status=$"Response feedback {feedback.Response.Id}: {feedback.Helpful}";}
 }
 ```
 
-## Flutter: рабочий пример
+## Flutter example
 
 ```dart
-String prompt = 'Составь план встречи', status = '';
+String prompt = 'Draft a meeting agenda', status = '';
 Future<String> generate(String text, NgPromptCancellation cancellation) async {
   await Future<void>.delayed(const Duration(milliseconds: 600));
   cancellation.throwIfCancelled();
-  return 'Локальный пример ответа на: $text'; // Замените сервисом приложения.
+  return 'Local example response to: $text'; // Replace with your application service.
 }
-Widget build(BuildContext context) => NgAIPrompt(label: 'Помощник', value: prompt,
+Widget build(BuildContext context) => NgAIPrompt(label: 'Assistant', value: prompt,
   onChanged: (v) => setState(() => prompt = v), generate: generate,
-  suggestions: const ['Составь план встречи', 'Предложи следующие шаги'],
-  onCompleted: (r) => setState(() => status = 'Ответ ${r.id} готов'),
-  onFeedback: (f) => setState(() => status = 'Оценка ответа ${f.response.id}: ${f.helpful}'));
+  suggestions: const ['Draft a meeting agenda', 'Suggest next steps'],
+  onCompleted: (r) => setState(() => status = 'Response ${r.id} ready'),
+  onFeedback: (f) => setState(() => status = 'Response feedback ${f.response.id}: ${f.helpful}'));
 ```
 
-## Параметры и события Blazor
+## Blazor parameters and events
 
-Имена чувствительны к регистру. `?` в типе разрешает null. Параметры с `EditorRequired` отмечены как обязательные; остальные имеют значение по умолчанию CLR или инициализатор ниже.
+Names are case-sensitive. `?` permits null. `EditorRequired` parameters are marked required; other values use the initializer or CLR default.
 
-| Параметр | Тип | По умолчанию / требование | Назначение |
+| Parameter | Type | Default / requirement | Purpose |
 |---|---|---|---|
-| `Label` | `string` | "AI prompt" | Подпись элемента или доступное имя. |
-| `Value` | `string` | "" | Текущее значение; тип и правила описаны выше. |
-| `ValueChanged` | `EventCallback<string>` | не задан | Новое значение для родителя; сохраните его в модели. |
-| `Suggestions` | `IReadOnlyList<string>` | Array.Empty<string>() | Смотрите поведение и тип модели выше. |
-| `Generate` | `Func<string,CancellationToken,Task<string>>?` | не задан | Смотрите поведение и тип модели выше. |
-| `ReadOnly` | `bool` | false | Запрещает изменение данных, сохраняя просмотр; точное поведение описано выше. |
-| `OnCompleted` | `EventCallback<NgPromptResponse>` | не задан | Смотрите поведение и тип модели выше. |
-| `OnFeedback` | `EventCallback<NgPromptFeedback>` | не задан | Смотрите поведение и тип модели выше. |
+| `Label` | `string` | "AI prompt" | Visible label or accessible name. |
+| `Value` | `string` | "" | Current value; see state ownership and model rules above. |
+| `ValueChanged` | `EventCallback<string>` | not set | New value for the parent to store and pass back. |
+| `Suggestions` | `IReadOnlyList<string>` | Array.Empty<string>() | See the behavior rules and model contract above. |
+| `Generate` | `Func<string,CancellationToken,Task<string>>?` | not set | Application-owned async response handler; provider credentials belong on the backend. |
+| `ReadOnly` | `bool` | false | Prevent changes while retaining supported viewing actions. |
+| `OnCompleted` | `EventCallback<NgPromptResponse>` | not set | Accepted successful response callback; not called for failed/cancelled requests. |
+| `OnFeedback` | `EventCallback<NgPromptFeedback>` | not set | Response and helpful/not-helpful/cleared vote. |
 
-## Параметры и события Flutter
+## Flutter parameters and events
 
-`required` в конструкторе означает обязательный аргумент, даже если его тип допускает null. `key` — стандартный Flutter Key. Значения по умолчанию приведены в точной сигнатуре ниже.
+`required` marks a mandatory argument even if its type is nullable. `key` is the standard Flutter Key. The exact constructor below specifies defaults.
 
-| Аргумент | Тип | Назначение |
+| Argument | Type | Purpose |
 |---|---|---|
-| `label` | `String` | Подпись элемента или доступное имя. |
-| `value` | `String` | Текущее значение; тип и правила описаны выше. |
-| `suggestions` | `List<String>` | Смотрите поведение и тип модели выше. |
-| `generate` | `NgPromptGenerator?` | Смотрите поведение и тип модели выше. |
-| `readOnly` | `bool` | Запрещает изменение данных, сохраняя просмотр; точное поведение описано выше. |
-| `onChanged` | `ValueChanged<String>?` | Новое значение для родителя; обновите состояние через setState. |
-| `onCompleted` | `ValueChanged<NgPromptResponse>?` | Смотрите поведение и тип модели выше. |
-| `onFeedback` | `ValueChanged<NgPromptFeedback>?` | Смотрите поведение и тип модели выше. |
+| `label` | `String` | Visible label or accessible name. |
+| `value` | `String` | Current value; see state ownership and model rules above. |
+| `suggestions` | `List<String>` | See the behavior rules and model contract above. |
+| `generate` | `NgPromptGenerator?` | Application-owned async response handler; provider credentials belong on the backend. |
+| `readOnly` | `bool` | Prevent changes while retaining supported viewing actions. |
+| `onChanged` | `ValueChanged<String>?` | Store the new value using setState or your state manager. |
+| `onCompleted` | `ValueChanged<NgPromptResponse>?` | Accepted successful response callback; not called for failed/cancelled requests. |
+| `onFeedback` | `ValueChanged<NgPromptFeedback>?` | Response and helpful/not-helpful/cleared vote. |
 
 ```dart
 const NgAIPrompt({
@@ -118,17 +108,17 @@ const NgAIPrompt({
   });
 ```
 
-## Интеграция и диагностика
+## Integration and troubleshooting
 
-Если интерфейс не обновляется, проверьте, сохраняет ли родитель результат callback и передаёт ли новое значение обратно. Для Blazor нужен интерактивный render mode; для Flutter — setState или используемый менеджер состояния. Данные формы отправляйте только после её успешной валидации.
+If the UI does not update, confirm that the parent stores callback values and passes them back. Blazor event handlers need interactive rendering; Flutter requires setState or a state manager. Submit form data only after successful validation.
 
-Проверяйте понятную подпись, пустое состояние, недоступность и размер контейнера. Клавиатурные возможности не означают полной сертификации screen reader. Сейчас проверяется Web в Chrome; нативные мобильные платформы будут проверяться отдельно.
+Check accessible labels, empty/invalid states, disabled actions and narrow layouts. Keyboard support is not full screen-reader certification. Current visual verification targets Web in visible Chrome on Linux/iMac; native mobile platforms are a separate phase.
 
-## Исходники и полный сценарий
+## Source and complete examples
 
-- [Blazor](../../src/NextgenComponents.Blazor/NgAIPrompt.razor)
-- [Flutter](../../packages/nextgen_components/lib/src/prompt.dart)
-- [Галереи и запуск](../../README.md#run)
-- [Матрица возможностей](../catalog.md)
+- [Blazor source](../../src/NextgenComponents.Blazor/NgAIPrompt.razor)
+- [Flutter source](../../packages/nextgen_components/lib/src/prompt.dart)
+- [Galleries and launch commands](../../README.md#run)
+- [Capability matrix](../catalog.md)
 
-Версия параметров сгенерирована из текущего исходного кода. Примеры и правила сопровождаются отдельно в `scripts/manual_content.py`; после изменения API выполните `python3 scripts/generate_manual.py`.
+API declarations are generated from current source. Curated examples and behavior live in `scripts/manual_content.py`; regenerate with `python3 scripts/generate_manual.py`.

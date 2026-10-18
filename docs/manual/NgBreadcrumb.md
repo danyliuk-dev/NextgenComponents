@@ -1,50 +1,50 @@
-# NgBreadcrumb — Навигационная цепочка
+# NgBreadcrumb — Breadcrumb
 
-[Оглавление](README.md) · [Подключение](getting-started.md) · [Модели](models.md)
+[Manual](README.md) · [Getting started](getting-started.md) · [Code examples](code-examples.md) · [Models](models.md)
 
-## Когда использовать
+## When to use it
 
-Показывает путь к текущему разделу и даёт перейти к предкам.
+Navigate the ancestors of the current location.
 
-## Поведение и практические правила
+## Behavior and practical rules
 
-Последний элемент — текущая страница, он не является кнопкой перехода. Callback возвращает Id выбранного предка. Приложение само меняет маршрут или фильтр. Id должен быть стабильным, подпись можно локализовать. Компонент не строит цепочку из URL автоматически.
+Each NgBreadcrumbItem has an ID and visible label. The final item represents the current page. OnNavigate/onNavigate reports the ancestor ID; route navigation belongs to the host application. Keep IDs stable and do not use labels as database keys.
 
-## Blazor: рабочий пример
+## Blazor example
 
 ```razor
 <NgBreadcrumb Items="items" OnNavigate="id=>selected=id"/>
 <p>@selected</p>
-@code { private string? selected; private NgBreadcrumbItem[] items=[new("all","Проекты"),new("design","Дизайн")]; }
+@code { private string? selected; private NgBreadcrumbItem[] items=[new("all","Projects"),new("design","Design")]; }
 ```
 
-## Flutter: рабочий пример
+## Flutter example
 
 ```dart
 String? selected;
 Widget build(BuildContext context) => NgBreadcrumb(
-  items: const [NgBreadcrumbItem('all','Проекты'),NgBreadcrumbItem('design','Дизайн')],
+  items: const [NgBreadcrumbItem('all','Projects'),NgBreadcrumbItem('design','Design')],
   onNavigate: (id) => setState(() => selected = id));
 ```
 
-## Параметры и события Blazor
+## Blazor parameters and events
 
-Имена чувствительны к регистру. `?` в типе разрешает null. Параметры с `EditorRequired` отмечены как обязательные; остальные имеют значение по умолчанию CLR или инициализатор ниже.
+Names are case-sensitive. `?` permits null. `EditorRequired` parameters are marked required; other values use the initializer or CLR default.
 
-| Параметр | Тип | По умолчанию / требование | Назначение |
+| Parameter | Type | Default / requirement | Purpose |
 |---|---|---|---|
-| `Label` | `string` | "Breadcrumb" | Подпись элемента или доступное имя. |
-| `Items` | `IReadOnlyList<NgBreadcrumbItem>` | [] | Исходные элементы. Тип модели указан в сигнатуре; заменяйте список при изменениях. |
-| `OnNavigate` | `EventCallback<string>` | не задан | ID выбранного предка. |
+| `Label` | `string` | "Breadcrumb" | Visible label or accessible name. |
+| `Items` | `IReadOnlyList<NgBreadcrumbItem>` | [] | Input collection. Replace it when changing records or configuration. |
+| `OnNavigate` | `EventCallback<string>` | not set | See the behavior rules and model contract above. |
 
-## Параметры и события Flutter
+## Flutter parameters and events
 
-`required` в конструкторе означает обязательный аргумент, даже если его тип допускает null. `key` — стандартный Flutter Key. Значения по умолчанию приведены в точной сигнатуре ниже.
+`required` marks a mandatory argument even if its type is nullable. `key` is the standard Flutter Key. The exact constructor below specifies defaults.
 
-| Аргумент | Тип | Назначение |
+| Argument | Type | Purpose |
 |---|---|---|
-| `items` | `List<NgBreadcrumbItem>` | Исходные элементы. Тип модели указан в сигнатуре; заменяйте список при изменениях. |
-| `onNavigate` | `ValueChanged<String>` | ID выбранного предка. |
+| `items` | `List<NgBreadcrumbItem>` | Input collection. Replace it when changing records or configuration. |
+| `onNavigate` | `ValueChanged<String>` | See the behavior rules and model contract above. |
 
 ```dart
 const NgBreadcrumb({
@@ -54,17 +54,17 @@ const NgBreadcrumb({
   });
 ```
 
-## Интеграция и диагностика
+## Integration and troubleshooting
 
-Если интерфейс не обновляется, проверьте, сохраняет ли родитель результат callback и передаёт ли новое значение обратно. Для Blazor нужен интерактивный render mode; для Flutter — setState или используемый менеджер состояния. Данные формы отправляйте только после её успешной валидации.
+If the UI does not update, confirm that the parent stores callback values and passes them back. Blazor event handlers need interactive rendering; Flutter requires setState or a state manager. Submit form data only after successful validation.
 
-Проверяйте понятную подпись, пустое состояние, недоступность и размер контейнера. Клавиатурные возможности не означают полной сертификации screen reader. Сейчас проверяется Web в Chrome; нативные мобильные платформы будут проверяться отдельно.
+Check accessible labels, empty/invalid states, disabled actions and narrow layouts. Keyboard support is not full screen-reader certification. Current visual verification targets Web in visible Chrome on Linux/iMac; native mobile platforms are a separate phase.
 
-## Исходники и полный сценарий
+## Source and complete examples
 
-- [Blazor](../../src/NextgenComponents.Blazor/NgBreadcrumb.razor)
-- [Flutter](../../packages/nextgen_components/lib/src/data.dart)
-- [Галереи и запуск](../../README.md#run)
-- [Матрица возможностей](../catalog.md)
+- [Blazor source](../../src/NextgenComponents.Blazor/NgBreadcrumb.razor)
+- [Flutter source](../../packages/nextgen_components/lib/src/data.dart)
+- [Galleries and launch commands](../../README.md#run)
+- [Capability matrix](../catalog.md)
 
-Версия параметров сгенерирована из текущего исходного кода. Примеры и правила сопровождаются отдельно в `scripts/manual_content.py`; после изменения API выполните `python3 scripts/generate_manual.py`.
+API declarations are generated from current source. Curated examples and behavior live in `scripts/manual_content.py`; regenerate with `python3 scripts/generate_manual.py`.

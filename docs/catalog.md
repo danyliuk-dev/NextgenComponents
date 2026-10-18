@@ -25,7 +25,7 @@ Snapshot: 2026-10-18. 139 named entries from the [Telerik Blazor index](https://
 | Navigation | [Segmented Control](https://www.telerik.com/blazor-ui/segmented-control) | planned | planned | 2 |
 | Navigation | [Speech-to-Text Button](https://www.telerik.com/blazor-ui/speech-to-text-button) | planned | planned | 2 |
 | Navigation | [Split Button](https://www.telerik.com/blazor-ui/split-button) | planned | planned | 2 |
-| Navigation | [Stepper](https://www.telerik.com/blazor-ui/stepper) | planned | planned | 2 |
+| Navigation | [Stepper](https://www.telerik.com/blazor-ui/stepper) | foundation: `NgStepper` | foundation: `NgStepper` | 2 |
 | Navigation | [Switch](https://www.telerik.com/blazor-ui/switch) | foundation: `NgSwitch` | foundation: `NgSwitch` | 1 |
 | Navigation | [TabStrip](https://www.telerik.com/blazor-ui/tabstrip) | foundation: `NgTabs` | foundation: `NgTabs` | 1 |
 | Navigation | [Toggle Button](https://www.telerik.com/blazor-ui/togglebutton) | planned | planned | 2 |
@@ -118,7 +118,7 @@ Snapshot: 2026-10-18. 139 named entries from the [Telerik Blazor index](https://
 | Layout | [TileLayout](https://www.telerik.com/blazor-ui/tilelayout) | planned | planned | 2 |
 | Layout | [Tooltip](https://www.telerik.com/blazor-ui/tooltip) | foundation: `NgTooltip` | foundation: `NgTooltip` | 1 |
 | Layout | [Window](https://www.telerik.com/blazor-ui/window) | planned | planned | 2 |
-| Layout | [Wizard](https://www.telerik.com/blazor-ui/wizard) | planned | planned | 2 |
+| Layout | [Wizard](https://www.telerik.com/blazor-ui/wizard) | foundation: `NgWizard` | foundation: `NgWizard` | 2 |
 | Gauges | [Arc Gauge](https://www.telerik.com/blazor-ui/arc-gauge) | foundation: `NgArcGauge` | foundation: `NgArcGauge` | 4 |
 | Gauges | [Circular Gauge](https://www.telerik.com/blazor-ui/circular-gauge) | planned | planned | 4 |
 | Gauges | [Linear Gauge](https://www.telerik.com/blazor-ui/linear-gauge) | foundation: `NgLinearGauge` | foundation: `NgLinearGauge` | 4 |

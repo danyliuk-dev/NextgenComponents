@@ -1,23 +1,23 @@
-# NgCalendar — Календарь
+# NgCalendar — Calendar
 
-[Оглавление](README.md) · [Подключение](getting-started.md) · [Модели](models.md)
+[Manual](README.md) · [Getting started](getting-started.md) · [Code examples](code-examples.md) · [Models](models.md)
 
-## Когда использовать
+## When to use it
 
-Выбор календарной даты или локального времени без автоматической смены часового пояса.
+Select a calendar date or local wall-clock time without automatic timezone conversion.
 
-## Поведение и практические правила
+## Behavior and practical rules
 
-Формат ввода: выбор дня. Min/Max включают граничные значения. Некорректные дни (например, 31 апреля) и время 24:00 не принимаются. DisabledDate/disabledDate возвращает true для запрещённого дня. Flutter использует DateTime для даты, TimeOfDay для времени; Blazor — DateOnly и TimeOnly. Не смешивайте UTC и локальные значения. Пустое необязательное поле хранит null. Для обязательности используйте валидацию формы (у Calendar нет required; проверяйте значение в приложении). Полные правила и ограничения ручного ввода см. forms-and-dates.md.
+Input format: calendar selection. Min/Max include boundary values. Invalid dates such as April 31 and times such as 24:00 are rejected. DisabledDate returns true for unavailable days. Blazor uses DateOnly, TimeOnly or DateTime; Flutter uses DateTime or TimeOfDay. Normalize timezones at application boundaries. Empty optional input is null. Validate required values through the form or application rule; Calendar has no required parameter. See [forms and dates](../forms-and-dates.md) for supported calendar interactions and parsing limitations.
 
-## Blazor: рабочий пример
+## Blazor example
 
 ```razor
 <NgCalendar @bind-Value="value"/>
 @code { private DateOnly? value=new(2026,10,20); }
 ```
 
-## Flutter: рабочий пример
+## Flutter example
 
 ```dart
 DateTime? value = DateTime(2026,10,20,9,30);
@@ -25,33 +25,33 @@ Widget build(BuildContext context) => NgCalendar(value: value,
   onChanged: (v) => setState(() => value = v));
 ```
 
-## Параметры и события Blazor
+## Blazor parameters and events
 
-Имена чувствительны к регистру. `?` в типе разрешает null. Параметры с `EditorRequired` отмечены как обязательные; остальные имеют значение по умолчанию CLR или инициализатор ниже.
+Names are case-sensitive. `?` permits null. `EditorRequired` parameters are marked required; other values use the initializer or CLR default.
 
-| Параметр | Тип | По умолчанию / требование | Назначение |
+| Parameter | Type | Default / requirement | Purpose |
 |---|---|---|---|
-| `Value` | `DateOnly?` | не задан | Текущее значение; тип и правила описаны выше. |
-| `ValueChanged` | `EventCallback<DateOnly?>` | не задан | Новое значение для родителя; сохраните его в модели. |
-| `Min` | `DateOnly?` | не задан | Нижняя включительная граница. |
-| `Max` | `DateOnly?` | не задан | Верхняя включительная граница. |
-| `DisabledDate` | `Func<DateOnly,bool>?` | не задан | Функция возвращает true для запрещённого дня. |
-| `Disabled` | `bool` | false | true запрещает действия пользователя. |
-| `Label` | `string` | "Calendar" | Подпись элемента или доступное имя. |
-| `Culture` | `CultureInfo` | CultureInfo.CurrentCulture | Культура подписей календаря. |
-| `FirstDayOfWeek` | `DayOfWeek` | DayOfWeek.Monday | Первый день недели календаря. |
+| `Value` | `DateOnly?` | not set | Current value; see state ownership and model rules above. |
+| `ValueChanged` | `EventCallback<DateOnly?>` | not set | New value for the parent to store and pass back. |
+| `Min` | `DateOnly?` | not set | Inclusive minimum. |
+| `Max` | `DateOnly?` | not set | Inclusive maximum. |
+| `DisabledDate` | `Func<DateOnly,bool>?` | not set | See the behavior rules and model contract above. |
+| `Disabled` | `bool` | false | Disable user interaction. |
+| `Label` | `string` | "Calendar" | Visible label or accessible name. |
+| `Culture` | `CultureInfo` | CultureInfo.CurrentCulture | See the behavior rules and model contract above. |
+| `FirstDayOfWeek` | `DayOfWeek` | DayOfWeek.Monday | See the behavior rules and model contract above. |
 
-## Параметры и события Flutter
+## Flutter parameters and events
 
-`required` в конструкторе означает обязательный аргумент, даже если его тип допускает null. `key` — стандартный Flutter Key. Значения по умолчанию приведены в точной сигнатуре ниже.
+`required` marks a mandatory argument even if its type is nullable. `key` is the standard Flutter Key. The exact constructor below specifies defaults.
 
-| Аргумент | Тип | Назначение |
+| Argument | Type | Purpose |
 |---|---|---|
-| `value` | `DateTime?` | Текущее значение; тип и правила описаны выше. |
-| `min` | `DateTime?` | Нижняя включительная граница. |
-| `max` | `DateTime?` | Верхняя включительная граница. |
-| `onChanged` | `ValueChanged<DateTime>?` | Новое значение для родителя; обновите состояние через setState. |
-| `disabledDate` | `bool Function(DateTime)?` | Функция возвращает true для запрещённого дня. |
+| `value` | `DateTime?` | Current value; see state ownership and model rules above. |
+| `min` | `DateTime?` | Inclusive minimum. |
+| `max` | `DateTime?` | Inclusive maximum. |
+| `onChanged` | `ValueChanged<DateTime>?` | Store the new value using setState or your state manager. |
+| `disabledDate` | `bool Function(DateTime)?` | See the behavior rules and model contract above. |
 
 ```dart
 const NgCalendar({
@@ -64,17 +64,17 @@ const NgCalendar({
   });
 ```
 
-## Интеграция и диагностика
+## Integration and troubleshooting
 
-Если интерфейс не обновляется, проверьте, сохраняет ли родитель результат callback и передаёт ли новое значение обратно. Для Blazor нужен интерактивный render mode; для Flutter — setState или используемый менеджер состояния. Данные формы отправляйте только после её успешной валидации.
+If the UI does not update, confirm that the parent stores callback values and passes them back. Blazor event handlers need interactive rendering; Flutter requires setState or a state manager. Submit form data only after successful validation.
 
-Проверяйте понятную подпись, пустое состояние, недоступность и размер контейнера. Клавиатурные возможности не означают полной сертификации screen reader. Сейчас проверяется Web в Chrome; нативные мобильные платформы будут проверяться отдельно.
+Check accessible labels, empty/invalid states, disabled actions and narrow layouts. Keyboard support is not full screen-reader certification. Current visual verification targets Web in visible Chrome on Linux/iMac; native mobile platforms are a separate phase.
 
-## Исходники и полный сценарий
+## Source and complete examples
 
-- [Blazor](../../src/NextgenComponents.Blazor/NgCalendar.razor)
-- [Flutter](../../packages/nextgen_components/lib/src/dates.dart)
-- [Галереи и запуск](../../README.md#run)
-- [Матрица возможностей](../catalog.md)
+- [Blazor source](../../src/NextgenComponents.Blazor/NgCalendar.razor)
+- [Flutter source](../../packages/nextgen_components/lib/src/dates.dart)
+- [Galleries and launch commands](../../README.md#run)
+- [Capability matrix](../catalog.md)
 
-Версия параметров сгенерирована из текущего исходного кода. Примеры и правила сопровождаются отдельно в `scripts/manual_content.py`; после изменения API выполните `python3 scripts/generate_manual.py`.
+API declarations are generated from current source. Curated examples and behavior live in `scripts/manual_content.py`; regenerate with `python3 scripts/generate_manual.py`.

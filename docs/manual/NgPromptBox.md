@@ -1,41 +1,37 @@
-# NgPromptBox — Поле запроса
+# NgPromptBox — Prompt input
 
-[Оглавление](README.md) · [Подключение](getting-started.md) · [Модели](models.md)
+[Manual](README.md) · [Getting started](getting-started.md) · [Code examples](code-examples.md) · [Models](models.md)
 
-## Когда использовать
+## When to use it
 
-Многострочное поле для запроса или сообщения с кнопками Send/Cancel. Подходит для собственного чата, AI-формы или поиска с асинхронной обработкой.
+Compose a multiline request with explicit submission and cancellation.
 
-## Поведение и практические правила
+## Behavior and practical rules
 
-Value/value — текст, ValueChanged/onChanged — изменение при вводе. Сохраняйте новое значение у родителя, как в примере. Для внешней замены передайте другое значение. Поле имеет локальный черновик; повторная передача того же внешнего значения не сбрасывает его. Label/label задаёт доступное имя, Placeholder/placeholder — подсказку внутри пустого поля.
+Value/value is a controlled draft. Store ValueChanged/onChanged and pass the value back. External value replacement updates the field. MaxLength is 1–8000 UTF-16 code units, default 8000; emoji may occupy two units. Values longer than the limit are rejected. Blank input cannot be submitted. Send trims outer whitespace; Enter inserts a newline. Tab followed by Enter/Space activates buttons; no special submit shortcut is installed.
 
-MaxLength/maxLength — 1–8000 UTF-16 code units, по умолчанию 8000. Emoji может занимать две единицы; обе платформы используют одинаковую границу. Слишком длинный внешний Value/value отклоняется, ввод ограничивается в поле. Текст не превращается в HTML. Enter добавляет новую строку; Tab переводит фокус на кнопку, Enter/Space нажимает её. Автоматической отправки по Enter нет. Blazor поле начинается с трёх строк и меняется по высоте мышью; Flutter — 3–6 строк со внутренней прокруткой.
+Busy makes the input read-only and replaces Send with Cancel. The parent owns the asynchronous request, busy state, result/error display and cancellation. OnCancel only signals the parent: it does not stop a network request by itself. Use a cancellation token/transport adapter and invalidate late responses. The example demonstrates this ownership. ReadOnly prevents submission and editing; a busy Cancel remains available when its callback exists. A missing submit/cancel callback disables the corresponding action.
 
-OnSubmit/onSubmit получает текст с обрезанными пробелами по краям. Пустой/пробельный запрос и отсутствие обработчика отключают Send. Компонент не очищает поле после отправки. Busy/busy блокирует редактирование и заменяет Send на Cancel; OnCancel/onCancel должен отменять работу приложения. ReadOnly/readOnly запрещает ввод и отправку; Cancel остаётся доступным для уже выполняемой работы. Без обработчика отмены Cancel отключён.
+This is an input control, not an AI client or form-validation engine. Use NgAIPrompt for history and response actions. Attachments, speech input, model selection, streaming and provider integration are not included. Do not put provider secrets in browser code.
 
-PromptBox сам не выполняет HTTP-запрос, не знает состояния генерации и не гарантирует отмену провайдера. Родитель должен сразу установить Busy/busy перед первым await, обработать ошибку и убрать busy в finally. Пример показывает игнорирование запоздалого результата по номеру запроса; транспортную отмену нужно реализовать в адаптере. Для готового управления историей, отменой и ошибками используйте NgAIPrompt.
-
-Текущий объём — многострочный текст, счётчик, отправка/отмена, readonly и внешнее обновление. Вложения, speech-to-text, режим Auto/SingleLine, пользовательские adornments и streaming пока не реализованы. Проверен Web; мобильные платформы отдельно.
-
-## Blazor: рабочий пример
+## Blazor example
 
 ```razor
-<NgPromptBox Label="Запрос" @bind-Value="prompt" Busy="busy" OnSubmit="Submit" OnCancel="Cancel"/>
+<NgPromptBox Label="Prompt" @bind-Value="prompt" Busy="busy" OnSubmit="Submit" OnCancel="Cancel"/>
 <p>@result</p>
 @code {
  private string prompt="",result=""; private bool busy; private int revision;
  private async Task Submit(string text) {
   var request=++revision; busy=true;
-  await Task.Delay(700); // Локальный пример; замените обработчиком приложения.
+  await Task.Delay(700); // Local example; replace with an application handler.
   if(request!=revision)return;
-  result=$"Получен запрос: {text}"; busy=false;
+  result=$"Received prompt: {text}"; busy=false;
  }
- private void Cancel(){revision++;busy=false;result="Отменено";}
+ private void Cancel(){revision++;busy=false;result="Cancelled";}
 }
 ```
 
-## Flutter: рабочий пример
+## Flutter example
 
 ```dart
 String prompt = '', result = '';
@@ -46,45 +42,45 @@ Future<void> submit(String text) async {
   setState(() => busy = true);
   await Future<void>.delayed(const Duration(milliseconds: 700));
   if (!mounted || request != revision) return;
-  setState(() { result = 'Получен запрос: $text'; busy = false; });
+  setState(() { result = 'Received prompt: $text'; busy = false; });
 }
-Widget build(BuildContext context) => NgPromptBox(label: 'Запрос', value: prompt,
+Widget build(BuildContext context) => NgPromptBox(label: 'Prompt', value: prompt,
   onChanged: (v) => setState(() => prompt = v), busy: busy,
   onSubmit: submit,
-  onCancel: () => setState(() { revision++; busy = false; result = 'Отменено'; }));
+  onCancel: () => setState(() { revision++; busy = false; result = 'Cancelled'; }));
 ```
 
-## Параметры и события Blazor
+## Blazor parameters and events
 
-Имена чувствительны к регистру. `?` в типе разрешает null. Параметры с `EditorRequired` отмечены как обязательные; остальные имеют значение по умолчанию CLR или инициализатор ниже.
+Names are case-sensitive. `?` permits null. `EditorRequired` parameters are marked required; other values use the initializer or CLR default.
 
-| Параметр | Тип | По умолчанию / требование | Назначение |
+| Parameter | Type | Default / requirement | Purpose |
 |---|---|---|---|
-| `Label` | `string` | "Prompt" | Подпись элемента или доступное имя. |
-| `Value` | `string` | "" | Текущее значение; тип и правила описаны выше. |
-| `ValueChanged` | `EventCallback<string>` | не задан | Новое значение для родителя; сохраните его в модели. |
-| `Placeholder` | `string` | "Describe what you need…" | Подсказка внутри пустого поля. |
-| `MaxLength` | `int` | 8000 | Максимальная длина текста. |
-| `Busy` | `bool` | false | Смотрите поведение и тип модели выше. |
-| `ReadOnly` | `bool` | false | Запрещает изменение данных, сохраняя просмотр; точное поведение описано выше. |
-| `OnSubmit` | `EventCallback<string>` | не задан | Смотрите поведение и тип модели выше. |
-| `OnCancel` | `EventCallback` | не задан | Смотрите поведение и тип модели выше. |
+| `Label` | `string` | "Prompt" | Visible label or accessible name. |
+| `Value` | `string` | "" | Current value; see state ownership and model rules above. |
+| `ValueChanged` | `EventCallback<string>` | not set | New value for the parent to store and pass back. |
+| `Placeholder` | `string` | "Describe what you need…" | Hint displayed for empty input. |
+| `MaxLength` | `int` | 8000 | See the behavior rules and model contract above. |
+| `Busy` | `bool` | false | Request in progress; the parent owns it for a standalone PromptBox. |
+| `ReadOnly` | `bool` | false | Prevent changes while retaining supported viewing actions. |
+| `OnSubmit` | `EventCallback<string>` | not set | Trimmed nonempty prompt submitted by the user. |
+| `OnCancel` | `EventCallback` | not set | Request cancellation; the application owns stopping its transport. |
 
-## Параметры и события Flutter
+## Flutter parameters and events
 
-`required` в конструкторе означает обязательный аргумент, даже если его тип допускает null. `key` — стандартный Flutter Key. Значения по умолчанию приведены в точной сигнатуре ниже.
+`required` marks a mandatory argument even if its type is nullable. `key` is the standard Flutter Key. The exact constructor below specifies defaults.
 
-| Аргумент | Тип | Назначение |
+| Argument | Type | Purpose |
 |---|---|---|
-| `label` | `String` | Подпись элемента или доступное имя. |
-| `value` | `String` | Текущее значение; тип и правила описаны выше. |
-| `placeholder` | `String` | Подсказка внутри пустого поля. |
-| `maxLength` | `int` | Максимальная длина текста. |
-| `busy` | `bool` | Смотрите поведение и тип модели выше. |
-| `readOnly` | `bool` | Запрещает изменение данных, сохраняя просмотр; точное поведение описано выше. |
-| `onChanged` | `ValueChanged<String>?` | Новое значение для родителя; обновите состояние через setState. |
-| `onSubmit` | `ValueChanged<String>?` | Смотрите поведение и тип модели выше. |
-| `onCancel` | `VoidCallback?` | Смотрите поведение и тип модели выше. |
+| `label` | `String` | Visible label or accessible name. |
+| `value` | `String` | Current value; see state ownership and model rules above. |
+| `placeholder` | `String` | Hint displayed for empty input. |
+| `maxLength` | `int` | See the behavior rules and model contract above. |
+| `busy` | `bool` | Request in progress; the parent owns it for a standalone PromptBox. |
+| `readOnly` | `bool` | Prevent changes while retaining supported viewing actions. |
+| `onChanged` | `ValueChanged<String>?` | Store the new value using setState or your state manager. |
+| `onSubmit` | `ValueChanged<String>?` | Trimmed nonempty prompt submitted by the user. |
+| `onCancel` | `VoidCallback?` | Request cancellation; the application owns stopping its transport. |
 
 ```dart
 const NgPromptBox({
@@ -101,17 +97,17 @@ const NgPromptBox({
   });
 ```
 
-## Интеграция и диагностика
+## Integration and troubleshooting
 
-Если интерфейс не обновляется, проверьте, сохраняет ли родитель результат callback и передаёт ли новое значение обратно. Для Blazor нужен интерактивный render mode; для Flutter — setState или используемый менеджер состояния. Данные формы отправляйте только после её успешной валидации.
+If the UI does not update, confirm that the parent stores callback values and passes them back. Blazor event handlers need interactive rendering; Flutter requires setState or a state manager. Submit form data only after successful validation.
 
-Проверяйте понятную подпись, пустое состояние, недоступность и размер контейнера. Клавиатурные возможности не означают полной сертификации screen reader. Сейчас проверяется Web в Chrome; нативные мобильные платформы будут проверяться отдельно.
+Check accessible labels, empty/invalid states, disabled actions and narrow layouts. Keyboard support is not full screen-reader certification. Current visual verification targets Web in visible Chrome on Linux/iMac; native mobile platforms are a separate phase.
 
-## Исходники и полный сценарий
+## Source and complete examples
 
-- [Blazor](../../src/NextgenComponents.Blazor/NgPromptBox.razor)
-- [Flutter](../../packages/nextgen_components/lib/src/prompt.dart)
-- [Галереи и запуск](../../README.md#run)
-- [Матрица возможностей](../catalog.md)
+- [Blazor source](../../src/NextgenComponents.Blazor/NgPromptBox.razor)
+- [Flutter source](../../packages/nextgen_components/lib/src/prompt.dart)
+- [Galleries and launch commands](../../README.md#run)
+- [Capability matrix](../catalog.md)
 
-Версия параметров сгенерирована из текущего исходного кода. Примеры и правила сопровождаются отдельно в `scripts/manual_content.py`; после изменения API выполните `python3 scripts/generate_manual.py`.
+API declarations are generated from current source. Curated examples and behavior live in `scripts/manual_content.py`; regenerate with `python3 scripts/generate_manual.py`.

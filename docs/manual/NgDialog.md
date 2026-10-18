@@ -1,53 +1,53 @@
-# NgDialog — Модальное окно
+# NgDialog — Modal dialog
 
-[Оглавление](README.md) · [Подключение](getting-started.md) · [Модели](models.md)
+[Manual](README.md) · [Getting started](getting-started.md) · [Code examples](code-examples.md) · [Models](models.md)
 
-## Когда использовать
+## When to use it
 
-Показывает отдельную задачу или редактор поверх страницы.
+Ask for a focused decision in a modal surface.
 
-## Поведение и практические правила
+## Behavior and practical rules
 
-Blazor: управляйте Open через @bind-Open, чтобы закрытие обновляло родителя. Flutter: NgDialog.show<T> возвращает Future<T?>, результат задаётся Navigator.pop(context, result); null соответствует закрытию без результата. Редактируйте отдельную копию данных и переносите изменения только при Save. Отмена не должна менять исходную запись. Не создавайте несколько вложенных несогласованных модальных задач.
+Blazor Open/OpenChanged control visibility. Flutter uses the dialog helper shown in the example. Supply a meaningful title, content and explicit actions. Escape dismisses the dialog; opening should move focus into it and closing restore focus to the trigger. Save and Cancel have different application semantics: cancelling must not persist the draft. Nested modal workflows and a full screen-reader certification are outside this release.
 
-## Blazor: рабочий пример
+## Blazor example
 
 ```razor
-<NgButton OnClick="()=>open=true">Открыть</NgButton>
-<NgDialog Title="Подтверждение" @bind-Open="open"><ChildContent>Продолжить?</ChildContent><Actions><NgButton OnClick="()=>open=false">Закрыть</NgButton></Actions></NgDialog>
+<NgButton OnClick="()=>open=true">Open</NgButton>
+<NgDialog Title="Confirmation" @bind-Open="open"><ChildContent>Continue?</ChildContent><Actions><NgButton OnClick="()=>open=false">Close</NgButton></Actions></NgDialog>
 @code { private bool open; }
 ```
 
-## Flutter: рабочий пример
+## Flutter example
 
 ```dart
-Widget build(BuildContext context) => NgButton(child: const Text('Открыть'),
-  onPressed: () => NgDialog.show<void>(context, title: 'Подтверждение',
-    child: const Text('Продолжить?'), actions: [TextButton(
-      onPressed: () => Navigator.of(context).pop(), child: const Text('Закрыть'))]));
+Widget build(BuildContext context) => NgButton(child: const Text('Open'),
+  onPressed: () => NgDialog.show<void>(context, title: 'Confirmation',
+    child: const Text('Continue?'), actions: [TextButton(
+      onPressed: () => Navigator.of(context).pop(), child: const Text('Close'))]));
 ```
 
-## Параметры и события Blazor
+## Blazor parameters and events
 
-Имена чувствительны к регистру. `?` в типе разрешает null. Параметры с `EditorRequired` отмечены как обязательные; остальные имеют значение по умолчанию CLR или инициализатор ниже.
+Names are case-sensitive. `?` permits null. `EditorRequired` parameters are marked required; other values use the initializer or CLR default.
 
-| Параметр | Тип | По умолчанию / требование | Назначение |
+| Parameter | Type | Default / requirement | Purpose |
 |---|---|---|---|
-| `Open` | `bool` | false | Открыто ли окно. |
-| `OpenChanged` | `EventCallback<bool>` | не задан | Сообщает родителю о закрытии/открытии. |
-| `Title` | `string` | "Dialog" | Заголовок блока или окна. |
-| `ChildContent` | `RenderFragment?` | не задан | Содержимое Razor-компонента. |
-| `Actions` | `RenderFragment?` | не задан | Кнопки/действия окна. |
+| `Open` | `bool` | false | See the behavior rules and model contract above. |
+| `OpenChanged` | `EventCallback<bool>` | not set | See the behavior rules and model contract above. |
+| `Title` | `string` | "Dialog" | Heading for the section or dialog. |
+| `ChildContent` | `RenderFragment?` | not set | Razor content; for a wizard, a RenderFragment<int> receiving the active index. |
+| `Actions` | `RenderFragment?` | not set | See the behavior rules and model contract above. |
 
-## Параметры и события Flutter
+## Flutter parameters and events
 
-`required` в конструкторе означает обязательный аргумент, даже если его тип допускает null. `key` — стандартный Flutter Key. Значения по умолчанию приведены в точной сигнатуре ниже.
+`required` marks a mandatory argument even if its type is nullable. `key` is the standard Flutter Key. The exact constructor below specifies defaults.
 
-| Аргумент | Тип | Назначение |
+| Argument | Type | Purpose |
 |---|---|---|
-| `title` | `String` | Заголовок блока или окна. |
-| `child` | `Widget` | Дочерний Flutter-виджет. |
-| `actions` | `List<Widget>` | Кнопки/действия окна. |
+| `title` | `String` | Heading for the section or dialog. |
+| `child` | `Widget` | See the behavior rules and model contract above. |
+| `actions` | `List<Widget>` | See the behavior rules and model contract above. |
 
 ```dart
 const NgDialog({
@@ -58,17 +58,17 @@ const NgDialog({
   });
 ```
 
-## Интеграция и диагностика
+## Integration and troubleshooting
 
-Если интерфейс не обновляется, проверьте, сохраняет ли родитель результат callback и передаёт ли новое значение обратно. Для Blazor нужен интерактивный render mode; для Flutter — setState или используемый менеджер состояния. Данные формы отправляйте только после её успешной валидации.
+If the UI does not update, confirm that the parent stores callback values and passes them back. Blazor event handlers need interactive rendering; Flutter requires setState or a state manager. Submit form data only after successful validation.
 
-Проверяйте понятную подпись, пустое состояние, недоступность и размер контейнера. Клавиатурные возможности не означают полной сертификации screen reader. Сейчас проверяется Web в Chrome; нативные мобильные платформы будут проверяться отдельно.
+Check accessible labels, empty/invalid states, disabled actions and narrow layouts. Keyboard support is not full screen-reader certification. Current visual verification targets Web in visible Chrome on Linux/iMac; native mobile platforms are a separate phase.
 
-## Исходники и полный сценарий
+## Source and complete examples
 
-- [Blazor](../../src/NextgenComponents.Blazor/NgDialog.razor)
-- [Flutter](../../packages/nextgen_components/lib/src/components.dart)
-- [Галереи и запуск](../../README.md#run)
-- [Матрица возможностей](../catalog.md)
+- [Blazor source](../../src/NextgenComponents.Blazor/NgDialog.razor)
+- [Flutter source](../../packages/nextgen_components/lib/src/components.dart)
+- [Galleries and launch commands](../../README.md#run)
+- [Capability matrix](../catalog.md)
 
-Версия параметров сгенерирована из текущего исходного кода. Примеры и правила сопровождаются отдельно в `scripts/manual_content.py`; после изменения API выполните `python3 scripts/generate_manual.py`.
+API declarations are generated from current source. Curated examples and behavior live in `scripts/manual_content.py`; regenerate with `python3 scripts/generate_manual.py`.

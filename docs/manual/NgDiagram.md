@@ -1,100 +1,92 @@
-# NgDiagram — Интерактивная схема
+# NgDiagram — Interactive diagram
 
-[Оглавление](README.md) · [Подключение](getting-started.md) · [Модели](models.md)
+[Manual](README.md) · [Getting started](getting-started.md) · [Code examples](code-examples.md) · [Models](models.md)
 
-## Когда использовать
+## When to use it
 
-Для небольших схем процессов, связей сущностей и рабочих потоков. Отображает узлы, соединяет их линиями и позволяет перемещать узлы без изменения их идентификаторов.
+Display and edit a graph of nodes and directed or undirected connections.
 
-## Поведение и практические правила
+## Behavior and practical rules
 
-### Выбор и перемещение
+### Selection and movement
+Click a node or connection to select it. The other selection type is first cleared through its callback with null. Store both selected IDs. Unknown IDs are not highlighted; remove stale selection when deleting data. Dragging previews a new position, and only pointer release commits coordinates and invokes ValueChanged/onChanged. Escape cancels drag. Tab focuses nodes; Enter/Space selects; arrows move 10 units, Shift+arrow moves 1. Movement stays inside the canvas. Flutter exposes keyboard-selectable Connections; Blazor SVG connections are focusable.
 
-Нажмите узел или линию для выбора. Компонент сначала сбрасывает выбор другого типа через callback с null, затем передаёт ID выбранного элемента. Сохраняйте оба значения в родителе. Выбор не меняет сам граф; неизвестный SelectedNodeId/selectedNodeId просто не подсвечивается. При удалении элементов приложение должно очистить устаревший выбор (пример есть в галерее).
+### Zoom and viewport
+Zoom changes by 25 percentage points, within 25–200%. Fit width fits the entire canvas width; 100% resets zoom. The viewport is 420 logical/CSS pixels tall, with internal scrolling. Zoom does not alter model coordinates or JSON. Fit diagram fits node bounds in both axes with 24 px padding and centers by scrolling; it preserves selection and works in ReadOnly. Empty graphs disable it. Minimum zoom can still require scrolling for large graphs; canvas boundaries constrain centering and long connection labels may extend beyond bounds. Fitting is explicit, not automatic layout.
 
-Перетащите узел мышью: полупрозрачный контур показывает будущую позицию. Только отпускание сохраняет новые координаты и вызывает ValueChanged/onChanged; связи перестраиваются после завершения. Escape отменяет перетаскивание. Клавиатура: Tab переходит к узлам, Enter/Space выбирает, стрелки сдвигают узел на 10 единиц, Shift+стрелка — на 1. Границы перемещения ограничены холстом. Во Flutter доступный список Connections позволяет выбирать линии с клавиатуры; в Blazor сами SVG-линии фокусируемые.
+NgDiagramModel.FitView/fitView(viewportWidth,viewportHeight) returns NgDiagramView (Zoom/ScrollX/ScrollY or lowerCamelCase). Sizes must be finite and positive. An empty graph returns 100% and zero scroll.
 
-### Масштаб и прокрутка
+### Model and persistence
+Value is immutable. Store the new graph from callbacks; an independent replacement cancels active drag. ReadOnly disables movement but retains selection, zoom and scrolling. The application owns create/edit/delete actions and their permissions. The gallery shows a properties panel, connections, 20-change history and import; NgDiagram itself has no undo history.
 
-Zoom in/out изменяет локальный масштаб шагом 25%; диапазон 25–200%. Fit width подбирает ширину всего холста под контейнер (с тем же ограничением), 100% сбрасывает масштаб. Размер viewport по высоте — 420 CSS/logical px; большие схемы прокручиваются внутри. Масштаб не меняет координаты модели и не входит в JSON. Fit diagram вписывает область всех узлов по обеим осям с отступом 24 px и центрирует её прокруткой. Координаты и выделение сохраняются; после вписывания можно перетаскивать узлы. В ReadOnly навигация доступна, для пустой схемы кнопка отключена. Масштаб ограничен 25–200%: очень большая схема может не поместиться целиком; у края холста центрирование ограничено доступной прокруткой. Длинные подписи связей могут выходить за границы узлов. Вписывание выполняется по нажатию, без автоматической раскладки и повторного центрирования при редактировании. Модель предоставляет FitView(viewportWidth, viewportHeight) / fitView(viewportWidth, viewportHeight), возвращающий NgDiagramView (Zoom/ScrollX/ScrollY в Blazor; zoom/scrollX/scrollY во Flutter); размеры viewport должны быть положительными конечными числами. Для пустой модели результат — 100%, прокрутка 0/0. При очень узком контейнере минимальные 25% могут всё ещё требовать горизонтальной прокрутки.
+UpsertNode/UpsertEdge add or replace by ID. RemoveNode also removes incident edges; RemoveEdge keeps nodes. Move(id,x,y) clamps coordinates to the canvas and returns a new model. For example: graph = graph.Move("start",80,120), or graph = graph.move('start',80,120). ToJson/toJson and FromJson/fromJson use the shared version-1 Nextgen schema, not Telerik JSON. Catch invalid imports and retain the previous graph. No automatic file storage or upload.
 
-### Состояние, свойства и сохранение
+### Geometry and limits
+Shapes: rectangle, ellipse, diamond (PascalCase enum names in C#). Nodes store ID, text, top-left X/Y and width/height (default 160×80). Labels are visually shortened but available in tooltips/accessibility/properties. Connections run straight between shape boundaries along the centers; directed connections have an end arrow. On-canvas connection labels shorten to 24 characters.
 
-`Value/value` — неизменяемый `NgDiagramModel`; после callback сохраните новый экземпляр и передайте его обратно. Независимая замена модели отменяет текущий drag. `ReadOnly/readOnly` отключает перетаскивание и клавиатурное перемещение, оставляя выбор, масштаб и прокрутку. Создание, редактирование подписей/типов и удаление — операции модели, которые вызывает приложение. Полный пример панели свойств, добавления связей, истории из 20 изменений и импорта находится в галерее `/diagram` (Blazor) / Foundation → Diagram (Flutter). В самом NgDiagram встроенной истории нет.
+Canvas dimensions: 200–5000 (default 1000×600); up to 100 nodes and 200 edges. Nodes: 60–400 × 40–240, fully inside the canvas. IDs: 1–64 ASCII letters/digits/_/-, unique separately for nodes and edges. Node text is nonempty and at most 100 UTF-16 units; edge text 0–100. Coordinates are finite. Edges require two different existing nodes. Cycles and parallel edges are allowed; workflow rules belong to the application. Overlaps are not resolved automatically; coincident centers yield a zero-length line.
 
-Операции модели: `UpsertNode/upsertNode` добавляет узел или заменяет его по ID, `UpsertEdge/upsertEdge` делает то же для связи; `RemoveNode/removeNode` удаляет узел **и все инцидентные связи**; `RemoveEdge/removeEdge` сохраняет узлы. `Move/move(id,x,y)` ограничивает конечные координаты холстом и возвращает новый граф. Например, `graph = graph.Move("start", 80, 120)` / `graph = graph.move('start', 80, 120)`; после вызова обновите UI обычным для вашей платформы способом.
+No automatic layout, obstacle routing, connector drawing, pointer resizing, groups, multiple selection, image/templates, export, minimap, pinch zoom or collaboration. Blazor loads diagram.js automatically from static web assets and requires interactive rendering; if drag fails, check the module and ValueChanged handling. Native/mobile and screen-reader audits remain separate.
 
-`ToJson()/toJson()` сохраняет формат версии 1, общий для Blazor и Flutter. `NgDiagramModel.FromJson(source)` / `NgDiagramModel.fromJson(source)` разбирает и проверяет граф; ловите ArgumentException / ArgumentError, сохраняя прежний документ при отказе. Компонент не пишет файлы и не отправляет данные на сервер. Это схема данных Nextgen, не совместимая с JSON Telerik.
-
-### Узлы, связи и ограничения
-
-Фигуры: Rectangle/rectangle, Ellipse/ellipse, Diamond/diamond. Узел хранит ID, текст, левую верхнюю координату X/Y и размеры Width/Height; размеры по умолчанию 160×80. Длинная подпись сокращается визуально; полный текст доступен в tooltip, доступном имени и панели свойств. Соединения прямые, между границами фигур по линии центров; Directed/directed включает стрелку на конце. Подпись связи сокращается до 24 символов на схеме. Список Connections во Flutter и панель свойств показывают полный текст.
-
-Размер холста 200–5000 в каждом измерении (по умолчанию 1000×600). До 100 узлов и 200 связей. Размер узла 60–400 × 40–240; узел должен целиком помещаться в холст. ID — 1–64 ASCII буквы/цифры, `_` или `-`; уникальны отдельно среди узлов и среди связей. Подпись узла непустая, до 100 UTF-16 единиц; подпись связи — 0–100. Координаты должны быть конечными. Связь требует два существующих разных узла. Циклы и несколько связей между одной парой разрешены: компонент отображает граф, но не проверяет бизнес-правила workflow. Наложенные узлы/линии не раздвигаются автоматически; при совпадении центров линия имеет нулевую длину.
-
-Не реализованы: автоматическая раскладка, маршрутизация вокруг препятствий, самостоятельное рисование связей за коннектор, изменение размера мышью, группы, множественный выбор, изображения/шаблоны узлов, PNG/PDF/SVG-экспорт, minimap, pinch zoom и collaboration. ReadOnly не отключает операции панели приложения автоматически — передавайте его и своим кнопкам. Нативные мобильные платформы и screen reader-аудит остаются отдельным этапом.
-
-Blazor автоматически загружает `diagram.js` из `_content/NextgenComponents.Blazor/`; вручную подключать script не нужно. Нужен interactive render mode. Если перетаскивание не работает, проверьте загрузку этого модуля и сохранение ValueChanged, а не только отображение SVG.
-
-## Blazor: рабочий пример
+## Blazor example
 
 ```razor
-<NgDiagram Label="Процесс" @bind-Value="graph"
+<NgDiagram Label="Process" @bind-Value="graph"
     @bind-SelectedNodeId="selectedNode" @bind-SelectedEdgeId="selectedEdge"/>
-<p>Узел: @selectedNode · Связь: @selectedEdge</p>
+<p>Node: @selectedNode · Connection: @selectedEdge</p>
 @code {
     private string? selectedNode, selectedEdge;
     private NgDiagramModel graph = new([
-        new("start", "Начало", 40, 100, Shape: NgDiagramShape.Ellipse),
-        new("work", "Обработка", 360, 100)
-    ], [new("next", "start", "work", "Продолжить")]);
+        new("start", "Start", 40, 100, Shape: NgDiagramShape.Ellipse),
+        new("work", "Processing", 360, 100)
+    ], [new("next", "start", "work", "Continue")]);
 }
 ```
 
-## Flutter: рабочий пример
+## Flutter example
 
 ```dart
 NgDiagramModel graph = NgDiagramModel(nodes: const [
-  NgDiagramNode('start', 'Начало', 40, 100, shape: NgDiagramShape.ellipse),
-  NgDiagramNode('work', 'Обработка', 360, 100),
-], edges: const [NgDiagramEdge('next', 'start', 'work', text: 'Продолжить')]);
+  NgDiagramNode('start', 'Start', 40, 100, shape: NgDiagramShape.ellipse),
+  NgDiagramNode('work', 'Processing', 360, 100),
+], edges: const [NgDiagramEdge('next', 'start', 'work', text: 'Continue')]);
 String? selectedNode, selectedEdge;
-Widget build(BuildContext context) => NgDiagram(label: 'Процесс', value: graph,
+Widget build(BuildContext context) => NgDiagram(label: 'Process', value: graph,
   onChanged: (v) => setState(() => graph = v),
   selectedNodeId: selectedNode, selectedEdgeId: selectedEdge,
   onSelectedNodeIdChanged: (v) => setState(() => selectedNode = v),
   onSelectedEdgeIdChanged: (v) => setState(() => selectedEdge = v));
 ```
 
-## Параметры и события Blazor
+## Blazor parameters and events
 
-Имена чувствительны к регистру. `?` в типе разрешает null. Параметры с `EditorRequired` отмечены как обязательные; остальные имеют значение по умолчанию CLR или инициализатор ниже.
+Names are case-sensitive. `?` permits null. `EditorRequired` parameters are marked required; other values use the initializer or CLR default.
 
-| Параметр | Тип | По умолчанию / требование | Назначение |
+| Parameter | Type | Default / requirement | Purpose |
 |---|---|---|---|
-| `Label` | `string` | "Diagram" | Подпись элемента или доступное имя. |
-| `Value` | `NgDiagramModel` | обязательный | Текущее значение; тип и правила описаны выше. |
-| `ValueChanged` | `EventCallback<NgDiagramModel>` | не задан | Новое значение для родителя; сохраните его в модели. |
-| `SelectedNodeId` | `string?` | не задан | Смотрите поведение и тип модели выше. |
-| `SelectedNodeIdChanged` | `EventCallback<string?>` | не задан | Смотрите поведение и тип модели выше. |
-| `SelectedEdgeId` | `string?` | не задан | Смотрите поведение и тип модели выше. |
-| `SelectedEdgeIdChanged` | `EventCallback<string?>` | не задан | Смотрите поведение и тип модели выше. |
-| `ReadOnly` | `bool` | false | Запрещает изменение данных, сохраняя просмотр; точное поведение описано выше. |
+| `Label` | `string` | "Diagram" | Visible label or accessible name. |
+| `Value` | `NgDiagramModel` | required | Current value; see state ownership and model rules above. |
+| `ValueChanged` | `EventCallback<NgDiagramModel>` | not set | New value for the parent to store and pass back. |
+| `SelectedNodeId` | `string?` | not set | See the behavior rules and model contract above. |
+| `SelectedNodeIdChanged` | `EventCallback<string?>` | not set | See the behavior rules and model contract above. |
+| `SelectedEdgeId` | `string?` | not set | See the behavior rules and model contract above. |
+| `SelectedEdgeIdChanged` | `EventCallback<string?>` | not set | See the behavior rules and model contract above. |
+| `ReadOnly` | `bool` | false | Prevent changes while retaining supported viewing actions. |
 
-## Параметры и события Flutter
+## Flutter parameters and events
 
-`required` в конструкторе означает обязательный аргумент, даже если его тип допускает null. `key` — стандартный Flutter Key. Значения по умолчанию приведены в точной сигнатуре ниже.
+`required` marks a mandatory argument even if its type is nullable. `key` is the standard Flutter Key. The exact constructor below specifies defaults.
 
-| Аргумент | Тип | Назначение |
+| Argument | Type | Purpose |
 |---|---|---|
-| `label` | `String` | Подпись элемента или доступное имя. |
-| `value` | `NgDiagramModel` | Текущее значение; тип и правила описаны выше. |
-| `onChanged` | `ValueChanged<NgDiagramModel>` | Новое значение для родителя; обновите состояние через setState. |
-| `selectedNodeId` | `String?` | Смотрите поведение и тип модели выше. |
-| `selectedEdgeId` | `String?` | Смотрите поведение и тип модели выше. |
-| `onSelectedNodeIdChanged` | `ValueChanged<String?>?` | Смотрите поведение и тип модели выше. |
-| `onSelectedEdgeIdChanged` | `ValueChanged<String?>?` | Смотрите поведение и тип модели выше. |
-| `readOnly` | `bool` | Запрещает изменение данных, сохраняя просмотр; точное поведение описано выше. |
+| `label` | `String` | Visible label or accessible name. |
+| `value` | `NgDiagramModel` | Current value; see state ownership and model rules above. |
+| `onChanged` | `ValueChanged<NgDiagramModel>` | Store the new value using setState or your state manager. |
+| `selectedNodeId` | `String?` | See the behavior rules and model contract above. |
+| `selectedEdgeId` | `String?` | See the behavior rules and model contract above. |
+| `onSelectedNodeIdChanged` | `ValueChanged<String?>?` | See the behavior rules and model contract above. |
+| `onSelectedEdgeIdChanged` | `ValueChanged<String?>?` | See the behavior rules and model contract above. |
+| `readOnly` | `bool` | Prevent changes while retaining supported viewing actions. |
 
 ```dart
 const NgDiagram({
@@ -110,17 +102,17 @@ const NgDiagram({
   });
 ```
 
-## Интеграция и диагностика
+## Integration and troubleshooting
 
-Если интерфейс не обновляется, проверьте, сохраняет ли родитель результат callback и передаёт ли новое значение обратно. Для Blazor нужен интерактивный render mode; для Flutter — setState или используемый менеджер состояния. Данные формы отправляйте только после её успешной валидации.
+If the UI does not update, confirm that the parent stores callback values and passes them back. Blazor event handlers need interactive rendering; Flutter requires setState or a state manager. Submit form data only after successful validation.
 
-Проверяйте понятную подпись, пустое состояние, недоступность и размер контейнера. Клавиатурные возможности не означают полной сертификации screen reader. Сейчас проверяется Web в Chrome; нативные мобильные платформы будут проверяться отдельно.
+Check accessible labels, empty/invalid states, disabled actions and narrow layouts. Keyboard support is not full screen-reader certification. Current visual verification targets Web in visible Chrome on Linux/iMac; native mobile platforms are a separate phase.
 
-## Исходники и полный сценарий
+## Source and complete examples
 
-- [Blazor](../../src/NextgenComponents.Blazor/NgDiagram.razor)
-- [Flutter](../../packages/nextgen_components/lib/src/diagram.dart)
-- [Галереи и запуск](../../README.md#run)
-- [Матрица возможностей](../catalog.md)
+- [Blazor source](../../src/NextgenComponents.Blazor/NgDiagram.razor)
+- [Flutter source](../../packages/nextgen_components/lib/src/diagram.dart)
+- [Galleries and launch commands](../../README.md#run)
+- [Capability matrix](../catalog.md)
 
-Версия параметров сгенерирована из текущего исходного кода. Примеры и правила сопровождаются отдельно в `scripts/manual_content.py`; после изменения API выполните `python3 scripts/generate_manual.py`.
+API declarations are generated from current source. Curated examples and behavior live in `scripts/manual_content.py`; regenerate with `python3 scripts/generate_manual.py`.

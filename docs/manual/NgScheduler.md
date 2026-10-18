@@ -1,59 +1,59 @@
-# NgScheduler — Недельное расписание
+# NgScheduler — Weekly scheduler
 
-[Оглавление](README.md) · [Подключение](getting-started.md) · [Модели](models.md)
+[Manual](README.md) · [Getting started](getting-started.md) · [Code examples](code-examples.md) · [Models](models.md)
 
-## Когда использовать
+## When to use it
 
-Показывает события по дням недели и вызывает приложение для создания/редактирования.
+Show a week of application events and request create/edit actions.
 
-## Поведение и практические правила
+## Behavior and practical rules
 
-Начало недели — понедельник. Предыдущая/следующая неделя и Today вызывают callback изменения даты. События имеют уникальный Id/id, непустой Title/title и End/end строго позже Start/start. Пересечение полуночи отображается в обоих днях; конец ровно в 00:00 не добавляет запись следующего дня. Редактор и хранение создаёт приложение: полный Save/Cancel/Delete есть в Analytics gallery. Используются локальные wall-clock значения без конвертации timezone. Это дневные карточки недели, не почасовая сетка. Повторы, ресурсы и drag/drop не реализованы.
+NgScheduleEvent requires a unique ID, nonempty title and End > Start. Date chooses the displayed week. Store DateChanged/onDateChanged; OnCreate/onCreate identifies a day, while OnEdit/onEdit identifies an event. The application opens its editor and replaces the event collection after saving. Times are local wall-clock values; timezone conversion belongs to the host. Recurrence, drag/resize, resources and multiple calendar views are not implemented.
 
-## Blazor: рабочий пример
+## Blazor example
 
 ```razor
 <NgScheduler @bind-Date="week" Items="events" OnCreate="day=>message=day.ToShortDateString()" OnEdit="item=>message=item.Title"/>
 <p>@message</p>
-@code { private DateTime week=new(2026,10,19); private string? message; private NgScheduleEvent[] events=[new("a","Встреча",new(2026,10,19,10,0,0),new(2026,10,19,11,0,0))]; }
+@code { private DateTime week=new(2026,10,19); private string? message; private NgScheduleEvent[] events=[new("a","Meeting",new(2026,10,19,10,0,0),new(2026,10,19,11,0,0))]; }
 ```
 
-## Flutter: рабочий пример
+## Flutter example
 
 ```dart
 DateTime week = DateTime(2026,10,19);
 Widget build(BuildContext context) => NgScheduler(date: week,
-  items: [NgScheduleEvent('a','Встреча',DateTime(2026,10,19,10),DateTime(2026,10,19,11))],
+  items: [NgScheduleEvent('a','Meeting',DateTime(2026,10,19,10),DateTime(2026,10,19,11))],
   onDateChanged: (v) => setState(() => week = v),
-  onCreate: (day) => debugPrint('Добавить $day'),
+  onCreate: (day) => debugPrint('Add $day'),
   onEdit: (item) => debugPrint(item.title));
 ```
 
-## Параметры и события Blazor
+## Blazor parameters and events
 
-Имена чувствительны к регистру. `?` в типе разрешает null. Параметры с `EditorRequired` отмечены как обязательные; остальные имеют значение по умолчанию CLR или инициализатор ниже.
+Names are case-sensitive. `?` permits null. `EditorRequired` parameters are marked required; other values use the initializer or CLR default.
 
-| Параметр | Тип | По умолчанию / требование | Назначение |
+| Parameter | Type | Default / requirement | Purpose |
 |---|---|---|---|
-| `Label` | `string` | "Schedule" | Подпись элемента или доступное имя. |
-| `Date` | `DateTime` | DateTime.Today | Любая дата отображаемой недели. |
-| `DateChanged` | `EventCallback<DateTime>` | не задан | Новая дата после навигации недели. |
-| `Items` | `IReadOnlyList<NgScheduleEvent>` | [] | Исходные элементы. Тип модели указан в сигнатуре; заменяйте список при изменениях. |
-| `OnCreate` | `EventCallback<DateTime>` | не задан | Выбранный день для создания события; откройте свой редактор. |
-| `OnEdit` | `EventCallback<NgScheduleEvent>` | не задан | Выбранное событие для редактирования. |
+| `Label` | `string` | "Schedule" | Visible label or accessible name. |
+| `Date` | `DateTime` | DateTime.Today | See the behavior rules and model contract above. |
+| `DateChanged` | `EventCallback<DateTime>` | not set | See the behavior rules and model contract above. |
+| `Items` | `IReadOnlyList<NgScheduleEvent>` | [] | Input collection. Replace it when changing records or configuration. |
+| `OnCreate` | `EventCallback<DateTime>` | not set | See the behavior rules and model contract above. |
+| `OnEdit` | `EventCallback<NgScheduleEvent>` | not set | See the behavior rules and model contract above. |
 
-## Параметры и события Flutter
+## Flutter parameters and events
 
-`required` в конструкторе означает обязательный аргумент, даже если его тип допускает null. `key` — стандартный Flutter Key. Значения по умолчанию приведены в точной сигнатуре ниже.
+`required` marks a mandatory argument even if its type is nullable. `key` is the standard Flutter Key. The exact constructor below specifies defaults.
 
-| Аргумент | Тип | Назначение |
+| Argument | Type | Purpose |
 |---|---|---|
-| `label` | `String` | Подпись элемента или доступное имя. |
-| `date` | `DateTime` | Любая дата отображаемой недели. |
-| `items` | `List<NgScheduleEvent>` | Исходные элементы. Тип модели указан в сигнатуре; заменяйте список при изменениях. |
-| `onDateChanged` | `ValueChanged<DateTime>` | Новая дата после навигации недели. |
-| `onCreate` | `ValueChanged<DateTime>` | Выбранный день для создания события; откройте свой редактор. |
-| `onEdit` | `ValueChanged<NgScheduleEvent>` | Выбранное событие для редактирования. |
+| `label` | `String` | Visible label or accessible name. |
+| `date` | `DateTime` | See the behavior rules and model contract above. |
+| `items` | `List<NgScheduleEvent>` | Input collection. Replace it when changing records or configuration. |
+| `onDateChanged` | `ValueChanged<DateTime>` | See the behavior rules and model contract above. |
+| `onCreate` | `ValueChanged<DateTime>` | See the behavior rules and model contract above. |
+| `onEdit` | `ValueChanged<NgScheduleEvent>` | See the behavior rules and model contract above. |
 
 ```dart
 const NgScheduler({
@@ -67,17 +67,17 @@ const NgScheduler({
   });
 ```
 
-## Интеграция и диагностика
+## Integration and troubleshooting
 
-Если интерфейс не обновляется, проверьте, сохраняет ли родитель результат callback и передаёт ли новое значение обратно. Для Blazor нужен интерактивный render mode; для Flutter — setState или используемый менеджер состояния. Данные формы отправляйте только после её успешной валидации.
+If the UI does not update, confirm that the parent stores callback values and passes them back. Blazor event handlers need interactive rendering; Flutter requires setState or a state manager. Submit form data only after successful validation.
 
-Проверяйте понятную подпись, пустое состояние, недоступность и размер контейнера. Клавиатурные возможности не означают полной сертификации screen reader. Сейчас проверяется Web в Chrome; нативные мобильные платформы будут проверяться отдельно.
+Check accessible labels, empty/invalid states, disabled actions and narrow layouts. Keyboard support is not full screen-reader certification. Current visual verification targets Web in visible Chrome on Linux/iMac; native mobile platforms are a separate phase.
 
-## Исходники и полный сценарий
+## Source and complete examples
 
-- [Blazor](../../src/NextgenComponents.Blazor/NgScheduler.razor)
-- [Flutter](../../packages/nextgen_components/lib/src/visualization.dart)
-- [Галереи и запуск](../../README.md#run)
-- [Матрица возможностей](../catalog.md)
+- [Blazor source](../../src/NextgenComponents.Blazor/NgScheduler.razor)
+- [Flutter source](../../packages/nextgen_components/lib/src/visualization.dart)
+- [Galleries and launch commands](../../README.md#run)
+- [Capability matrix](../catalog.md)
 
-Версия параметров сгенерирована из текущего исходного кода. Примеры и правила сопровождаются отдельно в `scripts/manual_content.py`; после изменения API выполните `python3 scripts/generate_manual.py`.
+API declarations are generated from current source. Curated examples and behavior live in `scripts/manual_content.py`; regenerate with `python3 scripts/generate_manual.py`.

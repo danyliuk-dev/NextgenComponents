@@ -191,6 +191,16 @@ using(var prompts=new NgPromptSession()) {
  try{await prompts.RunAsync("   ",(_,_)=>Task.FromResult("invalid"));throw new Exception("blank accepted");}catch(ArgumentException){Rule(true,"blank prompt rejected");}
 }
 var disposedPrompts=new NgPromptSession();var afterDispose=new TaskCompletionSource<string>();var outstanding=disposedPrompts.RunAsync("dispose",(_,_)=>afterDispose.Task);disposedPrompts.Dispose();afterDispose.SetResult("late");Rule(await outstanding is null,"disposed prompt session ignores late result");
+var steps=new NgStep[]{new("Contact"),new("Disabled",Disabled:true),new("Optional",Optional:true),new("Review",Valid:false)};
+await Check<NgStepper>(new(){["Items"]=steps,["Linear"]=true},"aria-current=\"step\"","disabled","Optional","Needs attention");
+await Check<NgStepper>(new(){["Items"]=steps,["Vertical"]=true,["Value"]=2},"ng-stepper-vertical","aria-current=\"step\"");
+await Check<NgWizard>(new(){["Items"]=steps,["ChildContent"]=(RenderFragment<int>)(i=>Text($"Content {i}"))},"Content 0","Step 1 of 4","Next","Back");
+Rule(NgStepRules.Adjacent(steps,0,1)==2&&NgStepRules.Adjacent(steps,2,-1)==0,"step navigation skips disabled entries");
+Rule(NgStepRules.Adjacent(steps,0,-1)==-1&&NgStepRules.Adjacent(steps,3,1)==-1,"step boundaries");
+Rule(NgStepRules.CanMove(steps,0,2,true)&&!NgStepRules.CanMove(steps,0,3,true)&&NgStepRules.CanMove(steps,3,0,true),"linear step contract");
+Rule(NgStepRules.CanMove(steps,0,3,false)&&!NgStepRules.CanMove(steps,0,1,false)&&!NgStepRules.CanMove(steps,0,0,false),"nonlinear and current/disabled contract");
+foreach(var invalid in new[]{-1,1,4}){try{NgStepRules.Validate(steps,invalid);throw new Exception("invalid current accepted");}catch(ArgumentException){Rule(true,"invalid active step rejected");}}
+try{NgStepRules.Adjacent(steps,0,0);throw new Exception("zero direction accepted");}catch(ArgumentOutOfRangeException){Rule(true,"zero direction rejected");}
 Console.WriteLine($"{count} rendering and data/date-rule checks passed. Browser interaction requires the separate visual run.");
 sealed class NoBrowserJS : IJSRuntime {
  public ValueTask<TValue> InvokeAsync<TValue>(string identifier, object?[]? args) => throw new InvalidOperationException("JS must not execute in SSR");

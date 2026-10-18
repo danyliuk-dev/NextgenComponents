@@ -1,66 +1,64 @@
-# NgPdfViewer — Просмотр PDF
+# NgPdfViewer — PDF viewer
 
-[Оглавление](README.md) · [Подключение](getting-started.md) · [Модели](models.md)
+[Manual](README.md) · [Getting started](getting-started.md) · [Code examples](code-examples.md) · [Models](models.md)
 
-## Когда использовать
+## When to use it
 
-Для просмотра инструкций, договоров и отчётов в веб-приложении. Blazor и Flutter Web используют общий локальный просмотрщик на PDF.js.
+Open, navigate, search and copy text from PDF documents.
 
-## Поведение и практические правила
+## Behavior and practical rules
 
-### Подключение и источник
-Source/source — относительный или HTTP(S) URL. Относительный адрес разрешается от base URI приложения; файл не включается автоматически: разместите его в wwwroot/samples (Blazor) или web/samples (Flutter). Null/пустая строка открывает пустой просмотрщик с кнопкой Open PDF. Получение URL идёт из браузера: same-origin cookies передаются только своему origin; для внешнего адреса сервер должен разрешать CORS. Пользовательский выбор Open PDF читает файл локально и не отправляет его на сервер. PDF.js, worker, CMaps и шрифты находятся в пакете; CDN не требуется.
+### Hosting and sources
+Source is a relative or HTTP(S) URL resolved from the app base URI. Host the file yourself in wwwroot/samples (Blazor) or web/samples (Flutter). Empty source opens the viewer with Open PDF. Browser requests send same-origin cookies only to their origin; remote servers must allow CORS. Open PDF reads a local file without upload. PDF.js, worker, CMaps and fonts are packaged locally; no CDN or additional script tag is needed.
 
-Blazor требует интерактивности для изменения параметров родителем, но сам iframe работает и при SSR. У приложения должны раздаваться static web assets: _content/NextgenComponents.Blazor/pdf-viewer/. Для UseStaticFiles добавьте MIME mappings .mjs = text/javascript, .bcmap и .pfb = application/octet-stream (пример в Program.cs галереи). В Flutter assets включены в pubspec пакета; дополнительных script-тегов не нужно. При CSP разрешите локальные scripts/workers, worker-src 'self' blob:, font-src 'self' blob:, frame-src 'self', style-src 'self' 'unsafe-inline' и connect-src к источнику PDF. Конкретная политика зависит от host-приложения.
+Blazor serves _content/NextgenComponents.Blazor/pdf-viewer/. With UseStaticFiles map .mjs to text/javascript and .bcmap/.pfb to application/octet-stream (see gallery Program.cs). The iframe works under SSR; parent parameter changes require interactivity. Flutter package assets supply the viewer. CSP must permit the required local frame/scripts/styles/workers/fonts and source connections, including blob workers/fonts where used; configure it in the host.
 
-### Навигация, поиск и состояние
-Previous/Next и поле Page переключают страницы от 1 до количества страниц документа; недопустимый номер отклоняется. Масштаб 10–300%, кнопки меняют его на 25 процентных пунктов. Fit width вписывает ширину, Fit page — страницу целиком; эти режимы пересчитываются при изменении размеров области. Увеличенные страницы прокручиваются внутри компонента. Height/height — 400–1600 CSS/logical px, по умолчанию 640; при малой ширине панель переносится и оставляет минимум 100 px для страницы.
+### Navigation, search and state
+Previous/Next and Page use one-based page numbers. Zoom is 10–300%, with 25-point button increments. Fit width/page recomputes on viewport resize. Enlarged pages scroll internally. Height is 400–1600, default 640; the toolbar wraps on narrow widths and leaves at least 100 px for the page.
 
-Find выполняет поиск подстроки без учёта регистра во всех страницах. Пробелы, табуляции и переводы строк считаются одним пробелом; фраза может пересекать границы текстовых фрагментов и строк. Результат — список номеров совпавших страниц; нажатие открывает страницу и Page text. Clear очищает запрос и результаты. Текстовый слой PDF извлекается в отдельный раскрываемый блок Page text (select and copy), где доступно обычное выделение/копирование браузера. Начиная с 0.8.1 текст также выделяется мышью непосредственно поверх страницы; Ctrl/Cmd+C использует обычное копирование браузера. Найденные совпадения подсвечиваются жёлтым на текущей странице, включая переходы между фрагментами текста. Подсветка сохраняется после навигации, масштабирования и вписывания; Clear, пустой запрос + Find и смена документа очищают её. Изменение поля запроса применяется после Find. На странице подсвечиваются первые 1000 непересекающихся совпадений; список результатов по-прежнему содержит номера страниц. При перерисовке страницы обычное пользовательское выделение сбрасывается. Точная геометрия зависит от шрифтов и текстового слоя PDF. Подсветка использует CSS Custom Highlight API (проверено в Chrome); в браузере без этого API остаются поиск по страницам и выделение текста. PDF без текстового слоя требует OCR, которого здесь нет. Результат зависит от порядка текста в исходном PDF; перенос слова с дефисом и лигатуры могут препятствовать совпадению.
+Find searches a case-insensitive substring across every page, normalizing whitespace and matching across text items/lines. Results list page numbers; selecting one opens that page and Page text. Clear removes query/results/highlights. Page text supports ordinary selection/copy. Text can also be selected over the rendered page; Ctrl/Cmd+C uses the browser clipboard. Current-page matches are highlighted (up to 1,000 non-overlapping matches), surviving zoom/navigation/fit. Find applies a changed query; Clear, an empty Find and document changes reset it. Redrawing clears ordinary selection. Highlight geometry depends on PDF fonts/text; CSS Custom Highlight API is used in Chrome, with page search and selection as fallback. No OCR: scanned PDFs without text cannot be searched. Hyphenation, ligatures and source text order may affect matching.
 
-Download сохраняет исходные байты текущего документа, включая файл, выбранный через Open PDF. Viewer не редактирует PDF. Имя берётся из URL или локального файла и очищается от управляющих символов и разделителей пути.
+Download saves the original bytes, including locally opened files. Filenames from URLs/files are stripped of control characters/path separators. The viewer does not edit PDF. Page/zoom/search/local-file state belongs to the iframe. Source or theme changes recreate it and reset state; reopen local files after a theme change. Identical parent rebuilds preserve it. Page/load callbacks and controlled page binding are not implemented.
 
-Состояние страницы, масштаба, поиска и локально открытого файла принадлежит просмотрщику. Изменение Source/source пересоздаёт iframe и сбрасывает его. Dark в Blazor задаётся явно; Flutter берёт Brightness из Theme. Смена темы также пересоздаёт iframe: локальный файл нужно открыть снова. Перестроение родителя с теми же параметрами сохраняет iframe. Callbacks загрузки/страницы и привязка текущей страницы пока отсутствуют.
+### Limits and failures
+At most 20 MiB and 200 pages, including streamed URL downloads. One page is rendered at a time; raster output is capped at 16 million pixels and an 8192-pixel side, reducing quality at extreme zoom if necessary. Corrupt files, CORS/access errors and password-protected documents show an error and allow another file. No passwords, forms, annotations, signatures, PDF links, print, OCR, thumbnails or built-in localization. PDF JavaScript/actions are not executed.
 
-### Ограничения и ошибки
-До 20 MiB и 200 страниц. Файл большей длины отклоняется; поток загрузки URL ограничен тем же размером. Отрисовывается одна страница, растровый буфер ограничен 16 миллионами пикселей и стороной 8192; при большом zoom качество может уменьшаться. Повреждённый файл, ошибка доступа/CORS и пароль показывают сообщения; после ошибки можно открыть другой PDF. Пароль, формы, аннотации, подписи, ссылки внутри PDF, печать, OCR, миниатюры и встроенная локализация пока не реализованы. Содержимое PDF не исполняет JavaScript и не запускает действия/ссылки.
+Flutter currently supports this component on Web only; native displays an explicit unsupported message. Native support and full screen-reader certification are not part of this release.
 
-Flutter использует HTML iframe и сейчас поддерживает этот компонент только на Web; на native показывается явное сообщение, а не имитация просмотрщика. Нативная поддержка — отдельный будущий этап. Полная screen-reader сертификация не проводилась. Это ограниченный рабочий набор функций, не полная совместимость с Telerik.
-
-## Blazor: рабочий пример
+## Blazor example
 
 ```razor
-<NgPdfViewer Label="Инструкция" Source="samples/nextgen-guide.pdf" Height="720" Dark="false"/>
-<p>PDF должен быть размещён приложением по указанному адресу.</p>
+<NgPdfViewer Label="Guide" Source="samples/nextgen-guide.pdf" Height="720" Dark="false"/>
+<p>PDF must be hosted by the application at this address.</p>
 ```
 
-## Flutter: рабочий пример
+## Flutter example
 
 ```dart
 Widget build(BuildContext context) => const NgPdfViewer(
-  label: 'Инструкция', source: 'samples/nextgen-guide.pdf', height: 720);
+  label: 'Guide', source: 'samples/nextgen-guide.pdf', height: 720);
 ```
 
-## Параметры и события Blazor
+## Blazor parameters and events
 
-Имена чувствительны к регистру. `?` в типе разрешает null. Параметры с `EditorRequired` отмечены как обязательные; остальные имеют значение по умолчанию CLR или инициализатор ниже.
+Names are case-sensitive. `?` permits null. `EditorRequired` parameters are marked required; other values use the initializer or CLR default.
 
-| Параметр | Тип | По умолчанию / требование | Назначение |
+| Parameter | Type | Default / requirement | Purpose |
 |---|---|---|---|
-| `Label` | `string` | "PDF viewer" | Подпись элемента или доступное имя. |
-| `Source` | `string?` | не задан | Смотрите поведение и тип модели выше. |
-| `Height` | `int` | 640 | Смотрите поведение и тип модели выше. |
-| `Dark` | `bool` | false | Смотрите поведение и тип модели выше. |
+| `Label` | `string` | "PDF viewer" | Visible label or accessible name. |
+| `Source` | `string?` | not set | See the behavior rules and model contract above. |
+| `Height` | `int` | 640 | See the behavior rules and model contract above. |
+| `Dark` | `bool` | false | See the behavior rules and model contract above. |
 
-## Параметры и события Flutter
+## Flutter parameters and events
 
-`required` в конструкторе означает обязательный аргумент, даже если его тип допускает null. `key` — стандартный Flutter Key. Значения по умолчанию приведены в точной сигнатуре ниже.
+`required` marks a mandatory argument even if its type is nullable. `key` is the standard Flutter Key. The exact constructor below specifies defaults.
 
-| Аргумент | Тип | Назначение |
+| Argument | Type | Purpose |
 |---|---|---|
-| `label` | `String` | Подпись элемента или доступное имя. |
-| `source` | `String?` | Смотрите поведение и тип модели выше. |
-| `height` | `double` | Смотрите поведение и тип модели выше. |
+| `label` | `String` | Visible label or accessible name. |
+| `source` | `String?` | See the behavior rules and model contract above. |
+| `height` | `double` | See the behavior rules and model contract above. |
 
 ```dart
 const NgPdfViewer({
@@ -71,17 +69,17 @@ const NgPdfViewer({
   });
 ```
 
-## Интеграция и диагностика
+## Integration and troubleshooting
 
-Если интерфейс не обновляется, проверьте, сохраняет ли родитель результат callback и передаёт ли новое значение обратно. Для Blazor нужен интерактивный render mode; для Flutter — setState или используемый менеджер состояния. Данные формы отправляйте только после её успешной валидации.
+If the UI does not update, confirm that the parent stores callback values and passes them back. Blazor event handlers need interactive rendering; Flutter requires setState or a state manager. Submit form data only after successful validation.
 
-Проверяйте понятную подпись, пустое состояние, недоступность и размер контейнера. Клавиатурные возможности не означают полной сертификации screen reader. Сейчас проверяется Web в Chrome; нативные мобильные платформы будут проверяться отдельно.
+Check accessible labels, empty/invalid states, disabled actions and narrow layouts. Keyboard support is not full screen-reader certification. Current visual verification targets Web in visible Chrome on Linux/iMac; native mobile platforms are a separate phase.
 
-## Исходники и полный сценарий
+## Source and complete examples
 
-- [Blazor](../../src/NextgenComponents.Blazor/NgPdfViewer.razor)
-- [Flutter](../../packages/nextgen_components/lib/src/pdf_viewer.dart)
-- [Галереи и запуск](../../README.md#run)
-- [Матрица возможностей](../catalog.md)
+- [Blazor source](../../src/NextgenComponents.Blazor/NgPdfViewer.razor)
+- [Flutter source](../../packages/nextgen_components/lib/src/pdf_viewer.dart)
+- [Galleries and launch commands](../../README.md#run)
+- [Capability matrix](../catalog.md)
 
-Версия параметров сгенерирована из текущего исходного кода. Примеры и правила сопровождаются отдельно в `scripts/manual_content.py`; после изменения API выполните `python3 scripts/generate_manual.py`.
+API declarations are generated from current source. Curated examples and behavior live in `scripts/manual_content.py`; regenerate with `python3 scripts/generate_manual.py`.

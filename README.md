@@ -2,11 +2,11 @@
 
 Blazor and Flutter component libraries with a shared design-token source and a Telerik Blazor component roadmap.
 
-**Current release: 0.10.0 AI interface, 39 controls on each Web platform (45 catalogue entries including chart modes).** This is not a complete Telerik replacement or API-compatible clone. The [catalog](docs/catalog.md) tracks 139 named entries from the published Telerik Blazor index; chart variants are counted separately. See [foundation capabilities](docs/foundation.md) and [forms/date capabilities](docs/forms-and-dates.md) and [data workspace capabilities and gaps](docs/data-workspace.md) and [analytics/schedule capabilities](docs/analytics-and-schedule.md).
+**Current release: 0.11.0 Stepper and Wizard, 41 controls on each Web platform (47 catalogue entries including chart modes).** This is not a complete Telerik replacement or API-compatible clone. The [catalog](docs/catalog.md) tracks 139 named entries from the published Telerik Blazor index; chart variants are counted separately. See [foundation capabilities](docs/foundation.md) and [forms/date capabilities](docs/forms-and-dates.md) and [data workspace capabilities and gaps](docs/data-workspace.md) and [analytics/schedule capabilities](docs/analytics-and-schedule.md).
 
 ## Manual
 
-[Подробное руководство на русском](docs/manual/README.md): все 39 компонентов, параметры и события, примеры Blazor/Flutter, правила состояния, формы, модели, формулы и ограничения.
+[English developer manual](docs/manual/README.md): all 41 components, behavior, parameters, events and working Blazor/Flutter examples. Start with [Getting started](docs/manual/getting-started.md) and [Code examples](docs/manual/code-examples.md). Both demos include an interactive code browser.
 
 ## Layout
 
@@ -96,7 +96,7 @@ flutter test
 ## Roadmap
 
 1. Shared theme, catalog, 11 foundation components and galleries (implemented subset).
-2. Forms and dates: 11 more controls and a complete booking example (0.2 implemented subset). Remaining input/layout features stay in the catalogue.
+2. Forms and dates: 11 more controls and a complete booking example (0.2 implemented subset). Stepper and Wizard added in 0.11: [workflow capabilities](docs/steps-and-wizard.md). Remaining input/layout features stay in the catalogue.
 3. Grid, TreeList, TreeView, Pager and Breadcrumb (0.3 implemented subset); advanced data features remain in the capability matrix.
 4. Charts (six modes), linear/arc gauges and weekly scheduling (0.4 implemented subset); advanced visualization and scheduling remain planned.
 5. Spreadsheet and PivotGrid: linked workbook (0.5 implemented subset). Structured document editor (0.6 implemented subset); see [editor capabilities](docs/editor.md). Interactive diagrams (0.7 implemented subset); see [diagram capabilities](docs/diagram.md). PDF Viewer (0.8 implemented subset); see [PDF capabilities](docs/pdf-viewer.md). Map (0.9 implemented subset); see [Map capabilities](docs/map.md). AI Prompt and PromptBox (0.10 implemented subset); see [AI interface capabilities](docs/ai-interface.md). Full rich-text editing and advanced AI integrations remain planned.

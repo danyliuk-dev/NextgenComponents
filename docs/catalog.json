@@ -9,14 +9,14 @@
       "reference": "https://www.telerik.com/blazor-ui/ai-prompt",
       "phase": 5,
       "blazor": {
-        "status": "planned",
-        "component": null
+        "status": "foundation",
+        "component": "NgAIPrompt"
       },
       "flutter": {
-        "status": "planned",
-        "component": null
+        "status": "foundation",
+        "component": "NgAIPrompt"
       },
-      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+      "featureSpec": "Implemented subset; see docs/ai-interface.md and the English component manual."
     },
     {
       "name": "Inline AI Prompt",
@@ -54,14 +54,14 @@
       "reference": "https://www.telerik.com/blazor-ui/promptbox",
       "phase": 5,
       "blazor": {
-        "status": "planned",
-        "component": null
+        "status": "foundation",
+        "component": "NgPromptBox"
       },
       "flutter": {
-        "status": "planned",
-        "component": null
+        "status": "foundation",
+        "component": "NgPromptBox"
       },
-      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+      "featureSpec": "Implemented subset; see docs/ai-interface.md and the English component manual."
     },
     {
       "name": "SmartPasteButton",
@@ -294,14 +294,14 @@
       "reference": "https://www.telerik.com/blazor-ui/stepper",
       "phase": 2,
       "blazor": {
-        "status": "planned",
-        "component": null
+        "status": "foundation",
+        "component": "NgStepper"
       },
       "flutter": {
-        "status": "planned",
-        "component": null
+        "status": "foundation",
+        "component": "NgStepper"
       },
-      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+      "featureSpec": "Implemented subset; see docs/steps-and-wizard.md and the English component manual."
     },
     {
       "name": "Switch",
@@ -1689,14 +1689,14 @@
       "reference": "https://www.telerik.com/blazor-ui/wizard",
       "phase": 2,
       "blazor": {
-        "status": "planned",
-        "component": null
+        "status": "foundation",
+        "component": "NgWizard"
       },
       "flutter": {
-        "status": "planned",
-        "component": null
+        "status": "foundation",
+        "component": "NgWizard"
       },
-      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+      "featureSpec": "Implemented subset; see docs/steps-and-wizard.md and the English component manual."
     },
     {
       "name": "Arc Gauge",

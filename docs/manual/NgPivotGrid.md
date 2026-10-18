@@ -1,24 +1,24 @@
-# NgPivotGrid — Сводная таблица
+# NgPivotGrid — Pivot grid
 
-[Оглавление](README.md) · [Подключение](getting-started.md) · [Модели](models.md)
+[Manual](README.md) · [Getting started](getting-started.md) · [Code examples](code-examples.md) · [Models](models.md)
 
-## Когда использовать
+## When to use it
 
-Группировка числовой меры по двум измерениям с итогами и просмотром исходных строк.
+Aggregate records by row and column dimensions.
 
-## Поведение и практические правила
+## Behavior and practical rules
 
-NgPivotRecord содержит уникальный ID, словарь строковых измерений и одну числовую Value/value (может быть null). Измерения сортируются по строковым ключам; отсутствующий ключ отображается как (blank). Sum/Average/Min/Max используют только числа; Count считает исходные записи, включая null. Все итоги считаются заново по исходным записям: среднее не является средним средних. Callback ячейки/итога отдаёт оригинальные записи; null Row/Column обозначает итог, пустая строка — пустое измерение. Фильтры применяйте к Items/items до передачи компоненту. Множественные уровни, несколько мер, OLAP и drag/drop конфигуратора отсутствуют.
+NgPivotRecord contains a unique ID, string dimensions and one nullable numeric value. Dimensions sort by string keys; a missing key appears as (blank). Sum/Average/Min/Max use numeric values; Count includes source records with null values. Totals are recalculated from source records, so an average is not an average of averages. Cell/total callbacks return the original records; null Row/Column denotes a total, while an empty string denotes a blank dimension. Filter Items/items before passing them in. Multiple grouping levels, measures, OLAP and a drag/drop configurator are not implemented.
 
-## Blazor: рабочий пример
+## Blazor example
 
 ```razor
 <NgPivotGrid Items="records" RowField="Team" ColumnField="Quarter" Aggregate="NgAggregate.Average" OnCellSelected="p=>count=p.Records.Count"/>
-<p>Исходных строк: @count</p>
+<p>Source records: @count</p>
 @code { private int count; private NgPivotRecord[] records=[new("a",new Dictionary<string,string>{{"Team","Design"},{"Quarter","Q1"}},100),new("b",new Dictionary<string,string>{{"Team","Design"},{"Quarter","Q1"}},200)]; }
 ```
 
-## Flutter: рабочий пример
+## Flutter example
 
 ```dart
 int count = 0;
@@ -29,31 +29,31 @@ Widget build(BuildContext context) => NgPivotGrid(rowField: 'Team', columnField:
   onCellSelected: (p) => setState(() => count = p.records.length));
 ```
 
-## Параметры и события Blazor
+## Blazor parameters and events
 
-Имена чувствительны к регистру. `?` в типе разрешает null. Параметры с `EditorRequired` отмечены как обязательные; остальные имеют значение по умолчанию CLR или инициализатор ниже.
+Names are case-sensitive. `?` permits null. `EditorRequired` parameters are marked required; other values use the initializer or CLR default.
 
-| Параметр | Тип | По умолчанию / требование | Назначение |
+| Parameter | Type | Default / requirement | Purpose |
 |---|---|---|---|
-| `Label` | `string` | "Pivot table" | Подпись элемента или доступное имя. |
-| `Items` | `IReadOnlyList<NgPivotRecord>` | [] | Исходные элементы. Тип модели указан в сигнатуре; заменяйте список при изменениях. |
-| `RowField` | `string` | "Team" | Ключ строкового измерения в Dimensions/dimensions. |
-| `ColumnField` | `string` | "Quarter" | Ключ столбцового измерения. |
-| `Aggregate` | `NgAggregate` | NgAggregate.Sum | Sum, Count, Average, Min или Max. |
-| `OnCellSelected` | `EventCallback<NgPivotSelection>` | не задан | Измерения и исходные записи выбранной ячейки/итога. |
+| `Label` | `string` | "Pivot table" | Visible label or accessible name. |
+| `Items` | `IReadOnlyList<NgPivotRecord>` | [] | Input collection. Replace it when changing records or configuration. |
+| `RowField` | `string` | "Team" | See the behavior rules and model contract above. |
+| `ColumnField` | `string` | "Quarter" | See the behavior rules and model contract above. |
+| `Aggregate` | `NgAggregate` | NgAggregate.Sum | See the behavior rules and model contract above. |
+| `OnCellSelected` | `EventCallback<NgPivotSelection>` | not set | See the behavior rules and model contract above. |
 
-## Параметры и события Flutter
+## Flutter parameters and events
 
-`required` в конструкторе означает обязательный аргумент, даже если его тип допускает null. `key` — стандартный Flutter Key. Значения по умолчанию приведены в точной сигнатуре ниже.
+`required` marks a mandatory argument even if its type is nullable. `key` is the standard Flutter Key. The exact constructor below specifies defaults.
 
-| Аргумент | Тип | Назначение |
+| Argument | Type | Purpose |
 |---|---|---|
-| `label` | `String` | Подпись элемента или доступное имя. |
-| `rowField` | `String` | Ключ строкового измерения в Dimensions/dimensions. |
-| `columnField` | `String` | Ключ столбцового измерения. |
-| `items` | `List<NgPivotRecord>` | Исходные элементы. Тип модели указан в сигнатуре; заменяйте список при изменениях. |
-| `aggregate` | `NgAggregate` | Sum, Count, Average, Min или Max. |
-| `onCellSelected` | `ValueChanged<NgPivotSelection>?` | Измерения и исходные записи выбранной ячейки/итога. |
+| `label` | `String` | Visible label or accessible name. |
+| `rowField` | `String` | See the behavior rules and model contract above. |
+| `columnField` | `String` | See the behavior rules and model contract above. |
+| `items` | `List<NgPivotRecord>` | Input collection. Replace it when changing records or configuration. |
+| `aggregate` | `NgAggregate` | See the behavior rules and model contract above. |
+| `onCellSelected` | `ValueChanged<NgPivotSelection>?` | See the behavior rules and model contract above. |
 
 ```dart
 const NgPivotGrid({
@@ -67,17 +67,17 @@ const NgPivotGrid({
   });
 ```
 
-## Интеграция и диагностика
+## Integration and troubleshooting
 
-Если интерфейс не обновляется, проверьте, сохраняет ли родитель результат callback и передаёт ли новое значение обратно. Для Blazor нужен интерактивный render mode; для Flutter — setState или используемый менеджер состояния. Данные формы отправляйте только после её успешной валидации.
+If the UI does not update, confirm that the parent stores callback values and passes them back. Blazor event handlers need interactive rendering; Flutter requires setState or a state manager. Submit form data only after successful validation.
 
-Проверяйте понятную подпись, пустое состояние, недоступность и размер контейнера. Клавиатурные возможности не означают полной сертификации screen reader. Сейчас проверяется Web в Chrome; нативные мобильные платформы будут проверяться отдельно.
+Check accessible labels, empty/invalid states, disabled actions and narrow layouts. Keyboard support is not full screen-reader certification. Current visual verification targets Web in visible Chrome on Linux/iMac; native mobile platforms are a separate phase.
 
-## Исходники и полный сценарий
+## Source and complete examples
 
-- [Blazor](../../src/NextgenComponents.Blazor/NgPivotGrid.razor)
-- [Flutter](../../packages/nextgen_components/lib/src/workbook.dart)
-- [Галереи и запуск](../../README.md#run)
-- [Матрица возможностей](../catalog.md)
+- [Blazor source](../../src/NextgenComponents.Blazor/NgPivotGrid.razor)
+- [Flutter source](../../packages/nextgen_components/lib/src/workbook.dart)
+- [Galleries and launch commands](../../README.md#run)
+- [Capability matrix](../catalog.md)
 
-Версия параметров сгенерирована из текущего исходного кода. Примеры и правила сопровождаются отдельно в `scripts/manual_content.py`; после изменения API выполните `python3 scripts/generate_manual.py`.
+API declarations are generated from current source. Curated examples and behavior live in `scripts/manual_content.py`; regenerate with `python3 scripts/generate_manual.py`.

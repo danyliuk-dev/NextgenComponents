@@ -1,57 +1,57 @@
-# NgDateRangePicker — Диапазон дат
+# NgDateRangePicker — Date range
 
-[Оглавление](README.md) · [Подключение](getting-started.md) · [Модели](models.md)
+[Manual](README.md) · [Getting started](getting-started.md) · [Code examples](code-examples.md) · [Models](models.md)
 
-## Когда использовать
+## When to use it
 
-Связанная пара начала и конца с проверкой порядка.
+Edit a linked start and end date.
 
-## Поведение и практические правила
+## Behavior and practical rules
 
-NgDateRange хранит Start/End в Blazor и start/end во Flutter. Конец раньше начала вызывает ошибку. Min/Max ограничивают обе границы. Callback обновляет диапазон целиком. Не отправляйте прежнее корректное значение, пока пользователь видит ошибку черновика: сохранение должно проходить через NgForm. Это диапазон календарных дат, не интервал часовых поясов.
+NgDateRange contains nullable Start/End (Blazor DateOnly, Flutter DateTime). An end before the start is invalid. Min/Max constrain both endpoints. Callbacks replace the whole range. A partially filled draft may exist; the form determines whether it is valid for submission. Do not save the last valid model while an invalid draft is visible: submit through NgForm. This is a calendar-date range, not a timezone-aware interval.
 
-## Blazor: рабочий пример
+## Blazor example
 
 ```razor
-<NgDateRangePicker Label="Период" @bind-Value="range"/>
+<NgDateRangePicker Label="Period" @bind-Value="range"/>
 @code { private NgDateRange? range=new(new(2026,10,20),new(2026,10,23)); }
 ```
 
-## Flutter: рабочий пример
+## Flutter example
 
 ```dart
 NgDateRange? range = NgDateRange(DateTime(2026,10,20), DateTime(2026,10,23));
-Widget build(BuildContext context) => NgDateRangePicker(label: 'Период', value: range,
+Widget build(BuildContext context) => NgDateRangePicker(label: 'Period', value: range,
   required: true, onChanged: (v) => setState(() => range = v));
 ```
 
-## Параметры и события Blazor
+## Blazor parameters and events
 
-Имена чувствительны к регистру. `?` в типе разрешает null. Параметры с `EditorRequired` отмечены как обязательные; остальные имеют значение по умолчанию CLR или инициализатор ниже.
+Names are case-sensitive. `?` permits null. `EditorRequired` parameters are marked required; other values use the initializer or CLR default.
 
-| Параметр | Тип | По умолчанию / требование | Назначение |
+| Parameter | Type | Default / requirement | Purpose |
 |---|---|---|---|
-| `Label` | `string` | "Date range" | Подпись элемента или доступное имя. |
-| `Value` | `NgDateRange?` | не задан | Текущее значение; тип и правила описаны выше. |
-| `ValueChanged` | `EventCallback<NgDateRange?>` | не задан | Новое значение для родителя; сохраните его в модели. |
-| `ValueExpression` | `Expression<Func<NgDateRange?>>?` | не задан | Выражение поля модели для валидации. @bind-Value создаёт автоматически; при ручных Value/ValueChanged передайте явно, даже вне формы. |
-| `Min` | `DateOnly?` | не задан | Нижняя включительная граница. |
-| `Max` | `DateOnly?` | не задан | Верхняя включительная граница. |
-| `Disabled` | `bool` | false | true запрещает действия пользователя. |
+| `Label` | `string` | "Date range" | Visible label or accessible name. |
+| `Value` | `NgDateRange?` | not set | Current value; see state ownership and model rules above. |
+| `ValueChanged` | `EventCallback<NgDateRange?>` | not set | New value for the parent to store and pass back. |
+| `ValueExpression` | `Expression<Func<NgDateRange?>>?` | not set | Expression identifying the model field; @bind-Value supplies it automatically. |
+| `Min` | `DateOnly?` | not set | Inclusive minimum. |
+| `Max` | `DateOnly?` | not set | Inclusive maximum. |
+| `Disabled` | `bool` | false | Disable user interaction. |
 
-## Параметры и события Flutter
+## Flutter parameters and events
 
-`required` в конструкторе означает обязательный аргумент, даже если его тип допускает null. `key` — стандартный Flutter Key. Значения по умолчанию приведены в точной сигнатуре ниже.
+`required` marks a mandatory argument even if its type is nullable. `key` is the standard Flutter Key. The exact constructor below specifies defaults.
 
-| Аргумент | Тип | Назначение |
+| Argument | Type | Purpose |
 |---|---|---|
-| `label` | `String` | Подпись элемента или доступное имя. |
-| `value` | `NgDateRange?` | Текущее значение; тип и правила описаны выше. |
-| `min` | `DateTime?` | Нижняя включительная граница. |
-| `max` | `DateTime?` | Верхняя включительная граница. |
-| `enabled` | `bool` | false запрещает действия пользователя. |
-| `required` | `bool` | true требует непустое значение при проверке формы. |
-| `onChanged` | `ValueChanged<NgDateRange?>?` | Новое значение для родителя; обновите состояние через setState. |
+| `label` | `String` | Visible label or accessible name. |
+| `value` | `NgDateRange?` | Current value; see state ownership and model rules above. |
+| `min` | `DateTime?` | Inclusive minimum. |
+| `max` | `DateTime?` | Inclusive maximum. |
+| `enabled` | `bool` | See the behavior rules and model contract above. |
+| `required` | `bool` | Require a nonempty/selected value during form validation. |
+| `onChanged` | `ValueChanged<NgDateRange?>?` | Store the new value using setState or your state manager. |
 
 ```dart
 const NgDateRangePicker({
@@ -66,17 +66,17 @@ const NgDateRangePicker({
   });
 ```
 
-## Интеграция и диагностика
+## Integration and troubleshooting
 
-Если интерфейс не обновляется, проверьте, сохраняет ли родитель результат callback и передаёт ли новое значение обратно. Для Blazor нужен интерактивный render mode; для Flutter — setState или используемый менеджер состояния. Данные формы отправляйте только после её успешной валидации.
+If the UI does not update, confirm that the parent stores callback values and passes them back. Blazor event handlers need interactive rendering; Flutter requires setState or a state manager. Submit form data only after successful validation.
 
-Проверяйте понятную подпись, пустое состояние, недоступность и размер контейнера. Клавиатурные возможности не означают полной сертификации screen reader. Сейчас проверяется Web в Chrome; нативные мобильные платформы будут проверяться отдельно.
+Check accessible labels, empty/invalid states, disabled actions and narrow layouts. Keyboard support is not full screen-reader certification. Current visual verification targets Web in visible Chrome on Linux/iMac; native mobile platforms are a separate phase.
 
-## Исходники и полный сценарий
+## Source and complete examples
 
-- [Blazor](../../src/NextgenComponents.Blazor/NgDateRangePicker.razor)
-- [Flutter](../../packages/nextgen_components/lib/src/dates.dart)
-- [Галереи и запуск](../../README.md#run)
-- [Матрица возможностей](../catalog.md)
+- [Blazor source](../../src/NextgenComponents.Blazor/NgDateRangePicker.razor)
+- [Flutter source](../../packages/nextgen_components/lib/src/dates.dart)
+- [Galleries and launch commands](../../README.md#run)
+- [Capability matrix](../catalog.md)
 
-Версия параметров сгенерирована из текущего исходного кода. Примеры и правила сопровождаются отдельно в `scripts/manual_content.py`; после изменения API выполните `python3 scripts/generate_manual.py`.
+API declarations are generated from current source. Curated examples and behavior live in `scripts/manual_content.py`; regenerate with `python3 scripts/generate_manual.py`.

@@ -1,50 +1,50 @@
-# NgNotification — Уведомление
+# NgNotification — Notification
 
-[Оглавление](README.md) · [Подключение](getting-started.md) · [Модели](models.md)
+[Manual](README.md) · [Getting started](getting-started.md) · [Code examples](code-examples.md) · [Models](models.md)
 
-## Когда использовать
+## When to use it
 
-Сообщение о результате операции с возможностью скрытия.
+Show an inline application status message.
 
-## Поведение и практические правила
+## Behavior and practical rules
 
-Blazor: Visible управляет показом, Tone="error" включает ошибку. Flutter: error: true задаёт ошибочный результат; видимость управляется условием родителя. Callback onDismiss/VisibleChanged должен убрать сообщение из интерфейса. Автоматического таймера, очереди toast и сетевого повтора нет. Не используйте уведомление как единственное место отображения ошибки поля.
+Message is plain text. Tone controls semantic color; do not communicate meaning through color alone. Dismissal invokes the supplied callback; update Visible/visible in the parent. This is not a timed global toast queue. Keep critical validation errors next to their fields and avoid placing confidential exception details in user-facing text.
 
-## Blazor: рабочий пример
+## Blazor example
 
 ```razor
-<NgNotification @bind-Visible="visible" Tone="success">Сохранено</NgNotification>
+<NgNotification @bind-Visible="visible" Tone="success">Saved</NgNotification>
 @code { private bool visible=true; }
 ```
 
-## Flutter: рабочий пример
+## Flutter example
 
 ```dart
 bool visible = true;
-Widget build(BuildContext context) => visible ? NgNotification(message: 'Сохранено',
+Widget build(BuildContext context) => visible ? NgNotification(message: 'Saved',
   onDismiss: () => setState(() => visible = false)) : const SizedBox.shrink();
 ```
 
-## Параметры и события Blazor
+## Blazor parameters and events
 
-Имена чувствительны к регистру. `?` в типе разрешает null. Параметры с `EditorRequired` отмечены как обязательные; остальные имеют значение по умолчанию CLR или инициализатор ниже.
+Names are case-sensitive. `?` permits null. `EditorRequired` parameters are marked required; other values use the initializer or CLR default.
 
-| Параметр | Тип | По умолчанию / требование | Назначение |
+| Parameter | Type | Default / requirement | Purpose |
 |---|---|---|---|
-| `Visible` | `bool` | true | Видимость уведомления. |
-| `VisibleChanged` | `EventCallback<bool>` | не задан | Обновление видимости после закрытия. |
-| `Tone` | `string` | "success" | Стиль уведомления, например success или error. |
-| `ChildContent` | `RenderFragment?` | не задан | Содержимое Razor-компонента. |
+| `Visible` | `bool` | true | See the behavior rules and model contract above. |
+| `VisibleChanged` | `EventCallback<bool>` | not set | See the behavior rules and model contract above. |
+| `Tone` | `string` | "success" | See the behavior rules and model contract above. |
+| `ChildContent` | `RenderFragment?` | not set | Razor content; for a wizard, a RenderFragment<int> receiving the active index. |
 
-## Параметры и события Flutter
+## Flutter parameters and events
 
-`required` в конструкторе означает обязательный аргумент, даже если его тип допускает null. `key` — стандартный Flutter Key. Значения по умолчанию приведены в точной сигнатуре ниже.
+`required` marks a mandatory argument even if its type is nullable. `key` is the standard Flutter Key. The exact constructor below specifies defaults.
 
-| Аргумент | Тип | Назначение |
+| Argument | Type | Purpose |
 |---|---|---|
-| `message` | `String` | Текст уведомления. |
-| `onDismiss` | `VoidCallback?` | Запрос убрать уведомление. |
-| `error` | `bool` | true включает оформление ошибки. |
+| `message` | `String` | See the behavior rules and model contract above. |
+| `onDismiss` | `VoidCallback?` | See the behavior rules and model contract above. |
+| `error` | `bool` | See the behavior rules and model contract above. |
 
 ```dart
 const NgNotification({
@@ -55,17 +55,17 @@ const NgNotification({
   });
 ```
 
-## Интеграция и диагностика
+## Integration and troubleshooting
 
-Если интерфейс не обновляется, проверьте, сохраняет ли родитель результат callback и передаёт ли новое значение обратно. Для Blazor нужен интерактивный render mode; для Flutter — setState или используемый менеджер состояния. Данные формы отправляйте только после её успешной валидации.
+If the UI does not update, confirm that the parent stores callback values and passes them back. Blazor event handlers need interactive rendering; Flutter requires setState or a state manager. Submit form data only after successful validation.
 
-Проверяйте понятную подпись, пустое состояние, недоступность и размер контейнера. Клавиатурные возможности не означают полной сертификации screen reader. Сейчас проверяется Web в Chrome; нативные мобильные платформы будут проверяться отдельно.
+Check accessible labels, empty/invalid states, disabled actions and narrow layouts. Keyboard support is not full screen-reader certification. Current visual verification targets Web in visible Chrome on Linux/iMac; native mobile platforms are a separate phase.
 
-## Исходники и полный сценарий
+## Source and complete examples
 
-- [Blazor](../../src/NextgenComponents.Blazor/NgNotification.razor)
-- [Flutter](../../packages/nextgen_components/lib/src/components.dart)
-- [Галереи и запуск](../../README.md#run)
-- [Матрица возможностей](../catalog.md)
+- [Blazor source](../../src/NextgenComponents.Blazor/NgNotification.razor)
+- [Flutter source](../../packages/nextgen_components/lib/src/components.dart)
+- [Galleries and launch commands](../../README.md#run)
+- [Capability matrix](../catalog.md)
 
-Версия параметров сгенерирована из текущего исходного кода. Примеры и правила сопровождаются отдельно в `scripts/manual_content.py`; после изменения API выполните `python3 scripts/generate_manual.py`.
+API declarations are generated from current source. Curated examples and behavior live in `scripts/manual_content.py`; regenerate with `python3 scripts/generate_manual.py`.

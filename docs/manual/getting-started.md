@@ -1,16 +1,35 @@
-# Подключение и общие правила
+# Getting started
 
-[Оглавление](README.md)
+[Manual](README.md) · [Code examples](code-examples.md)
 
-## Blazor
+NextgenComponents is a UI library. Your application owns data, persistence, authentication and external AI calls. Use the components in an existing host or run the included galleries as complete working applications.
 
-Требуется .NET 10. Добавьте ProjectReference на `src/NextgenComponents.Blazor/NextgenComponents.Blazor.csproj`, namespace `NextgenComponents.Blazor` в `_Imports.razor` и CSS:
+## Blazor: install and host
+
+Requires .NET 10. Add the project reference from your application directory, adjusting the path to your checkout:
+
+```bash
+dotnet add reference /path/to/NextgenComponents/src/NextgenComponents.Blazor/NextgenComponents.Blazor.csproj
+```
+
+Add `@using NextgenComponents.Blazor` to `_Imports.razor`. In the host document include:
 
 ```html
 <link rel="stylesheet" href="_content/NextgenComponents.Blazor/nextgen.css" />
 ```
 
-Пример интерактивной страницы:
+Register interactive rendering in `Program.cs` (using your application's App component):
+
+```csharp
+builder.Services.AddRazorComponents().AddInteractiveServerComponents();
+// After builder.Build(), use your normal middleware and static asset setup.
+app.MapStaticAssets();
+app.MapRazorComponents<App>().AddInteractiveServerRenderMode();
+```
+
+The host must load `_framework/blazor.web.js`. The gallery's [Program.cs](../../examples/BlazorGallery/Program.cs) and [App.razor](../../examples/BlazorGallery/Components/App.razor) show the complete setup, including PDF/Map asset MIME types.
+
+Create a Razor page:
 
 ```razor
 @page "/example"
@@ -18,26 +37,26 @@
 @using static Microsoft.AspNetCore.Components.Web.RenderMode
 @rendermode InteractiveServer
 <div class="ng-scope" data-ng-theme="light" data-ng-density="normal">
-    <NgTextBox Label="Имя" @bind-Value="name" />
-    <NgButton Primary OnClick="Save">Сохранить</NgButton>
+    <NgTextBox Label="Name" @bind-Value="name" />
+    <NgButton Primary OnClick="Save">Save</NgButton>
     <p>@status</p>
 </div>
 @code {
     private string? name;
     private string? status;
-    private void Save() => status = $"Привет, {name}";
+    private void Save() => status = $"Hello, {name}";
 }
 ```
 
-Хост должен регистрировать `AddRazorComponents().AddInteractiveServerComponents()` и `MapRazorComponents<App>().AddInteractiveServerRenderMode()`. В приложении с глобальным интерактивным режимом дополнительный `@rendermode` страницы не нужен. Статический SSR показывает HTML, но сам по себе не выполняет callback браузера.
+If the host already makes routes interactive, omit the page's `@rendermode`. Static SSR alone renders markup but does not run browser event callbacks.
 
-`@bind-Value` связывает `Value`, `ValueChanged` и `ValueExpression`. Если используете ручные `Value` и `ValueChanged`, для полей InputBase и компонентов с InputSelect/InputNumber передавайте `ValueExpression="()=>model.Field"`. Это требуется и вне формы. Для строковых параметров используйте `Value="@variable"`: `Value="variable"` может означать буквальный текст, а не переменную.
+`@bind-Value` supplies Value, ValueChanged and ValueExpression. With manual binding to InputBase/InputSelect/InputNumber wrappers, provide `ValueExpression="()=>model.Field"`, even outside a form. For a string parameter use `Value="@variable"`; `Value="variable"` may pass literal text.
 
-`data-ng-theme` принимает `light`/`dark`, `data-ng-density` — `normal`/`compact`. Применяйте их к внешнему `.ng-scope`. Не переопределяйте цвета отдельных компонентов без необходимости: это нарушает согласованность темы.
+Apply `data-ng-theme="light"` or `"dark"` and `data-ng-density="normal"` or `"compact"` to the outer `.ng-scope`. Shared tokens keep colors and focus states consistent.
 
-## Flutter
+## Flutter: install and host
 
-Требуются Flutter >= 3.38 и Dart >= 3.10. Добавьте зависимость (путь относительно своего pubspec.yaml):
+Requires Flutter >= 3.38 and Dart >= 3.10. Add a path dependency relative to your application's pubspec.yaml:
 
 ```yaml
 dependencies:
@@ -47,7 +66,7 @@ dependencies:
     path: ../../packages/nextgen_components
 ```
 
-Выполните `flutter pub get`. Минимальный пример:
+Run `flutter pub get`. A complete application shell:
 
 ```dart
 import 'package:flutter/material.dart';
@@ -65,38 +84,38 @@ class _DemoState extends State<Demo> {
   bool enabled = true;
   @override Widget build(BuildContext context) => Scaffold(
     body: Padding(padding: const EdgeInsets.all(24), child: NgSwitch(
-      label: 'Уведомления', value: enabled,
+      label: 'Notifications', value: enabled,
       onChanged: (v) => setState(() => enabled = v),
     )),
   );
 }
 ```
 
-`NgTheme.light(compact: true)` и `NgTheme.dark(compact: true)` включают компактную плотность. Примеры Flutter на страницах компонентов вставляются в тело класса State, как `_DemoState` выше; методы `build` не складываются вместе. Импорт Material предоставляет Text, Widget, BuildContext и остальные стандартные типы.
+Use `NgTheme.light(compact: true)` and its dark equivalent for compact density. Component-page Flutter examples are fields and methods inside a State class such as `_DemoState`; do not combine several build methods. Import Material for Text, Widget and BuildContext.
 
-Большинство компонентов управляются родителем: `value` → пользовательское действие → `onChanged` → `setState` → новое `value`. Если callback не сохраняет значение, интерфейс возвращается к старому состоянию. У текстовых полей `initialValue` — только начальное значение. Для программного сброса используйте `TextEditingController`; не передавайте controller и initialValue одновременно, освобождайте controller в dispose.
+Most components use `value → action → onChanged → setState → new value`. Store callback values or the component will retain the old state. For text fields, initialValue is only the initial draft. Use TextEditingController for programmatic changes, never combine it with initialValue, and dispose it in its owner.
 
-## Формы, коллекции и сохранение
+## Forms and persistence
 
-1. Держите редактируемый черновик отдельно от сохранённой записи.
-2. Оборачивайте поля в NgForm. У Blazor правила DataAnnotations находятся в модели; у Flutter используйте validator/required.
-3. При успешной проверке вызывайте собственный сервис сохранения. Ошибки сети не являются ошибками парсинга поля — показывайте их отдельно.
-4. При Cancel отбросьте черновик. После Save замените элемент и коллекцию, чтобы таблицы пересчитались.
-5. Не меняйте входные списки и наборы «на месте» без уведомления; принимайте новые коллекции из callback. ID записей и дерева должны быть стабильными и уникальными.
+1. Keep an editable draft separate from the saved record.
+2. Wrap validated fields in NgForm: DataAnnotations in Blazor, validator/required in Flutter.
+3. On successful validation call your own save service. Display network errors separately from field parsing errors.
+4. Cancel discards the draft; Save replaces the changed record and its collection.
+5. Use stable unique IDs and replace input collections instead of mutating them silently.
 
-Даты представлены различными типами: Blazor DateOnly/TimeOnly/DateTime, Flutter DateTime/TimeOfDay. Нормализуйте часовые пояса на границе приложения. Компоненты не являются timezone-сервисом.
+Blazor dates use DateOnly/TimeOnly/DateTime; Flutter uses DateTime/TimeOfDay. Normalize timezones at application boundaries.
 
-## Запуск и проверенные сценарии
+## Run the included applications
 
-Из корня: `dotnet run --project examples/BlazorGallery --urls http://127.0.0.1:5180`.
-Во Flutter-галерее: `flutter run -d chrome --web-port 5181`.
+```bash
+dotnet run --project examples/BlazorGallery --urls http://127.0.0.1:5180
+```
 
-| Раздел | Blazor | Flutter |
-|---|---|---|
-| Базовые элементы | `/` | Foundation |
-| Форма бронирования | `/forms` | Forms and dates |
-| Таблицы и дерево | `/data` | Data workspace |
-| Диаграммы и события | `/analytics` | Analytics and schedule |
-| Лист и сводная таблица | `/workbook` | Workbook |
+In `examples/flutter_gallery`:
 
-Сначала проверяйте пустое/некорректное значение, callback, исправление ошибки, смену темы и узкий контейнер. Текущее подтверждение относится к Web в видимом Chrome на Linux iMac. Нативные мобильные платформы будут проверяться отдельно. Матрица ограничений и реальные результаты находятся в [verification](../verification.md).
+```bash
+flutter pub get
+flutter run -d chrome --web-port 5181
+```
+
+Use **Code examples** in either gallery or the desktop portal. Documentation links in the local demos point to port 5182. To serve the manual without opening a browser, run `python3 scripts/desktop_launcher.py --page manual --no-browser`. The portal starts the local demos and serves these manuals. Native/mobile validation remains a separate phase; current evidence is in [verification](../verification.md).

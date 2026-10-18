@@ -1,3 +1,5 @@
+import 'code_gallery.dart';
+import 'steps_gallery.dart';
 import 'ai_gallery.dart';
 import 'map_gallery.dart';
 import 'pdf_gallery.dart';
@@ -29,7 +31,9 @@ class _GalleryState extends State<Gallery> {
       diagram = false,
       pdf = false,
       map = false,
-      ai = false;
+      ai = false,
+      steps = false,
+      code = false;
   @override
   Widget build(BuildContext context) => MaterialApp(
     title: 'Nextgen • Flutter',
@@ -37,7 +41,15 @@ class _GalleryState extends State<Gallery> {
     theme: NgTheme.light(compact: compact),
     darkTheme: NgTheme.dark(compact: compact),
     themeMode: dark ? ThemeMode.dark : ThemeMode.light,
-    home: ai
+    home: code
+        ? CodeGallery(onBack: () => setState(() => code = false))
+        : steps
+        ? StepsGallery(
+            dark: dark,
+            onDark: (v) => setState(() => dark = v),
+            onBack: () => setState(() => steps = false),
+          )
+        : ai
         ? AiGallery(
             dark: dark,
             onDark: (v) => setState(() => dark = v),
@@ -107,6 +119,8 @@ class _GalleryState extends State<Gallery> {
             onForms: () => setState(() => forms = true),
             onData: () => setState(() => data = true),
             onAnalytics: () => setState(() => analytics = true),
+            onCode: () => setState(() => code = true),
+            onSteps: () => setState(() => steps = true),
             onAi: () => setState(() => ai = true),
             onMap: () => setState(() => map = true),
             onPdf: () => setState(() => pdf = true),
@@ -131,7 +145,9 @@ class GalleryPage extends StatefulWidget {
       onDiagram,
       onPdf,
       onMap,
-      onAi;
+      onAi,
+      onSteps,
+      onCode;
   final ValueChanged<bool> onDark, onCompact;
   const GalleryPage({
     super.key,
@@ -144,6 +160,8 @@ class GalleryPage extends StatefulWidget {
     required this.onPdf,
     required this.onMap,
     required this.onAi,
+    required this.onSteps,
+    required this.onCode,
     required this.dark,
     required this.compact,
     required this.onDark,
@@ -216,6 +234,14 @@ class _GalleryPageState extends State<GalleryPage> {
                         fontWeight: FontWeight.bold,
                         letterSpacing: 1,
                       ),
+                    ),
+                    TextButton(
+                      onPressed: widget.onCode,
+                      child: const Text("Code examples"),
+                    ),
+                    TextButton(
+                      onPressed: widget.onSteps,
+                      child: const Text("Steps and wizard"),
                     ),
                     TextButton(
                       onPressed: widget.onAi,

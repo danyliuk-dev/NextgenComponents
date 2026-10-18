@@ -1,33 +1,34 @@
-# Модели данных и формулы
+# Data models and formulas
 
-[Оглавление](README.md)
+[Manual](README.md) · [Code examples](code-examples.md)
 
-## Общие модели
+## Shared models
 
-| Модель | Состав и правила |
+C# properties generally use PascalCase; Dart uses lowerCamelCase. Replace input collections when changing data.
+
+| Model | Contract |
 |---|---|
-| NgPromptResponse | Id/id, Prompt/prompt, Text/text. Неизменяемый ответ; ID возрастает в пределах сессии. |
-| NgPromptFeedback | Response/response и Helpful/helpful: true, false или null (снятие оценки). |
-| NgPromptSession | Состояние запроса и история последних 20 ответов; отмена исключает поздний результат. См. [NgAIPrompt](NgAIPrompt.md). |
-| NgOption | Blazor `new NgOption(value,label,disabled)`; Flutter `NgOption(value,label,disabled: true)`. Ключ уникален, подпись отображается пользователю. |
-| NgTab | Подпись и содержимое: RenderFragment в Blazor, Widget во Flutter. |
-| NgDateRange | Начало и конец: DateOnly? в Blazor, DateTime? во Flutter. Частично заполненный черновик допустим, правило формы решает, можно ли его отправлять. |
-| NgDataColumn<T> | Key/key, Title/title, Value/value возвращает исходный тип для сортировки, Format/format задаёт подпись, Template/cellBuilder — пользовательский вид ячейки. |
-| NgTreeNode<T> | Id/id, Item/item, Children/children, Disabled/disabled. Все ID уникальны, структура не содержит циклов. |
-| NgBreadcrumbItem | ID и подпись раздела; последний элемент обозначает текущий раздел. |
-| NgChartSeries | Имя и массив nullable чисел той же длины, что категории. null разрывает линию. |
-| NgChartSelection | Индексы серии/категории (с 0), их имена, числовое значение и готовая Label/label. |
-| NgScheduleEvent | Id/id, Title/title, Start/start, End/end. Обязательны уникальный ID, непустое название, End > Start. |
-| NgSheet | Размеры и словарь адрес → сырой текст. Неизменяемая модель одного листа. |
-| NgCellValue | Text/text — отображение, Number/number — число либо null, Error/error — код ошибки либо null. |
-| NgPivotRecord | Уникальный ID, словарь строковых измерений, одна числовая мера либо null. |
-| NgPivotSelection | Строковое/столбцовое измерения и список исходных записей. null измерение означает итог, `""` — пустую группу. |
+| NgStep | Label, Disabled, Optional and nullable Valid; see [Stepper](NgStepper.md) and [Wizard](NgWizard.md). |
+| NgPromptResponse | Immutable Id, Prompt, Text; IDs increase within a session. |
+| NgPromptFeedback | Response and Helpful: true, false or null to clear a vote. |
+| NgPromptSession | Request state and the latest 20 responses; cancellation rejects late results. See [AI Prompt](NgAIPrompt.md). |
+| NgOption | Unique key, label, disabled flag. C#: new NgOption(value,label,disabled); Dart: NgOption(value,label,disabled:true). |
+| NgTab | Label and RenderFragment (Blazor) or Widget (Flutter) content. |
+| NgDateRange | Nullable start/end: DateOnly in Blazor, DateTime in Flutter. Form rules determine whether a partial range can be submitted. |
+| NgDataColumn<T> | Key, Title, typed Value accessor, Format and Template/cellBuilder. Sort underlying values, not formatted text. |
+| NgTreeNode<T> | Unique Id, Item, Children, Disabled; no cycles. |
+| NgBreadcrumbItem | ID and label; the final item is the current location. |
+| NgChartSeries | Name and nullable numbers matching category count; null breaks a line. |
+| NgChartSelection | Zero-based series/point indices, names, numeric value and display label. |
+| NgScheduleEvent | Unique Id, nonempty Title, Start and End with End > Start. |
+| NgSheet | Immutable single-sheet dimensions and address-to-raw-text dictionary. |
+| NgCellValue | Text, nullable Number and nullable Error code. |
+| NgPivotRecord | Unique ID, string dimensions and one nullable numeric measure. |
+| NgPivotSelection | Row/column dimensions and source records; null identifies a total, empty string a blank dimension. |
 
-В Dart имена полей обычно lowerCamelCase, в C# — PascalCase. Не копируйте регистр параметров между платформами. Входные коллекции заменяйте, не меняйте их незаметно для родителя.
+## NgSheet
 
-## NgSheet: адреса, чтение и изменение
-
-Адреса A1…Z100, регистр нормализуется. Размер задаётся при создании и должен быть в пределах 1–100 строк, 1–26 колонок. Содержимое ячейки — до 1000 символов. Отсутствующий адрес внутри листа означает пустую ячейку.
+Addresses A1–Z100 are case-insensitive. A sheet has 1–100 rows and 1–26 columns. Each cell contains up to 1,000 characters; an absent in-bounds address is empty.
 
 ```csharp
 var sheet = new NgSheet(8, 5, new Dictionary<string,string> {
@@ -48,70 +49,68 @@ final result = next.evaluate('B1');  // number = 50
 final pasted = next.paste('A2','3\t4\n=SUM(A2:B2)');
 ```
 
-Set/set и Paste/paste создают новый лист, старый остаётся без изменений. Вставка прямоугольного TSV-блока не смещает ссылки в формулах: `=A1` остаётся `=A1`. Выход за границы или слишком длинная ячейка отклоняют всю операцию. Это текстовая вставка, не чтение XLSX/CSV-файла.
+Set and Paste return a new sheet. Rectangular TSV paste preserves formula references literally: `=A1` remains `=A1`. Out-of-bounds or oversized cells reject the whole operation. This is text paste, not XLSX/CSV import.
 
-## Язык формул
+## Formula language
 
-Формула начинается с `=`. Поддерживаются десятичные числа с точкой, экспоненциальная запись, `+ - * /`, унарные знаки, скобки, ссылки на ячейки, диапазоны в аргументах функций и функции ниже. Приоритет: скобки/унарный знак, умножение/деление, сложение/вычитание. Имена функций и адреса нечувствительны к регистру. Разделитель аргументов — запятая.
+Formulas start with `=`. Supported syntax: dot-decimal/exponent numbers, `+ - * /`, unary signs, parentheses, cell references, ranges in function arguments and the functions below. Precedence is parentheses/unary, multiplication/division, addition/subtraction. Names and addresses are case-insensitive; arguments use commas.
 
-| Формула | Результат/смысл |
+| Formula | Meaning |
 |---|---|
 | `=2+3*4` | 14 |
 | `=(2+3)*4` | 20 |
-| `=A1*B1` | Произведение двух числовых ячеек |
-| `=SUM(A1:A5)` | Сумма чисел диапазона; текст/пустые ячейки пропускаются |
-| `=AVERAGE(A1:A5)` | Среднее числовых ячеек диапазона; пустой числовой набор даёт #DIV/0! |
-| `=MIN(A1:A5)` / `=MAX(A1:A5)` | Экстремум чисел, для пустого диапазона 0 |
-| `=COUNT(A1:A5)` | Число числовых ячеек диапазона |
-| `=SUM(A1:B2,10)` | Числа прямоугольного диапазона плюс 10 |
+| `=A1*B1` | Multiply numeric cells |
+| `=SUM(A1:A5)` | Sum numbers, ignoring text/empty cells |
+| `=AVERAGE(A1:A5)` | Mean of numbers; no numbers produces #DIV/0! |
+| `=MIN(A1:A5)` / `=MAX(A1:A5)` | Extremum; an empty range returns 0 |
+| `=COUNT(A1:A5)` | Count numeric cells |
+| `=SUM(A1:B2,10)` | Sum a rectangle and 10 |
 
-Прямая ссылка на пустую ячейку в арифметике даёт 0; ссылка на текст даёт #VALUE!. В диапазонных аргументах функций текст и пустота пропускаются. Скалярные аргументы вычисляются как выражения: `COUNT(A1)` с пустой A1 считает вычисленный 0, а `COUNT(A1:A1)` пропускает пустую ячейку. Это намеренно ограниченный язык, не полная семантика Excel. Нет строковых/логических формул, IF, дат, листовых/абсолютных ссылок `$A$1`, именованных диапазонов или вызова внешнего кода.
+An empty direct reference evaluates to 0 in arithmetic; text produces #VALUE!. Range arguments skip text/empty cells. Scalar arguments evaluate expressions: COUNT(A1) counts computed zero for empty A1, while COUNT(A1:A1) skips it. This is a limited language, not full Excel semantics. No string/logical formulas, IF, dates, sheet/absolute references, named ranges or external code.
 
-| Код | Причина и исправление |
+| Error | Cause |
 |---|---|
-| #FORMULA! | Ошибка синтаксиса; проверьте скобки, операции и разделители |
-| #NAME? | Неизвестная функция; используйте поддерживаемую функцию |
-| #REF! | Неверный адрес или ссылка вне размеров листа |
-| #VALUE! | Текст использован там, где необходимо число |
-| #DIV/0! | Деление на ноль либо среднее пустого числового диапазона |
-| #CYCLE! | Прямая/косвенная ссылка на саму себя; разорвите зависимость |
-| #NUM! | Неконечный результат/переполнение числа |
-| #LIMIT! | Более 64 уровней вложения выражения или 100 зависимых ячеек в пути |
+| #FORMULA! | Invalid syntax/operators/parentheses/separators |
+| #NAME? | Unsupported function |
+| #REF! | Invalid or out-of-bounds address |
+| #VALUE! | Text used as a number |
+| #DIV/0! | Division by zero or average of no numbers |
+| #CYCLE! | Direct/indirect circular reference |
+| #NUM! | Nonfinite result/overflow |
+| #LIMIT! | More than 64 expression levels or 100 dependent cells along a path |
 
-Ошибки распространяются на зависимые формулы. Зависимости кешируются в пределах одного вычисления. Числа вычисляются с плавающей точкой double; для денежных расчётов с обязательной десятичной точностью нужен отдельный бизнес-слой. Исходный текст сохраняется отдельно от отображения G10/10 значащих цифр.
+Errors propagate. Dependencies are cached within an evaluation. Numbers use double floating point; exact decimal financial rules need a separate business layer. Raw text is stored separately from G10/10-significant-digit display.
 
-## Итоги PivotGrid
+## Pivot totals
 
-Sum/Average/Min/Max игнорируют null-меры; если чисел нет, отображается `—`. Count считает записи, включая записи с null. Средние итогов рассчитываются по исходным числам с учётом количества записей каждой группы. Например, группа 10/20 и группа 90 дают общий Average = 40, а не (15+90)/2.
+Sum/Average/Min/Max ignore null; no numbers displays `—`. Count includes records with null values. Totals aggregate original values: groups 10/20 and 90 produce Average 40, not (15+90)/2. NaN/Infinity and duplicate IDs are rejected. Missing dimensions equal an empty string. Selecting a total returns matching source records, or all records for the grand total. Aggregate overflow yields null displayed as `—`; normalize input if this must be distinguished from missing data.
 
-NaN/Infinity и повторяющиеся ID запрещены. Отсутствующее строковое измерение равно пустой строке. Выбор итоговой ячейки возвращает все исходные записи соответствующей строки/колонки или весь набор для общего итога. Переполнение агрегата возвращает null и отображается как `—`; нормализуйте диапазон входных чисел, если это важно отличать от отсутствия данных.
+## NgDocument
 
-## NgDocument: редактируемые документы
+Immutable Blocks contain Text, Kind, Bold, Italic, Underline and Align. Kinds: paragraph, heading1, heading2, bullet, numbered, quote. Alignment: left, center, right; C# enum names use PascalCase.
 
-`NgDocument` содержит неизменяемую коллекцию `Blocks/blocks`. `NgDocumentBlock` хранит `Text/text`, `Kind/kind`, `Bold/bold`, `Italic/italic`, `Underline/underline`, `Align/align`. Типы блока: Paragraph/paragraph, Heading1/heading1, Heading2/heading2, Bullet/bullet, Numbered/numbered, Quote/quote. Выравнивание: Left/left, Center/center, Right/right.
+Replace(index,block), InsertAfter(index), Remove(index) and Move(index,target) return a new document, using zero-based indices. Removing the last block leaves one empty paragraph. Invalid indices/limits leave the original unchanged. Update a block with C# `block with { Text = "New text" }` or Dart `block.copyWith(text: 'New text')`.
 
-`Replace/replace(index, block)`, `InsertAfter/insertAfter(index)`, `Remove/remove(index)`, `Move/move(index,target)` возвращают новый документ. Индексы с нуля. Удаление последнего блока оставляет пустой абзац. Неверный индекс/лимит отклоняется, исходный объект не меняется. В Blazor изменить блок удобно через `block with { Text = "Новый текст" }`, во Flutter через `block.copyWith(text: 'Новый текст')`.
-
-Обменный формат (выдаётся ToJson/toJson; читается FromJson/fromJson):
+ToJson/fromJson interchange:
 
 ```json
-{"version":1,"blocks":[{"text":"Название","kind":"heading1","bold":false,"italic":false,"underline":false,"align":"left"}]}
+{"version":1,"blocks":[{"text":"Title","kind":"heading1","bold":false,"italic":false,"underline":false,"align":"left"}]}
 ```
 
-Версия и blocks обязательны; незнакомые поля отклоняются. Все поля блока в экспортируемом формате присутствуют; при ручном JSON пропущенные поля блока получают значения пустого абзаца. null вместо текста/типа/флага недопустим. Используйте имена enum точно как в примере (camelCase). Лимиты: 100 блоков, 10000 UTF-16 единиц текста в каждом, 100000 суммарно, JSON до 1000000. Переносы CRLF/CR нормализуются в LF. HTML-теги в тексте остаются текстом; ToHtml/toHtml их экранирует. Подробные правила истории, черновика и интеграции — в [NgEditor](NgEditor.md).
+Version and blocks are required; unknown fields are rejected. Missing optional block fields use empty-paragraph defaults; null text/type/flags are invalid. Use exact camelCase enum names. Limits: 100 blocks, 10,000 UTF-16 units per block, 100,000 total, 1,000,000 input JSON units. CRLF/CR normalize to LF. HTML remains text and ToHtml escapes it. See [Editor](NgEditor.md) for draft/history rules.
 
-## NgDiagramModel: схема узлов и связей
+## NgDiagramModel
 
-Коллекции `Nodes/nodes` и `Edges/edges` неизменяемы. Узел `NgDiagramNode` задаёт ID, текст, X/Y, ширину/высоту и NgDiagramShape (rectangle, ellipse, diamond); связь `NgDiagramEdge` — ID, From/from, To/to, текст и Directed/directed. В Blazor имена enum начинаются с заглавной буквы. Координаты обозначают левый верхний угол, единицы независимы от zoom.
+Immutable Nodes/Edges describe ID/text/geometry/shapes and ID/from/to/text/directed connections. Coordinates identify the top-left corner and are independent of zoom.
 
 ```json
-{"version":1,"width":1000,"height":600,"nodes":[{"id":"a","text":"Начало","x":40,"y":100,"width":160,"height":80,"shape":"ellipse"},{"id":"b","text":"Шаг","x":360,"y":100,"width":160,"height":80,"shape":"rectangle"}],"edges":[{"id":"next","from":"a","to":"b","text":"Далее","directed":true}]}
+{"version":1,"width":1000,"height":600,"nodes":[{"id":"a","text":"Start","x":40,"y":100,"width":160,"height":80,"shape":"ellipse"},{"id":"b","text":"Step","x":360,"y":100,"width":160,"height":80,"shape":"rectangle"}],"edges":[{"id":"next","from":"a","to":"b","text":"Next","directed":true}]}
 ```
 
-В JSON обязательны version, width, height, nodes, edges; у узла — id/text/x/y, у связи — id/from/to. Пропущенные необязательные поля получают значения конструктора. Неизвестные поля, некорректные типы, enum, ID и геометрия отклоняются. При размере JSON более 1000000 UTF-16 единиц разбор прекращается. Используйте точный camelCase экспортируемого формата. Пустой граф с пустыми массивами допустим.
+Required JSON fields: version/width/height/nodes/edges; nodes require id/text/x/y; edges require id/from/to. Omitted optional fields use constructor defaults. Unknown fields, invalid types/enums/IDs/geometry and JSON over 1,000,000 UTF-16 units are rejected. Empty arrays are allowed. Use the exported camelCase schema.
 
-`UpsertNode/upsertNode`, `UpsertEdge/upsertEdge`, `RemoveNode/removeNode`, `RemoveEdge/removeEdge`, `Move/move` возвращают новый валидный граф, не изменяя исходный. Размеры холста 200–5000, узлов — 60–400 × 40–240; узлы ограничены холстом. До 100 узлов, 200 связей; ID до 64 ASCII символов, подписи до 100 UTF-16 единиц. Move ограничивает координаты границами; UpsertNode отклоняет выход за границы. RemoveNode удаляет связанные рёбра. Подробности о выборе, клавиатуре, циклах и ограничениях — в [NgDiagram](NgDiagram.md).
+UpsertNode/UpsertEdge/RemoveNode/RemoveEdge/Move return a validated new graph. Canvas: 200–5000 per dimension; nodes: 60–400 × 40–240, inside the canvas. At most 100 nodes/200 edges, IDs at most 64 ASCII characters, labels at most 100 UTF-16 units. Move clamps coordinates; UpsertNode rejects out-of-bounds geometry. RemoveNode removes incident edges. See [Diagram](NgDiagram.md) for interactions and limitations.
 
-## Географическая карта
+## Geographic models
 
-`NgMapPoint` хранит latitude/longitude; `NgMapView` добавляет zoom. `NgMapMarker` — ID, подпись и позиция. `NgMapPath` — ID, подпись, неизменяемый список точек и признак замкнутого полигона. `NgMapModel` копирует коллекции маркеров/линий и проверяет общий набор ID и лимиты. Подробные правила, сигнатуры и примеры обновления: [NgMap](NgMap.md).
+NgMapPoint stores latitude/longitude; NgMapView adds zoom. NgMapMarker contains ID/text/position. NgMapPath contains ID/text/copied points and a closed-polygon flag. NgMapModel copies collections and validates shared IDs and bounds. See [Map](NgMap.md) for limits, signatures, clustering and update examples.

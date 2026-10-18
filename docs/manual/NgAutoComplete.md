@@ -1,58 +1,58 @@
-# NgAutoComplete — Текст с подсказками
+# NgAutoComplete — Text suggestions
 
-[Оглавление](README.md) · [Подключение](getting-started.md) · [Модели](models.md)
+[Manual](README.md) · [Getting started](getting-started.md) · [Code examples](code-examples.md) · [Models](models.md)
 
-## Когда использовать
+## When to use it
 
-Помогает заполнить свободный текст, предлагая совпадения из строкового списка.
+Enter free text with suggestions from a local string list.
 
-## Поведение и практические правила
+## Behavior and practical rules
 
-Допускает текст вне списка. Если нужен обязательный выбор существующего ключа, используйте NgComboBox. Flutter initialValue задаёт начальный текст; для полного внешнего сброса пересоздайте виджет с новым Key. Подсказки локальные; загрузку и debounce для сервера реализует приложение.
+Text outside the suggestions is allowed. Use ComboBox when the value must be an existing key. Flutter initialValue sets the starting text; recreate the widget with a new Key for a complete external reset. Searching is local; the application owns server requests, debounce and cancellation. Store callbacks before submitting the draft.
 
-## Blazor: рабочий пример
+## Blazor example
 
 ```razor
-<NgAutoComplete Label="Город" Items="cities" @bind-Value="city"/>
-@code { private string? city; private string[] cities=["Киев","Львов","Одесса"]; }
+<NgAutoComplete Label="City" Items="cities" @bind-Value="city"/>
+@code { private string? city; private string[] cities=["Kyiv","Lviv","Odesa"]; }
 ```
 
-## Flutter: рабочий пример
+## Flutter example
 
 ```dart
 String city = '';
-Widget build(BuildContext context) => NgAutoComplete(label: 'Город',
-  items: const ['Киев','Львов','Одесса'], initialValue: city,
+Widget build(BuildContext context) => NgAutoComplete(label: 'City',
+  items: const ['Kyiv','Lviv','Odesa'], initialValue: city,
   onChanged: (v) => city = v);
 ```
 
-## Параметры и события Blazor
+## Blazor parameters and events
 
-Имена чувствительны к регистру. `?` в типе разрешает null. Параметры с `EditorRequired` отмечены как обязательные; остальные имеют значение по умолчанию CLR или инициализатор ниже.
+Names are case-sensitive. `?` permits null. `EditorRequired` parameters are marked required; other values use the initializer or CLR default.
 
-| Параметр | Тип | По умолчанию / требование | Назначение |
+| Parameter | Type | Default / requirement | Purpose |
 |---|---|---|---|
-| `Id` | `string` | "ng-"+Guid.NewGuid().ToString("N") | Уникальный HTML ID; по умолчанию генерируется. |
-| `Label` | `string` | "Search" | Подпись элемента или доступное имя. |
-| `Placeholder` | `string?` | не задан | Подсказка внутри пустого поля. |
-| `Items` | `IReadOnlyList<string>` | [] | Исходные элементы. Тип модели указан в сигнатуре; заменяйте список при изменениях. |
-| `Disabled` | `bool` | false | true запрещает действия пользователя. |
-| `Value` | `string?` | значение модели | Текущее значение поля. |
-| `ValueChanged` | `EventCallback<string?>` | — | Изменение значения. |
-| `ValueExpression` | `Expression<Func<string?>>` | обязательно | Автоматически создаётся @bind-Value; при ручной привязке передайте явно. |
-| `AdditionalAttributes` | словарь HTML-атрибутов | null | Дополнительные HTML/ARIA атрибуты поля. |
+| `Id` | `string` | "ng-"+Guid.NewGuid().ToString("N") | See the behavior rules and model contract above. |
+| `Label` | `string` | "Search" | Visible label or accessible name. |
+| `Placeholder` | `string?` | not set | Hint displayed for empty input. |
+| `Items` | `IReadOnlyList<string>` | [] | Input collection. Replace it when changing records or configuration. |
+| `Disabled` | `bool` | false | Disable user interaction. |
+| `Value` | `string?` | model value | Current field value. |
+| `ValueChanged` | `EventCallback<string?>` | not set | Value change callback. |
+| `ValueExpression` | `Expression<Func<string?>>` | required | Supplied by @bind-Value; pass explicitly with manual binding. |
+| `AdditionalAttributes` | HTML attribute dictionary | null | Extra HTML/ARIA attributes. |
 
-## Параметры и события Flutter
+## Flutter parameters and events
 
-`required` в конструкторе означает обязательный аргумент, даже если его тип допускает null. `key` — стандартный Flutter Key. Значения по умолчанию приведены в точной сигнатуре ниже.
+`required` marks a mandatory argument even if its type is nullable. `key` is the standard Flutter Key. The exact constructor below specifies defaults.
 
-| Аргумент | Тип | Назначение |
+| Argument | Type | Purpose |
 |---|---|---|
-| `label` | `String` | Подпись элемента или доступное имя. |
-| `items` | `List<String>` | Исходные элементы. Тип модели указан в сигнатуре; заменяйте список при изменениях. |
-| `initialValue` | `String` | Начальное значение, а не постоянно управляемое значение. |
-| `onChanged` | `ValueChanged<String>?` | Новое значение для родителя; обновите состояние через setState. |
-| `enabled` | `bool` | false запрещает действия пользователя. |
+| `label` | `String` | Visible label or accessible name. |
+| `items` | `List<String>` | Input collection. Replace it when changing records or configuration. |
+| `initialValue` | `String` | Starting field value, not continuous controlled state. |
+| `onChanged` | `ValueChanged<String>?` | Store the new value using setState or your state manager. |
+| `enabled` | `bool` | See the behavior rules and model contract above. |
 
 ```dart
 const NgAutoComplete({
@@ -65,17 +65,17 @@ const NgAutoComplete({
   });
 ```
 
-## Интеграция и диагностика
+## Integration and troubleshooting
 
-Если интерфейс не обновляется, проверьте, сохраняет ли родитель результат callback и передаёт ли новое значение обратно. Для Blazor нужен интерактивный render mode; для Flutter — setState или используемый менеджер состояния. Данные формы отправляйте только после её успешной валидации.
+If the UI does not update, confirm that the parent stores callback values and passes them back. Blazor event handlers need interactive rendering; Flutter requires setState or a state manager. Submit form data only after successful validation.
 
-Проверяйте понятную подпись, пустое состояние, недоступность и размер контейнера. Клавиатурные возможности не означают полной сертификации screen reader. Сейчас проверяется Web в Chrome; нативные мобильные платформы будут проверяться отдельно.
+Check accessible labels, empty/invalid states, disabled actions and narrow layouts. Keyboard support is not full screen-reader certification. Current visual verification targets Web in visible Chrome on Linux/iMac; native mobile platforms are a separate phase.
 
-## Исходники и полный сценарий
+## Source and complete examples
 
-- [Blazor](../../src/NextgenComponents.Blazor/NgAutoComplete.razor)
-- [Flutter](../../packages/nextgen_components/lib/src/forms.dart)
-- [Галереи и запуск](../../README.md#run)
-- [Матрица возможностей](../catalog.md)
+- [Blazor source](../../src/NextgenComponents.Blazor/NgAutoComplete.razor)
+- [Flutter source](../../packages/nextgen_components/lib/src/forms.dart)
+- [Galleries and launch commands](../../README.md#run)
+- [Capability matrix](../catalog.md)
 
-Версия параметров сгенерирована из текущего исходного кода. Примеры и правила сопровождаются отдельно в `scripts/manual_content.py`; после изменения API выполните `python3 scripts/generate_manual.py`.
+API declarations are generated from current source. Curated examples and behavior live in `scripts/manual_content.py`; regenerate with `python3 scripts/generate_manual.py`.

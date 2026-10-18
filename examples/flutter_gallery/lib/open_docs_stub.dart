@@ -1,0 +1,1 @@
+void openDocs(String page) {}

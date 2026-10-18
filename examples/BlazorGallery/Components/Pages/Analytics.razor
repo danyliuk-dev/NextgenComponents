@@ -1,7 +1,7 @@
 @page "/analytics"
 <PageTitle>Nextgen • Analytics and schedule</PageTitle>
 <div class="ng-scope gallery" data-ng-theme="@(dark?"dark":"light")" data-ng-density="@(compact?"compact":"normal")"><main>
-<nav><strong><span class="brand-icon">N</span> NEXTGEN COMPONENTS</strong><div class="row"><a href="/">Foundation</a><a href="/data">Data workspace</a><NgSwitch Label="Dark theme" @bind-Value="dark"/><NgCheckBox Label="Compact" @bind-Value="compact"/></div></nav>
+<nav><a href="/code-examples">Code examples</a><strong><span class="brand-icon">N</span> NEXTGEN COMPONENTS</strong><div class="row"><a href="/">Foundation</a><a href="/data">Data workspace</a><NgSwitch Label="Dark theme" @bind-Value="dark"/><NgCheckBox Label="Compact" @bind-Value="compact"/></div></nav>
 <section class="hero"><p class="eyebrow">BLAZOR / ANALYTICS AND SCHEDULE 0.4</p><h1>See the trend.<br/>Plan what comes next.</h1><p>Compare delivery results, inspect individual values and manage the team's weekly schedule.</p></section>
 <section class="panel"><div class="fields"><NgDropDownList Label="Chart type" Items="kinds" @bind-Value="kind"/><NgCheckBox Label="Show empty data" @bind-Value="empty"/></div>
 <NgChart Title="Delivery overview" Kind="Kind" Categories="(empty?[]:categories)" Series="ChartSeries" OnPointSelected="p=>selection=p.Label"/>

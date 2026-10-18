@@ -1,68 +1,68 @@
-# NgDataGrid — Таблица записей
+# NgDataGrid — Data grid
 
-[Оглавление](README.md) · [Подключение](getting-started.md) · [Модели](models.md)
+[Manual](README.md) · [Getting started](getting-started.md) · [Code examples](code-examples.md) · [Models](models.md)
 
-## Когда использовать
+## When to use it
 
-Локальная таблица с числовой сортировкой, поиском, пагинацией и выбором строк.
+Display, sort, filter, select and page local records.
 
-## Поведение и практические правила
+## Behavior and practical rules
 
-RowId/rowId должен возвращать уникальный постоянный ключ. Колонка Value/value возвращает исходный тип (число для числовой сортировки); Format/format меняет только представление. Поиск применяется до пагинации. Выбор хранится по ID и сохраняется между страницами; select-page выбирает только текущую страницу. RowActions/rowActions и Toolbar/toolbar позволяют добавить действия; редактор записи создаёт приложение. После CRUD заменяйте список, а не меняйте объект без уведомления. Серверная пагинация, виртуализация, группировка и Excel-экспорт пока отсутствуют.
+NgDataColumn<T> supplies a stable key, title and Value/value accessor. Return typed values for sorting; Format/format changes display only. Template/cellBuilder customizes a cell. RowId must return a unique stable ID. Save selection callbacks and replace Items/items after edits so the grid recalculates. Toolbar and row actions allow the application to own editing and persistence. This local grid does not implement server data binding, virtualization, column grouping or Excel export; see [data workspace](../data-workspace.md).
 
-## Blazor: рабочий пример
+## Blazor example
 
 ```razor
 <NgDataGrid TItem="Product" Items="rows" Columns="columns" RowId="r=>r.Id" @bind-SelectedIds="selected"/>
-@code { public record Product(string Id,string Name,int Count); private Product[] rows=[new("a","Стол",12),new("b","Стул",120)]; private HashSet<string> selected=[]; private NgDataColumn<Product>[] columns=[new("name","Название",r=>r.Name),new("count","Количество",r=>r.Count)]; }
+@code { public record Product(string Id,string Name,int Count); private Product[] rows=[new("a","Desk",12),new("b","Chair",120)]; private HashSet<string> selected=[]; private NgDataColumn<Product>[] columns=[new("name","Name",r=>r.Name),new("count","Quantity",r=>r.Count)]; }
 ```
 
-## Flutter: рабочий пример
+## Flutter example
 
 ```dart
-final rows = [(id: 'a', name: 'Стол', count: 12), (id: 'b', name: 'Стул', count: 120)];
+final rows = [(id: 'a', name: 'Desk', count: 12), (id: 'b', name: 'Chair', count: 120)];
 Set<String> selected = {};
 Widget build(BuildContext context) => NgDataGrid<({String id, String name, int count})>(
   items: rows, rowId: (r) => r.id, selectedIds: selected,
   onSelectionChanged: (v) => setState(() => selected = v),
-  columns: [NgDataColumn('name','Название',(r) => r.name),
-    NgDataColumn('count','Количество',(r) => r.count)]);
+  columns: [NgDataColumn('name','Name',(r) => r.name),
+    NgDataColumn('count','Quantity',(r) => r.count)]);
 ```
 
-## Параметры и события Blazor
+## Blazor parameters and events
 
-Имена чувствительны к регистру. `?` в типе разрешает null. Параметры с `EditorRequired` отмечены как обязательные; остальные имеют значение по умолчанию CLR или инициализатор ниже.
+Names are case-sensitive. `?` permits null. `EditorRequired` parameters are marked required; other values use the initializer or CLR default.
 
-| Параметр | Тип | По умолчанию / требование | Назначение |
+| Parameter | Type | Default / requirement | Purpose |
 |---|---|---|---|
-| `Items` | `IReadOnlyList<TItem>` | обязательный | Исходные элементы. Тип модели указан в сигнатуре; заменяйте список при изменениях. |
-| `Columns` | `IReadOnlyList<NgDataColumn<TItem>>` | обязательный | Описание колонок либо поле измерения; см. модель и пример. |
-| `RowId` | `Func<TItem,string>` | обязательный | Функция уникального стабильного ключа записи. |
-| `Label` | `string` | "Records" | Подпись элемента или доступное имя. |
-| `EmptyText` | `string` | "No matching records." | Сообщение для пустого результата. |
-| `Selectable` | `bool` | true | Показывать выбор строк. |
-| `SelectedIds` | `HashSet<string>` | [] | Набор выбранных ID. |
-| `SelectedIdsChanged` | `EventCallback<HashSet<string>>` | не задан | Новый набор выбранных ID. |
-| `Toolbar` | `RenderFragment?` | не задан | Пользовательская панель действий. |
-| `RowActions` | `RenderFragment<TItem>?` | не задан | Шаблон действий для конкретной записи. |
-| `InitialPageSize` | `int` | 5 | Начальный размер страницы при создании компонента. |
+| `Items` | `IReadOnlyList<TItem>` | required | Input collection. Replace it when changing records or configuration. |
+| `Columns` | `IReadOnlyList<NgDataColumn<TItem>>` | required | Column definitions; see the data model and example. |
+| `RowId` | `Func<TItem,string>` | required | See the behavior rules and model contract above. |
+| `Label` | `string` | "Records" | Visible label or accessible name. |
+| `EmptyText` | `string` | "No matching records." | See the behavior rules and model contract above. |
+| `Selectable` | `bool` | true | See the behavior rules and model contract above. |
+| `SelectedIds` | `HashSet<string>` | [] | See the behavior rules and model contract above. |
+| `SelectedIdsChanged` | `EventCallback<HashSet<string>>` | not set | See the behavior rules and model contract above. |
+| `Toolbar` | `RenderFragment?` | not set | See the behavior rules and model contract above. |
+| `RowActions` | `RenderFragment<TItem>?` | not set | See the behavior rules and model contract above. |
+| `InitialPageSize` | `int` | 5 | See the behavior rules and model contract above. |
 
-## Параметры и события Flutter
+## Flutter parameters and events
 
-`required` в конструкторе означает обязательный аргумент, даже если его тип допускает null. `key` — стандартный Flutter Key. Значения по умолчанию приведены в точной сигнатуре ниже.
+`required` marks a mandatory argument even if its type is nullable. `key` is the standard Flutter Key. The exact constructor below specifies defaults.
 
-| Аргумент | Тип | Назначение |
+| Argument | Type | Purpose |
 |---|---|---|
-| `items` | `List<T>` | Исходные элементы. Тип модели указан в сигнатуре; заменяйте список при изменениях. |
-| `columns` | `List<NgDataColumn<T>>` | Описание колонок либо поле измерения; см. модель и пример. |
-| `rowId` | `String Function(T)` | Функция уникального стабильного ключа записи. |
-| `selectedIds` | `Set<String>` | Набор выбранных ID. |
-| `onSelectionChanged` | `ValueChanged<Set<String>>?` | Новый набор выбранных ID. |
-| `rowActions` | `Widget Function(BuildContext, T)?` | Шаблон действий для конкретной записи. |
-| `toolbar` | `Widget?` | Пользовательская панель действий. |
-| `label` | `String` | Подпись элемента или доступное имя. |
-| `emptyText` | `String` | Сообщение для пустого результата. |
-| `initialPageSize` | `int` | Начальный размер страницы при создании компонента. |
+| `items` | `List<T>` | Input collection. Replace it when changing records or configuration. |
+| `columns` | `List<NgDataColumn<T>>` | Column definitions; see the data model and example. |
+| `rowId` | `String Function(T)` | See the behavior rules and model contract above. |
+| `selectedIds` | `Set<String>` | See the behavior rules and model contract above. |
+| `onSelectionChanged` | `ValueChanged<Set<String>>?` | See the behavior rules and model contract above. |
+| `rowActions` | `Widget Function(BuildContext, T)?` | See the behavior rules and model contract above. |
+| `toolbar` | `Widget?` | See the behavior rules and model contract above. |
+| `label` | `String` | Visible label or accessible name. |
+| `emptyText` | `String` | See the behavior rules and model contract above. |
+| `initialPageSize` | `int` | See the behavior rules and model contract above. |
 
 ```dart
 const NgDataGrid({
@@ -80,17 +80,17 @@ const NgDataGrid({
   });
 ```
 
-## Интеграция и диагностика
+## Integration and troubleshooting
 
-Если интерфейс не обновляется, проверьте, сохраняет ли родитель результат callback и передаёт ли новое значение обратно. Для Blazor нужен интерактивный render mode; для Flutter — setState или используемый менеджер состояния. Данные формы отправляйте только после её успешной валидации.
+If the UI does not update, confirm that the parent stores callback values and passes them back. Blazor event handlers need interactive rendering; Flutter requires setState or a state manager. Submit form data only after successful validation.
 
-Проверяйте понятную подпись, пустое состояние, недоступность и размер контейнера. Клавиатурные возможности не означают полной сертификации screen reader. Сейчас проверяется Web в Chrome; нативные мобильные платформы будут проверяться отдельно.
+Check accessible labels, empty/invalid states, disabled actions and narrow layouts. Keyboard support is not full screen-reader certification. Current visual verification targets Web in visible Chrome on Linux/iMac; native mobile platforms are a separate phase.
 
-## Исходники и полный сценарий
+## Source and complete examples
 
-- [Blazor](../../src/NextgenComponents.Blazor/NgDataGrid.razor)
-- [Flutter](../../packages/nextgen_components/lib/src/data.dart)
-- [Галереи и запуск](../../README.md#run)
-- [Матрица возможностей](../catalog.md)
+- [Blazor source](../../src/NextgenComponents.Blazor/NgDataGrid.razor)
+- [Flutter source](../../packages/nextgen_components/lib/src/data.dart)
+- [Galleries and launch commands](../../README.md#run)
+- [Capability matrix](../catalog.md)
 
-Версия параметров сгенерирована из текущего исходного кода. Примеры и правила сопровождаются отдельно в `scripts/manual_content.py`; после изменения API выполните `python3 scripts/generate_manual.py`.
+API declarations are generated from current source. Curated examples and behavior live in `scripts/manual_content.py`; regenerate with `python3 scripts/generate_manual.py`.

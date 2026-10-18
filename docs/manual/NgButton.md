@@ -1,52 +1,52 @@
-# NgButton — Кнопка
+# NgButton — Button
 
-[Оглавление](README.md) · [Подключение](getting-started.md) · [Модели](models.md)
+[Manual](README.md) · [Getting started](getting-started.md) · [Code examples](code-examples.md) · [Models](models.md)
 
-## Когда использовать
+## When to use it
 
-Запускает действие пользователя: сохранить, открыть окно, применить фильтр.
+Trigger an application action or submit a form.
 
-## Поведение и практические правила
+## Behavior and practical rules
 
-Primary выделяет основное действие. Blazor: Disabled блокирует кнопку; Type="submit" отправляет родительскую форму. Flutter: onPressed: null отключает кнопку. Для асинхронного сохранения храните флаг busy у родителя и отключайте повторное нажатие. Компонент сам не отправляет HTTP-запросы.
+Use OnClick/onPressed for application actions. In Blazor Type="submit" submits the enclosing form; the default is button. In Flutter a null onPressed disables the button. Disabled actions must also be guarded by your application when starting asynchronous work. Primary uses the shared theme accent. Buttons support Tab and Enter/Space; give icon-only content an accessible name.
 
-## Blazor: рабочий пример
+## Blazor example
 
 ```razor
-<NgButton Primary OnClick="()=>count++">Нажато @count раз</NgButton>
+<NgButton Primary OnClick="()=>count++">Clicked @count times</NgButton>
 @code { private int count; }
 ```
 
-## Flutter: рабочий пример
+## Flutter example
 
 ```dart
 int count = 0;
 Widget build(BuildContext context) => NgButton(primary: true,
-  onPressed: () => setState(() => count++), child: Text('Нажато $count раз'));
+  onPressed: () => setState(() => count++), child: Text('Clicked $count times'));
 ```
 
-## Параметры и события Blazor
+## Blazor parameters and events
 
-Имена чувствительны к регистру. `?` в типе разрешает null. Параметры с `EditorRequired` отмечены как обязательные; остальные имеют значение по умолчанию CLR или инициализатор ниже.
+Names are case-sensitive. `?` permits null. `EditorRequired` parameters are marked required; other values use the initializer or CLR default.
 
-| Параметр | Тип | По умолчанию / требование | Назначение |
+| Parameter | Type | Default / requirement | Purpose |
 |---|---|---|---|
-| `ChildContent` | `RenderFragment?` | не задан | Содержимое Razor-компонента. |
-| `Primary` | `bool` | false | Выделяет основное действие цветом темы. |
-| `Disabled` | `bool` | false | true запрещает действия пользователя. |
-| `Type` | `string` | "button" | HTML-тип кнопки: button или submit. |
-| `OnClick` | `EventCallback<MouseEventArgs>` | не задан | Событие нажатия. |
-| `AdditionalAttributes` | `Dictionary<string,object>?` | не задан | Дополнительные HTML/ARIA атрибуты; не используйте для обхода проверок модели. |
+| `ChildContent` | `RenderFragment?` | not set | Razor content; for a wizard, a RenderFragment<int> receiving the active index. |
+| `Primary` | `bool` | false | See the behavior rules and model contract above. |
+| `Disabled` | `bool` | false | Disable user interaction. |
+| `Type` | `string` | "button" | See the behavior rules and model contract above. |
+| `OnClick` | `EventCallback<MouseEventArgs>` | not set | Application click handler. |
+| `AdditionalAttributes` | `Dictionary<string,object>?` | not set | Additional HTML/ARIA attributes; do not bypass component validation. |
 
-## Параметры и события Flutter
+## Flutter parameters and events
 
-`required` в конструкторе означает обязательный аргумент, даже если его тип допускает null. `key` — стандартный Flutter Key. Значения по умолчанию приведены в точной сигнатуре ниже.
+`required` marks a mandatory argument even if its type is nullable. `key` is the standard Flutter Key. The exact constructor below specifies defaults.
 
-| Аргумент | Тип | Назначение |
+| Argument | Type | Purpose |
 |---|---|---|
-| `child` | `Widget` | Дочерний Flutter-виджет. |
-| `onPressed` | `VoidCallback?` | Обработчик нажатия; null отключает Flutter-кнопку. |
-| `primary` | `bool` | Выделяет основное действие цветом темы. |
+| `child` | `Widget` | See the behavior rules and model contract above. |
+| `onPressed` | `VoidCallback?` | Application action; null disables the button. |
+| `primary` | `bool` | See the behavior rules and model contract above. |
 
 ```dart
 const NgButton({
@@ -57,17 +57,17 @@ const NgButton({
   });
 ```
 
-## Интеграция и диагностика
+## Integration and troubleshooting
 
-Если интерфейс не обновляется, проверьте, сохраняет ли родитель результат callback и передаёт ли новое значение обратно. Для Blazor нужен интерактивный render mode; для Flutter — setState или используемый менеджер состояния. Данные формы отправляйте только после её успешной валидации.
+If the UI does not update, confirm that the parent stores callback values and passes them back. Blazor event handlers need interactive rendering; Flutter requires setState or a state manager. Submit form data only after successful validation.
 
-Проверяйте понятную подпись, пустое состояние, недоступность и размер контейнера. Клавиатурные возможности не означают полной сертификации screen reader. Сейчас проверяется Web в Chrome; нативные мобильные платформы будут проверяться отдельно.
+Check accessible labels, empty/invalid states, disabled actions and narrow layouts. Keyboard support is not full screen-reader certification. Current visual verification targets Web in visible Chrome on Linux/iMac; native mobile platforms are a separate phase.
 
-## Исходники и полный сценарий
+## Source and complete examples
 
-- [Blazor](../../src/NextgenComponents.Blazor/NgButton.razor)
-- [Flutter](../../packages/nextgen_components/lib/src/components.dart)
-- [Галереи и запуск](../../README.md#run)
-- [Матрица возможностей](../catalog.md)
+- [Blazor source](../../src/NextgenComponents.Blazor/NgButton.razor)
+- [Flutter source](../../packages/nextgen_components/lib/src/components.dart)
+- [Galleries and launch commands](../../README.md#run)
+- [Capability matrix](../catalog.md)
 
-Версия параметров сгенерирована из текущего исходного кода. Примеры и правила сопровождаются отдельно в `scripts/manual_content.py`; после изменения API выполните `python3 scripts/generate_manual.py`.
+API declarations are generated from current source. Curated examples and behavior live in `scripts/manual_content.py`; regenerate with `python3 scripts/generate_manual.py`.

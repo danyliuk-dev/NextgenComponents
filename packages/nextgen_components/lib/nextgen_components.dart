@@ -16,3 +16,5 @@ export 'src/pdf_viewer.dart';
 export 'src/map.dart';
 
 export 'src/prompt.dart';
+
+export 'src/steps.dart';

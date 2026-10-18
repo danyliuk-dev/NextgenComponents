@@ -1,7 +1,7 @@
 @page "/map"
 <PageTitle>Nextgen • Map</PageTitle>
 <div class="ng-scope gallery" data-ng-theme="@(dark?"dark":"light")"><main>
-<nav><strong>N NEXTGEN COMPONENTS</strong><div class="row"><a href="/">Foundation</a><NgSwitch Label="Dark theme" @bind-Value="dark"/></div></nav>
+<nav><a href="/code-examples">Code examples</a><strong>N NEXTGEN COMPONENTS</strong><div class="row"><a href="/">Foundation</a><NgSwitch Label="Dark theme" @bind-Value="dark"/></div></nav>
 <section class="hero"><p class="eyebrow">BLAZOR / MAP 0.9</p><h1>Places in context.</h1><p>Explore locations, select objects and connect the map to your application.</p></section>
 <section class="panel"><div class="row"><NgCheckBox Label="Cluster markers" @bind-Value="clusterMarkers"/><NgButton OnClick="Dense">Dense markers</NgButton><NgButton OnClick="SameLocation">Same location</NgButton><NgButton OnClick="Reset">Reset data</NgButton><NgButton OnClick="()=>{model=new();selected=null;}">Empty data</NgButton><NgButton OnClick='()=>provider="osm"'>OpenStreetMap</NgButton><NgButton OnClick='()=>provider="none"'>No basemap</NgButton><NgButton OnClick='()=>provider="broken"'>Broken tiles</NgButton><NgCheckBox Label="Add marker on map click" @bind-Value="addMarker"/></div>
 <NgMap Label="Kyiv places" Value="model" ClusterMarkers="clusterMarkers" @bind-View="view" @bind-SelectedId="selected" OnMapClick="Clicked" TileUrlTemplate="@TileUrl" Attribution="© OpenStreetMap contributors" AttributionUrl="https://www.openstreetmap.org/copyright" Dark="dark" Height="560"/>

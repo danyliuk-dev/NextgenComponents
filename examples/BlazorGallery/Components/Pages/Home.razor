@@ -3,7 +3,7 @@
 <PageTitle>Nextgen • Blazor</PageTitle>
 <div class="ng-scope gallery" data-ng-theme="@(dark ? "dark" : "light")" data-ng-density="@(compact ? "compact" : "normal")">
 <main>
-<nav><strong><span class="brand-icon">N</span> NEXTGEN COMPONENTS</strong><div class="row"><a href="/ai">AI interface</a><a href="/map">Map</a><a href="/pdf">PDF Viewer</a><a href="/diagram">Diagram</a><a href="/editor">Editor</a><a href="/workbook">Workbook</a><a href="/analytics">Analytics and schedule</a><a href="/data">Data workspace</a><a href="/forms">Forms and dates</a><NgSwitch Label="Dark theme" @bind-Value="dark" /><NgCheckBox Label="Compact" @bind-Value="compact" /></div></nav>
+<nav><a href="/code-examples">Code examples</a><strong><span class="brand-icon">N</span> NEXTGEN COMPONENTS</strong><div class="row"><a href="/steps">Steps and wizard</a><a href="/ai">AI interface</a><a href="/map">Map</a><a href="/pdf">PDF Viewer</a><a href="/diagram">Diagram</a><a href="/editor">Editor</a><a href="/workbook">Workbook</a><a href="/analytics">Analytics and schedule</a><a href="/data">Data workspace</a><a href="/forms">Forms and dates</a><NgSwitch Label="Dark theme" @bind-Value="dark" /><NgCheckBox Label="Compact" @bind-Value="compact" /></div></nav>
 <section class="hero"><p class="eyebrow">BLAZOR / FOUNDATION 0.1</p><h1>A consistent interface.<br />On every platform.</h1><p>Explore the first collection of Nextgen controls. Edit the form, switch themes, and try the interactions.</p></section>
 @if (notification) { <div class="notice"><NgNotification @bind-Visible="notification">Workspace settings saved for @model.Name.</NgNotification></div> }
 <section class="panel"><div class="panel-heading"><h2>Workspace settings</h2><span class="tag">INTERACTIVE DEMO</span></div>

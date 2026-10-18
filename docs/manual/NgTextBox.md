@@ -1,60 +1,60 @@
-# NgTextBox — Однострочный текст
+# NgTextBox — Single-line text
 
-[Оглавление](README.md) · [Подключение](getting-started.md) · [Модели](models.md)
+[Manual](README.md) · [Getting started](getting-started.md) · [Code examples](code-examples.md) · [Models](models.md)
 
-## Когда использовать
+## When to use it
 
-Ввод имени, описания или заметок с передачей изменений в модель.
+Edit a string with a visible label and form validation.
 
-## Поведение и практические правила
+## Behavior and practical rules
 
-Blazor обновляет Value при вводе. Для обязательного поля используйте Required в модели NgForm. Flutter использует controller либо initialValue, но не оба сразу; initialValue не предназначен для последующего внешнего сброса. Для сброса меняйте controller.text и освобождайте controller в dispose. validator работает внутри Form/NgForm; null означает отсутствие ошибки. HTML в тексте не интерпретируется.
+Blazor uses InputBase<string?>: prefer @bind-Value, which supplies Value, ValueChanged and ValueExpression. With manual binding, supply ValueExpression even outside a form. Flutter initialValue is a starting value, not a controlled value: use TextEditingController for programmatic changes, do not combine it with initialValue, and dispose it in its owner. In a Flutter form validator returns null for valid input or an error string. Keep drafts separate from saved records. TextArea supports rows and multiline input; limits and required rules belong to the field/form configuration. A validation error must block saving the entire form.
 
-## Blazor: рабочий пример
+## Blazor example
 
 ```razor
-<NgTextBox Label="Описание" @bind-Value="text"/>
+<NgTextBox Label="Description" @bind-Value="text"/>
 <p>@text</p>
-@code { private string? text="Начальный текст"; }
+@code { private string? text="Initial text"; }
 ```
 
-## Flutter: рабочий пример
+## Flutter example
 
 ```dart
-final text = TextEditingController(text: 'Начальный текст');
+final text = TextEditingController(text: 'Initial text');
 @override void dispose() { text.dispose(); super.dispose(); }
-Widget build(BuildContext context) => NgTextBox(label: 'Описание',
-  controller: text, validator: (v) => v == null || v.trim().isEmpty ? 'Введите текст' : null);
+Widget build(BuildContext context) => NgTextBox(label: 'Description',
+  controller: text, validator: (v) => v == null || v.trim().isEmpty ? 'Enter text' : null);
 ```
 
-## Параметры и события Blazor
+## Blazor parameters and events
 
-Имена чувствительны к регистру. `?` в типе разрешает null. Параметры с `EditorRequired` отмечены как обязательные; остальные имеют значение по умолчанию CLR или инициализатор ниже.
+Names are case-sensitive. `?` permits null. `EditorRequired` parameters are marked required; other values use the initializer or CLR default.
 
-| Параметр | Тип | По умолчанию / требование | Назначение |
+| Parameter | Type | Default / requirement | Purpose |
 |---|---|---|---|
-| `Id` | `string` | "ng-" + Guid.NewGuid().ToString("N") | Уникальный HTML ID; по умолчанию генерируется. |
-| `Label` | `string` | "" | Подпись элемента или доступное имя. |
-| `Placeholder` | `string?` | не задан | Подсказка внутри пустого поля. |
-| `Disabled` | `bool` | false | true запрещает действия пользователя. |
-| `Value` | `string?` | значение модели | Текущее значение поля. |
-| `ValueChanged` | `EventCallback<string?>` | — | Изменение значения. |
-| `ValueExpression` | `Expression<Func<string?>>` | обязательно | Автоматически создаётся @bind-Value; при ручной привязке передайте явно. |
-| `AdditionalAttributes` | словарь HTML-атрибутов | null | Дополнительные HTML/ARIA атрибуты поля. |
+| `Id` | `string` | "ng-" + Guid.NewGuid().ToString("N") | See the behavior rules and model contract above. |
+| `Label` | `string` | "" | Visible label or accessible name. |
+| `Placeholder` | `string?` | not set | Hint displayed for empty input. |
+| `Disabled` | `bool` | false | Disable user interaction. |
+| `Value` | `string?` | model value | Current field value. |
+| `ValueChanged` | `EventCallback<string?>` | not set | Value change callback. |
+| `ValueExpression` | `Expression<Func<string?>>` | required | Supplied by @bind-Value; pass explicitly with manual binding. |
+| `AdditionalAttributes` | HTML attribute dictionary | null | Extra HTML/ARIA attributes. |
 
-## Параметры и события Flutter
+## Flutter parameters and events
 
-`required` в конструкторе означает обязательный аргумент, даже если его тип допускает null. `key` — стандартный Flutter Key. Значения по умолчанию приведены в точной сигнатуре ниже.
+`required` marks a mandatory argument even if its type is nullable. `key` is the standard Flutter Key. The exact constructor below specifies defaults.
 
-| Аргумент | Тип | Назначение |
+| Argument | Type | Purpose |
 |---|---|---|
-| `label` | `String` | Подпись элемента или доступное имя. |
-| `controller` | `TextEditingController?` | Контроллер текста. Не совмещайте с initialValue; dispose выполняет владелец. |
-| `initialValue` | `String?` | Начальное значение, а не постоянно управляемое значение. |
-| `onChanged` | `ValueChanged<String>?` | Новое значение для родителя; обновите состояние через setState. |
-| `validator` | `FormFieldValidator<String>?` | Проверка поля: null при успехе, строка с ошибкой при отказе. |
-| `enabled` | `bool` | false запрещает действия пользователя. |
-| `placeholder` | `String?` | Подсказка внутри пустого поля. |
+| `label` | `String` | Visible label or accessible name. |
+| `controller` | `TextEditingController?` | Text controller; do not combine with initialValue. Dispose in its owner. |
+| `initialValue` | `String?` | Starting field value, not continuous controlled state. |
+| `onChanged` | `ValueChanged<String>?` | Store the new value using setState or your state manager. |
+| `validator` | `FormFieldValidator<String>?` | Return null when valid or a user-facing validation error. |
+| `enabled` | `bool` | See the behavior rules and model contract above. |
+| `placeholder` | `String?` | Hint displayed for empty input. |
 
 ```dart
 const NgTextBox({
@@ -69,17 +69,17 @@ const NgTextBox({
   });
 ```
 
-## Интеграция и диагностика
+## Integration and troubleshooting
 
-Если интерфейс не обновляется, проверьте, сохраняет ли родитель результат callback и передаёт ли новое значение обратно. Для Blazor нужен интерактивный render mode; для Flutter — setState или используемый менеджер состояния. Данные формы отправляйте только после её успешной валидации.
+If the UI does not update, confirm that the parent stores callback values and passes them back. Blazor event handlers need interactive rendering; Flutter requires setState or a state manager. Submit form data only after successful validation.
 
-Проверяйте понятную подпись, пустое состояние, недоступность и размер контейнера. Клавиатурные возможности не означают полной сертификации screen reader. Сейчас проверяется Web в Chrome; нативные мобильные платформы будут проверяться отдельно.
+Check accessible labels, empty/invalid states, disabled actions and narrow layouts. Keyboard support is not full screen-reader certification. Current visual verification targets Web in visible Chrome on Linux/iMac; native mobile platforms are a separate phase.
 
-## Исходники и полный сценарий
+## Source and complete examples
 
-- [Blazor](../../src/NextgenComponents.Blazor/NgTextBox.razor)
-- [Flutter](../../packages/nextgen_components/lib/src/components.dart)
-- [Галереи и запуск](../../README.md#run)
-- [Матрица возможностей](../catalog.md)
+- [Blazor source](../../src/NextgenComponents.Blazor/NgTextBox.razor)
+- [Flutter source](../../packages/nextgen_components/lib/src/components.dart)
+- [Galleries and launch commands](../../README.md#run)
+- [Capability matrix](../catalog.md)
 
-Версия параметров сгенерирована из текущего исходного кода. Примеры и правила сопровождаются отдельно в `scripts/manual_content.py`; после изменения API выполните `python3 scripts/generate_manual.py`.
+API declarations are generated from current source. Curated examples and behavior live in `scripts/manual_content.py`; regenerate with `python3 scripts/generate_manual.py`.

@@ -1,24 +1,24 @@
-# NgPager — Страницы данных
+# NgPager — Pagination
 
-[Оглавление](README.md) · [Подключение](getting-started.md) · [Модели](models.md)
+[Manual](README.md) · [Getting started](getting-started.md) · [Code examples](code-examples.md) · [Models](models.md)
 
-## Когда использовать
+## When to use it
 
-Управляет номером страницы и размером порции; сами записи фильтрует приложение или NgDataGrid.
+Navigate a known number of records.
 
-## Поведение и практические правила
+## Behavior and practical rules
 
-Нумерация страниц начинается с 1. Total — число записей после фильтра, а не размер текущей страницы. Сначала фильтруйте/сортируйте данные, затем выделяйте страницу. После сокращения набора ограничьте page через NgDataOperations.ClampPage/clampPage. Не передавайте неположительный pageSize; используйте значение из Sizes/sizes. Серверную загрузку по callback реализует приложение.
+Page is one-based; PageSize is positive, Total is the count before paging. Store PageChanged and PageSizeChanged, and reset/clamp the page when the filter or size changes. The pager does not fetch or slice data: the example performs Skip/Take or equivalent application slicing. Disable impossible navigation at the first/last page. Server paging must provide a consistent total and handle stale asynchronous responses.
 
-## Blazor: рабочий пример
+## Blazor example
 
 ```razor
 <NgPager Total="items.Length" @bind-Page="page" @bind-PageSize="size"/>
 @foreach(var item in items.Skip((page-1)*size).Take(size)){<p>@item</p>}
-@code { private int page=1,size=5; private string[] items=Enumerable.Range(1,18).Select(i=>$"Строка {i}").ToArray(); }
+@code { private int page=1,size=5; private string[] items=Enumerable.Range(1,18).Select(i=>$"Row {i}").ToArray(); }
 ```
 
-## Flutter: рабочий пример
+## Flutter example
 
 ```dart
 int page = 1, size = 5;
@@ -27,34 +27,34 @@ Widget build(BuildContext context) => NgPager(total: 18, page: page, pageSize: s
   onPageSizeChanged: (v) => setState(() { size = v; page = 1; }));
 ```
 
-## Параметры и события Blazor
+## Blazor parameters and events
 
-Имена чувствительны к регистру. `?` в типе разрешает null. Параметры с `EditorRequired` отмечены как обязательные; остальные имеют значение по умолчанию CLR или инициализатор ниже.
+Names are case-sensitive. `?` permits null. `EditorRequired` parameters are marked required; other values use the initializer or CLR default.
 
-| Параметр | Тип | По умолчанию / требование | Назначение |
+| Parameter | Type | Default / requirement | Purpose |
 |---|---|---|---|
-| `Total` | `int` | 0 | Число записей после фильтрации. |
-| `Page` | `int` | 1 | Текущая страница, начиная с 1. |
-| `PageSize` | `int` | 10 | Положительное количество строк на странице. |
-| `Sizes` | `IReadOnlyList<int>` | [5,10,25,50] | Доступные размеры страницы. |
-| `Disabled` | `bool` | false | true запрещает действия пользователя. |
-| `Label` | `string` | "Pagination" | Подпись элемента или доступное имя. |
-| `PageChanged` | `EventCallback<int>` | не задан | Запрос изменить номер страницы. |
-| `PageSizeChanged` | `EventCallback<int>` | не задан | Запрос изменить размер страницы. |
+| `Total` | `int` | 0 | See the behavior rules and model contract above. |
+| `Page` | `int` | 1 | See the behavior rules and model contract above. |
+| `PageSize` | `int` | 10 | See the behavior rules and model contract above. |
+| `Sizes` | `IReadOnlyList<int>` | [5,10,25,50] | See the behavior rules and model contract above. |
+| `Disabled` | `bool` | false | Disable user interaction. |
+| `Label` | `string` | "Pagination" | Visible label or accessible name. |
+| `PageChanged` | `EventCallback<int>` | not set | See the behavior rules and model contract above. |
+| `PageSizeChanged` | `EventCallback<int>` | not set | See the behavior rules and model contract above. |
 
-## Параметры и события Flutter
+## Flutter parameters and events
 
-`required` в конструкторе означает обязательный аргумент, даже если его тип допускает null. `key` — стандартный Flutter Key. Значения по умолчанию приведены в точной сигнатуре ниже.
+`required` marks a mandatory argument even if its type is nullable. `key` is the standard Flutter Key. The exact constructor below specifies defaults.
 
-| Аргумент | Тип | Назначение |
+| Argument | Type | Purpose |
 |---|---|---|
-| `total` | `int` | Число записей после фильтрации. |
-| `page` | `int` | Текущая страница, начиная с 1. |
-| `pageSize` | `int` | Положительное количество строк на странице. |
-| `sizes` | `List<int>` | Доступные размеры страницы. |
-| `onPageChanged` | `ValueChanged<int>` | Запрос изменить номер страницы. |
-| `onPageSizeChanged` | `ValueChanged<int>` | Изменение размера страницы; обычно также сбрасывают page в 1. |
-| `enabled` | `bool` | false запрещает действия пользователя. |
+| `total` | `int` | See the behavior rules and model contract above. |
+| `page` | `int` | See the behavior rules and model contract above. |
+| `pageSize` | `int` | See the behavior rules and model contract above. |
+| `sizes` | `List<int>` | See the behavior rules and model contract above. |
+| `onPageChanged` | `ValueChanged<int>` | See the behavior rules and model contract above. |
+| `onPageSizeChanged` | `ValueChanged<int>` | See the behavior rules and model contract above. |
+| `enabled` | `bool` | See the behavior rules and model contract above. |
 
 ```dart
 const NgPager({
@@ -69,17 +69,17 @@ const NgPager({
   });
 ```
 
-## Интеграция и диагностика
+## Integration and troubleshooting
 
-Если интерфейс не обновляется, проверьте, сохраняет ли родитель результат callback и передаёт ли новое значение обратно. Для Blazor нужен интерактивный render mode; для Flutter — setState или используемый менеджер состояния. Данные формы отправляйте только после её успешной валидации.
+If the UI does not update, confirm that the parent stores callback values and passes them back. Blazor event handlers need interactive rendering; Flutter requires setState or a state manager. Submit form data only after successful validation.
 
-Проверяйте понятную подпись, пустое состояние, недоступность и размер контейнера. Клавиатурные возможности не означают полной сертификации screen reader. Сейчас проверяется Web в Chrome; нативные мобильные платформы будут проверяться отдельно.
+Check accessible labels, empty/invalid states, disabled actions and narrow layouts. Keyboard support is not full screen-reader certification. Current visual verification targets Web in visible Chrome on Linux/iMac; native mobile platforms are a separate phase.
 
-## Исходники и полный сценарий
+## Source and complete examples
 
-- [Blazor](../../src/NextgenComponents.Blazor/NgPager.razor)
-- [Flutter](../../packages/nextgen_components/lib/src/data.dart)
-- [Галереи и запуск](../../README.md#run)
-- [Матрица возможностей](../catalog.md)
+- [Blazor source](../../src/NextgenComponents.Blazor/NgPager.razor)
+- [Flutter source](../../packages/nextgen_components/lib/src/data.dart)
+- [Galleries and launch commands](../../README.md#run)
+- [Capability matrix](../catalog.md)
 
-Версия параметров сгенерирована из текущего исходного кода. Примеры и правила сопровождаются отдельно в `scripts/manual_content.py`; после изменения API выполните `python3 scripts/generate_manual.py`.
+API declarations are generated from current source. Curated examples and behavior live in `scripts/manual_content.py`; regenerate with `python3 scripts/generate_manual.py`.

@@ -1,61 +1,61 @@
-# NgTreeView — Дерево
+# NgTreeView — Tree view
 
-[Оглавление](README.md) · [Подключение](getting-started.md) · [Модели](models.md)
+[Manual](README.md) · [Getting started](getting-started.md) · [Code examples](code-examples.md) · [Models](models.md)
 
-## Когда использовать
+## When to use it
 
-Иерархические данные с раскрытием узлов, поиском и выбором.
+Browse and select hierarchical records.
 
-## Поведение и практические правила
+## Behavior and practical rules
 
-Все ID должны быть уникальны во всём дереве; циклы/повторные ID недопустимы. ExpandedIds/expandedIds — набор раскрытых ID; сохраняйте его из callback. Поиск сохраняет путь родителей найденного узла. TreeList сортирует внутри уровня, не разрушая иерархию. TreeView имеет клавиатурную навигацию и недоступные узлы; полный аудит screen reader не выполнен. Ленивой загрузки, перетаскивания и виртуализации нет.
+NgTreeNode<T> contains a stable unique ID, item, children and disabled flag. The graph must be acyclic. ExpandedIds and SelectedId are controlled: save callbacks and pass updated collections back. Replacing the tree should also remove obsolete IDs from parent selection/expansion. Disabled nodes cannot be selected. Lazy server loading, drag/drop and virtualization are not implemented.
 
-## Blazor: рабочий пример
+## Blazor example
 
 ```razor
 <NgTreeView TItem="string" Items="nodes" Text="s=>s" @bind-ExpandedIds="expanded" @bind-SelectedId="selected"/>
-@code { private string? selected; private HashSet<string> expanded=["root"]; private NgTreeNode<string>[] nodes=[new("root","Проекты",[new("a","Дизайн"),new("b","Разработка")])]; }
+@code { private string? selected; private HashSet<string> expanded=["root"]; private NgTreeNode<string>[] nodes=[new("root","Projects",[new("a","Design"),new("b","Engineering")])]; }
 ```
 
-## Flutter: рабочий пример
+## Flutter example
 
 ```dart
 Set<String> expanded = {'root'}; String? selected;
 Widget build(BuildContext context) => NgTreeView<String>(
-  items: const [NgTreeNode('root','Проекты',children: [NgTreeNode('a','Дизайн'),NgTreeNode('b','Разработка')])],
+  items: const [NgTreeNode('root','Projects',children: [NgTreeNode('a','Design'),NgTreeNode('b','Engineering')])],
   text: (s) => s,
   expandedIds: expanded, selectedId: selected,
   onExpandedChanged: (v) => setState(() => expanded = v),
   onSelected: (v) => setState(() => selected = v));
 ```
 
-## Параметры и события Blazor
+## Blazor parameters and events
 
-Имена чувствительны к регистру. `?` в типе разрешает null. Параметры с `EditorRequired` отмечены как обязательные; остальные имеют значение по умолчанию CLR или инициализатор ниже.
+Names are case-sensitive. `?` permits null. `EditorRequired` parameters are marked required; other values use the initializer or CLR default.
 
-| Параметр | Тип | По умолчанию / требование | Назначение |
+| Parameter | Type | Default / requirement | Purpose |
 |---|---|---|---|
-| `Label` | `string` | "Folders" | Подпись элемента или доступное имя. |
-| `Items` | `IReadOnlyList<NgTreeNode<TItem>>` | обязательный | Исходные элементы. Тип модели указан в сигнатуре; заменяйте список при изменениях. |
-| `Text` | `Func<TItem,string>` | обязательный | Текст подсказки либо функция подписи узла (смотрите тип). |
-| `SelectedId` | `string?` | не задан | ID текущего узла либо null. |
-| `SelectedIdChanged` | `EventCallback<string?>` | не задан | Выбор другого узла. |
-| `ExpandedIds` | `HashSet<string>` | [] | Набор раскрытых ID дерева. |
-| `ExpandedIdsChanged` | `EventCallback<HashSet<string>>` | не задан | Новый набор раскрытых ID. |
+| `Label` | `string` | "Folders" | Visible label or accessible name. |
+| `Items` | `IReadOnlyList<NgTreeNode<TItem>>` | required | Input collection. Replace it when changing records or configuration. |
+| `Text` | `Func<TItem,string>` | required | See the behavior rules and model contract above. |
+| `SelectedId` | `string?` | not set | See the behavior rules and model contract above. |
+| `SelectedIdChanged` | `EventCallback<string?>` | not set | See the behavior rules and model contract above. |
+| `ExpandedIds` | `HashSet<string>` | [] | See the behavior rules and model contract above. |
+| `ExpandedIdsChanged` | `EventCallback<HashSet<string>>` | not set | See the behavior rules and model contract above. |
 
-## Параметры и события Flutter
+## Flutter parameters and events
 
-`required` в конструкторе означает обязательный аргумент, даже если его тип допускает null. `key` — стандартный Flutter Key. Значения по умолчанию приведены в точной сигнатуре ниже.
+`required` marks a mandatory argument even if its type is nullable. `key` is the standard Flutter Key. The exact constructor below specifies defaults.
 
-| Аргумент | Тип | Назначение |
+| Argument | Type | Purpose |
 |---|---|---|
-| `items` | `List<NgTreeNode<T>>` | Исходные элементы. Тип модели указан в сигнатуре; заменяйте список при изменениях. |
-| `text` | `String Function(T)` | Текст подсказки либо функция подписи узла (смотрите тип). |
-| `label` | `String` | Подпись элемента или доступное имя. |
-| `selectedId` | `String?` | ID текущего узла либо null. |
-| `expandedIds` | `Set<String>` | Набор раскрытых ID дерева. |
-| `onSelected` | `ValueChanged<String>?` | ID выбранного узла. |
-| `onExpandedChanged` | `ValueChanged<Set<String>>` | Новый набор раскрытых ID; сохраните его. |
+| `items` | `List<NgTreeNode<T>>` | Input collection. Replace it when changing records or configuration. |
+| `text` | `String Function(T)` | See the behavior rules and model contract above. |
+| `label` | `String` | Visible label or accessible name. |
+| `selectedId` | `String?` | See the behavior rules and model contract above. |
+| `expandedIds` | `Set<String>` | See the behavior rules and model contract above. |
+| `onSelected` | `ValueChanged<String>?` | See the behavior rules and model contract above. |
+| `onExpandedChanged` | `ValueChanged<Set<String>>` | See the behavior rules and model contract above. |
 
 ```dart
 const NgTreeView({
@@ -70,17 +70,17 @@ const NgTreeView({
   });
 ```
 
-## Интеграция и диагностика
+## Integration and troubleshooting
 
-Если интерфейс не обновляется, проверьте, сохраняет ли родитель результат callback и передаёт ли новое значение обратно. Для Blazor нужен интерактивный render mode; для Flutter — setState или используемый менеджер состояния. Данные формы отправляйте только после её успешной валидации.
+If the UI does not update, confirm that the parent stores callback values and passes them back. Blazor event handlers need interactive rendering; Flutter requires setState or a state manager. Submit form data only after successful validation.
 
-Проверяйте понятную подпись, пустое состояние, недоступность и размер контейнера. Клавиатурные возможности не означают полной сертификации screen reader. Сейчас проверяется Web в Chrome; нативные мобильные платформы будут проверяться отдельно.
+Check accessible labels, empty/invalid states, disabled actions and narrow layouts. Keyboard support is not full screen-reader certification. Current visual verification targets Web in visible Chrome on Linux/iMac; native mobile platforms are a separate phase.
 
-## Исходники и полный сценарий
+## Source and complete examples
 
-- [Blazor](../../src/NextgenComponents.Blazor/NgTreeView.razor)
-- [Flutter](../../packages/nextgen_components/lib/src/data.dart)
-- [Галереи и запуск](../../README.md#run)
-- [Матрица возможностей](../catalog.md)
+- [Blazor source](../../src/NextgenComponents.Blazor/NgTreeView.razor)
+- [Flutter source](../../packages/nextgen_components/lib/src/data.dart)
+- [Galleries and launch commands](../../README.md#run)
+- [Capability matrix](../catalog.md)
 
-Версия параметров сгенерирована из текущего исходного кода. Примеры и правила сопровождаются отдельно в `scripts/manual_content.py`; после изменения API выполните `python3 scripts/generate_manual.py`.
+API declarations are generated from current source. Curated examples and behavior live in `scripts/manual_content.py`; regenerate with `python3 scripts/generate_manual.py`.

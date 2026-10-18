@@ -1,330 +1,1129 @@
-# Curated examples and usage notes, consumed by the documentation generator.
-D={}
-def add(n,title,use,blazor,dart,notes):D[n]=dict(title=title,use=use,blazor=blazor,dart=dart,notes=notes)
-add('NgButton','Кнопка','Запускает действие пользователя: сохранить, открыть окно, применить фильтр.', '<NgButton Primary OnClick="()=>count++">Нажато @count раз</NgButton>\n@code { private int count; }', "int count = 0;\nWidget build(BuildContext context) => NgButton(primary: true,\n  onPressed: () => setState(() => count++), child: Text('Нажато $count раз'));",'Primary выделяет основное действие. Blazor: Disabled блокирует кнопку; Type="submit" отправляет родительскую форму. Flutter: onPressed: null отключает кнопку. Для асинхронного сохранения храните флаг busy у родителя и отключайте повторное нажатие. Компонент сам не отправляет HTTP-запросы.')
-for n,title,extra in [('NgTextBox','Однострочный текст',''),('NgTextArea','Многострочный текст',' Rows="4" MaxLength="500"')]:
- add(n,title,'Ввод имени, описания или заметок с передачей изменений в модель.',f'<{n} Label="Описание" @bind-Value="text"{extra}/>\n<p>@text</p>\n@code {{ private string? text="Начальный текст"; }}',f"final text = TextEditingController(text: 'Начальный текст');\n@override void dispose() {{ text.dispose(); super.dispose(); }}\nWidget build(BuildContext context) => {n}(label: 'Описание',\n  controller: text, validator: (v) => v == null || v.trim().isEmpty ? 'Введите текст' : null"+(", rows: 4, maxLength: 500" if extra else '')+");",'Blazor обновляет Value при вводе. Для обязательного поля используйте Required в модели NgForm. Flutter использует controller либо initialValue, но не оба сразу; initialValue не предназначен для последующего внешнего сброса. Для сброса меняйте controller.text и освобождайте controller в dispose. validator работает внутри Form/NgForm; null означает отсутствие ошибки. HTML в тексте не интерпретируется.')
-add('NgNumericTextBox','Числовое поле','Ввод количества или суммы с границами и сохранением последнего корректного значения.', '<NgNumericTextBox Label="Количество" Min="0" Max="100" Step="1" @bind-Value="quantity"/>\n@code { private decimal? quantity=5; }', "double? quantity = 5;\nWidget build(BuildContext context) => NgNumericTextBox(label: 'Количество',\n  value: quantity, min: 0, max: 100, required: true,\n  onChanged: (v) => setState(() => quantity = v));",'Типы различаются: Blazor decimal?, Flutter double?. Пустое необязательное поле соответствует null. Flutter сохраняет некорректный черновик, но не публикует его как число; NgForm.validate блокирует отправку. Во Flutter required: true запрещает пустое значение; в Blazor добавьте Required/Range к модели формы. Step имеется только в Blazor API. Это не форматтер валют и не финансовый движок.')
-for n,title in [('NgCheckBox','Флажок'),('NgSwitch','Переключатель')]:
- add(n,title,'Редактирует независимое логическое состояние.',f'<{n} Label="Уведомления" @bind-Value="enabled"/>\n@code {{ private bool enabled=true; }}',f"bool enabled = true;\nWidget build(BuildContext context) => {n}(label: 'Уведомления',\n  value: enabled, onChanged: (v) => setState(() => enabled = v));",'Состояние хранит родитель: обязательно сохраняйте новое значение из callback. Во Flutter onChanged: null отключает управление; в Blazor используйте Disabled. Label должен объяснять, что именно включается. Поддерживается только true/false, третьего состояния нет. Для группы взаимоисключающих вариантов используйте NgRadioGroup.')
-for n,title in [('NgDropDownList','Выпадающий список'),('NgRadioGroup','Группа вариантов'),('NgComboBox','Выбор с поиском')]:
- b=f'<{n} Label="Команда" Items="options" @bind-Value="team"/>\n@code {{ private string'+('?' if n=='NgComboBox' else '')+' team="design"; private NgOption[] options=[new("design","Дизайн"),new("dev","Разработка"),new("locked","Недоступно",true)]; }'
- d=f"String? team = 'design';\nWidget build(BuildContext context) => {n}(label: 'Команда', value: team,\n  items: const [NgOption('design','Дизайн'), NgOption('dev','Разработка'),\n    NgOption('locked','Недоступно', disabled: true)],\n  onChanged: (v) => setState(() => team = v));"
- add(n,title,'Выбор одного значения из набора NgOption; Value/value содержит ключ, Label/label — отображаемую подпись.',b,d,'Ключи вариантов должны быть уникальны. Disabled у NgOption исключает выбор этого пункта. '+('ComboBox фильтрует варианты по тексту; произвольная строка не становится допустимым ключом. Некорректный черновик блокирует форму; required во Flutter запрещает пустой выбор.' if n=='NgComboBox' else 'Родитель обязан принять callback и передать новое value обратно. Не передавайте ключ, отсутствующий в Items. RadioGroup подходит для небольшого числа одновременно видимых вариантов.')+' Локальный список; удалённый поиск, виртуализация и группировка не реализованы.')
-add('NgAutoComplete','Текст с подсказками','Помогает заполнить свободный текст, предлагая совпадения из строкового списка.', '<NgAutoComplete Label="Город" Items="cities" @bind-Value="city"/>\n@code { private string? city; private string[] cities=["Киев","Львов","Одесса"]; }', "String city = '';\nWidget build(BuildContext context) => NgAutoComplete(label: 'Город',\n  items: const ['Киев','Львов','Одесса'], initialValue: city,\n  onChanged: (v) => city = v);",'Допускает текст вне списка. Если нужен обязательный выбор существующего ключа, используйте NgComboBox. Flutter initialValue задаёт начальный текст; для полного внешнего сброса пересоздайте виджет с новым Key. Подсказки локальные; загрузку и debounce для сервера реализует приложение.')
-add('NgMultiSelect','Множественный выбор','Выбор нескольких ключей из NgOption с удалением выбранных элементов.', '<NgMultiSelect Label="Услуги" Items="options" MaxSelected="2" @bind-Value="selected"/>\n@code { private string[] selected=[]; private NgOption[] options=[new("a","Доставка"),new("b","Сборка")]; }', "List<String> selected = [];\nWidget build(BuildContext context) => NgMultiSelect(label: 'Услуги', value: selected,\n  items: const [NgOption('a','Доставка'),NgOption('b','Сборка')], maxSelected: 2,\n  onChanged: (v) => setState(() => selected = v));",'Значение — коллекция ключей, а не подписей. Callback отдаёт новый список; заменяйте коллекцию в родителе. MaxSelected ограничивает добавление, удаление остаётся доступным. Во Flutter required требует хотя бы один вариант; в Blazor задайте правило модели формы. Поле поддерживает поиск по локальным вариантам и не виртуализирует большой список.')
-for n,title,typ,init,fmt in [('NgDateInput','Ручной ввод даты','DateOnly?','new(2026,10,20)','yyyy-MM-dd'),('NgDatePicker','Дата с календарём','DateOnly?','new(2026,10,20)','yyyy-MM-dd'),('NgCalendar','Календарь','DateOnly?','new(2026,10,20)','выбор дня'),('NgDateTimePicker','Дата и время','DateTime?','new(2026,10,20,9,30,0)','yyyy-MM-dd HH:mm'),('NgTimePicker','Время','TimeOnly?','new(9,30)','HH:mm')]:
- dt='TimeOfDay?' if n=='NgTimePicker' else 'DateTime?';di='const TimeOfDay(hour: 9, minute: 30)' if n=='NgTimePicker' else 'DateTime(2026,10,20,9,30)'
- add(n,title,'Выбор календарной даты или локального времени без автоматической смены часового пояса.',f'<{n} '+('Label="Дата" ' if n!='NgCalendar' else '')+'@bind-Value="value"/>\n@code { private '+typ+' value='+init+'; }',f"{dt} value = {di};\nWidget build(BuildContext context) => {n}(value: value,\n  onChanged: (v) => setState(() => value = v));",f'Формат ввода: {fmt}. Min/Max включают граничные значения. Некорректные дни (например, 31 апреля) и время 24:00 не принимаются. '+('DisabledDate/disabledDate возвращает true для запрещённого дня. ' if n in ['NgDateInput','NgDatePicker','NgCalendar'] else '')+'Flutter использует DateTime для даты, TimeOfDay для времени; Blazor — DateOnly и TimeOnly. Не смешивайте UTC и локальные значения. Пустое необязательное поле хранит null. Для обязательности используйте валидацию формы'+(' (у Calendar нет required; проверяйте значение в приложении).' if n=='NgCalendar' else '; во Flutter также имеется required: true.')+' Полные правила и ограничения ручного ввода см. forms-and-dates.md.')
-add('NgDateRangePicker','Диапазон дат','Связанная пара начала и конца с проверкой порядка.', '<NgDateRangePicker Label="Период" @bind-Value="range"/>\n@code { private NgDateRange? range=new(new(2026,10,20),new(2026,10,23)); }', "NgDateRange? range = NgDateRange(DateTime(2026,10,20), DateTime(2026,10,23));\nWidget build(BuildContext context) => NgDateRangePicker(label: 'Период', value: range,\n  required: true, onChanged: (v) => setState(() => range = v));",'NgDateRange хранит Start/End в Blazor и start/end во Flutter. Конец раньше начала вызывает ошибку. Min/Max ограничивают обе границы. Callback обновляет диапазон целиком. Не отправляйте прежнее корректное значение, пока пользователь видит ошибку черновика: сохранение должно проходить через NgForm. Это диапазон календарных дат, не интервал часовых поясов.')
-add('NgForm','Форма и валидация','Объединяет поля, проверяет значения и вызывает обработчик только при успешной проверке.', '''<NgForm Model="model" OnValidSubmit="Save">
-    <NgTextBox Label="Имя" @bind-Value="model.Name"/>
-    <NgButton Type="submit" Primary>Сохранить</NgButton>
-</NgForm>
-<p>@status</p>
-@code {
- private Draft model=new(); private string? status;
- private void Save()=>status=$"Сохранено: {model.Name}";
- public class Draft { [System.ComponentModel.DataAnnotations.Required] public string? Name {get;set;} }
-}''', "String name = '';\nWidget build(BuildContext context) => NgForm(submitLabel: 'Сохранить',\n  onValidSubmit: () => debugPrint('Сохранено: $name'),\n  child: NgTextBox(label: 'Имя', onChanged: (v) => name = v,\n    validator: (v) => v == null || v.trim().isEmpty ? 'Введите имя' : null));",'Blazor оборачивает EditForm и DataAnnotationsValidator; Model обязателен, кнопку submit добавляет приложение. Flutter уже добавляет кнопку submitLabel и вызывает Form.validate. Поля должны находиться внутри формы. Для изменения объекта-черновика используйте новый @key/Key, если требуется новый жизненный цикл формы. Межполевые бизнес-правила (например, End > Start) проверяйте в модели или перед сохранением. NgForm не выполняет сохранение в БД автоматически.')
-add('NgTabs','Вкладки','Переключает панели в одном пространстве интерфейса.', '<NgTabs Items="tabs" @bind-SelectedIndex="index"/>\n@code { private int index; private NgTab[] tabs=[new("Обзор",b=>b.AddContent(0,"Сводка")),new("Детали",b=>b.AddContent(0,"Подробности"))]; }', "int index = 0;\nWidget build(BuildContext context) => NgTabs(selectedIndex: index,\n  items: const [NgTab('Обзор',Text('Сводка')),NgTab('Детали',Text('Подробности'))],\n  onChanged: (v) => setState(() => index = v));",'Индекс начинается с 0 и должен попадать в диапазон Items. NgTab объединяет подпись и содержимое панели. Сохраняйте callback в состоянии родителя, если вкладкой управляет приложение. Это не маршрутизатор: адрес страницы и история браузера сами не меняются. Не рассчитывайте на одинаковую стратегию сохранения внутреннего состояния скрытых панелей между платформами; значимые данные держите у родителя.')
-add('NgDialog','Модальное окно','Показывает отдельную задачу или редактор поверх страницы.', '<NgButton OnClick="()=>open=true">Открыть</NgButton>\n<NgDialog Title="Подтверждение" @bind-Open="open"><ChildContent>Продолжить?</ChildContent><Actions><NgButton OnClick="()=>open=false">Закрыть</NgButton></Actions></NgDialog>\n@code { private bool open; }', "Widget build(BuildContext context) => NgButton(child: const Text('Открыть'),\n  onPressed: () => NgDialog.show<void>(context, title: 'Подтверждение',\n    child: const Text('Продолжить?'), actions: [TextButton(\n      onPressed: () => Navigator.of(context).pop(), child: const Text('Закрыть'))]));",'Blazor: управляйте Open через @bind-Open, чтобы закрытие обновляло родителя. Flutter: NgDialog.show<T> возвращает Future<T?>, результат задаётся Navigator.pop(context, result); null соответствует закрытию без результата. Редактируйте отдельную копию данных и переносите изменения только при Save. Отмена не должна менять исходную запись. Не создавайте несколько вложенных несогласованных модальных задач.')
-add('NgTooltip','Подсказка','Короткое пояснение к кнопке или значку.', '<NgTooltip Text="Создать копию"><NgButton>Копировать</NgButton></NgTooltip>', "Widget build(BuildContext context) => NgTooltip(text: 'Создать копию',\n  child: NgButton(onPressed: () {}, child: const Text('Копировать')));",'Дочерний элемент остаётся основным управляющим элементом. Подсказка дополняет понятную подпись, но не заменяет её. Не помещайте в неё обязательные инструкции или интерактивную форму. Реализация использует CSS/ARIA в Blazor и стандартный Flutter Tooltip; точный жест/задержка зависит от платформы.')
-add('NgNotification','Уведомление','Сообщение о результате операции с возможностью скрытия.', '<NgNotification @bind-Visible="visible" Tone="success">Сохранено</NgNotification>\n@code { private bool visible=true; }', "bool visible = true;\nWidget build(BuildContext context) => visible ? NgNotification(message: 'Сохранено',\n  onDismiss: () => setState(() => visible = false)) : const SizedBox.shrink();",'Blazor: Visible управляет показом, Tone="error" включает ошибку. Flutter: error: true задаёт ошибочный результат; видимость управляется условием родителя. Callback onDismiss/VisibleChanged должен убрать сообщение из интерфейса. Автоматического таймера, очереди toast и сетевого повтора нет. Не используйте уведомление как единственное место отображения ошибки поля.')
-add('NgPager','Страницы данных','Управляет номером страницы и размером порции; сами записи фильтрует приложение или NgDataGrid.', '<NgPager Total="items.Length" @bind-Page="page" @bind-PageSize="size"/>\n@foreach(var item in items.Skip((page-1)*size).Take(size)){<p>@item</p>}\n@code { private int page=1,size=5; private string[] items=Enumerable.Range(1,18).Select(i=>$"Строка {i}").ToArray(); }', "int page = 1, size = 5;\nWidget build(BuildContext context) => NgPager(total: 18, page: page, pageSize: size,\n  onPageChanged: (v) => setState(() => page = v),\n  onPageSizeChanged: (v) => setState(() { size = v; page = 1; }));",'Нумерация страниц начинается с 1. Total — число записей после фильтра, а не размер текущей страницы. Сначала фильтруйте/сортируйте данные, затем выделяйте страницу. После сокращения набора ограничьте page через NgDataOperations.ClampPage/clampPage. Не передавайте неположительный pageSize; используйте значение из Sizes/sizes. Серверную загрузку по callback реализует приложение.')
-add('NgBreadcrumb','Навигационная цепочка','Показывает путь к текущему разделу и даёт перейти к предкам.', '<NgBreadcrumb Items="items" OnNavigate="id=>selected=id"/>\n<p>@selected</p>\n@code { private string? selected; private NgBreadcrumbItem[] items=[new("all","Проекты"),new("design","Дизайн")]; }', "String? selected;\nWidget build(BuildContext context) => NgBreadcrumb(\n  items: const [NgBreadcrumbItem('all','Проекты'),NgBreadcrumbItem('design','Дизайн')],\n  onNavigate: (id) => setState(() => selected = id));",'Последний элемент — текущая страница, он не является кнопкой перехода. Callback возвращает Id выбранного предка. Приложение само меняет маршрут или фильтр. Id должен быть стабильным, подпись можно локализовать. Компонент не строит цепочку из URL автоматически.')
-add('NgDataGrid','Таблица записей','Локальная таблица с числовой сортировкой, поиском, пагинацией и выбором строк.', '<NgDataGrid TItem="Product" Items="rows" Columns="columns" RowId="r=>r.Id" @bind-SelectedIds="selected"/>\n@code { public record Product(string Id,string Name,int Count); private Product[] rows=[new("a","Стол",12),new("b","Стул",120)]; private HashSet<string> selected=[]; private NgDataColumn<Product>[] columns=[new("name","Название",r=>r.Name),new("count","Количество",r=>r.Count)]; }', "final rows = [(id: 'a', name: 'Стол', count: 12), (id: 'b', name: 'Стул', count: 120)];\nSet<String> selected = {};\nWidget build(BuildContext context) => NgDataGrid<({String id, String name, int count})>(\n  items: rows, rowId: (r) => r.id, selectedIds: selected,\n  onSelectionChanged: (v) => setState(() => selected = v),\n  columns: [NgDataColumn('name','Название',(r) => r.name),\n    NgDataColumn('count','Количество',(r) => r.count)]);",'RowId/rowId должен возвращать уникальный постоянный ключ. Колонка Value/value возвращает исходный тип (число для числовой сортировки); Format/format меняет только представление. Поиск применяется до пагинации. Выбор хранится по ID и сохраняется между страницами; select-page выбирает только текущую страницу. RowActions/rowActions и Toolbar/toolbar позволяют добавить действия; редактор записи создаёт приложение. После CRUD заменяйте список, а не меняйте объект без уведомления. Серверная пагинация, виртуализация, группировка и Excel-экспорт пока отсутствуют.')
-for n,title in [('NgTreeView','Дерево'),('NgTreeList','Дерево с колонками')]:
- arg='Text="s=>s"' if n=='NgTreeView' else 'Columns="columns"';fields=' private NgDataColumn<string>[] columns=[new("name","Название",s=>s)];' if n=='NgTreeList' else ''
- add(n,title,'Иерархические данные с раскрытием узлов, поиском и выбором.',f'<{n} TItem="string" Items="nodes" {arg} @bind-ExpandedIds="expanded" @bind-SelectedId="selected"/>\n@code {{ private string? selected; private HashSet<string> expanded=["root"]; private NgTreeNode<string>[] nodes=[new("root","Проекты",[new("a","Дизайн"),new("b","Разработка")])];'+fields+' }',f"Set<String> expanded = {{'root'}}; String? selected;\nWidget build(BuildContext context) => {n}<String>(\n  items: const [NgTreeNode('root','Проекты',children: [NgTreeNode('a','Дизайн'),NgTreeNode('b','Разработка')])],\n  "+("text: (s) => s," if n=='NgTreeView' else "columns: [NgDataColumn('name','Название',(s) => s)],")+"\n  expandedIds: expanded, selectedId: selected,\n  onExpandedChanged: (v) => setState(() => expanded = v),\n  onSelected: (v) => setState(() => selected = v));",'Все ID должны быть уникальны во всём дереве; циклы/повторные ID недопустимы. ExpandedIds/expandedIds — набор раскрытых ID; сохраняйте его из callback. Поиск сохраняет путь родителей найденного узла. TreeList сортирует внутри уровня, не разрушая иерархию. TreeView имеет клавиатурную навигацию и недоступные узлы; полный аудит screen reader не выполнен. Ленивой загрузки, перетаскивания и виртуализации нет.')
-add('NgChart','Диаграмма','Сравнение категорий и серий; шесть режимов: column, bar, line, area, pie, donut.', '<NgChart Title="Продажи" Kind="NgChartKind.Line" Categories="categories" Series="series" OnPointSelected="p=>selected=p.Label"/>\n<p>@selected</p>\n@code { private string? selected; private string[] categories=["Пн","Вт","Ср"]; private NgChartSeries[] series=[new("Заказы",[10,null,25])]; }', "String? selected;\nWidget build(BuildContext context) => NgChart(title: 'Продажи', kind: NgChartKind.line,\n  categories: const ['Пн','Вт','Ср'], series: const [NgChartSeries('Заказы',[10,null,25])],\n  onPointSelected: (p) => setState(() => selected = p.label));",'Число Values/values в каждой серии должно совпадать с Categories/categories. null создаёт разрыв линии; NaN/Infinity не допускаются. Pie/Donut принимают одну неотрицательную серию; нулевой итог показывает пустое состояние. Легенда скрывает серию; callback точки содержит индекс и имя категории/серии и число. Для клавиатуры используйте Chart data (в Blazor также SVG-точки Enter/Space). В Flutter прямой клик canvas и доступные кнопки списка разделены. Стэкинг, zoom, export и автоматическая раскладка длинных подписей отсутствуют.')
-for n,title in [('NgLinearGauge','Линейный индикатор'),('NgArcGauge','Дуговой индикатор')]:
- add(n,title,'Показывает числовой прогресс относительно заданного диапазона.',f'<{n} Label="Загрузка" Value="72" Min="0" Max="100" Unit="%"/>',f"Widget build(BuildContext context) => const {n}(label: 'Загрузка',\n  value: 72, min: 0, max: 100, unit: '%');",'Min/min должен быть меньше Max/max, все числа — конечными. Значение вне диапазона ограничивает заполнение 0–100%, но подпись показывает исходное значение. Компонент только отображает данные, события изменения нет. Unit/unit задаёт подпись единиц, не выполняет преобразование. Цветовые зоны, стрелки, анимация и экспорт не реализованы. Blazor сохраняет точность подписи G6; Flutter подпись самого индикатора округляется до целого.')
-add('NgScheduler','Недельное расписание','Показывает события по дням недели и вызывает приложение для создания/редактирования.', '''<NgScheduler @bind-Date="week" Items="events" OnCreate="day=>message=$"Добавить {day:d}"" OnEdit="item=>message=item.Title"/>
-<p>@message</p>
-@code { private DateTime week=new(2026,10,19); private string? message; private NgScheduleEvent[] events=[new("a","Встреча",new(2026,10,19,10,0,0),new(2026,10,19,11,0,0))]; }'''.replace('OnCreate="day=>message=$"Добавить {day:d}""','OnCreate="day=>message=day.ToShortDateString()"'), "DateTime week = DateTime(2026,10,19);\nWidget build(BuildContext context) => NgScheduler(date: week,\n  items: [NgScheduleEvent('a','Встреча',DateTime(2026,10,19,10),DateTime(2026,10,19,11))],\n  onDateChanged: (v) => setState(() => week = v),\n  onCreate: (day) => debugPrint('Добавить $day'),\n  onEdit: (item) => debugPrint(item.title));",'Начало недели — понедельник. Предыдущая/следующая неделя и Today вызывают callback изменения даты. События имеют уникальный Id/id, непустой Title/title и End/end строго позже Start/start. Пересечение полуночи отображается в обоих днях; конец ровно в 00:00 не добавляет запись следующего дня. Редактор и хранение создаёт приложение: полный Save/Cancel/Delete есть в Analytics gallery. Используются локальные wall-clock значения без конвертации timezone. Это дневные карточки недели, не почасовая сетка. Повторы, ресурсы и drag/drop не реализованы.')
-add('NgSpreadsheet','Электронный лист','Редактирование ячеек, вычисление формул, массовая вставка и история изменений.', '<NgSpreadsheet @bind-Value="sheet"/>\n@code { private NgSheet sheet=new(8,5,new Dictionary<string,string>{{"A1","10"},{"B1","20"},{"C1","=SUM(A1:B1)"}}); }', "NgSheet sheet = NgSheet(rows: 8, columns: 5, cells: {'A1':'10','B1':'20','C1':'=SUM(A1:B1)'});\nWidget build(BuildContext context) => NgSpreadsheet(value: sheet,\n  onChanged: (v) => setState(() => sheet = v));",'Выберите ячейку, измените Cell value or formula, нажмите Apply cell или Enter. Стрелки перемещают выбор. Значение хранится в неизменяемом NgSheet; callback отдаёт целый новый лист. Undo/Redo хранит до 50 операций; независимая замена Value/value родителем очищает историю. ReadOnly/readOnly отключает редактирование. Paste cells принимает TSV (табуляции и строки), вставляет от выбранного адреса, сохраняет формулы буквально и отклоняет выход за границы целиком. Поддерживаются 1–100 строк, 1–26 колонок, до 1000 символов в ячейке. Это один локальный лист: XLSX/CSV-файлы, форматы, объединения, относительное смещение формул и несколько листов не реализованы.')
-add('NgPivotGrid','Сводная таблица','Группировка числовой меры по двум измерениям с итогами и просмотром исходных строк.', '<NgPivotGrid Items="records" RowField="Team" ColumnField="Quarter" Aggregate="NgAggregate.Average" OnCellSelected="p=>count=p.Records.Count"/>\n<p>Исходных строк: @count</p>\n@code { private int count; private NgPivotRecord[] records=[new("a",new Dictionary<string,string>{{"Team","Design"},{"Quarter","Q1"}},100),new("b",new Dictionary<string,string>{{"Team","Design"},{"Quarter","Q1"}},200)]; }', "int count = 0;\nWidget build(BuildContext context) => NgPivotGrid(rowField: 'Team', columnField: 'Quarter',\n  aggregate: NgAggregate.average, items: [\n    NgPivotRecord('a', {'Team':'Design','Quarter':'Q1'},100),\n    NgPivotRecord('b', {'Team':'Design','Quarter':'Q1'},200)],\n  onCellSelected: (p) => setState(() => count = p.records.length));",'NgPivotRecord содержит уникальный ID, словарь строковых измерений и одну числовую Value/value (может быть null). Измерения сортируются по строковым ключам; отсутствующий ключ отображается как (blank). Sum/Average/Min/Max используют только числа; Count считает исходные записи, включая null. Все итоги считаются заново по исходным записям: среднее не является средним средних. Callback ячейки/итога отдаёт оригинальные записи; null Row/Column обозначает итог, пустая строка — пустое измерение. Фильтры применяйте к Items/items до передачи компоненту. Множественные уровни, несколько мер, OLAP и drag/drop конфигуратора отсутствуют.')
-add('NgEditor','Редактор структурированного документа','Для инструкций, описаний проектов, заметок и других небольших документов, которым нужны заголовки, списки и форматирование. Одинаковая модель документа используется в Blazor и Flutter Web.',
-'''<NgEditor Label="Описание проекта" @bind-Value="document"/>
-<NgButton OnClick="Save">Сохранить JSON</NgButton>
-<pre>@saved</pre>
-@code {
-    private NgDocument document = new([
-        new("План проекта", NgBlockKind.Heading1),
-        new("Согласовать требования", NgBlockKind.Bullet),
-        new("Проверить результат", NgBlockKind.Bullet, Bold: true)
-    ]);
-    private string saved = "";
-    private void Save() => saved = document.ToJson();
-}''',
-'''NgDocument document = NgDocument(blocks: const [
-  NgDocumentBlock(text: 'План проекта', kind: NgBlockKind.heading1),
-  NgDocumentBlock(text: 'Согласовать требования', kind: NgBlockKind.bullet),
-  NgDocumentBlock(text: 'Проверить результат', kind: NgBlockKind.bullet, bold: true),
-]);
-String saved = '';
-Widget build(BuildContext context) => Column(children: [
-  NgEditor(label: 'Описание проекта', value: document,
-    onChanged: (v) => setState(() => document = v)),
-  NgButton(onPressed: () => setState(() => saved = document.toJson()),
-    child: const Text('Сохранить JSON')),
-  Text(saved),
-]);''',
-'''### Редактирование
-
-1. Выберите блок в списке слева (на узком экране — сверху).
-2. Введите текст в Block text и нажмите Apply text. До применения это локальный черновик: preview, callback и экспорт содержат прежнее значение.
-3. Block type выбирает абзац, заголовок первого/второго уровня, пункт маркированного/нумерованного списка или цитату. Bold, Italic, Underline и Alignment применяются **ко всему блоку**. Это редактор блоков с отдельным предпросмотром, не редактор произвольного HTML и не форматирование выделенных слов.
-4. Смена блока, типа, выравнивания, форматирования, Add block и Move автоматически применяют черновик. Одно действие создаёт одну запись истории. Add block вставляет пустой абзац после текущего и выбирает его. Move up/down сохраняют выбор на перемещённом блоке.
-5. Delete block удаляет выбранный блок вместе с неприменённым черновиком. При удалении последнего остаётся один пустой абзац. Undo/Redo отменяют/возвращают применённые операции; неприменённый черновик при этом отбрасывается. История хранит последние 50 операций.
-
-### Состояние и сохранение
-
-`Value/value` — неизменяемый `NgDocument`; `ValueChanged/onChanged` возвращает целый новый документ. Родитель обязан сохранить его и передать обратно. Независимая замена документа, например после импорта или загрузки другого файла, сбрасывает локальную историю и черновик. Не создавайте новый эквивалентный объект на каждом render: используйте полученный экземпляр.
-
-`ReadOnly/readOnly` блокирует изменения, сохраняя выбор блоков и просмотр. Уже введённый черновик не сохраняется автоматически при включении этого режима. `NgEditor` не является InputBase/FormField: обязательность и бизнес-правила документа проверяет приложение.
-
-`ToJson()/toJson()` создаёт формат версии 1, одинаковый для обеих платформ. Для восстановления вызовите `NgDocument.FromJson(source)` / `NgDocument.fromJson(source)`; обработайте `ArgumentException` / `ArgumentError` и заменяйте документ только после успешного разбора. Пример полного Save/Restore находится в Editor gallery (`/editor` в Blazor, кнопка Editor во Flutter).
-
-`ToHtml()/toHtml()` экспортирует только применённые блоки. Текст экранируется, соседние пункты одного типа объединяются в ul/ol; переход к другому типу начинает новый список. HTML — фрагмент, без внешней темы и контейнера. Перенос строки внутри блока становится br. JSON храните как исходный редактируемый формат; обратного импорта HTML нет. Компонент не записывает файлы и не отправляет документ на сервер.
-
-### Клавиатура, размеры и ограничения
-
-Поля и кнопки доступны через Tab, кнопки — Enter/Space; textarea поддерживает обычный многострочный ввод. Собственных Ctrl+Z/Ctrl+Y нет: кнопки Undo/Redo управляют документом, системная отмена внутри textarea — только его черновиком. Проверка screen reader и мобильных платформ пока не проведена.
-
-Лимиты: 1–100 блоков, до 10000 UTF-16 единиц в блоке, до 100000 во всём документе; входной JSON — до 1000000. Модель проверяет ограничения при каждой операции. Сохраняются текст, тип блока, три флага форматирования и выравнивание. Вложенные списки, ссылки, изображения, таблицы, шрифты, выделенные диапазоны, импорт HTML/Word, печать/PDF, совместное редактирование и AI пока отсутствуют. Размеры ограничены для локальных небольших документов; виртуализации нет.''')
-add('NgDiagram','Интерактивная схема','Для небольших схем процессов, связей сущностей и рабочих потоков. Отображает узлы, соединяет их линиями и позволяет перемещать узлы без изменения их идентификаторов.',
-'''<NgDiagram Label="Процесс" @bind-Value="graph"
-    @bind-SelectedNodeId="selectedNode" @bind-SelectedEdgeId="selectedEdge"/>
-<p>Узел: @selectedNode · Связь: @selectedEdge</p>
-@code {
-    private string? selectedNode, selectedEdge;
-    private NgDiagramModel graph = new([
-        new("start", "Начало", 40, 100, Shape: NgDiagramShape.Ellipse),
-        new("work", "Обработка", 360, 100)
-    ], [new("next", "start", "work", "Продолжить")]);
-}''',
-'''NgDiagramModel graph = NgDiagramModel(nodes: const [
-  NgDiagramNode('start', 'Начало', 40, 100, shape: NgDiagramShape.ellipse),
-  NgDiagramNode('work', 'Обработка', 360, 100),
-], edges: const [NgDiagramEdge('next', 'start', 'work', text: 'Продолжить')]);
-String? selectedNode, selectedEdge;
-Widget build(BuildContext context) => NgDiagram(label: 'Процесс', value: graph,
-  onChanged: (v) => setState(() => graph = v),
-  selectedNodeId: selectedNode, selectedEdgeId: selectedEdge,
-  onSelectedNodeIdChanged: (v) => setState(() => selectedNode = v),
-  onSelectedEdgeIdChanged: (v) => setState(() => selectedEdge = v));''',
-'''### Выбор и перемещение
-
-Нажмите узел или линию для выбора. Компонент сначала сбрасывает выбор другого типа через callback с null, затем передаёт ID выбранного элемента. Сохраняйте оба значения в родителе. Выбор не меняет сам граф; неизвестный SelectedNodeId/selectedNodeId просто не подсвечивается. При удалении элементов приложение должно очистить устаревший выбор (пример есть в галерее).
-
-Перетащите узел мышью: полупрозрачный контур показывает будущую позицию. Только отпускание сохраняет новые координаты и вызывает ValueChanged/onChanged; связи перестраиваются после завершения. Escape отменяет перетаскивание. Клавиатура: Tab переходит к узлам, Enter/Space выбирает, стрелки сдвигают узел на 10 единиц, Shift+стрелка — на 1. Границы перемещения ограничены холстом. Во Flutter доступный список Connections позволяет выбирать линии с клавиатуры; в Blazor сами SVG-линии фокусируемые.
-
-### Масштаб и прокрутка
-
-Zoom in/out изменяет локальный масштаб шагом 25%; диапазон 25–200%. Fit width подбирает ширину всего холста под контейнер (с тем же ограничением), 100% сбрасывает масштаб. Размер viewport по высоте — 420 CSS/logical px; большие схемы прокручиваются внутри. Масштаб не меняет координаты модели и не входит в JSON. Fit diagram вписывает область всех узлов по обеим осям с отступом 24 px и центрирует её прокруткой. Координаты и выделение сохраняются; после вписывания можно перетаскивать узлы. В ReadOnly навигация доступна, для пустой схемы кнопка отключена. Масштаб ограничен 25–200%: очень большая схема может не поместиться целиком; у края холста центрирование ограничено доступной прокруткой. Длинные подписи связей могут выходить за границы узлов. Вписывание выполняется по нажатию, без автоматической раскладки и повторного центрирования при редактировании. Модель предоставляет FitView(viewportWidth, viewportHeight) / fitView(viewportWidth, viewportHeight), возвращающий NgDiagramView (Zoom/ScrollX/ScrollY в Blazor; zoom/scrollX/scrollY во Flutter); размеры viewport должны быть положительными конечными числами. Для пустой модели результат — 100%, прокрутка 0/0. При очень узком контейнере минимальные 25% могут всё ещё требовать горизонтальной прокрутки.
-
-### Состояние, свойства и сохранение
-
-`Value/value` — неизменяемый `NgDiagramModel`; после callback сохраните новый экземпляр и передайте его обратно. Независимая замена модели отменяет текущий drag. `ReadOnly/readOnly` отключает перетаскивание и клавиатурное перемещение, оставляя выбор, масштаб и прокрутку. Создание, редактирование подписей/типов и удаление — операции модели, которые вызывает приложение. Полный пример панели свойств, добавления связей, истории из 20 изменений и импорта находится в галерее `/diagram` (Blazor) / Foundation → Diagram (Flutter). В самом NgDiagram встроенной истории нет.
-
-Операции модели: `UpsertNode/upsertNode` добавляет узел или заменяет его по ID, `UpsertEdge/upsertEdge` делает то же для связи; `RemoveNode/removeNode` удаляет узел **и все инцидентные связи**; `RemoveEdge/removeEdge` сохраняет узлы. `Move/move(id,x,y)` ограничивает конечные координаты холстом и возвращает новый граф. Например, `graph = graph.Move("start", 80, 120)` / `graph = graph.move('start', 80, 120)`; после вызова обновите UI обычным для вашей платформы способом.
-
-`ToJson()/toJson()` сохраняет формат версии 1, общий для Blazor и Flutter. `NgDiagramModel.FromJson(source)` / `NgDiagramModel.fromJson(source)` разбирает и проверяет граф; ловите ArgumentException / ArgumentError, сохраняя прежний документ при отказе. Компонент не пишет файлы и не отправляет данные на сервер. Это схема данных Nextgen, не совместимая с JSON Telerik.
-
-### Узлы, связи и ограничения
-
-Фигуры: Rectangle/rectangle, Ellipse/ellipse, Diamond/diamond. Узел хранит ID, текст, левую верхнюю координату X/Y и размеры Width/Height; размеры по умолчанию 160×80. Длинная подпись сокращается визуально; полный текст доступен в tooltip, доступном имени и панели свойств. Соединения прямые, между границами фигур по линии центров; Directed/directed включает стрелку на конце. Подпись связи сокращается до 24 символов на схеме. Список Connections во Flutter и панель свойств показывают полный текст.
-
-Размер холста 200–5000 в каждом измерении (по умолчанию 1000×600). До 100 узлов и 200 связей. Размер узла 60–400 × 40–240; узел должен целиком помещаться в холст. ID — 1–64 ASCII буквы/цифры, `_` или `-`; уникальны отдельно среди узлов и среди связей. Подпись узла непустая, до 100 UTF-16 единиц; подпись связи — 0–100. Координаты должны быть конечными. Связь требует два существующих разных узла. Циклы и несколько связей между одной парой разрешены: компонент отображает граф, но не проверяет бизнес-правила workflow. Наложенные узлы/линии не раздвигаются автоматически; при совпадении центров линия имеет нулевую длину.
-
-Не реализованы: автоматическая раскладка, маршрутизация вокруг препятствий, самостоятельное рисование связей за коннектор, изменение размера мышью, группы, множественный выбор, изображения/шаблоны узлов, PNG/PDF/SVG-экспорт, minimap, pinch zoom и collaboration. ReadOnly не отключает операции панели приложения автоматически — передавайте его и своим кнопкам. Нативные мобильные платформы и screen reader-аудит остаются отдельным этапом.
-
-Blazor автоматически загружает `diagram.js` из `_content/NextgenComponents.Blazor/`; вручную подключать script не нужно. Нужен interactive render mode. Если перетаскивание не работает, проверьте загрузку этого модуля и сохранение ValueChanged, а не только отображение SVG.''')
-
-add('NgPdfViewer','Просмотр PDF','Для просмотра инструкций, договоров и отчётов в веб-приложении. Blazor и Flutter Web используют общий локальный просмотрщик на PDF.js.',
-'''<NgPdfViewer Label="Инструкция" Source="samples/nextgen-guide.pdf" Height="720" Dark="false"/>
-<p>PDF должен быть размещён приложением по указанному адресу.</p>''',
-"""Widget build(BuildContext context) => const NgPdfViewer(
-  label: 'Инструкция', source: 'samples/nextgen-guide.pdf', height: 720);""",
-'''### Подключение и источник
-Source/source — относительный или HTTP(S) URL. Относительный адрес разрешается от base URI приложения; файл не включается автоматически: разместите его в wwwroot/samples (Blazor) или web/samples (Flutter). Null/пустая строка открывает пустой просмотрщик с кнопкой Open PDF. Получение URL идёт из браузера: same-origin cookies передаются только своему origin; для внешнего адреса сервер должен разрешать CORS. Пользовательский выбор Open PDF читает файл локально и не отправляет его на сервер. PDF.js, worker, CMaps и шрифты находятся в пакете; CDN не требуется.
-
-Blazor требует интерактивности для изменения параметров родителем, но сам iframe работает и при SSR. У приложения должны раздаваться static web assets: _content/NextgenComponents.Blazor/pdf-viewer/. Для UseStaticFiles добавьте MIME mappings .mjs = text/javascript, .bcmap и .pfb = application/octet-stream (пример в Program.cs галереи). В Flutter assets включены в pubspec пакета; дополнительных script-тегов не нужно. При CSP разрешите локальные scripts/workers, worker-src 'self' blob:, font-src 'self' blob:, frame-src 'self', style-src 'self' 'unsafe-inline' и connect-src к источнику PDF. Конкретная политика зависит от host-приложения.
-
-### Навигация, поиск и состояние
-Previous/Next и поле Page переключают страницы от 1 до количества страниц документа; недопустимый номер отклоняется. Масштаб 10–300%, кнопки меняют его на 25 процентных пунктов. Fit width вписывает ширину, Fit page — страницу целиком; эти режимы пересчитываются при изменении размеров области. Увеличенные страницы прокручиваются внутри компонента. Height/height — 400–1600 CSS/logical px, по умолчанию 640; при малой ширине панель переносится и оставляет минимум 100 px для страницы.
-
-Find выполняет поиск подстроки без учёта регистра во всех страницах. Пробелы, табуляции и переводы строк считаются одним пробелом; фраза может пересекать границы текстовых фрагментов и строк. Результат — список номеров совпавших страниц; нажатие открывает страницу и Page text. Clear очищает запрос и результаты. Текстовый слой PDF извлекается в отдельный раскрываемый блок Page text (select and copy), где доступно обычное выделение/копирование браузера. Начиная с 0.8.1 текст также выделяется мышью непосредственно поверх страницы; Ctrl/Cmd+C использует обычное копирование браузера. Найденные совпадения подсвечиваются жёлтым на текущей странице, включая переходы между фрагментами текста. Подсветка сохраняется после навигации, масштабирования и вписывания; Clear, пустой запрос + Find и смена документа очищают её. Изменение поля запроса применяется после Find. На странице подсвечиваются первые 1000 непересекающихся совпадений; список результатов по-прежнему содержит номера страниц. При перерисовке страницы обычное пользовательское выделение сбрасывается. Точная геометрия зависит от шрифтов и текстового слоя PDF. Подсветка использует CSS Custom Highlight API (проверено в Chrome); в браузере без этого API остаются поиск по страницам и выделение текста. PDF без текстового слоя требует OCR, которого здесь нет. Результат зависит от порядка текста в исходном PDF; перенос слова с дефисом и лигатуры могут препятствовать совпадению.
-
-Download сохраняет исходные байты текущего документа, включая файл, выбранный через Open PDF. Viewer не редактирует PDF. Имя берётся из URL или локального файла и очищается от управляющих символов и разделителей пути.
-
-Состояние страницы, масштаба, поиска и локально открытого файла принадлежит просмотрщику. Изменение Source/source пересоздаёт iframe и сбрасывает его. Dark в Blazor задаётся явно; Flutter берёт Brightness из Theme. Смена темы также пересоздаёт iframe: локальный файл нужно открыть снова. Перестроение родителя с теми же параметрами сохраняет iframe. Callbacks загрузки/страницы и привязка текущей страницы пока отсутствуют.
-
-### Ограничения и ошибки
-До 20 MiB и 200 страниц. Файл большей длины отклоняется; поток загрузки URL ограничен тем же размером. Отрисовывается одна страница, растровый буфер ограничен 16 миллионами пикселей и стороной 8192; при большом zoom качество может уменьшаться. Повреждённый файл, ошибка доступа/CORS и пароль показывают сообщения; после ошибки можно открыть другой PDF. Пароль, формы, аннотации, подписи, ссылки внутри PDF, печать, OCR, миниатюры и встроенная локализация пока не реализованы. Содержимое PDF не исполняет JavaScript и не запускает действия/ссылки.
-
-Flutter использует HTML iframe и сейчас поддерживает этот компонент только на Web; на native показывается явное сообщение, а не имитация просмотрщика. Нативная поддержка — отдельный будущий этап. Полная screen-reader сертификация не проводилась. Это ограниченный рабочий набор функций, не полная совместимость с Telerik.''')
-
-add('NgMap','Интерактивная карта','Показывает географические точки, линии и области. Подходит для объектов на карте и выбора места; маршрут и адрес по координатам рассчитывает приложение.',
-'''<NgMap Label="Объекты" Value="map" ClusterMarkers="true" ClusterRadius="60" @bind-View="view" @bind-SelectedId="selected"
-    OnMapClick="Clicked" TileUrlTemplate="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
-    Attribution="© OpenStreetMap contributors" AttributionUrl="https://www.openstreetmap.org/copyright"/>
-<p>Выбрано: @selected; последняя точка: @last</p>
-@code {
- private string? selected; private string last="";
- private NgMapView view=new(50.4501,30.5234,13);
- private NgMapModel map=new(
-   [new("office","Офис",new(50.4501,30.5234)),new("park","Парк",new(50.4466,30.5410))],
-   [new("line","Линия",[new(50.4501,30.5234),new(50.4466,30.5410)])]);
- private void Clicked(NgMapPoint p){last=$"{p.Latitude:F4}, {p.Longitude:F4}";}
-}''',
-"""String? selected;
-String last = '';
-NgMapView view = NgMapView(latitude: 50.4501, longitude: 30.5234, zoom: 13);
-final map = NgMapModel(markers: [
-  NgMapMarker('office', 'Офис', NgMapPoint(50.4501, 30.5234)),
-  NgMapMarker('park', 'Парк', NgMapPoint(50.4466, 30.5410)),
-], paths: [NgMapPath('line', 'Линия', [
-  NgMapPoint(50.4501, 30.5234), NgMapPoint(50.4466, 30.5410),
-])]);
-Widget build(BuildContext context) => NgMap(label: 'Объекты', value: map,
-  view: view, selectedId: selected, clusterMarkers: true, clusterRadius: 60,
-  onViewChanged: (v) => setState(() => view = v),
-  onSelectedIdChanged: (id) => setState(() => selected = id),
-  onMapClick: (p) => setState(() => last = '${p.latitude}, ${p.longitude}'),
-  tileUrlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-  attribution: '© OpenStreetMap contributors',
-  attributionUrl: 'https://www.openstreetmap.org/copyright');""",
-'''### Подключение и источник карты
-
-Blazor требует интерактивного render mode и static web assets. При UseStaticFiles обеспечьте MIME .mjs = text/javascript для модуля кластеризации (пример настройки в Program.cs галереи). Общий движок Leaflet 1.9.4 поставляется локально в _content/NextgenComponents.Blazor/map-viewer/ и assets пакета Flutter; CDN и script-теги в приложении не нужны. Flutter: реализован Web, native показывает явное сообщение о неподдерживаемой платформе. Мобильные приложения будут проверяться отдельно.
-
-TileUrlTemplate/tileUrlTemplate — один шаблон растровых XYZ-тайлов с обязательными {z}, {x}, {y}; пример выше использует публичный OpenStreetMap. Поддерживаются относительный URL (от base URI приложения) и HTTP(S). Пустой/null источник показывает сетку и ваши объекты без географической подложки. Attribution/attribution — обязательная непустая подпись для источника тайлов. AttributionUrl/attributionUrl добавляет ссылку; HTML в подписи и тексте объектов не исполняется. Подпись видна в правом нижнем углу карты. Провайдер должен поддерживать zoom 0–19 и разрешать использование тайлов вашим приложением. Headers, bearer-токены, TMS и vector tiles пока не поддерживаются.
-
-Для OpenStreetMap сохраняйте видимую атрибуцию, стандартный Referrer и браузерный cache; не делайте предзагрузку больших областей или offline-скачивание. Сервис best-effort, без SLA: для рабочей нагрузки выберите подходящего провайдера и ознакомьтесь с его условиями. Движок не отправляет подписи ваших объектов провайдеру, но тот получает IP, Referrer и номера просматриваемых тайлов. Политика: https://operations.osmfoundation.org/policies/tiles/ . При CSP нужны локальные frame/script/style assets, inline styles Leaflet и img-src для выбранного источника тайлов; настройте политику в host-приложении.
-
-### Модель данных
-
-NgMapPoint(latitude, longitude) принимает конечные числа: широта ±85.05112878 (Web Mercator), долгота ±180. Сначала широта, затем долгота. NgMapMarker(id, text, position) — точка с подписью и popup. NgMapPath(id, text, points, closed) — прямая ломаная (2+ точки) либо полигон (closed=true, 3+ точки); последнее соединение полигона добавляется автоматически. Это географические линии, а не автомобильный маршрут. Пересечение линии даты и отверстия/мультиполигоны не поддерживаются.
-
-NgMapModel(markers, paths) копирует коллекции и предоставляет их только для чтения. ID уникален среди всех маркеров и линий: 1–64 ASCII буквы/цифры, '-' или '_'. Подпись — 1–200 символов, не только пробелы. Лимиты: 500 маркеров, 100 линий/полигонов, 5000 точек суммарно в линиях. Конструкторы отклоняют нарушения через ArgumentException/ArgumentError. Для обновления замените Value/value новым NgMapModel; не меняйте исходный список на месте. Данные не сохраняются и не загружаются автоматически.
-
-### Навигация и события
-
-View/view задаёт центр и целый zoom 0–19; начальное значение (0,0,2). Drag перемещает карту; колесо, двойной щелчок и +/− меняют масштаб; сфокусированная карта принимает стрелки и +/−. Fit data вписывает все объекты с отступом и ограничением zoom ≤14; при пустой модели кнопка отключена. Изменение данных само по себе не запускает Fit data. Центр ограничивается границами мира.
-
-ViewChanged/onViewChanged вызывается после перемещения, масштабирования, Fit data и программной смены вида. Обновляйте view в родителе, как в примере. SelectedId/selectedId — один ID или null; SelectedIdChanged/onSelectedIdChanged сообщает выбор маркера/линии либо null после Clear selection. Неизвестный ID отображается как отсутствие выбора, родительская переменная при этом автоматически не исправляется. Храните значение события у родителя, чтобы последующие обновления не вернули предыдущий выбор. Кнопки списка Objects доступны с клавиатуры, открывают popup и показывают выбранный объект. Маркеры и линии также выбираются прямо на карте.
-
-OnMapClick/onMapClick сообщает NgMapPoint для свободной области карты; щелчок по объекту не считается щелчком по фону. Для добавления маркера создайте новый NgMapModel из старых маркеров плюс новый NgMapMarker с уникальным ID и передайте его в Value/value. В галереях есть полный пример Add marker on map click. Callback не является геокодированием и не возвращает адрес.
-
-Height/height: 400–1200 px, по умолчанию 520. При ширине до 540 px список объектов перемещается под карту и прокручивается горизонтально. Label/label задаёт заголовок и title iframe. Blazor Dark задаётся явно; Flutter берёт тему из Theme. Смена темы и модели сохраняет iframe и текущий вид, если View/view не изменился; подложка провайдера остаётся исходной (не инвертируется).
-
-### Кластеризация маркеров (0.9.1)
-
-ClusterMarkers/clusterMarkers (по умолчанию false) объединяет близкие маркеры в круг с их количеством. ClusterRadius/clusterRadius — целое число от 20 до 120 CSS px, по умолчанию 60; проверяется даже при выключенной кластеризации. Это расстояние на текущем масштабе, а не метры. Маркеры сортируются по ID и группируются вокруг первой точки группы; длинные цепочки соседних точек не склеиваются в одну бесконечную группу. Изменение порядка исходной коллекции и перемещение карты не меняют состав групп; изменение zoom пересчитывает его. Точки через линию даты не объединяются.
-
-Нажатие на группу приближает её область минимум на один уровень, максимум до zoom 19. Если координаты совпадают или достигнут zoom 19, открывается прокручиваемый список конкретных объектов. Нажатие на имя передаёт обычный SelectedIdChanged/onSelectedIdChanged, раскрывает индивидуальный маркер и popup. Группа сама не имеет публичного ID и не вызывает событие выбора объекта или щелчка по фону. Выбор через Objects работает так же. Выбранный маркер исключается из кластеров и остаётся отдельным; после Clear selection снова включается в группу. Следовательно, число на группе не включает выбранный маркер, а общий счётчик внизу всегда показывает все исходные маркеры.
-
-Группы доступны по Tab и Enter, список внутри popup — обычные кнопки. Изменение данных и включение/выключение кластеризации сохраняют вид карты; открытый popup при перегруппировке может закрыться. Тема не сбрасывает группы. Пути и полигоны не кластеризуются. Лимит модели остаётся 500 маркеров; это не серверная агрегация и не обещание работы с миллионами точек. В галереях Dense markers показывает 60 близких объектов, Same location — три офиса в одной точке без внешних тайлов.
-
-### Состояния и ограничения
-
-No objects — пустая модель; No basemap configured — нет источника тайлов. Loading tiles, Tiles loaded и Some map tiles unavailable показывают загрузку текущего набора тайлов. При отказе сети маркеры, линии и выбор продолжают работать; повторная навигация или смена источника запрашивает новые тайлы. Количество объектов всегда отображается отдельно. Отсутствие подложки не означает отсутствие данных.
-
-Одна растровая подложка, точки, линии и простые полигоны — текущий объём. Геокодирование, маршрутизация, GeoJSON import, bubble layers, редактирование геометрии, экспорт и offline-режим пока не реализованы. Для больших данных сначала фильтруйте объекты по области/задаче в приложении. Полный API Telerik не воспроизводится.''')
-
-add('NgPromptBox','Поле запроса','Многострочное поле для запроса или сообщения с кнопками Send/Cancel. Подходит для собственного чата, AI-формы или поиска с асинхронной обработкой.',
-'''<NgPromptBox Label="Запрос" @bind-Value="prompt" Busy="busy" OnSubmit="Submit" OnCancel="Cancel"/>
-<p>@result</p>
-@code {
- private string prompt="",result=""; private bool busy; private int revision;
- private async Task Submit(string text) {
-  var request=++revision; busy=true;
-  await Task.Delay(700); // Локальный пример; замените обработчиком приложения.
-  if(request!=revision)return;
-  result=$"Получен запрос: {text}"; busy=false;
- }
- private void Cancel(){revision++;busy=false;result="Отменено";}
-}''',
-"""String prompt = '', result = '';
-bool busy = false;
-int revision = 0;
-Future<void> submit(String text) async {
-  final request = ++revision;
-  setState(() => busy = true);
-  await Future<void>.delayed(const Duration(milliseconds: 700));
-  if (!mounted || request != revision) return;
-  setState(() { result = 'Получен запрос: $text'; busy = false; });
-}
-Widget build(BuildContext context) => NgPromptBox(label: 'Запрос', value: prompt,
-  onChanged: (v) => setState(() => prompt = v), busy: busy,
-  onSubmit: submit,
-  onCancel: () => setState(() { revision++; busy = false; result = 'Отменено'; }));""",
-'''Value/value — текст, ValueChanged/onChanged — изменение при вводе. Сохраняйте новое значение у родителя, как в примере. Для внешней замены передайте другое значение. Поле имеет локальный черновик; повторная передача того же внешнего значения не сбрасывает его. Label/label задаёт доступное имя, Placeholder/placeholder — подсказку внутри пустого поля.
-
-MaxLength/maxLength — 1–8000 UTF-16 code units, по умолчанию 8000. Emoji может занимать две единицы; обе платформы используют одинаковую границу. Слишком длинный внешний Value/value отклоняется, ввод ограничивается в поле. Текст не превращается в HTML. Enter добавляет новую строку; Tab переводит фокус на кнопку, Enter/Space нажимает её. Автоматической отправки по Enter нет. Blazor поле начинается с трёх строк и меняется по высоте мышью; Flutter — 3–6 строк со внутренней прокруткой.
-
-OnSubmit/onSubmit получает текст с обрезанными пробелами по краям. Пустой/пробельный запрос и отсутствие обработчика отключают Send. Компонент не очищает поле после отправки. Busy/busy блокирует редактирование и заменяет Send на Cancel; OnCancel/onCancel должен отменять работу приложения. ReadOnly/readOnly запрещает ввод и отправку; Cancel остаётся доступным для уже выполняемой работы. Без обработчика отмены Cancel отключён.
-
-PromptBox сам не выполняет HTTP-запрос, не знает состояния генерации и не гарантирует отмену провайдера. Родитель должен сразу установить Busy/busy перед первым await, обработать ошибку и убрать busy в finally. Пример показывает игнорирование запоздалого результата по номеру запроса; транспортную отмену нужно реализовать в адаптере. Для готового управления историей, отменой и ошибками используйте NgAIPrompt.
-
-Текущий объём — многострочный текст, счётчик, отправка/отмена, readonly и внешнее обновление. Вложения, speech-to-text, режим Auto/SingleLine, пользовательские adornments и streaming пока не реализованы. Проверен Web; мобильные платформы отдельно.''')
-
-add('NgAIPrompt','Работа с AI-запросами','Интерфейс запроса и ответа с подсказками, историей, отменой, повтором и оценкой. Модель AI не встроена: генерацию выполняет переданный обработчик приложения.',
-'''<NgAIPrompt Label="Помощник" @bind-Value="prompt" Generate="Generate"
-    Suggestions="suggestions" OnCompleted="Completed" OnFeedback="Feedback"/>
-<p>@status</p>
-@code {
- private string prompt="Составь план встречи",status="";
- private string[] suggestions=["Составь план встречи","Предложи следующие шаги"];
- private async Task<string> Generate(string text,CancellationToken cancellation) {
-  await Task.Delay(600,cancellation);
-  return $"Локальный пример ответа на: {text}"; // Здесь подключите сервис приложения.
- }
- private void Completed(NgPromptResponse response){status=$"Ответ {response.Id} готов";}
- private void Feedback(NgPromptFeedback feedback){status=$"Оценка ответа {feedback.Response.Id}: {feedback.Helpful}";}
-}''',
-"""String prompt = 'Составь план встречи', status = '';
-Future<String> generate(String text, NgPromptCancellation cancellation) async {
-  await Future<void>.delayed(const Duration(milliseconds: 600));
-  cancellation.throwIfCancelled();
-  return 'Локальный пример ответа на: $text'; // Замените сервисом приложения.
-}
-Widget build(BuildContext context) => NgAIPrompt(label: 'Помощник', value: prompt,
-  onChanged: (v) => setState(() => prompt = v), generate: generate,
-  suggestions: const ['Составь план встречи', 'Предложи следующие шаги'],
-  onCompleted: (r) => setState(() => status = 'Ответ ${r.id} готов'),
-  onFeedback: (f) => setState(() => status = 'Оценка ответа ${f.response.id}: ${f.helpful}'));""",
-'''### Подключение генерации
-
-Blazor Generate — Func<string, CancellationToken, Task<string>>. Flutter generate — NgPromptGenerator, то есть Future<String> Function(String, NgPromptCancellation). Обработчик получает зафиксированный, обрезанный по краям запрос и возвращает готовый текст ответа. Без обработчика поле отключено и показано Connect a generation handler. Примеры в этом руководстве и галерея используют локальную задержку и предсказуемый ответ, а не настоящую модель AI.
-
-Подключите обработчик к API своего приложения: он отвечает за аутентификацию, выбор модели, лимиты запросов, таймаут и вызов провайдера. Не помещайте секретный ключ провайдера в Flutter Web или Blazor WebAssembly; вызов с ключом выполняйте на своём сервере. Компонент сам ничего не отправляет в сеть. Для Blazor передавайте полученный CancellationToken в HTTP/AI SDK. Для Flutter подключайте cancellation.whenCancelled к отмене HTTP-клиента; cancellation.isCancelled и throwIfCancelled() позволяют проверить отмену перед дальнейшими действиями. Простая проверка после await не останавливает сетевой запрос — она лишь прекращает обработку его результата.
-
-### Ввод и жизненный цикл
-
-Value/value и ValueChanged/onChanged управляют черновиком, как у NgPromptBox. Лимит запроса — 8000 UTF-16 code units. Suggestions/suggestions — до восьми непустых подсказок по 200 единиц каждая. Подсказка заполняет поле, но не отправляет запрос автоматически. Отправка происходит кнопкой Send; Enter в поле создаёт новую строку. Повторный Send блокируется до окончания работы. Во время запроса нельзя менять текст через поле или подсказки, но родитель может передать новый Value/value; это изменит следующий черновик, а не уже отправленный запрос.
-
-Cancel сразу возвращает интерфейс в состояние готовности и сигнализирует провайдеру отмену. После этого можно отправить новый запрос. Если старый обработчик проигнорировал отмену и позднее завершился, его ответ или ошибка не попадут в историю и не заменят новый результат. При удалении компонента также отменяется текущая работа. ReadOnly/readOnly или удаление Generate/generate во время запроса отменяет его; история остаётся доступной для просмотра и копирования. Отмена интерфейса не гарантирует прекращения расходов/работы внешнего сервиса — транспортный адаптер должен использовать сигнал отмены.
-
-Ошибка провайдера показывает Generation failed. Try again.; детали исключения не выводятся. Логируйте их в обработчике приложения. Retry request повторяет последний неудачный запрос, даже если текущий черновик уже изменился. Пустой ответ и ответ длиннее 32000 UTF-16 единиц также считаются ошибкой. Предыдущая история при ошибке сохраняется. Таймаут задаётся приложением; без него зависший обработчик остаётся активным до Cancel.
-
-### Ответ, история и события
-
-Ответ отображается как обычный выбираемый текст: HTML/Markdown не исполняются, ссылки не открываются автоматически. Copy response копирует выбранный ответ; при недоступном clipboard показывается подсказка выделить текст вручную. История хранит до 20 последних успешных ответов; старейший удаляется автоматически. Нажатие на запись показывает соответствующий ответ. Regenerate повторяет запрос выбранной записи и создаёт новую запись с новым ID. Номера уникальны только в пределах экземпляра компонента, не являются серверными ключами и не сбрасываются при Clear history.
-
-OnCompleted/onCompleted вызывается только для принятого успешного ответа. NgPromptResponse содержит Id/id (int), Prompt/prompt и Text/text (строки). Отменённые, ошибочные и запоздалые ответы не вызывают событие. Сохранение и отправка данных на сервер остаются у приложения. Обработчик события не является частью вызова AI; ошибки ваших callbacks обрабатывайте в приложении.
-
-Helpful / Not helpful переключают оценку выбранного ответа. Повторное нажатие активной оценки очищает её. OnFeedback/onFeedback получает NgPromptFeedback: Response/response и Helpful/helpful (true, false или null). Оценка локальная, без автоматической отправки провайдеру; сохраняйте её в своём callback при необходимости. ReadOnly запрещает отправку, повтор, очистку и оценку, но сохраняет выбор старого ответа и копирование.
-
-Clear history удаляет ответы и оценки; в UI кнопка отключена во время генерации. Черновик остаётся. История и оценки живут только в памяти компонента и исчезают при его удалении/перезагрузке страницы. Для сохранения используйте OnCompleted/onCompleted и своё хранилище; загрузка внешней истории пока не поддерживается.
-
-### Модель сессии и границы
-
-NgPromptSession доступна для собственной оболочки: RunAsync/run, Cancel/cancel, Select/select, Clear/clear, Dispose/dispose; Responses/responses — неизменяемая коллекция, Selected/selected, IsBusy/isBusy, Error/error, Status/status — состояние. C#: Changed; Flutter: ChangeNotifier. Используйте сессию в UI-контексте, освобождайте её при завершении. Прямой Clear/clear сессии отменяет работу и не допускает позднего восстановления истории. NgAIPrompt сам создаёт и освобождает свою сессию.
-
-Blazor нужен интерактивный render mode; Flutter использует текущую тему. При ширине менее 760 px ввод, история и ответ располагаются вертикально. Веб-буфер обмена обычно требует HTTPS либо localhost. Статус операции объявляется через live region; полная сертификация screen reader не заявляется.
-
-В этой версии нет streaming, tool calling, автодействий по ответу модели, команд/кастомных вкладок, вложений, speech-to-text, сохранения истории между сессиями или встроенной интеграции с конкретным AI SDK. PromptBox и AIPrompt покрывают ограниченный рабочий набор возможностей Telerik, без API-совместимости. Проверен Web в Chrome, native mobile остаётся отдельным этапом.''')
+"""Reviewed English component guidance and compiling examples."""
+D = {'NgButton': {'title': 'Button',
+              'use': 'Trigger an application action or submit a form.',
+              'blazor': '<NgButton Primary OnClick="()=>count++">Clicked @count times</NgButton>\n'
+                        '@code { private int count; }',
+              'dart': 'int count = 0;\n'
+                      'Widget build(BuildContext context) => NgButton(primary: true,\n'
+                      "  onPressed: () => setState(() => count++), child: Text('Clicked $count times'));",
+              'notes': 'Use OnClick/onPressed for application actions. In Blazor Type="submit" submits the '
+                       'enclosing form; the default is button. In Flutter a null onPressed disables the '
+                       'button. Disabled actions must also be guarded by your application when starting '
+                       'asynchronous work. Primary uses the shared theme accent. Buttons support Tab and '
+                       'Enter/Space; give icon-only content an accessible name.'},
+ 'NgTextBox': {'title': 'Single-line text',
+               'use': 'Edit a string with a visible label and form validation.',
+               'blazor': '<NgTextBox Label="Description" @bind-Value="text"/>\n'
+                         '<p>@text</p>\n'
+                         '@code { private string? text="Initial text"; }',
+               'dart': "final text = TextEditingController(text: 'Initial text');\n"
+                       '@override void dispose() { text.dispose(); super.dispose(); }\n'
+                       "Widget build(BuildContext context) => NgTextBox(label: 'Description',\n"
+                       "  controller: text, validator: (v) => v == null || v.trim().isEmpty ? 'Enter text' : "
+                       'null);',
+               'notes': 'Blazor uses InputBase<string?>: prefer @bind-Value, which supplies Value, '
+                        'ValueChanged and ValueExpression. With manual binding, supply ValueExpression even '
+                        'outside a form. Flutter initialValue is a starting value, not a controlled value: '
+                        'use TextEditingController for programmatic changes, do not combine it with '
+                        'initialValue, and dispose it in its owner. In a Flutter form validator returns null '
+                        'for valid input or an error string. Keep drafts separate from saved records. '
+                        'TextArea supports rows and multiline input; limits and required rules belong to the '
+                        'field/form configuration. A validation error must block saving the entire form.'},
+ 'NgTextArea': {'title': 'Multiline text',
+                'use': 'Edit a string with a visible label and form validation.',
+                'blazor': '<NgTextArea Label="Description" @bind-Value="text" Rows="4" MaxLength="500"/>\n'
+                          '<p>@text</p>\n'
+                          '@code { private string? text="Initial text"; }',
+                'dart': "final text = TextEditingController(text: 'Initial text');\n"
+                        '@override void dispose() { text.dispose(); super.dispose(); }\n'
+                        "Widget build(BuildContext context) => NgTextArea(label: 'Description',\n"
+                        "  controller: text, validator: (v) => v == null || v.trim().isEmpty ? 'Enter text' "
+                        ': null, rows: 4, maxLength: 500);',
+                'notes': 'Blazor uses InputBase<string?>: prefer @bind-Value, which supplies Value, '
+                         'ValueChanged and ValueExpression. With manual binding, supply ValueExpression even '
+                         'outside a form. Flutter initialValue is a starting value, not a controlled value: '
+                         'use TextEditingController for programmatic changes, do not combine it with '
+                         'initialValue, and dispose it in its owner. In a Flutter form validator returns '
+                         'null for valid input or an error string. Keep drafts separate from saved records. '
+                         'TextArea supports rows and multiline input; limits and required rules belong to '
+                         'the field/form configuration. A validation error must block saving the entire '
+                         'form.'},
+ 'NgNumericTextBox': {'title': 'Numeric input',
+                      'use': 'Edit a nullable number with range validation.',
+                      'blazor': '<NgNumericTextBox Label="Quantity" Min="0" Max="100" Step="1" '
+                                '@bind-Value="quantity"/>\n'
+                                '@code { private decimal? quantity=5; }',
+                      'dart': 'double? quantity = 5;\n'
+                              "Widget build(BuildContext context) => NgNumericTextBox(label: 'Quantity',\n"
+                              '  value: quantity, min: 0, max: 100, required: true,\n'
+                              '  onChanged: (v) => setState(() => quantity = v));',
+                      'notes': 'Min/Max are inclusive. Invalid text must not silently submit the last valid '
+                               'number: submit through NgForm so the displayed draft is validated. Empty '
+                               'optional input is null. Blazor uses its declared numeric type and InputBase '
+                               'expression binding; Flutter uses double?. Keep storage precision and '
+                               'business rounding in the application. Do not treat a numeric input as a '
+                               'currency or timezone service.'},
+ 'NgCheckBox': {'title': 'Checkbox',
+                'use': 'Edit a Boolean option.',
+                'blazor': '<NgCheckBox Label="Notifications" @bind-Value="enabled"/>\n'
+                          '@code { private bool enabled=true; }',
+                'dart': 'bool enabled = true;\n'
+                        "Widget build(BuildContext context) => NgCheckBox(label: 'Notifications',\n"
+                        '  value: enabled, onChanged: (v) => setState(() => enabled = v));',
+                'notes': 'The parent owns Value/value. Store ValueChanged/onChanged and pass the updated '
+                         'value back; Flutter needs setState or your state manager. Disabled prevents '
+                         'interaction. The label provides the accessible name. Keyboard focus and Space '
+                         'toggle the control. These components represent true/false, not a tri-state value; '
+                         'validate application requirements separately.'},
+ 'NgSwitch': {'title': 'Switch',
+              'use': 'Edit a Boolean option.',
+              'blazor': '<NgSwitch Label="Notifications" @bind-Value="enabled"/>\n'
+                        '@code { private bool enabled=true; }',
+              'dart': 'bool enabled = true;\n'
+                      "Widget build(BuildContext context) => NgSwitch(label: 'Notifications',\n"
+                      '  value: enabled, onChanged: (v) => setState(() => enabled = v));',
+              'notes': 'The parent owns Value/value. Store ValueChanged/onChanged and pass the updated value '
+                       'back; Flutter needs setState or your state manager. Disabled prevents interaction. '
+                       'The label provides the accessible name. Keyboard focus and Space toggle the control. '
+                       'These components represent true/false, not a tri-state value; validate application '
+                       'requirements separately.'},
+ 'NgDropDownList': {'title': 'Dropdown list',
+                    'use': 'Select one NgOption key from a local collection.',
+                    'blazor': '<NgDropDownList Label="Team" Items="options" @bind-Value="team"/>\n'
+                              '@code { private string team="design"; private NgOption[] '
+                              'options=[new("design","Design"),new("dev","Engineering"),new("locked","Unavailable",true)]; '
+                              '}',
+                    'dart': "String? team = 'design';\n"
+                            "Widget build(BuildContext context) => NgDropDownList(label: 'Team', value: "
+                            'team,\n'
+                            "  items: const [NgOption('design','Design'), NgOption('dev','Engineering'),\n"
+                            "    NgOption('locked','Unavailable', disabled: true)],\n"
+                            '  onChanged: (v) => setState(() => team = v));',
+                    'notes': 'NgOption contains value, label and disabled. Keys must be unique; selection '
+                             'stores the key, not the displayed label. Disabled entries cannot be selected. '
+                             'Replace the items collection when it changes and clear an obsolete selected '
+                             'key in the parent. Blazor binding requires ValueExpression for InputBase-based '
+                             'fields; use @bind-Value. Flutter initialValue initializes form state; reset '
+                             'using the supported controller/key pattern. Use form validation for a required '
+                             'choice. Large datasets and remote loading are outside this implementation.'},
+ 'NgRadioGroup': {'title': 'Radio group',
+                  'use': 'Select one NgOption key from a local collection.',
+                  'blazor': '<NgRadioGroup Label="Team" Items="options" @bind-Value="team"/>\n'
+                            '@code { private string team="design"; private NgOption[] '
+                            'options=[new("design","Design"),new("dev","Engineering"),new("locked","Unavailable",true)]; '
+                            '}',
+                  'dart': "String? team = 'design';\n"
+                          "Widget build(BuildContext context) => NgRadioGroup(label: 'Team', value: team,\n"
+                          "  items: const [NgOption('design','Design'), NgOption('dev','Engineering'),\n"
+                          "    NgOption('locked','Unavailable', disabled: true)],\n"
+                          '  onChanged: (v) => setState(() => team = v));',
+                  'notes': 'NgOption contains value, label and disabled. Keys must be unique; selection '
+                           'stores the key, not the displayed label. Disabled entries cannot be selected. '
+                           'Replace the items collection when it changes and clear an obsolete selected key '
+                           'in the parent. Blazor binding requires ValueExpression for InputBase-based '
+                           'fields; use @bind-Value. Flutter initialValue initializes form state; reset '
+                           'using the supported controller/key pattern. Use form validation for a required '
+                           'choice. Large datasets and remote loading are outside this implementation.'},
+ 'NgComboBox': {'title': 'Searchable selection',
+                'use': 'Select one NgOption key from a local collection.',
+                'blazor': '<NgComboBox Label="Team" Items="options" @bind-Value="team"/>\n'
+                          '@code { private string? team="design"; private NgOption[] '
+                          'options=[new("design","Design"),new("dev","Engineering"),new("locked","Unavailable",true)]; '
+                          '}',
+                'dart': "String? team = 'design';\n"
+                        "Widget build(BuildContext context) => NgComboBox(label: 'Team', value: team,\n"
+                        "  items: const [NgOption('design','Design'), NgOption('dev','Engineering'),\n"
+                        "    NgOption('locked','Unavailable', disabled: true)],\n"
+                        '  onChanged: (v) => setState(() => team = v));',
+                'notes': 'NgOption contains value, label and disabled. Keys must be unique; selection stores '
+                         'the key, not the displayed label. Disabled entries cannot be selected. Replace the '
+                         'items collection when it changes and clear an obsolete selected key in the parent. '
+                         'Blazor binding requires ValueExpression for InputBase-based fields; use '
+                         '@bind-Value. Flutter initialValue initializes form state; reset using the '
+                         'supported controller/key pattern. ComboBox filters local options; use AutoComplete '
+                         'when arbitrary text is allowed. There is no remote loading or virtualization.'},
+ 'NgAutoComplete': {'title': 'Text suggestions',
+                    'use': 'Enter free text with suggestions from a local string list.',
+                    'blazor': '<NgAutoComplete Label="City" Items="cities" @bind-Value="city"/>\n'
+                              '@code { private string? city; private string[] '
+                              'cities=["Kyiv","Lviv","Odesa"]; }',
+                    'dart': "String city = '';\n"
+                            "Widget build(BuildContext context) => NgAutoComplete(label: 'City',\n"
+                            "  items: const ['Kyiv','Lviv','Odesa'], initialValue: city,\n"
+                            '  onChanged: (v) => city = v);',
+                    'notes': 'Text outside the suggestions is allowed. Use ComboBox when the value must be '
+                             'an existing key. Flutter initialValue sets the starting text; recreate the '
+                             'widget with a new Key for a complete external reset. Searching is local; the '
+                             'application owns server requests, debounce and cancellation. Store callbacks '
+                             'before submitting the draft.'},
+ 'NgMultiSelect': {'title': 'Multiple selection',
+                   'use': 'Select several NgOption keys and remove selected items.',
+                   'blazor': '<NgMultiSelect Label="Services" Items="options" MaxSelected="2" '
+                             '@bind-Value="selected"/>\n'
+                             '@code { private string[] selected=[]; private NgOption[] '
+                             'options=[new("a","Delivery"),new("b","Assembly")]; }',
+                   'dart': 'List<String> selected = [];\n'
+                           "Widget build(BuildContext context) => NgMultiSelect(label: 'Services', value: "
+                           'selected,\n'
+                           "  items: const [NgOption('a','Delivery'),NgOption('b','Assembly')], maxSelected: "
+                           '2,\n'
+                           '  onChanged: (v) => setState(() => selected = v));',
+                   'notes': 'Value is a collection of keys, not labels. The callback supplies a new list; '
+                            'replace the parent collection. MaxSelected limits additions while removal '
+                            'remains available. Flutter required demands at least one selection; in Blazor '
+                            'define the rule in the form model. Search is local; large-list virtualization '
+                            'and remote loading are not implemented.'},
+ 'NgDateInput': {'title': 'Date input',
+                 'use': 'Select a calendar date or local wall-clock time without automatic timezone '
+                        'conversion.',
+                 'blazor': '<NgDateInput Label="Date" @bind-Value="value"/>\n'
+                           '@code { private DateOnly? value=new(2026,10,20); }',
+                 'dart': 'DateTime? value = DateTime(2026,10,20,9,30);\n'
+                         'Widget build(BuildContext context) => NgDateInput(value: value,\n'
+                         '  onChanged: (v) => setState(() => value = v));',
+                 'notes': 'Input format: yyyy-MM-dd. Min/Max include boundary values. Invalid dates such as '
+                          'April 31 and times such as 24:00 are rejected. DisabledDate returns true for '
+                          'unavailable days. Blazor uses DateOnly, TimeOnly or DateTime; Flutter uses '
+                          'DateTime or TimeOfDay. Normalize timezones at application boundaries. Empty '
+                          'optional input is null. Validate required values through the form; Flutter also '
+                          'exposes required. See [forms and dates](../forms-and-dates.md) for supported '
+                          'calendar interactions and parsing limitations.'},
+ 'NgDatePicker': {'title': 'Date picker',
+                  'use': 'Select a calendar date or local wall-clock time without automatic timezone '
+                         'conversion.',
+                  'blazor': '<NgDatePicker Label="Date" @bind-Value="value"/>\n'
+                            '@code { private DateOnly? value=new(2026,10,20); }',
+                  'dart': 'DateTime? value = DateTime(2026,10,20,9,30);\n'
+                          'Widget build(BuildContext context) => NgDatePicker(value: value,\n'
+                          '  onChanged: (v) => setState(() => value = v));',
+                  'notes': 'Input format: yyyy-MM-dd. Min/Max include boundary values. Invalid dates such as '
+                           'April 31 and times such as 24:00 are rejected. DisabledDate returns true for '
+                           'unavailable days. Blazor uses DateOnly, TimeOnly or DateTime; Flutter uses '
+                           'DateTime or TimeOfDay. Normalize timezones at application boundaries. Empty '
+                           'optional input is null. Validate required values through the form; Flutter also '
+                           'exposes required. See [forms and dates](../forms-and-dates.md) for supported '
+                           'calendar interactions and parsing limitations.'},
+ 'NgCalendar': {'title': 'Calendar',
+                'use': 'Select a calendar date or local wall-clock time without automatic timezone '
+                       'conversion.',
+                'blazor': '<NgCalendar @bind-Value="value"/>\n'
+                          '@code { private DateOnly? value=new(2026,10,20); }',
+                'dart': 'DateTime? value = DateTime(2026,10,20,9,30);\n'
+                        'Widget build(BuildContext context) => NgCalendar(value: value,\n'
+                        '  onChanged: (v) => setState(() => value = v));',
+                'notes': 'Input format: calendar selection. Min/Max include boundary values. Invalid dates '
+                         'such as April 31 and times such as 24:00 are rejected. DisabledDate returns true '
+                         'for unavailable days. Blazor uses DateOnly, TimeOnly or DateTime; Flutter uses '
+                         'DateTime or TimeOfDay. Normalize timezones at application boundaries. Empty '
+                         'optional input is null. Validate required values through the form or application '
+                         'rule; Calendar has no required parameter. See [forms and '
+                         'dates](../forms-and-dates.md) for supported calendar interactions and parsing '
+                         'limitations.'},
+ 'NgDateTimePicker': {'title': 'Date and time',
+                      'use': 'Select a calendar date or local wall-clock time without automatic timezone '
+                             'conversion.',
+                      'blazor': '<NgDateTimePicker Label="Date" @bind-Value="value"/>\n'
+                                '@code { private DateTime? value=new(2026,10,20,9,30,0); }',
+                      'dart': 'DateTime? value = DateTime(2026,10,20,9,30);\n'
+                              'Widget build(BuildContext context) => NgDateTimePicker(value: value,\n'
+                              '  onChanged: (v) => setState(() => value = v));',
+                      'notes': 'Input format: yyyy-MM-dd HH:mm. Min/Max include boundary values. Invalid '
+                               'dates such as April 31 and times such as 24:00 are rejected. Blazor uses '
+                               'DateOnly, TimeOnly or DateTime; Flutter uses DateTime or TimeOfDay. '
+                               'Normalize timezones at application boundaries. Empty optional input is null. '
+                               'Validate required values through the form; Flutter also exposes required. '
+                               'See [forms and dates](../forms-and-dates.md) for supported calendar '
+                               'interactions and parsing limitations.'},
+ 'NgTimePicker': {'title': 'Time picker',
+                  'use': 'Select a calendar date or local wall-clock time without automatic timezone '
+                         'conversion.',
+                  'blazor': '<NgTimePicker Label="Date" @bind-Value="value"/>\n'
+                            '@code { private TimeOnly? value=new(9,30); }',
+                  'dart': 'TimeOfDay? value = const TimeOfDay(hour: 9, minute: 30);\n'
+                          'Widget build(BuildContext context) => NgTimePicker(value: value,\n'
+                          '  onChanged: (v) => setState(() => value = v));',
+                  'notes': 'Input format: HH:mm. Min/Max include boundary values. Invalid dates such as '
+                           'April 31 and times such as 24:00 are rejected. Blazor uses DateOnly, TimeOnly or '
+                           'DateTime; Flutter uses DateTime or TimeOfDay. Normalize timezones at application '
+                           'boundaries. Empty optional input is null. Validate required values through the '
+                           'form; Flutter also exposes required. See [forms and '
+                           'dates](../forms-and-dates.md) for supported calendar interactions and parsing '
+                           'limitations.'},
+ 'NgDateRangePicker': {'title': 'Date range',
+                       'use': 'Edit a linked start and end date.',
+                       'blazor': '<NgDateRangePicker Label="Period" @bind-Value="range"/>\n'
+                                 '@code { private NgDateRange? range=new(new(2026,10,20),new(2026,10,23)); }',
+                       'dart': 'NgDateRange? range = NgDateRange(DateTime(2026,10,20), '
+                               'DateTime(2026,10,23));\n'
+                               "Widget build(BuildContext context) => NgDateRangePicker(label: 'Period', "
+                               'value: range,\n'
+                               '  required: true, onChanged: (v) => setState(() => range = v));',
+                       'notes': 'NgDateRange contains nullable Start/End (Blazor DateOnly, Flutter '
+                                'DateTime). An end before the start is invalid. Min/Max constrain both '
+                                'endpoints. Callbacks replace the whole range. A partially filled draft may '
+                                'exist; the form determines whether it is valid for submission. Do not save '
+                                'the last valid model while an invalid draft is visible: submit through '
+                                'NgForm. This is a calendar-date range, not a timezone-aware interval.'},
+ 'NgForm': {'title': 'Form validation',
+            'use': 'Validate fields and run a save handler only after successful validation.',
+            'blazor': '<NgForm Model="model" OnValidSubmit="Save">\n'
+                      '    <NgTextBox Label="Name" @bind-Value="model.Name"/>\n'
+                      '    <NgButton Type="submit" Primary>Save</NgButton>\n'
+                      '</NgForm>\n'
+                      '<p>@status</p>\n'
+                      '@code {\n'
+                      ' private Draft model=new(); private string? status;\n'
+                      ' private void Save()=>status=$"Saved: {model.Name}";\n'
+                      ' public class Draft { [System.ComponentModel.DataAnnotations.Required] public string? '
+                      'Name {get;set;} }\n'
+                      '}',
+            'dart': "String name = '';\n"
+                    "Widget build(BuildContext context) => NgForm(submitLabel: 'Save',\n"
+                    "  onValidSubmit: () => debugPrint('Saved: $name'),\n"
+                    "  child: NgTextBox(label: 'Name', onChanged: (v) => name = v,\n"
+                    "    validator: (v) => v == null || v.trim().isEmpty ? 'Enter a name' : null));",
+            'notes': 'Blazor Model uses DataAnnotations; OnValidSubmit receives a valid form and '
+                     'OnInvalidSubmit reports a failed submission. Keep one model instance while editing. '
+                     'Flutter uses a GlobalKey<FormState>, field validators/required rules and the supplied '
+                     'submit handler. Return null for valid field values, otherwise an error message. '
+                     'Network failures belong to the application save flow, not numeric/date parsing. Avoid '
+                     'nested forms. Maintain a separate saved record so Cancel can discard the draft.'},
+ 'NgTabs': {'title': 'Tabs',
+            'use': 'Switch between related content panels.',
+            'blazor': '<NgTabs Items="tabs" @bind-SelectedIndex="index"/>\n'
+                      '@code { private int index; private NgTab[] '
+                      'tabs=[new("Overview",b=>b.AddContent(0,"Summary")),new("Details",b=>b.AddContent(0,"Details"))]; '
+                      '}',
+            'dart': 'int index = 0;\n'
+                    'Widget build(BuildContext context) => NgTabs(selectedIndex: index,\n'
+                    "  items: const [NgTab('Overview',Text('Summary')),NgTab('Details',Text('Details'))],\n"
+                    '  onChanged: (v) => setState(() => index = v));',
+            'notes': 'NgTab contains label and content; disabled tabs cannot be activated. SelectedIndex is '
+                     'zero-based and controlled by the parent. Store selection callbacks. Blazor connects '
+                     'tab IDs, aria-controls and panel labels, and installs its keyboard behavior through '
+                     'the packaged JS module; interactive rendering and static assets are required. Flutter '
+                     'uses its platform focus behavior. Keep business state in the parent rather than '
+                     'depending on the lifetime of a panel widget.'},
+ 'NgDialog': {'title': 'Modal dialog',
+              'use': 'Ask for a focused decision in a modal surface.',
+              'blazor': '<NgButton OnClick="()=>open=true">Open</NgButton>\n'
+                        '<NgDialog Title="Confirmation" '
+                        '@bind-Open="open"><ChildContent>Continue?</ChildContent><Actions><NgButton '
+                        'OnClick="()=>open=false">Close</NgButton></Actions></NgDialog>\n'
+                        '@code { private bool open; }',
+              'dart': "Widget build(BuildContext context) => NgButton(child: const Text('Open'),\n"
+                      "  onPressed: () => NgDialog.show<void>(context, title: 'Confirmation',\n"
+                      "    child: const Text('Continue?'), actions: [TextButton(\n"
+                      "      onPressed: () => Navigator.of(context).pop(), child: const Text('Close'))]));",
+              'notes': 'Blazor Open/OpenChanged control visibility. Flutter uses the dialog helper shown in '
+                       'the example. Supply a meaningful title, content and explicit actions. Escape '
+                       'dismisses the dialog; opening should move focus into it and closing restore focus to '
+                       'the trigger. Save and Cancel have different application semantics: cancelling must '
+                       'not persist the draft. Nested modal workflows and a full screen-reader certification '
+                       'are outside this release.'},
+ 'NgTooltip': {'title': 'Tooltip',
+               'use': 'Explain a control with a short nonessential hint.',
+               'blazor': '<NgTooltip Text="Create a copy"><NgButton>Copy</NgButton></NgTooltip>',
+               'dart': "Widget build(BuildContext context) => NgTooltip(text: 'Create a copy',\n"
+                       "  child: NgButton(onPressed: () {}, child: const Text('Copy')));",
+               'notes': 'Supply Text/text and the child control. Tooltips are supplementary: the child still '
+                        'needs an accessible name and essential instructions must remain visible. Use '
+                        'pointer hover or keyboard focus to reveal the hint. Do not place form fields, '
+                        'actions or long documents inside a tooltip.'},
+ 'NgNotification': {'title': 'Notification',
+                    'use': 'Show an inline application status message.',
+                    'blazor': '<NgNotification @bind-Visible="visible" '
+                              'Tone="success">Saved</NgNotification>\n'
+                              '@code { private bool visible=true; }',
+                    'dart': 'bool visible = true;\n'
+                            'Widget build(BuildContext context) => visible ? NgNotification(message: '
+                            "'Saved',\n"
+                            '  onDismiss: () => setState(() => visible = false)) : const SizedBox.shrink();',
+                    'notes': 'Message is plain text. Tone controls semantic color; do not communicate '
+                             'meaning through color alone. Dismissal invokes the supplied callback; update '
+                             'Visible/visible in the parent. This is not a timed global toast queue. Keep '
+                             'critical validation errors next to their fields and avoid placing confidential '
+                             'exception details in user-facing text.'},
+ 'NgPager': {'title': 'Pagination',
+             'use': 'Navigate a known number of records.',
+             'blazor': '<NgPager Total="items.Length" @bind-Page="page" @bind-PageSize="size"/>\n'
+                       '@foreach(var item in items.Skip((page-1)*size).Take(size)){<p>@item</p>}\n'
+                       '@code { private int page=1,size=5; private string[] '
+                       'items=Enumerable.Range(1,18).Select(i=>$"Row {i}").ToArray(); }',
+             'dart': 'int page = 1, size = 5;\n'
+                     'Widget build(BuildContext context) => NgPager(total: 18, page: page, pageSize: size,\n'
+                     '  onPageChanged: (v) => setState(() => page = v),\n'
+                     '  onPageSizeChanged: (v) => setState(() { size = v; page = 1; }));',
+             'notes': 'Page is one-based; PageSize is positive, Total is the count before paging. Store '
+                      'PageChanged and PageSizeChanged, and reset/clamp the page when the filter or size '
+                      'changes. The pager does not fetch or slice data: the example performs Skip/Take or '
+                      'equivalent application slicing. Disable impossible navigation at the first/last page. '
+                      'Server paging must provide a consistent total and handle stale asynchronous '
+                      'responses.'},
+ 'NgBreadcrumb': {'title': 'Breadcrumb',
+                  'use': 'Navigate the ancestors of the current location.',
+                  'blazor': '<NgBreadcrumb Items="items" OnNavigate="id=>selected=id"/>\n'
+                            '<p>@selected</p>\n'
+                            '@code { private string? selected; private NgBreadcrumbItem[] '
+                            'items=[new("all","Projects"),new("design","Design")]; }',
+                  'dart': 'String? selected;\n'
+                          'Widget build(BuildContext context) => NgBreadcrumb(\n'
+                          '  items: const '
+                          "[NgBreadcrumbItem('all','Projects'),NgBreadcrumbItem('design','Design')],\n"
+                          '  onNavigate: (id) => setState(() => selected = id));',
+                  'notes': 'Each NgBreadcrumbItem has an ID and visible label. The final item represents the '
+                           'current page. OnNavigate/onNavigate reports the ancestor ID; route navigation '
+                           'belongs to the host application. Keep IDs stable and do not use labels as '
+                           'database keys.'},
+ 'NgDataGrid': {'title': 'Data grid',
+                'use': 'Display, sort, filter, select and page local records.',
+                'blazor': '<NgDataGrid TItem="Product" Items="rows" Columns="columns" RowId="r=>r.Id" '
+                          '@bind-SelectedIds="selected"/>\n'
+                          '@code { public record Product(string Id,string Name,int Count); private Product[] '
+                          'rows=[new("a","Desk",12),new("b","Chair",120)]; private HashSet<string> '
+                          'selected=[]; private NgDataColumn<Product>[] '
+                          'columns=[new("name","Name",r=>r.Name),new("count","Quantity",r=>r.Count)]; }',
+                'dart': "final rows = [(id: 'a', name: 'Desk', count: 12), (id: 'b', name: 'Chair', count: "
+                        '120)];\n'
+                        'Set<String> selected = {};\n'
+                        'Widget build(BuildContext context) => NgDataGrid<({String id, String name, int '
+                        'count})>(\n'
+                        '  items: rows, rowId: (r) => r.id, selectedIds: selected,\n'
+                        '  onSelectionChanged: (v) => setState(() => selected = v),\n'
+                        "  columns: [NgDataColumn('name','Name',(r) => r.name),\n"
+                        "    NgDataColumn('count','Quantity',(r) => r.count)]);",
+                'notes': 'NgDataColumn<T> supplies a stable key, title and Value/value accessor. Return '
+                         'typed values for sorting; Format/format changes display only. Template/cellBuilder '
+                         'customizes a cell. RowId must return a unique stable ID. Save selection callbacks '
+                         'and replace Items/items after edits so the grid recalculates. Toolbar and row '
+                         'actions allow the application to own editing and persistence. This local grid does '
+                         'not implement server data binding, virtualization, column grouping or Excel '
+                         'export; see [data workspace](../data-workspace.md).'},
+ 'NgTreeView': {'title': 'Tree view',
+                'use': 'Browse and select hierarchical records.',
+                'blazor': '<NgTreeView TItem="string" Items="nodes" Text="s=>s" @bind-ExpandedIds="expanded" '
+                          '@bind-SelectedId="selected"/>\n'
+                          '@code { private string? selected; private HashSet<string> expanded=["root"]; '
+                          'private NgTreeNode<string>[] '
+                          'nodes=[new("root","Projects",[new("a","Design"),new("b","Engineering")])]; }',
+                'dart': "Set<String> expanded = {'root'}; String? selected;\n"
+                        'Widget build(BuildContext context) => NgTreeView<String>(\n'
+                        "  items: const [NgTreeNode('root','Projects',children: "
+                        "[NgTreeNode('a','Design'),NgTreeNode('b','Engineering')])],\n"
+                        '  text: (s) => s,\n'
+                        '  expandedIds: expanded, selectedId: selected,\n'
+                        '  onExpandedChanged: (v) => setState(() => expanded = v),\n'
+                        '  onSelected: (v) => setState(() => selected = v));',
+                'notes': 'NgTreeNode<T> contains a stable unique ID, item, children and disabled flag. The '
+                         'graph must be acyclic. ExpandedIds and SelectedId are controlled: save callbacks '
+                         'and pass updated collections back. Replacing the tree should also remove obsolete '
+                         'IDs from parent selection/expansion. Disabled nodes cannot be selected. Lazy '
+                         'server loading, drag/drop and virtualization are not implemented.'},
+ 'NgTreeList': {'title': 'Tree list',
+                'use': 'Combine hierarchical rows with typed columns.',
+                'blazor': '<NgTreeList TItem="string" Items="nodes" Columns="columns" '
+                          '@bind-ExpandedIds="expanded" @bind-SelectedId="selected"/>\n'
+                          '@code { private string? selected; private HashSet<string> expanded=["root"]; '
+                          'private NgTreeNode<string>[] '
+                          'nodes=[new("root","Projects",[new("a","Design"),new("b","Engineering")])]; '
+                          'private NgDataColumn<string>[] columns=[new("name","Name",s=>s)]; }',
+                'dart': "Set<String> expanded = {'root'}; String? selected;\n"
+                        'Widget build(BuildContext context) => NgTreeList<String>(\n'
+                        "  items: const [NgTreeNode('root','Projects',children: "
+                        "[NgTreeNode('a','Design'),NgTreeNode('b','Engineering')])],\n"
+                        "  columns: [NgDataColumn('name','Name',(s) => s)],\n"
+                        '  expandedIds: expanded, selectedId: selected,\n'
+                        '  onExpandedChanged: (v) => setState(() => expanded = v),\n'
+                        '  onSelected: (v) => setState(() => selected = v));',
+                'notes': 'Use NgTreeNode<T> for hierarchy and NgDataColumn<T> for cells. IDs must be unique '
+                         'across the whole tree. Persist expanded/selected IDs through callbacks; replace '
+                         'collections after data changes. Column accessors return underlying values, while '
+                         'format/cell templates define presentation. Application code owns edits and '
+                         'persistence. See [data workspace](../data-workspace.md) for sorting/filtering '
+                         'scope and omitted server/virtualization features.'},
+ 'NgChart': {'title': 'Chart',
+             'use': 'Visualize local series as column, bar, line, area, pie or donut charts.',
+             'blazor': '<NgChart Title="Sales" Kind="NgChartKind.Line" Categories="categories" '
+                       'Series="series" OnPointSelected="p=>selected=p.Label"/>\n'
+                       '<p>@selected</p>\n'
+                       '@code { private string? selected; private string[] categories=["Mon","Tue","Wed"]; '
+                       'private NgChartSeries[] series=[new("Orders",[10,null,25])]; }',
+             'dart': 'String? selected;\n'
+                     "Widget build(BuildContext context) => NgChart(title: 'Sales', kind: NgChartKind.line,\n"
+                     "  categories: const ['Mon','Tue','Wed'], series: const "
+                     "[NgChartSeries('Orders',[10,null,25])],\n"
+                     '  onPointSelected: (p) => setState(() => selected = p.label));',
+             'notes': 'Categories define the shared domain; every series must have the same number of '
+                      'nullable numeric values. Null breaks a line instead of becoming zero. Point selection '
+                      'returns NgChartSelection with zero-based series/point indices, their names, the '
+                      'number and a ready-to-use label. The application chooses what to do with a point. '
+                      'Keep units explicit. See [analytics and scheduling](../analytics-and-schedule.md) for '
+                      'mode-specific constraints; advanced axes, export, remote aggregation and broad '
+                      'chart-type parity are not implemented.'},
+ 'NgLinearGauge': {'title': 'Linear gauge',
+                   'use': 'Display a value within a numeric range.',
+                   'blazor': '<NgLinearGauge Label="Load" Value="72" Min="0" Max="100" Unit="%"/>',
+                   'dart': "Widget build(BuildContext context) => const NgLinearGauge(label: 'Load',\n"
+                           "  value: 72, min: 0, max: 100, unit: '%');",
+                   'notes': 'Min must be less than Max and values must be finite. The gauge projects the '
+                            'configured value into the range; keep the original business value in the '
+                            'parent. Label and Unit explain the number without relying on color. This is a '
+                            'read-only display, not an input or a multi-scale gauge. Use the shared theme '
+                            'for light/dark contrast.'},
+ 'NgArcGauge': {'title': 'Arc gauge',
+                'use': 'Display a value within a numeric range.',
+                'blazor': '<NgArcGauge Label="Load" Value="72" Min="0" Max="100" Unit="%"/>',
+                'dart': "Widget build(BuildContext context) => const NgArcGauge(label: 'Load',\n"
+                        "  value: 72, min: 0, max: 100, unit: '%');",
+                'notes': 'Min must be less than Max and values must be finite. The gauge projects the '
+                         'configured value into the range; keep the original business value in the parent. '
+                         'Label and Unit explain the number without relying on color. This is a read-only '
+                         'display, not an input or a multi-scale gauge. Use the shared theme for light/dark '
+                         'contrast.'},
+ 'NgScheduler': {'title': 'Weekly scheduler',
+                 'use': 'Show a week of application events and request create/edit actions.',
+                 'blazor': '<NgScheduler @bind-Date="week" Items="events" '
+                           'OnCreate="day=>message=day.ToShortDateString()" '
+                           'OnEdit="item=>message=item.Title"/>\n'
+                           '<p>@message</p>\n'
+                           '@code { private DateTime week=new(2026,10,19); private string? message; private '
+                           'NgScheduleEvent[] '
+                           'events=[new("a","Meeting",new(2026,10,19,10,0,0),new(2026,10,19,11,0,0))]; }',
+                 'dart': 'DateTime week = DateTime(2026,10,19);\n'
+                         'Widget build(BuildContext context) => NgScheduler(date: week,\n'
+                         '  items: '
+                         "[NgScheduleEvent('a','Meeting',DateTime(2026,10,19,10),DateTime(2026,10,19,11))],\n"
+                         '  onDateChanged: (v) => setState(() => week = v),\n'
+                         "  onCreate: (day) => debugPrint('Add $day'),\n"
+                         '  onEdit: (item) => debugPrint(item.title));',
+                 'notes': 'NgScheduleEvent requires a unique ID, nonempty title and End > Start. Date '
+                          'chooses the displayed week. Store DateChanged/onDateChanged; OnCreate/onCreate '
+                          'identifies a day, while OnEdit/onEdit identifies an event. The application opens '
+                          'its editor and replaces the event collection after saving. Times are local '
+                          'wall-clock values; timezone conversion belongs to the host. Recurrence, '
+                          'drag/resize, resources and multiple calendar views are not implemented.'},
+ 'NgSpreadsheet': {'title': 'Spreadsheet',
+                   'use': 'Edit a small local worksheet with formulas and undo/redo.',
+                   'blazor': '<NgSpreadsheet @bind-Value="sheet"/>\n'
+                             '@code { private NgSheet sheet=new(8,5,new '
+                             'Dictionary<string,string>{{"A1","10"},{"B1","20"},{"C1","=SUM(A1:B1)"}}); }',
+                   'dart': 'NgSheet sheet = NgSheet(rows: 8, columns: 5, cells: '
+                           "{'A1':'10','B1':'20','C1':'=SUM(A1:B1)'});\n"
+                           'Widget build(BuildContext context) => NgSpreadsheet(value: sheet,\n'
+                           '  onChanged: (v) => setState(() => sheet = v));',
+                   'notes': 'Select a cell, edit Cell value or formula, then press Apply cell or Enter. '
+                            'Arrow keys move selection. NgSheet is immutable; save the entire new sheet from '
+                            'the callback. Undo/Redo keeps up to 50 operations; an independent parent Value '
+                            'replacement clears local history. ReadOnly disables edits. Paste cells accepts '
+                            'rectangular TSV from the selected address, preserves formula text literally and '
+                            'rejects an out-of-bounds paste as a whole. Limits: 1–100 rows, 1–26 columns, '
+                            '1,000 characters per cell. See [models and formulas](models.md) for '
+                            'operators/functions/errors. One sheet only: no XLSX/CSV files, formatting, '
+                            'merges, relative formula adjustment or multi-sheet workbook.'},
+ 'NgPivotGrid': {'title': 'Pivot grid',
+                 'use': 'Aggregate records by row and column dimensions.',
+                 'blazor': '<NgPivotGrid Items="records" RowField="Team" ColumnField="Quarter" '
+                           'Aggregate="NgAggregate.Average" OnCellSelected="p=>count=p.Records.Count"/>\n'
+                           '<p>Source records: @count</p>\n'
+                           '@code { private int count; private NgPivotRecord[] records=[new("a",new '
+                           'Dictionary<string,string>{{"Team","Design"},{"Quarter","Q1"}},100),new("b",new '
+                           'Dictionary<string,string>{{"Team","Design"},{"Quarter","Q1"}},200)]; }',
+                 'dart': 'int count = 0;\n'
+                         "Widget build(BuildContext context) => NgPivotGrid(rowField: 'Team', columnField: "
+                         "'Quarter',\n"
+                         '  aggregate: NgAggregate.average, items: [\n'
+                         "    NgPivotRecord('a', {'Team':'Design','Quarter':'Q1'},100),\n"
+                         "    NgPivotRecord('b', {'Team':'Design','Quarter':'Q1'},200)],\n"
+                         '  onCellSelected: (p) => setState(() => count = p.records.length));',
+                 'notes': 'NgPivotRecord contains a unique ID, string dimensions and one nullable numeric '
+                          'value. Dimensions sort by string keys; a missing key appears as (blank). '
+                          'Sum/Average/Min/Max use numeric values; Count includes source records with null '
+                          'values. Totals are recalculated from source records, so an average is not an '
+                          'average of averages. Cell/total callbacks return the original records; null '
+                          'Row/Column denotes a total, while an empty string denotes a blank dimension. '
+                          'Filter Items/items before passing them in. Multiple grouping levels, measures, '
+                          'OLAP and a drag/drop configurator are not implemented.'},
+ 'NgEditor': {'title': 'Structured document editor',
+              'use': 'Edit a small document as typed blocks with a separate preview.',
+              'blazor': '<NgEditor Label="Project description" @bind-Value="document"/>\n'
+                        '<NgButton OnClick="Save">Save JSON</NgButton>\n'
+                        '<pre>@saved</pre>\n'
+                        '@code {\n'
+                        '    private NgDocument document = new([\n'
+                        '        new("Project plan", NgBlockKind.Heading1),\n'
+                        '        new("Agree on requirements", NgBlockKind.Bullet),\n'
+                        '        new("Review the result", NgBlockKind.Bullet, Bold: true)\n'
+                        '    ]);\n'
+                        '    private string saved = "";\n'
+                        '    private void Save() => saved = document.ToJson();\n'
+                        '}',
+              'dart': 'NgDocument document = NgDocument(blocks: const [\n'
+                      "  NgDocumentBlock(text: 'Project plan', kind: NgBlockKind.heading1),\n"
+                      "  NgDocumentBlock(text: 'Agree on requirements', kind: NgBlockKind.bullet),\n"
+                      "  NgDocumentBlock(text: 'Review the result', kind: NgBlockKind.bullet, bold: true),\n"
+                      ']);\n'
+                      "String saved = '';\n"
+                      'Widget build(BuildContext context) => Column(children: [\n'
+                      "  NgEditor(label: 'Project description', value: document,\n"
+                      '    onChanged: (v) => setState(() => document = v)),\n'
+                      '  NgButton(onPressed: () => setState(() => saved = document.toJson()),\n'
+                      "    child: const Text('Save JSON')),\n"
+                      '  Text(saved),\n'
+                      ']);',
+              'notes': '### Editing\n'
+                       'Select a block, change Block text and press Apply text. Until applied, the local '
+                       'draft is not included in callbacks, preview or export. Block type supports '
+                       'paragraphs, level 1/2 headings, bullet/numbered items and quotes. Bold, Italic, '
+                       'Underline and Alignment apply to the entire block, not a selected text range.\n'
+                       '\n'
+                       'Changing selection/type/alignment/formatting, Add block and Move automatically '
+                       'applies the draft; one action creates one history entry. Add inserts a paragraph '
+                       'after the current block. Move preserves selection. Delete discards the selected '
+                       'draft; deleting the final block leaves one empty paragraph. Undo/Redo stores the '
+                       'last 50 applied operations and discards an unapplied draft.\n'
+                       '\n'
+                       '### State and storage\n'
+                       'Value is an immutable NgDocument. Save the new instance from ValueChanged/onChanged '
+                       'and pass it back. An independent replacement (import or another file) resets history '
+                       'and draft; do not manufacture an equivalent new instance on every render. ReadOnly '
+                       'preserves selection/preview but does not auto-save a pending draft. NgEditor is not '
+                       'an InputBase/FormField: the host validates document business rules.\n'
+                       '\n'
+                       'ToJson/toJson produces the shared version-1 format. Restore with '
+                       'NgDocument.FromJson/fromJson, catch ArgumentException/ArgumentError and preserve the '
+                       'current document on failure. ToHtml/toHtml exports applied blocks only, escapes '
+                       'text, groups adjacent list items and converts newlines to br. It returns a fragment '
+                       'without theme/container. Store JSON as the editable source; HTML import is not '
+                       'supported. The component does not upload or write files. The Editor gallery '
+                       'demonstrates Save/Restore.\n'
+                       '\n'
+                       '### Keyboard and limits\n'
+                       'Tab navigates controls; Enter/Space activates buttons. The textarea uses ordinary '
+                       'multiline input. Document Undo/Redo buttons are separate from operating-system '
+                       'text-input undo; there are no custom Ctrl+Z/Ctrl+Y shortcuts.\n'
+                       '\n'
+                       'Limits: 1–100 blocks, 10,000 UTF-16 units per block, 100,000 total, 1,000,000 units '
+                       'of input JSON. The model checks each operation. No nested lists, links, images, '
+                       'tables, font picker, selection formatting, HTML/Word import, PDF/print, '
+                       'collaboration, AI or virtualization. Native mobile and full screen-reader '
+                       'verification remain separate.'},
+ 'NgDiagram': {'title': 'Interactive diagram',
+               'use': 'Display and edit a graph of nodes and directed or undirected connections.',
+               'blazor': '<NgDiagram Label="Process" @bind-Value="graph"\n'
+                         '    @bind-SelectedNodeId="selectedNode" @bind-SelectedEdgeId="selectedEdge"/>\n'
+                         '<p>Node: @selectedNode · Connection: @selectedEdge</p>\n'
+                         '@code {\n'
+                         '    private string? selectedNode, selectedEdge;\n'
+                         '    private NgDiagramModel graph = new([\n'
+                         '        new("start", "Start", 40, 100, Shape: NgDiagramShape.Ellipse),\n'
+                         '        new("work", "Processing", 360, 100)\n'
+                         '    ], [new("next", "start", "work", "Continue")]);\n'
+                         '}',
+               'dart': 'NgDiagramModel graph = NgDiagramModel(nodes: const [\n'
+                       "  NgDiagramNode('start', 'Start', 40, 100, shape: NgDiagramShape.ellipse),\n"
+                       "  NgDiagramNode('work', 'Processing', 360, 100),\n"
+                       "], edges: const [NgDiagramEdge('next', 'start', 'work', text: 'Continue')]);\n"
+                       'String? selectedNode, selectedEdge;\n'
+                       "Widget build(BuildContext context) => NgDiagram(label: 'Process', value: graph,\n"
+                       '  onChanged: (v) => setState(() => graph = v),\n'
+                       '  selectedNodeId: selectedNode, selectedEdgeId: selectedEdge,\n'
+                       '  onSelectedNodeIdChanged: (v) => setState(() => selectedNode = v),\n'
+                       '  onSelectedEdgeIdChanged: (v) => setState(() => selectedEdge = v));',
+               'notes': '### Selection and movement\n'
+                        'Click a node or connection to select it. The other selection type is first cleared '
+                        'through its callback with null. Store both selected IDs. Unknown IDs are not '
+                        'highlighted; remove stale selection when deleting data. Dragging previews a new '
+                        'position, and only pointer release commits coordinates and invokes '
+                        'ValueChanged/onChanged. Escape cancels drag. Tab focuses nodes; Enter/Space '
+                        'selects; arrows move 10 units, Shift+arrow moves 1. Movement stays inside the '
+                        'canvas. Flutter exposes keyboard-selectable Connections; Blazor SVG connections are '
+                        'focusable.\n'
+                        '\n'
+                        '### Zoom and viewport\n'
+                        'Zoom changes by 25 percentage points, within 25–200%. Fit width fits the entire '
+                        'canvas width; 100% resets zoom. The viewport is 420 logical/CSS pixels tall, with '
+                        'internal scrolling. Zoom does not alter model coordinates or JSON. Fit diagram fits '
+                        'node bounds in both axes with 24 px padding and centers by scrolling; it preserves '
+                        'selection and works in ReadOnly. Empty graphs disable it. Minimum zoom can still '
+                        'require scrolling for large graphs; canvas boundaries constrain centering and long '
+                        'connection labels may extend beyond bounds. Fitting is explicit, not automatic '
+                        'layout.\n'
+                        '\n'
+                        'NgDiagramModel.FitView/fitView(viewportWidth,viewportHeight) returns NgDiagramView '
+                        '(Zoom/ScrollX/ScrollY or lowerCamelCase). Sizes must be finite and positive. An '
+                        'empty graph returns 100% and zero scroll.\n'
+                        '\n'
+                        '### Model and persistence\n'
+                        'Value is immutable. Store the new graph from callbacks; an independent replacement '
+                        'cancels active drag. ReadOnly disables movement but retains selection, zoom and '
+                        'scrolling. The application owns create/edit/delete actions and their permissions. '
+                        'The gallery shows a properties panel, connections, 20-change history and import; '
+                        'NgDiagram itself has no undo history.\n'
+                        '\n'
+                        'UpsertNode/UpsertEdge add or replace by ID. RemoveNode also removes incident edges; '
+                        'RemoveEdge keeps nodes. Move(id,x,y) clamps coordinates to the canvas and returns a '
+                        'new model. For example: graph = graph.Move("start",80,120), or graph = '
+                        "graph.move('start',80,120). ToJson/toJson and FromJson/fromJson use the shared "
+                        'version-1 Nextgen schema, not Telerik JSON. Catch invalid imports and retain the '
+                        'previous graph. No automatic file storage or upload.\n'
+                        '\n'
+                        '### Geometry and limits\n'
+                        'Shapes: rectangle, ellipse, diamond (PascalCase enum names in C#). Nodes store ID, '
+                        'text, top-left X/Y and width/height (default 160×80). Labels are visually shortened '
+                        'but available in tooltips/accessibility/properties. Connections run straight '
+                        'between shape boundaries along the centers; directed connections have an end arrow. '
+                        'On-canvas connection labels shorten to 24 characters.\n'
+                        '\n'
+                        'Canvas dimensions: 200–5000 (default 1000×600); up to 100 nodes and 200 edges. '
+                        'Nodes: 60–400 × 40–240, fully inside the canvas. IDs: 1–64 ASCII '
+                        'letters/digits/_/-, unique separately for nodes and edges. Node text is nonempty '
+                        'and at most 100 UTF-16 units; edge text 0–100. Coordinates are finite. Edges '
+                        'require two different existing nodes. Cycles and parallel edges are allowed; '
+                        'workflow rules belong to the application. Overlaps are not resolved automatically; '
+                        'coincident centers yield a zero-length line.\n'
+                        '\n'
+                        'No automatic layout, obstacle routing, connector drawing, pointer resizing, groups, '
+                        'multiple selection, image/templates, export, minimap, pinch zoom or collaboration. '
+                        'Blazor loads diagram.js automatically from static web assets and requires '
+                        'interactive rendering; if drag fails, check the module and ValueChanged handling. '
+                        'Native/mobile and screen-reader audits remain separate.'},
+ 'NgPdfViewer': {'title': 'PDF viewer',
+                 'use': 'Open, navigate, search and copy text from PDF documents.',
+                 'blazor': '<NgPdfViewer Label="Guide" Source="samples/nextgen-guide.pdf" Height="720" '
+                           'Dark="false"/>\n'
+                           '<p>PDF must be hosted by the application at this address.</p>',
+                 'dart': 'Widget build(BuildContext context) => const NgPdfViewer(\n'
+                         "  label: 'Guide', source: 'samples/nextgen-guide.pdf', height: 720);",
+                 'notes': '### Hosting and sources\n'
+                          'Source is a relative or HTTP(S) URL resolved from the app base URI. Host the file '
+                          'yourself in wwwroot/samples (Blazor) or web/samples (Flutter). Empty source opens '
+                          'the viewer with Open PDF. Browser requests send same-origin cookies only to their '
+                          'origin; remote servers must allow CORS. Open PDF reads a local file without '
+                          'upload. PDF.js, worker, CMaps and fonts are packaged locally; no CDN or '
+                          'additional script tag is needed.\n'
+                          '\n'
+                          'Blazor serves _content/NextgenComponents.Blazor/pdf-viewer/. With UseStaticFiles '
+                          'map .mjs to text/javascript and .bcmap/.pfb to application/octet-stream (see '
+                          'gallery Program.cs). The iframe works under SSR; parent parameter changes require '
+                          'interactivity. Flutter package assets supply the viewer. CSP must permit the '
+                          'required local frame/scripts/styles/workers/fonts and source connections, '
+                          'including blob workers/fonts where used; configure it in the host.\n'
+                          '\n'
+                          '### Navigation, search and state\n'
+                          'Previous/Next and Page use one-based page numbers. Zoom is 10–300%, with 25-point '
+                          'button increments. Fit width/page recomputes on viewport resize. Enlarged pages '
+                          'scroll internally. Height is 400–1600, default 640; the toolbar wraps on narrow '
+                          'widths and leaves at least 100 px for the page.\n'
+                          '\n'
+                          'Find searches a case-insensitive substring across every page, normalizing '
+                          'whitespace and matching across text items/lines. Results list page numbers; '
+                          'selecting one opens that page and Page text. Clear removes '
+                          'query/results/highlights. Page text supports ordinary selection/copy. Text can '
+                          'also be selected over the rendered page; Ctrl/Cmd+C uses the browser clipboard. '
+                          'Current-page matches are highlighted (up to 1,000 non-overlapping matches), '
+                          'surviving zoom/navigation/fit. Find applies a changed query; Clear, an empty Find '
+                          'and document changes reset it. Redrawing clears ordinary selection. Highlight '
+                          'geometry depends on PDF fonts/text; CSS Custom Highlight API is used in Chrome, '
+                          'with page search and selection as fallback. No OCR: scanned PDFs without text '
+                          'cannot be searched. Hyphenation, ligatures and source text order may affect '
+                          'matching.\n'
+                          '\n'
+                          'Download saves the original bytes, including locally opened files. Filenames from '
+                          'URLs/files are stripped of control characters/path separators. The viewer does '
+                          'not edit PDF. Page/zoom/search/local-file state belongs to the iframe. Source or '
+                          'theme changes recreate it and reset state; reopen local files after a theme '
+                          'change. Identical parent rebuilds preserve it. Page/load callbacks and controlled '
+                          'page binding are not implemented.\n'
+                          '\n'
+                          '### Limits and failures\n'
+                          'At most 20 MiB and 200 pages, including streamed URL downloads. One page is '
+                          'rendered at a time; raster output is capped at 16 million pixels and an '
+                          '8192-pixel side, reducing quality at extreme zoom if necessary. Corrupt files, '
+                          'CORS/access errors and password-protected documents show an error and allow '
+                          'another file. No passwords, forms, annotations, signatures, PDF links, print, '
+                          'OCR, thumbnails or built-in localization. PDF JavaScript/actions are not '
+                          'executed.\n'
+                          '\n'
+                          'Flutter currently supports this component on Web only; native displays an '
+                          'explicit unsupported message. Native support and full screen-reader certification '
+                          'are not part of this release.'},
+ 'NgMap': {'title': 'Interactive map',
+           'use': 'Display geographic markers, paths and polygons over an optional raster basemap.',
+           'blazor': '<NgMap Label="Objects" Value="map" ClusterMarkers="true" ClusterRadius="60" '
+                     '@bind-View="view" @bind-SelectedId="selected"\n'
+                     '    OnMapClick="Clicked" '
+                     'TileUrlTemplate="https://tile.openstreetmap.org/{z}/{x}/{y}.png"\n'
+                     '    Attribution="© OpenStreetMap contributors" '
+                     'AttributionUrl="https://www.openstreetmap.org/copyright"/>\n'
+                     '<p>Selected: @selected; last point: @last</p>\n'
+                     '@code {\n'
+                     ' private string? selected; private string last="";\n'
+                     ' private NgMapView view=new(50.4501,30.5234,13);\n'
+                     ' private NgMapModel map=new(\n'
+                     '   '
+                     '[new("office","Office",new(50.4501,30.5234)),new("park","Park",new(50.4466,30.5410))],\n'
+                     '   [new("line","Line",[new(50.4501,30.5234),new(50.4466,30.5410)])]);\n'
+                     ' private void Clicked(NgMapPoint p){last=$"{p.Latitude:F4}, {p.Longitude:F4}";}\n'
+                     '}',
+           'dart': 'String? selected;\n'
+                   "String last = '';\n"
+                   'NgMapView view = NgMapView(latitude: 50.4501, longitude: 30.5234, zoom: 13);\n'
+                   'final map = NgMapModel(markers: [\n'
+                   "  NgMapMarker('office', 'Office', NgMapPoint(50.4501, 30.5234)),\n"
+                   "  NgMapMarker('park', 'Park', NgMapPoint(50.4466, 30.5410)),\n"
+                   "], paths: [NgMapPath('line', 'Line', [\n"
+                   '  NgMapPoint(50.4501, 30.5234), NgMapPoint(50.4466, 30.5410),\n'
+                   '])]);\n'
+                   "Widget build(BuildContext context) => NgMap(label: 'Objects', value: map,\n"
+                   '  view: view, selectedId: selected, clusterMarkers: true, clusterRadius: 60,\n'
+                   '  onViewChanged: (v) => setState(() => view = v),\n'
+                   '  onSelectedIdChanged: (id) => setState(() => selected = id),\n'
+                   "  onMapClick: (p) => setState(() => last = '${p.latitude}, ${p.longitude}'),\n"
+                   "  tileUrlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',\n"
+                   "  attribution: '© OpenStreetMap contributors',\n"
+                   "  attributionUrl: 'https://www.openstreetmap.org/copyright');",
+           'notes': '### Hosting and tiles\n'
+                    'Blazor requires interactive rendering and static assets. With UseStaticFiles map .mjs '
+                    'to text/javascript for the clustering module (gallery Program.cs). Leaflet 1.9.4 is '
+                    'packaged in map-viewer and Flutter assets; no CDN/script tags are needed. Flutter '
+                    'implements Web; native shows an unsupported-platform message.\n'
+                    '\n'
+                    'TileUrlTemplate must contain {z}, {x}, {y}; relative and HTTP(S) URLs are supported. '
+                    'Empty source shows a grid and your objects without a basemap. Attribution is required '
+                    'for a configured provider; AttributionUrl adds a link. Attribution/object labels are '
+                    'plain text. Choose a provider supporting zoom 0–19 and your usage terms. Custom '
+                    'headers, bearer tokens, TMS and vector tiles are not supported.\n'
+                    '\n'
+                    'For OpenStreetMap keep attribution, normal Referrer and browser cache; do not '
+                    'bulk-prefetch or download offline. The public service has no SLA; review the provider '
+                    'terms and [tile policy](https://operations.osmfoundation.org/policies/tiles/). Object '
+                    'labels are not sent to the provider, but IP, Referrer and tile coordinates are. Host '
+                    'CSP must permit local frames/scripts/styles, Leaflet inline styles and provider '
+                    'images.\n'
+                    '\n'
+                    '### Data model\n'
+                    'NgMapPoint accepts latitude first, longitude second: finite latitude ±85.05112878, '
+                    'longitude ±180. NgMapMarker has ID, label and position. NgMapPath is a straight '
+                    'polyline with at least 2 points, or a closed polygon with at least 3; closing is '
+                    'automatic. These are geographic lines, not road routing. No date-line crossing, holes '
+                    'or multipolygons.\n'
+                    '\n'
+                    'NgMapModel copies collections and exposes read-only data. IDs are unique across markers '
+                    'and paths: 1–64 ASCII letters/digits/_/-. Labels: 1–200 characters, not only '
+                    'whitespace. Limits: 500 markers, 100 paths/polygons, 5,000 total path points. Invalid '
+                    'input raises ArgumentException/ArgumentError. Replace the model to update; there is no '
+                    'automatic persistence/loading.\n'
+                    '\n'
+                    '### View and events\n'
+                    'View defines center and integer zoom 0–19 (initial 0,0,2). Drag pans; '
+                    'wheel/double-click/+/- zoom. Focused maps accept arrows and +/-. Fit data fits all '
+                    'objects with padding and zoom at most 14; empty models disable it. Data changes do not '
+                    'auto-fit. The center is limited to world bounds.\n'
+                    '\n'
+                    'Store ViewChanged/onViewChanged after movement, zoom, fit or programmatic changes. '
+                    'SelectedId is one object ID or null; selection callbacks report marker/path IDs or null '
+                    'after Clear selection. Unknown IDs appear unselected without correcting parent state. '
+                    'Objects buttons are keyboard accessible and open object popups; objects are also '
+                    'clickable directly. OnMapClick reports a coordinate only for free background, not '
+                    'object clicks. To add a marker, build a new NgMapModel with the old items and a '
+                    'uniquely identified marker. No address/geocoding is returned.\n'
+                    '\n'
+                    'Height: 400–1200, default 520. Below 540 px the Objects list moves under the map and '
+                    'scrolls horizontally. Label also names the iframe. Blazor Dark is explicit; Flutter '
+                    'reads Theme. Theme/model updates preserve the iframe/view when View is unchanged; '
+                    'provider imagery is not inverted.\n'
+                    '\n'
+                    '### Clustering\n'
+                    'ClusterMarkers defaults to false. ClusterRadius is an integer 20–120 CSS px, default '
+                    '60, validated even when clustering is off. Distance is screen distance at the current '
+                    'zoom, not meters. Markers sort by ID and group around the first point; neighbor chains '
+                    'do not merge indefinitely. Input ordering and panning do not change membership; zoom '
+                    'recalculates groups. Date-line points are not clustered together.\n'
+                    '\n'
+                    'Activating a cluster zooms at least one level, up to 19. Coincident points or maximum '
+                    'zoom open a scrollable member chooser. Choosing a member triggers normal selection and '
+                    'displays its individual marker/popup. Clusters have no public object ID and do not '
+                    'trigger background clicks. A selected marker stays outside clusters; Clear selection '
+                    'rejoins it, so a cluster count excludes the selected marker while the total includes '
+                    'every marker. Objects selection behaves the same way.\n'
+                    '\n'
+                    'Clusters support Tab/Enter and popup buttons. Data/clustering updates preserve the view '
+                    'but may close a regrouped popup; theme changes retain groups. Paths are not clustered. '
+                    'The 500-marker model limit still applies: this is not server aggregation. Dense markers '
+                    'and Same location gallery scenarios demonstrate it without external tiles.\n'
+                    '\n'
+                    '### Status and omissions\n'
+                    'No objects, No basemap configured, Loading tiles, Tiles loaded and Some map tiles '
+                    'unavailable distinguish data and provider states. Objects/selection still work when '
+                    'tiles fail. Navigation/source changes request new tiles. One raster basemap only; no '
+                    'geocoding, routing, GeoJSON import, bubble layers, geometry editing, export or offline '
+                    'mode. Filter large datasets in the application before supplying them.'},
+ 'NgPromptBox': {'title': 'Prompt input',
+                 'use': 'Compose a multiline request with explicit submission and cancellation.',
+                 'blazor': '<NgPromptBox Label="Prompt" @bind-Value="prompt" Busy="busy" OnSubmit="Submit" '
+                           'OnCancel="Cancel"/>\n'
+                           '<p>@result</p>\n'
+                           '@code {\n'
+                           ' private string prompt="",result=""; private bool busy; private int revision;\n'
+                           ' private async Task Submit(string text) {\n'
+                           '  var request=++revision; busy=true;\n'
+                           '  await Task.Delay(700); // Local example; replace with an application handler.\n'
+                           '  if(request!=revision)return;\n'
+                           '  result=$"Received prompt: {text}"; busy=false;\n'
+                           ' }\n'
+                           ' private void Cancel(){revision++;busy=false;result="Cancelled";}\n'
+                           '}',
+                 'dart': "String prompt = '', result = '';\n"
+                         'bool busy = false;\n'
+                         'int revision = 0;\n'
+                         'Future<void> submit(String text) async {\n'
+                         '  final request = ++revision;\n'
+                         '  setState(() => busy = true);\n'
+                         '  await Future<void>.delayed(const Duration(milliseconds: 700));\n'
+                         '  if (!mounted || request != revision) return;\n'
+                         "  setState(() { result = 'Received prompt: $text'; busy = false; });\n"
+                         '}\n'
+                         "Widget build(BuildContext context) => NgPromptBox(label: 'Prompt', value: prompt,\n"
+                         '  onChanged: (v) => setState(() => prompt = v), busy: busy,\n'
+                         '  onSubmit: submit,\n'
+                         "  onCancel: () => setState(() { revision++; busy = false; result = 'Cancelled'; "
+                         '}));',
+                 'notes': 'Value/value is a controlled draft. Store ValueChanged/onChanged and pass the '
+                          'value back. External value replacement updates the field. MaxLength is 1–8000 '
+                          'UTF-16 code units, default 8000; emoji may occupy two units. Values longer than '
+                          'the limit are rejected. Blank input cannot be submitted. Send trims outer '
+                          'whitespace; Enter inserts a newline. Tab followed by Enter/Space activates '
+                          'buttons; no special submit shortcut is installed.\n'
+                          '\n'
+                          'Busy makes the input read-only and replaces Send with Cancel. The parent owns the '
+                          'asynchronous request, busy state, result/error display and cancellation. OnCancel '
+                          'only signals the parent: it does not stop a network request by itself. Use a '
+                          'cancellation token/transport adapter and invalidate late responses. The example '
+                          'demonstrates this ownership. ReadOnly prevents submission and editing; a busy '
+                          'Cancel remains available when its callback exists. A missing submit/cancel '
+                          'callback disables the corresponding action.\n'
+                          '\n'
+                          'This is an input control, not an AI client or form-validation engine. Use '
+                          'NgAIPrompt for history and response actions. Attachments, speech input, model '
+                          'selection, streaming and provider integration are not included. Do not put '
+                          'provider secrets in browser code.'},
+ 'NgAIPrompt': {'title': 'AI prompt interface',
+                'use': 'Compose requests, inspect responses and manage retries, history and feedback.',
+                'blazor': '<NgAIPrompt Label="Assistant" @bind-Value="prompt" Generate="Generate"\n'
+                          '    Suggestions="suggestions" OnCompleted="Completed" OnFeedback="Feedback"/>\n'
+                          '<p>@status</p>\n'
+                          '@code {\n'
+                          ' private string prompt="Draft a meeting agenda",status="";\n'
+                          ' private string[] suggestions=["Draft a meeting agenda","Suggest next steps"];\n'
+                          ' private async Task<string> Generate(string text,CancellationToken cancellation) '
+                          '{\n'
+                          '  await Task.Delay(600,cancellation);\n'
+                          '  return $"Local example response to: {text}"; // Connect your application '
+                          'service here.\n'
+                          ' }\n'
+                          ' private void Completed(NgPromptResponse response){status=$"Response '
+                          '{response.Id} ready";}\n'
+                          ' private void Feedback(NgPromptFeedback feedback){status=$"Response feedback '
+                          '{feedback.Response.Id}: {feedback.Helpful}";}\n'
+                          '}',
+                'dart': "String prompt = 'Draft a meeting agenda', status = '';\n"
+                        'Future<String> generate(String text, NgPromptCancellation cancellation) async {\n'
+                        '  await Future<void>.delayed(const Duration(milliseconds: 600));\n'
+                        '  cancellation.throwIfCancelled();\n'
+                        "  return 'Local example response to: $text'; // Replace with your application "
+                        'service.\n'
+                        '}\n'
+                        "Widget build(BuildContext context) => NgAIPrompt(label: 'Assistant', value: "
+                        'prompt,\n'
+                        '  onChanged: (v) => setState(() => prompt = v), generate: generate,\n'
+                        "  suggestions: const ['Draft a meeting agenda', 'Suggest next steps'],\n"
+                        "  onCompleted: (r) => setState(() => status = 'Response ${r.id} ready'),\n"
+                        "  onFeedback: (f) => setState(() => status = 'Response feedback ${f.response.id}: "
+                        "${f.helpful}'));",
+                'notes': '### Provider contract\n'
+                         'Blazor Generate is Func<string,CancellationToken,Task<string>>; Flutter generate '
+                         'is NgPromptGenerator: Future<String> Function(String,NgPromptCancellation). The '
+                         'handler receives a captured, trimmed prompt and returns complete response text. '
+                         'Without it the input is disabled. The example/gallery uses a deterministic delayed '
+                         'local handler, not an AI model.\n'
+                         '\n'
+                         'The application owns authentication, model choice, rate limits, timeouts and '
+                         'provider calls. Keep provider credentials on your backend. In Blazor pass '
+                         'CancellationToken into the HTTP/AI client. In Flutter connect '
+                         'cancellation.whenCancelled to transport cancellation; isCancelled and '
+                         'throwIfCancelled detect cancellation. Checking after await stops result '
+                         'processing, not the remote request or billing. The component itself makes no '
+                         'network requests.\n'
+                         '\n'
+                         '### Draft and request lifecycle\n'
+                         'Value/value and change callbacks control the draft. Maximum prompt: 8000 UTF-16 '
+                         'units. Up to 8 nonempty suggestions, each at most 200 units. Suggestions fill the '
+                         'draft without sending. Enter inserts a newline; Send submits. Duplicate submission '
+                         'is blocked while busy. The user cannot edit during a request, but an external '
+                         'Value replacement changes the next draft, not the captured request.\n'
+                         '\n'
+                         'Cancel immediately releases the UI and signals cancellation. A new request may '
+                         'start immediately. Even if an older handler ignores cancellation, its late '
+                         'result/error cannot enter history or replace newer state. Disposal, ReadOnly or '
+                         'removing the handler also cancels pending work. ReadOnly keeps history '
+                         "browsing/copying available. Transport cancellation is the application's "
+                         'responsibility.\n'
+                         '\n'
+                         'Provider exceptions show a generic Generation failed. Try again. message; log '
+                         'details in your handler. Retry request uses the last failed prompt even if the '
+                         'draft changed. Empty/whitespace responses and responses over 32000 UTF-16 units '
+                         'are errors. Previous successful history survives failures. Timeouts belong to the '
+                         'application.\n'
+                         '\n'
+                         '### Responses and events\n'
+                         'The last 20 successful responses are kept in memory; oldest entries are evicted. '
+                         'IDs increase throughout the component session, including after Clear history. '
+                         "Selecting history changes the displayed response. Regenerate runs that response's "
+                         'original prompt. Clear removes history/selection/votes and cancels work in the '
+                         'public session API; the UI button is disabled while busy. History is not durable '
+                         'and is lost on component disposal.\n'
+                         '\n'
+                         'NgPromptResponse contains Id/id, Prompt/prompt and Text/text. OnCompleted fires '
+                         'once for each accepted successful response, never for cancellation/failure. '
+                         'NgPromptFeedback contains the response and Helpful/helpful: true, false or null '
+                         'for a cleared vote. Clicking the same vote toggles it off; votes do not call the '
+                         'provider. Callback exceptions belong to the host application.\n'
+                         '\n'
+                         'Responses render as plain text, with no HTML/Markdown execution. Copy response '
+                         'uses the browser/platform clipboard; when unavailable, select the text manually. '
+                         'Clipboard permissions and secure-context rules depend on the host. There are no '
+                         'attachments, speech, command templates, streaming, provider SDKs, model picker, '
+                         'durable conversations or automatic moderation.\n'
+                         '\n'
+                         '### Session API and integration\n'
+                         'NgPromptSession exposes read-only Responses/responses, Selected/selected, '
+                         'IsBusy/isBusy, Error/error and Status/status. RunAsync/run invokes a handler; '
+                         'Cancel/cancel invalidates pending work; Select/select changes selection; '
+                         'Clear/clear resets history; Dispose/dispose ends the session. Blazor Changed and '
+                         'Flutter ChangeNotifier report state changes. Use it on the UI thread, dispose it '
+                         'in its owner, and do not mutate response collections. The component owns its own '
+                         'session; use the public session only when building a separate custom interface. '
+                         'Native mobile and full accessibility certification remain separate.'},
+ 'NgStepper': {'title': 'Step progress',
+               'use': 'Display progress through a sequence and request a different active step.',
+               'blazor': '<NgStepper Items="steps" @bind-Value="current" Linear />\n'
+                         '<p>Current index: @current</p>\n'
+                         '@code {\n'
+                         ' private int current;\n'
+                         ' private NgStep[] '
+                         'steps=[new("Contact"),new("Preferences",Optional:true),new("Review")];\n'
+                         '}',
+               'dart': 'int current = 0;\n'
+                       "final steps = const [NgStep('Contact'), NgStep('Preferences', optional: true), "
+                       "NgStep('Review')];\n"
+                       'Widget build(BuildContext context) => NgStepper(items: steps, value: current, '
+                       'linear: true,\n'
+                       '  onChanged: (v) => setState(() => current = v));',
+               'notes': 'Items/items contains 1–30 NgStep values. Labels must contain 1–120 UTF-16 units and '
+                        'cannot be whitespace-only. Value/value is a zero-based enabled index. Invalid '
+                        'configuration throws ArgumentException/ArgumentError instead of silently selecting '
+                        'another step. Replace lists when updating them.\n'
+                        '\n'
+                        'NgStep contains Label/label, Disabled/disabled, Optional/optional and nullable '
+                        'Valid/valid. Optional is an annotation, not an automatic skip. Valid is '
+                        'presentation only: true shows a check mark, false shows Needs attention, null shows '
+                        'the step number. It never performs validation. Disabled steps cannot be selected. '
+                        'NgStepRules.Adjacent/adjacent finds the next enabled index in direction -1 or 1, '
+                        'returning -1 at the boundary.\n'
+                        '\n'
+                        'Without Linear/linear, any enabled step can be selected. Linear permits any earlier '
+                        'enabled step or the next enabled step, skipping disabled entries. It does not '
+                        'remember the furthest visited step. Clicking the current step does nothing. Store '
+                        'ValueChanged/onChanged in the parent; without updating Value the active marker '
+                        'stays unchanged. Disabled disables all interaction. Vertical stacks the steps; '
+                        'horizontal layout wraps on narrow screens.\n'
+                        '\n'
+                        'Use Tab to reach enabled buttons and Enter/Space to activate them. Blazor marks the '
+                        'current step with aria-current=step; Flutter exposes selected semantics. Arrow-key '
+                        'roving focus and full screen-reader certification are not implemented. Use NgWizard '
+                        'to add content, validation and finish actions; this component itself does not mount '
+                        'pages, validate fields or save data.'},
+ 'NgWizard': {'title': 'Multi-step wizard',
+              'use': 'Guide a user through an application-owned form with guarded forward transitions and '
+                     'completion.',
+              'blazor': '<NgWizard Items="steps" @bind-Value="current" ValidateStep="Validate" '
+                        'OnFinish="Save" Context="index">\n'
+                        ' @if(index==0){<label>Name <input @bind="name" @bind:event="oninput" /></label>}\n'
+                        ' else{<p>Review: @name</p>}\n'
+                        '</NgWizard>\n'
+                        '<p>@status</p>\n'
+                        '@code {\n'
+                        ' private int current; private string name="",status="Not saved";\n'
+                        ' private NgStep[] steps=[new("Contact"),new("Review")];\n'
+                        ' private Task<string?> Validate(int '
+                        'index)=>Task.FromResult<string?>(index==0&&name.Trim().Length<2?"Enter at least two '
+                        'characters.":null);\n'
+                        ' private Task Save(){status=$"Saved: {name}";return Task.CompletedTask;}\n'
+                        '}',
+              'dart': 'int current = 0;\n'
+                      "String name = '', status = 'Not saved';\n"
+                      "final steps = const [NgStep('Contact'), NgStep('Review')];\n"
+                      'Widget build(BuildContext context) => Column(children: [\n'
+                      ' NgWizard(items: steps, value: current,\n'
+                      '  onChanged: (v) => setState(() => current = v),\n'
+                      "  validateStep: (index) async => index == 0 && name.trim().length < 2 ? 'Enter at "
+                      "least two characters.' : null,\n"
+                      "  onFinish: () async { setState(() => status = 'Saved: $name'); },\n"
+                      '  contentBuilder: (context, index) => index == 0\n'
+                      '    ? TextFormField(initialValue: name, decoration: const InputDecoration(labelText: '
+                      "'Name'), onChanged: (v) => name = v)\n"
+                      "    : Text('Review: $name')),\n"
+                      ' Text(status),\n'
+                      ']);',
+              'notes': '### Configuration and state\n'
+                       'Items and Value follow NgStepper rules: 1–30 steps, enabled zero-based current '
+                       'index, unique positions and valid labels. Linear defaults to true. Back moves to the '
+                       'preceding enabled step. Next moves to the following enabled step, skipping disabled '
+                       'entries. Earlier headers are reachable; later headers obey Linear. With '
+                       'Linear=false, clicking a later header validates only the current step, not every '
+                       'skipped step. Optional is a label, not a separate Skip action.\n'
+                       '\n'
+                       'ValueChanged/onChanged is a request to the parent. Store it and render the returned '
+                       'index; otherwise the wizard remains on the current step. ChildContent is '
+                       'RenderFragment<int> in Blazor; contentBuilder is Widget Function(BuildContext,int) '
+                       'in Flutter. Only active content is rendered. Keep drafts/controllers/validation keys '
+                       'in the parent so data survives navigation; do not rely on child widget state. Blazor '
+                       'consumers can key their content by index when they need fresh child instances.\n'
+                       '\n'
+                       '### Validation and asynchronous work\n'
+                       'ValidateStep/validateStep receives the current index before forward movement (Next '
+                       'or a future header) and before Finish. Return null or an empty string to allow the '
+                       'action; return a user-facing message to block it. Backward movement does not '
+                       'validate. Use EditContext.Validate or FormState.validate in this callback if '
+                       'embedding a form; the wizard does not automatically validate nested fields. On '
+                       'Finish, revalidate all business-critical values in your save service, including '
+                       'earlier steps.\n'
+                       '\n'
+                       'During validation/saving, navigation buttons and headers are disabled and Checking… '
+                       'is announced. Duplicate activation is ignored. Validation failure keeps the current '
+                       'step and displays its message. Exceptions show a generic retryable error. A changed '
+                       'current index, changed step configuration, disabled state or disposal invalidates '
+                       'pending UI results, so an old validator cannot navigate a newly reset wizard. This '
+                       'does not cancel network work: own transport cancellation in your application. '
+                       'Vertical/theme changes alone preserve the pending operation.\n'
+                       '\n'
+                       '### Completion and reset\n'
+                       'Finish appears when no later enabled step exists. It requires OnFinish/onFinish. '
+                       'After successful completion it shows Completed. and disables further '
+                       'navigation/saving. Failed saves remain retryable. Completion is local UI state, not '
+                       'a server idempotency guarantee: use an idempotency key for durable operations. A '
+                       'callback already running may still have external effects after disposal/reset; '
+                       "protect your application's result updates accordingly.\n"
+                       '\n'
+                       'Use a new @key/ValueKey to reset the whole wizard, including completion, then reset '
+                       'the parent draft/index. Changing the current index, step configuration or Disabled '
+                       'also resets local status. The gallery demonstrates resetting while a delayed '
+                       'validator is running. Do not change configuration during a durable save unless the '
+                       'host handles its consequences.\n'
+                       '\n'
+                       '### Accessibility and scope\n'
+                       'Tab and Enter/Space operate controls; status/error messages are announced. Stepper '
+                       'orientation is horizontal/wrapping or vertical, above content. No automatic focus '
+                       'move into the new form, custom button templates, side/bottom stepper placements, '
+                       'built-in persistence, animated transitions or native/mobile certification. Keep the '
+                       "form's visible headings and labels meaningful."}}

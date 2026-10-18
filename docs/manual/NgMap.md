@@ -1,81 +1,72 @@
-# NgMap — Интерактивная карта
+# NgMap — Interactive map
 
-[Оглавление](README.md) · [Подключение](getting-started.md) · [Модели](models.md)
+[Manual](README.md) · [Getting started](getting-started.md) · [Code examples](code-examples.md) · [Models](models.md)
 
-## Когда использовать
+## When to use it
 
-Показывает географические точки, линии и области. Подходит для объектов на карте и выбора места; маршрут и адрес по координатам рассчитывает приложение.
+Display geographic markers, paths and polygons over an optional raster basemap.
 
-## Поведение и практические правила
+## Behavior and practical rules
 
-### Подключение и источник карты
+### Hosting and tiles
+Blazor requires interactive rendering and static assets. With UseStaticFiles map .mjs to text/javascript for the clustering module (gallery Program.cs). Leaflet 1.9.4 is packaged in map-viewer and Flutter assets; no CDN/script tags are needed. Flutter implements Web; native shows an unsupported-platform message.
 
-Blazor требует интерактивного render mode и static web assets. При UseStaticFiles обеспечьте MIME .mjs = text/javascript для модуля кластеризации (пример настройки в Program.cs галереи). Общий движок Leaflet 1.9.4 поставляется локально в _content/NextgenComponents.Blazor/map-viewer/ и assets пакета Flutter; CDN и script-теги в приложении не нужны. Flutter: реализован Web, native показывает явное сообщение о неподдерживаемой платформе. Мобильные приложения будут проверяться отдельно.
+TileUrlTemplate must contain {z}, {x}, {y}; relative and HTTP(S) URLs are supported. Empty source shows a grid and your objects without a basemap. Attribution is required for a configured provider; AttributionUrl adds a link. Attribution/object labels are plain text. Choose a provider supporting zoom 0–19 and your usage terms. Custom headers, bearer tokens, TMS and vector tiles are not supported.
 
-TileUrlTemplate/tileUrlTemplate — один шаблон растровых XYZ-тайлов с обязательными {z}, {x}, {y}; пример выше использует публичный OpenStreetMap. Поддерживаются относительный URL (от base URI приложения) и HTTP(S). Пустой/null источник показывает сетку и ваши объекты без географической подложки. Attribution/attribution — обязательная непустая подпись для источника тайлов. AttributionUrl/attributionUrl добавляет ссылку; HTML в подписи и тексте объектов не исполняется. Подпись видна в правом нижнем углу карты. Провайдер должен поддерживать zoom 0–19 и разрешать использование тайлов вашим приложением. Headers, bearer-токены, TMS и vector tiles пока не поддерживаются.
+For OpenStreetMap keep attribution, normal Referrer and browser cache; do not bulk-prefetch or download offline. The public service has no SLA; review the provider terms and [tile policy](https://operations.osmfoundation.org/policies/tiles/). Object labels are not sent to the provider, but IP, Referrer and tile coordinates are. Host CSP must permit local frames/scripts/styles, Leaflet inline styles and provider images.
 
-Для OpenStreetMap сохраняйте видимую атрибуцию, стандартный Referrer и браузерный cache; не делайте предзагрузку больших областей или offline-скачивание. Сервис best-effort, без SLA: для рабочей нагрузки выберите подходящего провайдера и ознакомьтесь с его условиями. Движок не отправляет подписи ваших объектов провайдеру, но тот получает IP, Referrer и номера просматриваемых тайлов. Политика: https://operations.osmfoundation.org/policies/tiles/ . При CSP нужны локальные frame/script/style assets, inline styles Leaflet и img-src для выбранного источника тайлов; настройте политику в host-приложении.
+### Data model
+NgMapPoint accepts latitude first, longitude second: finite latitude ±85.05112878, longitude ±180. NgMapMarker has ID, label and position. NgMapPath is a straight polyline with at least 2 points, or a closed polygon with at least 3; closing is automatic. These are geographic lines, not road routing. No date-line crossing, holes or multipolygons.
 
-### Модель данных
+NgMapModel copies collections and exposes read-only data. IDs are unique across markers and paths: 1–64 ASCII letters/digits/_/-. Labels: 1–200 characters, not only whitespace. Limits: 500 markers, 100 paths/polygons, 5,000 total path points. Invalid input raises ArgumentException/ArgumentError. Replace the model to update; there is no automatic persistence/loading.
 
-NgMapPoint(latitude, longitude) принимает конечные числа: широта ±85.05112878 (Web Mercator), долгота ±180. Сначала широта, затем долгота. NgMapMarker(id, text, position) — точка с подписью и popup. NgMapPath(id, text, points, closed) — прямая ломаная (2+ точки) либо полигон (closed=true, 3+ точки); последнее соединение полигона добавляется автоматически. Это географические линии, а не автомобильный маршрут. Пересечение линии даты и отверстия/мультиполигоны не поддерживаются.
+### View and events
+View defines center and integer zoom 0–19 (initial 0,0,2). Drag pans; wheel/double-click/+/- zoom. Focused maps accept arrows and +/-. Fit data fits all objects with padding and zoom at most 14; empty models disable it. Data changes do not auto-fit. The center is limited to world bounds.
 
-NgMapModel(markers, paths) копирует коллекции и предоставляет их только для чтения. ID уникален среди всех маркеров и линий: 1–64 ASCII буквы/цифры, '-' или '_'. Подпись — 1–200 символов, не только пробелы. Лимиты: 500 маркеров, 100 линий/полигонов, 5000 точек суммарно в линиях. Конструкторы отклоняют нарушения через ArgumentException/ArgumentError. Для обновления замените Value/value новым NgMapModel; не меняйте исходный список на месте. Данные не сохраняются и не загружаются автоматически.
+Store ViewChanged/onViewChanged after movement, zoom, fit or programmatic changes. SelectedId is one object ID or null; selection callbacks report marker/path IDs or null after Clear selection. Unknown IDs appear unselected without correcting parent state. Objects buttons are keyboard accessible and open object popups; objects are also clickable directly. OnMapClick reports a coordinate only for free background, not object clicks. To add a marker, build a new NgMapModel with the old items and a uniquely identified marker. No address/geocoding is returned.
 
-### Навигация и события
+Height: 400–1200, default 520. Below 540 px the Objects list moves under the map and scrolls horizontally. Label also names the iframe. Blazor Dark is explicit; Flutter reads Theme. Theme/model updates preserve the iframe/view when View is unchanged; provider imagery is not inverted.
 
-View/view задаёт центр и целый zoom 0–19; начальное значение (0,0,2). Drag перемещает карту; колесо, двойной щелчок и +/− меняют масштаб; сфокусированная карта принимает стрелки и +/−. Fit data вписывает все объекты с отступом и ограничением zoom ≤14; при пустой модели кнопка отключена. Изменение данных само по себе не запускает Fit data. Центр ограничивается границами мира.
+### Clustering
+ClusterMarkers defaults to false. ClusterRadius is an integer 20–120 CSS px, default 60, validated even when clustering is off. Distance is screen distance at the current zoom, not meters. Markers sort by ID and group around the first point; neighbor chains do not merge indefinitely. Input ordering and panning do not change membership; zoom recalculates groups. Date-line points are not clustered together.
 
-ViewChanged/onViewChanged вызывается после перемещения, масштабирования, Fit data и программной смены вида. Обновляйте view в родителе, как в примере. SelectedId/selectedId — один ID или null; SelectedIdChanged/onSelectedIdChanged сообщает выбор маркера/линии либо null после Clear selection. Неизвестный ID отображается как отсутствие выбора, родительская переменная при этом автоматически не исправляется. Храните значение события у родителя, чтобы последующие обновления не вернули предыдущий выбор. Кнопки списка Objects доступны с клавиатуры, открывают popup и показывают выбранный объект. Маркеры и линии также выбираются прямо на карте.
+Activating a cluster zooms at least one level, up to 19. Coincident points or maximum zoom open a scrollable member chooser. Choosing a member triggers normal selection and displays its individual marker/popup. Clusters have no public object ID and do not trigger background clicks. A selected marker stays outside clusters; Clear selection rejoins it, so a cluster count excludes the selected marker while the total includes every marker. Objects selection behaves the same way.
 
-OnMapClick/onMapClick сообщает NgMapPoint для свободной области карты; щелчок по объекту не считается щелчком по фону. Для добавления маркера создайте новый NgMapModel из старых маркеров плюс новый NgMapMarker с уникальным ID и передайте его в Value/value. В галереях есть полный пример Add marker on map click. Callback не является геокодированием и не возвращает адрес.
+Clusters support Tab/Enter and popup buttons. Data/clustering updates preserve the view but may close a regrouped popup; theme changes retain groups. Paths are not clustered. The 500-marker model limit still applies: this is not server aggregation. Dense markers and Same location gallery scenarios demonstrate it without external tiles.
 
-Height/height: 400–1200 px, по умолчанию 520. При ширине до 540 px список объектов перемещается под карту и прокручивается горизонтально. Label/label задаёт заголовок и title iframe. Blazor Dark задаётся явно; Flutter берёт тему из Theme. Смена темы и модели сохраняет iframe и текущий вид, если View/view не изменился; подложка провайдера остаётся исходной (не инвертируется).
+### Status and omissions
+No objects, No basemap configured, Loading tiles, Tiles loaded and Some map tiles unavailable distinguish data and provider states. Objects/selection still work when tiles fail. Navigation/source changes request new tiles. One raster basemap only; no geocoding, routing, GeoJSON import, bubble layers, geometry editing, export or offline mode. Filter large datasets in the application before supplying them.
 
-### Кластеризация маркеров (0.9.1)
-
-ClusterMarkers/clusterMarkers (по умолчанию false) объединяет близкие маркеры в круг с их количеством. ClusterRadius/clusterRadius — целое число от 20 до 120 CSS px, по умолчанию 60; проверяется даже при выключенной кластеризации. Это расстояние на текущем масштабе, а не метры. Маркеры сортируются по ID и группируются вокруг первой точки группы; длинные цепочки соседних точек не склеиваются в одну бесконечную группу. Изменение порядка исходной коллекции и перемещение карты не меняют состав групп; изменение zoom пересчитывает его. Точки через линию даты не объединяются.
-
-Нажатие на группу приближает её область минимум на один уровень, максимум до zoom 19. Если координаты совпадают или достигнут zoom 19, открывается прокручиваемый список конкретных объектов. Нажатие на имя передаёт обычный SelectedIdChanged/onSelectedIdChanged, раскрывает индивидуальный маркер и popup. Группа сама не имеет публичного ID и не вызывает событие выбора объекта или щелчка по фону. Выбор через Objects работает так же. Выбранный маркер исключается из кластеров и остаётся отдельным; после Clear selection снова включается в группу. Следовательно, число на группе не включает выбранный маркер, а общий счётчик внизу всегда показывает все исходные маркеры.
-
-Группы доступны по Tab и Enter, список внутри popup — обычные кнопки. Изменение данных и включение/выключение кластеризации сохраняют вид карты; открытый popup при перегруппировке может закрыться. Тема не сбрасывает группы. Пути и полигоны не кластеризуются. Лимит модели остаётся 500 маркеров; это не серверная агрегация и не обещание работы с миллионами точек. В галереях Dense markers показывает 60 близких объектов, Same location — три офиса в одной точке без внешних тайлов.
-
-### Состояния и ограничения
-
-No objects — пустая модель; No basemap configured — нет источника тайлов. Loading tiles, Tiles loaded и Some map tiles unavailable показывают загрузку текущего набора тайлов. При отказе сети маркеры, линии и выбор продолжают работать; повторная навигация или смена источника запрашивает новые тайлы. Количество объектов всегда отображается отдельно. Отсутствие подложки не означает отсутствие данных.
-
-Одна растровая подложка, точки, линии и простые полигоны — текущий объём. Геокодирование, маршрутизация, GeoJSON import, bubble layers, редактирование геометрии, экспорт и offline-режим пока не реализованы. Для больших данных сначала фильтруйте объекты по области/задаче в приложении. Полный API Telerik не воспроизводится.
-
-## Blazor: рабочий пример
+## Blazor example
 
 ```razor
-<NgMap Label="Объекты" Value="map" ClusterMarkers="true" ClusterRadius="60" @bind-View="view" @bind-SelectedId="selected"
+<NgMap Label="Objects" Value="map" ClusterMarkers="true" ClusterRadius="60" @bind-View="view" @bind-SelectedId="selected"
     OnMapClick="Clicked" TileUrlTemplate="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
     Attribution="© OpenStreetMap contributors" AttributionUrl="https://www.openstreetmap.org/copyright"/>
-<p>Выбрано: @selected; последняя точка: @last</p>
+<p>Selected: @selected; last point: @last</p>
 @code {
  private string? selected; private string last="";
  private NgMapView view=new(50.4501,30.5234,13);
  private NgMapModel map=new(
-   [new("office","Офис",new(50.4501,30.5234)),new("park","Парк",new(50.4466,30.5410))],
-   [new("line","Линия",[new(50.4501,30.5234),new(50.4466,30.5410)])]);
+   [new("office","Office",new(50.4501,30.5234)),new("park","Park",new(50.4466,30.5410))],
+   [new("line","Line",[new(50.4501,30.5234),new(50.4466,30.5410)])]);
  private void Clicked(NgMapPoint p){last=$"{p.Latitude:F4}, {p.Longitude:F4}";}
 }
 ```
 
-## Flutter: рабочий пример
+## Flutter example
 
 ```dart
 String? selected;
 String last = '';
 NgMapView view = NgMapView(latitude: 50.4501, longitude: 30.5234, zoom: 13);
 final map = NgMapModel(markers: [
-  NgMapMarker('office', 'Офис', NgMapPoint(50.4501, 30.5234)),
-  NgMapMarker('park', 'Парк', NgMapPoint(50.4466, 30.5410)),
-], paths: [NgMapPath('line', 'Линия', [
+  NgMapMarker('office', 'Office', NgMapPoint(50.4501, 30.5234)),
+  NgMapMarker('park', 'Park', NgMapPoint(50.4466, 30.5410)),
+], paths: [NgMapPath('line', 'Line', [
   NgMapPoint(50.4501, 30.5234), NgMapPoint(50.4466, 30.5410),
 ])]);
-Widget build(BuildContext context) => NgMap(label: 'Объекты', value: map,
+Widget build(BuildContext context) => NgMap(label: 'Objects', value: map,
   view: view, selectedId: selected, clusterMarkers: true, clusterRadius: 60,
   onViewChanged: (v) => setState(() => view = v),
   onSelectedIdChanged: (id) => setState(() => selected = id),
@@ -85,46 +76,46 @@ Widget build(BuildContext context) => NgMap(label: 'Объекты', value: map,
   attributionUrl: 'https://www.openstreetmap.org/copyright');
 ```
 
-## Параметры и события Blazor
+## Blazor parameters and events
 
-Имена чувствительны к регистру. `?` в типе разрешает null. Параметры с `EditorRequired` отмечены как обязательные; остальные имеют значение по умолчанию CLR или инициализатор ниже.
+Names are case-sensitive. `?` permits null. `EditorRequired` parameters are marked required; other values use the initializer or CLR default.
 
-| Параметр | Тип | По умолчанию / требование | Назначение |
+| Parameter | Type | Default / requirement | Purpose |
 |---|---|---|---|
-| `Label` | `string` | "Map" | Подпись элемента или доступное имя. |
-| `Value` | `NgMapModel` | new() | Текущее значение; тип и правила описаны выше. |
-| `View` | `NgMapView` | new() | Смотрите поведение и тип модели выше. |
-| `ViewChanged` | `EventCallback<NgMapView>` | не задан | Смотрите поведение и тип модели выше. |
-| `SelectedId` | `string?` | не задан | ID текущего узла либо null. |
-| `SelectedIdChanged` | `EventCallback<string?>` | не задан | Выбор другого узла. |
-| `OnMapClick` | `EventCallback<NgMapPoint>` | не задан | Смотрите поведение и тип модели выше. |
-| `TileUrlTemplate` | `string?` | не задан | Смотрите поведение и тип модели выше. |
-| `Attribution` | `string` | "" | Смотрите поведение и тип модели выше. |
-| `AttributionUrl` | `string?` | не задан | Смотрите поведение и тип модели выше. |
-| `ClusterMarkers` | `bool` | false | Смотрите поведение и тип модели выше. |
-| `ClusterRadius` | `int` | 60 | Смотрите поведение и тип модели выше. |
-| `Dark` | `bool` | false | Смотрите поведение и тип модели выше. |
-| `Height` | `int` | 520 | Смотрите поведение и тип модели выше. |
+| `Label` | `string` | "Map" | Visible label or accessible name. |
+| `Value` | `NgMapModel` | new() | Current value; see state ownership and model rules above. |
+| `View` | `NgMapView` | new() | See the behavior rules and model contract above. |
+| `ViewChanged` | `EventCallback<NgMapView>` | not set | See the behavior rules and model contract above. |
+| `SelectedId` | `string?` | not set | See the behavior rules and model contract above. |
+| `SelectedIdChanged` | `EventCallback<string?>` | not set | See the behavior rules and model contract above. |
+| `OnMapClick` | `EventCallback<NgMapPoint>` | not set | See the behavior rules and model contract above. |
+| `TileUrlTemplate` | `string?` | not set | See the behavior rules and model contract above. |
+| `Attribution` | `string` | "" | See the behavior rules and model contract above. |
+| `AttributionUrl` | `string?` | not set | See the behavior rules and model contract above. |
+| `ClusterMarkers` | `bool` | false | See the behavior rules and model contract above. |
+| `ClusterRadius` | `int` | 60 | See the behavior rules and model contract above. |
+| `Dark` | `bool` | false | See the behavior rules and model contract above. |
+| `Height` | `int` | 520 | See the behavior rules and model contract above. |
 
-## Параметры и события Flutter
+## Flutter parameters and events
 
-`required` в конструкторе означает обязательный аргумент, даже если его тип допускает null. `key` — стандартный Flutter Key. Значения по умолчанию приведены в точной сигнатуре ниже.
+`required` marks a mandatory argument even if its type is nullable. `key` is the standard Flutter Key. The exact constructor below specifies defaults.
 
-| Аргумент | Тип | Назначение |
+| Argument | Type | Purpose |
 |---|---|---|
-| `label` | `String` | Подпись элемента или доступное имя. |
-| `value` | `NgMapModel` | Текущее значение; тип и правила описаны выше. |
-| `view` | `NgMapView?` | Смотрите поведение и тип модели выше. |
-| `selectedId` | `String?` | ID текущего узла либо null. |
-| `tileUrlTemplate` | `String?` | Смотрите поведение и тип модели выше. |
-| `attributionUrl` | `String?` | Смотрите поведение и тип модели выше. |
-| `attribution` | `String` | Смотрите поведение и тип модели выше. |
-| `height` | `double` | Смотрите поведение и тип модели выше. |
-| `clusterMarkers` | `bool` | Смотрите поведение и тип модели выше. |
-| `clusterRadius` | `int` | Смотрите поведение и тип модели выше. |
-| `onViewChanged` | `ValueChanged<NgMapView>?` | Смотрите поведение и тип модели выше. |
-| `onSelectedIdChanged` | `ValueChanged<String?>?` | Смотрите поведение и тип модели выше. |
-| `onMapClick` | `ValueChanged<NgMapPoint>?` | Смотрите поведение и тип модели выше. |
+| `label` | `String` | Visible label or accessible name. |
+| `value` | `NgMapModel` | Current value; see state ownership and model rules above. |
+| `view` | `NgMapView?` | See the behavior rules and model contract above. |
+| `selectedId` | `String?` | See the behavior rules and model contract above. |
+| `tileUrlTemplate` | `String?` | See the behavior rules and model contract above. |
+| `attributionUrl` | `String?` | See the behavior rules and model contract above. |
+| `attribution` | `String` | See the behavior rules and model contract above. |
+| `height` | `double` | See the behavior rules and model contract above. |
+| `clusterMarkers` | `bool` | See the behavior rules and model contract above. |
+| `clusterRadius` | `int` | See the behavior rules and model contract above. |
+| `onViewChanged` | `ValueChanged<NgMapView>?` | See the behavior rules and model contract above. |
+| `onSelectedIdChanged` | `ValueChanged<String?>?` | See the behavior rules and model contract above. |
+| `onMapClick` | `ValueChanged<NgMapPoint>?` | See the behavior rules and model contract above. |
 
 ```dart
 const NgMap({
@@ -145,17 +136,17 @@ const NgMap({
   });
 ```
 
-## Интеграция и диагностика
+## Integration and troubleshooting
 
-Если интерфейс не обновляется, проверьте, сохраняет ли родитель результат callback и передаёт ли новое значение обратно. Для Blazor нужен интерактивный render mode; для Flutter — setState или используемый менеджер состояния. Данные формы отправляйте только после её успешной валидации.
+If the UI does not update, confirm that the parent stores callback values and passes them back. Blazor event handlers need interactive rendering; Flutter requires setState or a state manager. Submit form data only after successful validation.
 
-Проверяйте понятную подпись, пустое состояние, недоступность и размер контейнера. Клавиатурные возможности не означают полной сертификации screen reader. Сейчас проверяется Web в Chrome; нативные мобильные платформы будут проверяться отдельно.
+Check accessible labels, empty/invalid states, disabled actions and narrow layouts. Keyboard support is not full screen-reader certification. Current visual verification targets Web in visible Chrome on Linux/iMac; native mobile platforms are a separate phase.
 
-## Исходники и полный сценарий
+## Source and complete examples
 
-- [Blazor](../../src/NextgenComponents.Blazor/NgMap.razor)
-- [Flutter](../../packages/nextgen_components/lib/src/map.dart)
-- [Галереи и запуск](../../README.md#run)
-- [Матрица возможностей](../catalog.md)
+- [Blazor source](../../src/NextgenComponents.Blazor/NgMap.razor)
+- [Flutter source](../../packages/nextgen_components/lib/src/map.dart)
+- [Galleries and launch commands](../../README.md#run)
+- [Capability matrix](../catalog.md)
 
-Версия параметров сгенерирована из текущего исходного кода. Примеры и правила сопровождаются отдельно в `scripts/manual_content.py`; после изменения API выполните `python3 scripts/generate_manual.py`.
+API declarations are generated from current source. Curated examples and behavior live in `scripts/manual_content.py`; regenerate with `python3 scripts/generate_manual.py`.

@@ -1,51 +1,51 @@
-# NgArcGauge — Дуговой индикатор
+# NgArcGauge — Arc gauge
 
-[Оглавление](README.md) · [Подключение](getting-started.md) · [Модели](models.md)
+[Manual](README.md) · [Getting started](getting-started.md) · [Code examples](code-examples.md) · [Models](models.md)
 
-## Когда использовать
+## When to use it
 
-Показывает числовой прогресс относительно заданного диапазона.
+Display a value within a numeric range.
 
-## Поведение и практические правила
+## Behavior and practical rules
 
-Min/min должен быть меньше Max/max, все числа — конечными. Значение вне диапазона ограничивает заполнение 0–100%, но подпись показывает исходное значение. Компонент только отображает данные, события изменения нет. Unit/unit задаёт подпись единиц, не выполняет преобразование. Цветовые зоны, стрелки, анимация и экспорт не реализованы. Blazor сохраняет точность подписи G6; Flutter подпись самого индикатора округляется до целого.
+Min must be less than Max and values must be finite. The gauge projects the configured value into the range; keep the original business value in the parent. Label and Unit explain the number without relying on color. This is a read-only display, not an input or a multi-scale gauge. Use the shared theme for light/dark contrast.
 
-## Blazor: рабочий пример
+## Blazor example
 
 ```razor
-<NgArcGauge Label="Загрузка" Value="72" Min="0" Max="100" Unit="%"/>
+<NgArcGauge Label="Load" Value="72" Min="0" Max="100" Unit="%"/>
 ```
 
-## Flutter: рабочий пример
+## Flutter example
 
 ```dart
-Widget build(BuildContext context) => const NgArcGauge(label: 'Загрузка',
+Widget build(BuildContext context) => const NgArcGauge(label: 'Load',
   value: 72, min: 0, max: 100, unit: '%');
 ```
 
-## Параметры и события Blazor
+## Blazor parameters and events
 
-Имена чувствительны к регистру. `?` в типе разрешает null. Параметры с `EditorRequired` отмечены как обязательные; остальные имеют значение по умолчанию CLR или инициализатор ниже.
+Names are case-sensitive. `?` permits null. `EditorRequired` parameters are marked required; other values use the initializer or CLR default.
 
-| Параметр | Тип | По умолчанию / требование | Назначение |
+| Parameter | Type | Default / requirement | Purpose |
 |---|---|---|---|
-| `Label` | `string` | "Progress" | Подпись элемента или доступное имя. |
-| `Value` | `double` | 0 | Текущее значение; тип и правила описаны выше. |
-| `Min` | `double` | 0 | Нижняя включительная граница. |
-| `Max` | `double` | 100 | Верхняя включительная граница. |
-| `Unit` | `string` | "%" | Подпись единиц измерения. |
+| `Label` | `string` | "Progress" | Visible label or accessible name. |
+| `Value` | `double` | 0 | Current value; see state ownership and model rules above. |
+| `Min` | `double` | 0 | Inclusive minimum. |
+| `Max` | `double` | 100 | Inclusive maximum. |
+| `Unit` | `string` | "%" | See the behavior rules and model contract above. |
 
-## Параметры и события Flutter
+## Flutter parameters and events
 
-`required` в конструкторе означает обязательный аргумент, даже если его тип допускает null. `key` — стандартный Flutter Key. Значения по умолчанию приведены в точной сигнатуре ниже.
+`required` marks a mandatory argument even if its type is nullable. `key` is the standard Flutter Key. The exact constructor below specifies defaults.
 
-| Аргумент | Тип | Назначение |
+| Argument | Type | Purpose |
 |---|---|---|
-| `label` | `String` | Подпись элемента или доступное имя. |
-| `unit` | `String` | Подпись единиц измерения. |
-| `value` | `double` | Текущее значение; тип и правила описаны выше. |
-| `min` | `double` | Нижняя включительная граница. |
-| `max` | `double` | Верхняя включительная граница. |
+| `label` | `String` | Visible label or accessible name. |
+| `unit` | `String` | See the behavior rules and model contract above. |
+| `value` | `double` | Current value; see state ownership and model rules above. |
+| `min` | `double` | Inclusive minimum. |
+| `max` | `double` | Inclusive maximum. |
 
 ```dart
 const NgArcGauge({
@@ -58,17 +58,17 @@ const NgArcGauge({
   });
 ```
 
-## Интеграция и диагностика
+## Integration and troubleshooting
 
-Если интерфейс не обновляется, проверьте, сохраняет ли родитель результат callback и передаёт ли новое значение обратно. Для Blazor нужен интерактивный render mode; для Flutter — setState или используемый менеджер состояния. Данные формы отправляйте только после её успешной валидации.
+If the UI does not update, confirm that the parent stores callback values and passes them back. Blazor event handlers need interactive rendering; Flutter requires setState or a state manager. Submit form data only after successful validation.
 
-Проверяйте понятную подпись, пустое состояние, недоступность и размер контейнера. Клавиатурные возможности не означают полной сертификации screen reader. Сейчас проверяется Web в Chrome; нативные мобильные платформы будут проверяться отдельно.
+Check accessible labels, empty/invalid states, disabled actions and narrow layouts. Keyboard support is not full screen-reader certification. Current visual verification targets Web in visible Chrome on Linux/iMac; native mobile platforms are a separate phase.
 
-## Исходники и полный сценарий
+## Source and complete examples
 
-- [Blazor](../../src/NextgenComponents.Blazor/NgArcGauge.razor)
-- [Flutter](../../packages/nextgen_components/lib/src/visualization.dart)
-- [Галереи и запуск](../../README.md#run)
-- [Матрица возможностей](../catalog.md)
+- [Blazor source](../../src/NextgenComponents.Blazor/NgArcGauge.razor)
+- [Flutter source](../../packages/nextgen_components/lib/src/visualization.dart)
+- [Galleries and launch commands](../../README.md#run)
+- [Capability matrix](../catalog.md)
 
-Версия параметров сгенерирована из текущего исходного кода. Примеры и правила сопровождаются отдельно в `scripts/manual_content.py`; после изменения API выполните `python3 scripts/generate_manual.py`.
+API declarations are generated from current source. Curated examples and behavior live in `scripts/manual_content.py`; regenerate with `python3 scripts/generate_manual.py`.

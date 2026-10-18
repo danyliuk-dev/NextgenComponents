@@ -1,63 +1,63 @@
-# NgForm — Форма и валидация
+# NgForm — Form validation
 
-[Оглавление](README.md) · [Подключение](getting-started.md) · [Модели](models.md)
+[Manual](README.md) · [Getting started](getting-started.md) · [Code examples](code-examples.md) · [Models](models.md)
 
-## Когда использовать
+## When to use it
 
-Объединяет поля, проверяет значения и вызывает обработчик только при успешной проверке.
+Validate fields and run a save handler only after successful validation.
 
-## Поведение и практические правила
+## Behavior and practical rules
 
-Blazor оборачивает EditForm и DataAnnotationsValidator; Model обязателен, кнопку submit добавляет приложение. Flutter уже добавляет кнопку submitLabel и вызывает Form.validate. Поля должны находиться внутри формы. Для изменения объекта-черновика используйте новый @key/Key, если требуется новый жизненный цикл формы. Межполевые бизнес-правила (например, End > Start) проверяйте в модели или перед сохранением. NgForm не выполняет сохранение в БД автоматически.
+Blazor Model uses DataAnnotations; OnValidSubmit receives a valid form and OnInvalidSubmit reports a failed submission. Keep one model instance while editing. Flutter uses a GlobalKey<FormState>, field validators/required rules and the supplied submit handler. Return null for valid field values, otherwise an error message. Network failures belong to the application save flow, not numeric/date parsing. Avoid nested forms. Maintain a separate saved record so Cancel can discard the draft.
 
-## Blazor: рабочий пример
+## Blazor example
 
 ```razor
 <NgForm Model="model" OnValidSubmit="Save">
-    <NgTextBox Label="Имя" @bind-Value="model.Name"/>
-    <NgButton Type="submit" Primary>Сохранить</NgButton>
+    <NgTextBox Label="Name" @bind-Value="model.Name"/>
+    <NgButton Type="submit" Primary>Save</NgButton>
 </NgForm>
 <p>@status</p>
 @code {
  private Draft model=new(); private string? status;
- private void Save()=>status=$"Сохранено: {model.Name}";
+ private void Save()=>status=$"Saved: {model.Name}";
  public class Draft { [System.ComponentModel.DataAnnotations.Required] public string? Name {get;set;} }
 }
 ```
 
-## Flutter: рабочий пример
+## Flutter example
 
 ```dart
 String name = '';
-Widget build(BuildContext context) => NgForm(submitLabel: 'Сохранить',
-  onValidSubmit: () => debugPrint('Сохранено: $name'),
-  child: NgTextBox(label: 'Имя', onChanged: (v) => name = v,
-    validator: (v) => v == null || v.trim().isEmpty ? 'Введите имя' : null));
+Widget build(BuildContext context) => NgForm(submitLabel: 'Save',
+  onValidSubmit: () => debugPrint('Saved: $name'),
+  child: NgTextBox(label: 'Name', onChanged: (v) => name = v,
+    validator: (v) => v == null || v.trim().isEmpty ? 'Enter a name' : null));
 ```
 
-## Параметры и события Blazor
+## Blazor parameters and events
 
-Имена чувствительны к регистру. `?` в типе разрешает null. Параметры с `EditorRequired` отмечены как обязательные; остальные имеют значение по умолчанию CLR или инициализатор ниже.
+Names are case-sensitive. `?` permits null. `EditorRequired` parameters are marked required; other values use the initializer or CLR default.
 
-| Параметр | Тип | По умолчанию / требование | Назначение |
+| Parameter | Type | Default / requirement | Purpose |
 |---|---|---|---|
-| `Model` | `object` | обязательный | Объект данных для EditForm/DataAnnotations. |
-| `Name` | `string` | "ng-form" | Имя формы. |
-| `ShowSummary` | `bool` | true | Показывать сводку ошибок. |
-| `ChildContent` | `RenderFragment?` | не задан | Содержимое Razor-компонента. |
-| `OnValidSubmit` | `EventCallback<EditContext>` | не задан | Вызывается после успешной валидации; сохранение выполняет приложение. |
-| `OnInvalidSubmit` | `EventCallback<EditContext>` | не задан | Вызывается при неуспешной проверке формы. |
+| `Model` | `object` | required | See the behavior rules and model contract above. |
+| `Name` | `string` | "ng-form" | See the behavior rules and model contract above. |
+| `ShowSummary` | `bool` | true | See the behavior rules and model contract above. |
+| `ChildContent` | `RenderFragment?` | not set | Razor content; for a wizard, a RenderFragment<int> receiving the active index. |
+| `OnValidSubmit` | `EventCallback<EditContext>` | not set | See the behavior rules and model contract above. |
+| `OnInvalidSubmit` | `EventCallback<EditContext>` | not set | See the behavior rules and model contract above. |
 
-## Параметры и события Flutter
+## Flutter parameters and events
 
-`required` в конструкторе означает обязательный аргумент, даже если его тип допускает null. `key` — стандартный Flutter Key. Значения по умолчанию приведены в точной сигнатуре ниже.
+`required` marks a mandatory argument even if its type is nullable. `key` is the standard Flutter Key. The exact constructor below specifies defaults.
 
-| Аргумент | Тип | Назначение |
+| Argument | Type | Purpose |
 |---|---|---|
-| `child` | `Widget` | Дочерний Flutter-виджет. |
-| `onValidSubmit` | `VoidCallback` | Вызывается после успешной валидации; сохранение выполняет приложение. |
-| `submitLabel` | `String` | Текст встроенной Flutter-кнопки отправки. |
-| `formKey` | `GlobalKey<FormState>?` | Необязательный ключ для доступа к FormState. |
+| `child` | `Widget` | See the behavior rules and model contract above. |
+| `onValidSubmit` | `VoidCallback` | See the behavior rules and model contract above. |
+| `submitLabel` | `String` | See the behavior rules and model contract above. |
+| `formKey` | `GlobalKey<FormState>?` | See the behavior rules and model contract above. |
 
 ```dart
 const NgForm({
@@ -69,17 +69,17 @@ const NgForm({
   });
 ```
 
-## Интеграция и диагностика
+## Integration and troubleshooting
 
-Если интерфейс не обновляется, проверьте, сохраняет ли родитель результат callback и передаёт ли новое значение обратно. Для Blazor нужен интерактивный render mode; для Flutter — setState или используемый менеджер состояния. Данные формы отправляйте только после её успешной валидации.
+If the UI does not update, confirm that the parent stores callback values and passes them back. Blazor event handlers need interactive rendering; Flutter requires setState or a state manager. Submit form data only after successful validation.
 
-Проверяйте понятную подпись, пустое состояние, недоступность и размер контейнера. Клавиатурные возможности не означают полной сертификации screen reader. Сейчас проверяется Web в Chrome; нативные мобильные платформы будут проверяться отдельно.
+Check accessible labels, empty/invalid states, disabled actions and narrow layouts. Keyboard support is not full screen-reader certification. Current visual verification targets Web in visible Chrome on Linux/iMac; native mobile platforms are a separate phase.
 
-## Исходники и полный сценарий
+## Source and complete examples
 
-- [Blazor](../../src/NextgenComponents.Blazor/NgForm.razor)
-- [Flutter](../../packages/nextgen_components/lib/src/forms.dart)
-- [Галереи и запуск](../../README.md#run)
-- [Матрица возможностей](../catalog.md)
+- [Blazor source](../../src/NextgenComponents.Blazor/NgForm.razor)
+- [Flutter source](../../packages/nextgen_components/lib/src/forms.dart)
+- [Galleries and launch commands](../../README.md#run)
+- [Capability matrix](../catalog.md)
 
-Версия параметров сгенерирована из текущего исходного кода. Примеры и правила сопровождаются отдельно в `scripts/manual_content.py`; после изменения API выполните `python3 scripts/generate_manual.py`.
+API declarations are generated from current source. Curated examples and behavior live in `scripts/manual_content.py`; regenerate with `python3 scripts/generate_manual.py`.

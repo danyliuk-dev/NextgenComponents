@@ -1,0 +1,18 @@
+<nav class="ng-stepper @(Vertical?"ng-stepper-vertical":"")" aria-label="@Label">
+<ol>
+@for(var i=0;i<Items.Count;i++){var index=i;var step=Items[i];
+<li><button type="button" class="ng-step-button" aria-current="@(Value==i?"step":null)" disabled="@(Disabled||step.Disabled||(Value!=i&&!NgStepRules.CanMove(Items,Value,i,Linear)))" @onclick="()=>Choose(index)"><span class="ng-step-number">@(step.Valid==false?"!":step.Valid==true?"✓":(i+1).ToString())</span><span>@step.Label @if(step.Optional){<small>Optional</small>} @if(step.Valid is not null){<small>@(step.Valid.Value?"Valid":"Needs attention")</small>}</span></button></li>
+}
+</ol>
+</nav>
+@code {
+ [Parameter] public string Label {get;set;}="Progress";
+ [Parameter,EditorRequired] public IReadOnlyList<NgStep> Items {get;set;}=[];
+ [Parameter] public int Value {get;set;}
+ [Parameter] public EventCallback<int> ValueChanged {get;set;}
+ [Parameter] public bool Linear {get;set;}
+ [Parameter] public bool Vertical {get;set;}
+ [Parameter] public bool Disabled {get;set;}
+ protected override void OnParametersSet()=>NgStepRules.Validate(Items,Value);
+ private Task Choose(int target)=>!Disabled&&NgStepRules.CanMove(Items,Value,target,Linear)?ValueChanged.InvokeAsync(target):Task.CompletedTask;
+}

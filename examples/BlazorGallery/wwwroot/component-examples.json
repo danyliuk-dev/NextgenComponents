@@ -1,0 +1,207 @@
+{
+  "NgAIPrompt": {
+    "title": "AI prompt interface",
+    "blazor": "<NgAIPrompt Label=\"Assistant\" @bind-Value=\"prompt\" Generate=\"Generate\"\n    Suggestions=\"suggestions\" OnCompleted=\"Completed\" OnFeedback=\"Feedback\"/>\n<p>@status</p>\n@code {\n private string prompt=\"Draft a meeting agenda\",status=\"\";\n private string[] suggestions=[\"Draft a meeting agenda\",\"Suggest next steps\"];\n private async Task<string> Generate(string text,CancellationToken cancellation) {\n  await Task.Delay(600,cancellation);\n  return $\"Local example response to: {text}\"; // Connect your application service here.\n }\n private void Completed(NgPromptResponse response){status=$\"Response {response.Id} ready\";}\n private void Feedback(NgPromptFeedback feedback){status=$\"Response feedback {feedback.Response.Id}: {feedback.Helpful}\";}\n}",
+    "flutter": "String prompt = 'Draft a meeting agenda', status = '';\nFuture<String> generate(String text, NgPromptCancellation cancellation) async {\n  await Future<void>.delayed(const Duration(milliseconds: 600));\n  cancellation.throwIfCancelled();\n  return 'Local example response to: $text'; // Replace with your application service.\n}\nWidget build(BuildContext context) => NgAIPrompt(label: 'Assistant', value: prompt,\n  onChanged: (v) => setState(() => prompt = v), generate: generate,\n  suggestions: const ['Draft a meeting agenda', 'Suggest next steps'],\n  onCompleted: (r) => setState(() => status = 'Response ${r.id} ready'),\n  onFeedback: (f) => setState(() => status = 'Response feedback ${f.response.id}: ${f.helpful}'));"
+  },
+  "NgArcGauge": {
+    "title": "Arc gauge",
+    "blazor": "<NgArcGauge Label=\"Load\" Value=\"72\" Min=\"0\" Max=\"100\" Unit=\"%\"/>",
+    "flutter": "Widget build(BuildContext context) => const NgArcGauge(label: 'Load',\n  value: 72, min: 0, max: 100, unit: '%');"
+  },
+  "NgAutoComplete": {
+    "title": "Text suggestions",
+    "blazor": "<NgAutoComplete Label=\"City\" Items=\"cities\" @bind-Value=\"city\"/>\n@code { private string? city; private string[] cities=[\"Kyiv\",\"Lviv\",\"Odesa\"]; }",
+    "flutter": "String city = '';\nWidget build(BuildContext context) => NgAutoComplete(label: 'City',\n  items: const ['Kyiv','Lviv','Odesa'], initialValue: city,\n  onChanged: (v) => city = v);"
+  },
+  "NgBreadcrumb": {
+    "title": "Breadcrumb",
+    "blazor": "<NgBreadcrumb Items=\"items\" OnNavigate=\"id=>selected=id\"/>\n<p>@selected</p>\n@code { private string? selected; private NgBreadcrumbItem[] items=[new(\"all\",\"Projects\"),new(\"design\",\"Design\")]; }",
+    "flutter": "String? selected;\nWidget build(BuildContext context) => NgBreadcrumb(\n  items: const [NgBreadcrumbItem('all','Projects'),NgBreadcrumbItem('design','Design')],\n  onNavigate: (id) => setState(() => selected = id));"
+  },
+  "NgButton": {
+    "title": "Button",
+    "blazor": "<NgButton Primary OnClick=\"()=>count++\">Clicked @count times</NgButton>\n@code { private int count; }",
+    "flutter": "int count = 0;\nWidget build(BuildContext context) => NgButton(primary: true,\n  onPressed: () => setState(() => count++), child: Text('Clicked $count times'));"
+  },
+  "NgCalendar": {
+    "title": "Calendar",
+    "blazor": "<NgCalendar @bind-Value=\"value\"/>\n@code { private DateOnly? value=new(2026,10,20); }",
+    "flutter": "DateTime? value = DateTime(2026,10,20,9,30);\nWidget build(BuildContext context) => NgCalendar(value: value,\n  onChanged: (v) => setState(() => value = v));"
+  },
+  "NgChart": {
+    "title": "Chart",
+    "blazor": "<NgChart Title=\"Sales\" Kind=\"NgChartKind.Line\" Categories=\"categories\" Series=\"series\" OnPointSelected=\"p=>selected=p.Label\"/>\n<p>@selected</p>\n@code { private string? selected; private string[] categories=[\"Mon\",\"Tue\",\"Wed\"]; private NgChartSeries[] series=[new(\"Orders\",[10,null,25])]; }",
+    "flutter": "String? selected;\nWidget build(BuildContext context) => NgChart(title: 'Sales', kind: NgChartKind.line,\n  categories: const ['Mon','Tue','Wed'], series: const [NgChartSeries('Orders',[10,null,25])],\n  onPointSelected: (p) => setState(() => selected = p.label));"
+  },
+  "NgCheckBox": {
+    "title": "Checkbox",
+    "blazor": "<NgCheckBox Label=\"Notifications\" @bind-Value=\"enabled\"/>\n@code { private bool enabled=true; }",
+    "flutter": "bool enabled = true;\nWidget build(BuildContext context) => NgCheckBox(label: 'Notifications',\n  value: enabled, onChanged: (v) => setState(() => enabled = v));"
+  },
+  "NgComboBox": {
+    "title": "Searchable selection",
+    "blazor": "<NgComboBox Label=\"Team\" Items=\"options\" @bind-Value=\"team\"/>\n@code { private string? team=\"design\"; private NgOption[] options=[new(\"design\",\"Design\"),new(\"dev\",\"Engineering\"),new(\"locked\",\"Unavailable\",true)]; }",
+    "flutter": "String? team = 'design';\nWidget build(BuildContext context) => NgComboBox(label: 'Team', value: team,\n  items: const [NgOption('design','Design'), NgOption('dev','Engineering'),\n    NgOption('locked','Unavailable', disabled: true)],\n  onChanged: (v) => setState(() => team = v));"
+  },
+  "NgDataGrid": {
+    "title": "Data grid",
+    "blazor": "<NgDataGrid TItem=\"Product\" Items=\"rows\" Columns=\"columns\" RowId=\"r=>r.Id\" @bind-SelectedIds=\"selected\"/>\n@code { public record Product(string Id,string Name,int Count); private Product[] rows=[new(\"a\",\"Desk\",12),new(\"b\",\"Chair\",120)]; private HashSet<string> selected=[]; private NgDataColumn<Product>[] columns=[new(\"name\",\"Name\",r=>r.Name),new(\"count\",\"Quantity\",r=>r.Count)]; }",
+    "flutter": "final rows = [(id: 'a', name: 'Desk', count: 12), (id: 'b', name: 'Chair', count: 120)];\nSet<String> selected = {};\nWidget build(BuildContext context) => NgDataGrid<({String id, String name, int count})>(\n  items: rows, rowId: (r) => r.id, selectedIds: selected,\n  onSelectionChanged: (v) => setState(() => selected = v),\n  columns: [NgDataColumn('name','Name',(r) => r.name),\n    NgDataColumn('count','Quantity',(r) => r.count)]);"
+  },
+  "NgDateInput": {
+    "title": "Date input",
+    "blazor": "<NgDateInput Label=\"Date\" @bind-Value=\"value\"/>\n@code { private DateOnly? value=new(2026,10,20); }",
+    "flutter": "DateTime? value = DateTime(2026,10,20,9,30);\nWidget build(BuildContext context) => NgDateInput(value: value,\n  onChanged: (v) => setState(() => value = v));"
+  },
+  "NgDatePicker": {
+    "title": "Date picker",
+    "blazor": "<NgDatePicker Label=\"Date\" @bind-Value=\"value\"/>\n@code { private DateOnly? value=new(2026,10,20); }",
+    "flutter": "DateTime? value = DateTime(2026,10,20,9,30);\nWidget build(BuildContext context) => NgDatePicker(value: value,\n  onChanged: (v) => setState(() => value = v));"
+  },
+  "NgDateRangePicker": {
+    "title": "Date range",
+    "blazor": "<NgDateRangePicker Label=\"Period\" @bind-Value=\"range\"/>\n@code { private NgDateRange? range=new(new(2026,10,20),new(2026,10,23)); }",
+    "flutter": "NgDateRange? range = NgDateRange(DateTime(2026,10,20), DateTime(2026,10,23));\nWidget build(BuildContext context) => NgDateRangePicker(label: 'Period', value: range,\n  required: true, onChanged: (v) => setState(() => range = v));"
+  },
+  "NgDateTimePicker": {
+    "title": "Date and time",
+    "blazor": "<NgDateTimePicker Label=\"Date\" @bind-Value=\"value\"/>\n@code { private DateTime? value=new(2026,10,20,9,30,0); }",
+    "flutter": "DateTime? value = DateTime(2026,10,20,9,30);\nWidget build(BuildContext context) => NgDateTimePicker(value: value,\n  onChanged: (v) => setState(() => value = v));"
+  },
+  "NgDiagram": {
+    "title": "Interactive diagram",
+    "blazor": "<NgDiagram Label=\"Process\" @bind-Value=\"graph\"\n    @bind-SelectedNodeId=\"selectedNode\" @bind-SelectedEdgeId=\"selectedEdge\"/>\n<p>Node: @selectedNode · Connection: @selectedEdge</p>\n@code {\n    private string? selectedNode, selectedEdge;\n    private NgDiagramModel graph = new([\n        new(\"start\", \"Start\", 40, 100, Shape: NgDiagramShape.Ellipse),\n        new(\"work\", \"Processing\", 360, 100)\n    ], [new(\"next\", \"start\", \"work\", \"Continue\")]);\n}",
+    "flutter": "NgDiagramModel graph = NgDiagramModel(nodes: const [\n  NgDiagramNode('start', 'Start', 40, 100, shape: NgDiagramShape.ellipse),\n  NgDiagramNode('work', 'Processing', 360, 100),\n], edges: const [NgDiagramEdge('next', 'start', 'work', text: 'Continue')]);\nString? selectedNode, selectedEdge;\nWidget build(BuildContext context) => NgDiagram(label: 'Process', value: graph,\n  onChanged: (v) => setState(() => graph = v),\n  selectedNodeId: selectedNode, selectedEdgeId: selectedEdge,\n  onSelectedNodeIdChanged: (v) => setState(() => selectedNode = v),\n  onSelectedEdgeIdChanged: (v) => setState(() => selectedEdge = v));"
+  },
+  "NgDialog": {
+    "title": "Modal dialog",
+    "blazor": "<NgButton OnClick=\"()=>open=true\">Open</NgButton>\n<NgDialog Title=\"Confirmation\" @bind-Open=\"open\"><ChildContent>Continue?</ChildContent><Actions><NgButton OnClick=\"()=>open=false\">Close</NgButton></Actions></NgDialog>\n@code { private bool open; }",
+    "flutter": "Widget build(BuildContext context) => NgButton(child: const Text('Open'),\n  onPressed: () => NgDialog.show<void>(context, title: 'Confirmation',\n    child: const Text('Continue?'), actions: [TextButton(\n      onPressed: () => Navigator.of(context).pop(), child: const Text('Close'))]));"
+  },
+  "NgDropDownList": {
+    "title": "Dropdown list",
+    "blazor": "<NgDropDownList Label=\"Team\" Items=\"options\" @bind-Value=\"team\"/>\n@code { private string team=\"design\"; private NgOption[] options=[new(\"design\",\"Design\"),new(\"dev\",\"Engineering\"),new(\"locked\",\"Unavailable\",true)]; }",
+    "flutter": "String? team = 'design';\nWidget build(BuildContext context) => NgDropDownList(label: 'Team', value: team,\n  items: const [NgOption('design','Design'), NgOption('dev','Engineering'),\n    NgOption('locked','Unavailable', disabled: true)],\n  onChanged: (v) => setState(() => team = v));"
+  },
+  "NgEditor": {
+    "title": "Structured document editor",
+    "blazor": "<NgEditor Label=\"Project description\" @bind-Value=\"document\"/>\n<NgButton OnClick=\"Save\">Save JSON</NgButton>\n<pre>@saved</pre>\n@code {\n    private NgDocument document = new([\n        new(\"Project plan\", NgBlockKind.Heading1),\n        new(\"Agree on requirements\", NgBlockKind.Bullet),\n        new(\"Review the result\", NgBlockKind.Bullet, Bold: true)\n    ]);\n    private string saved = \"\";\n    private void Save() => saved = document.ToJson();\n}",
+    "flutter": "NgDocument document = NgDocument(blocks: const [\n  NgDocumentBlock(text: 'Project plan', kind: NgBlockKind.heading1),\n  NgDocumentBlock(text: 'Agree on requirements', kind: NgBlockKind.bullet),\n  NgDocumentBlock(text: 'Review the result', kind: NgBlockKind.bullet, bold: true),\n]);\nString saved = '';\nWidget build(BuildContext context) => Column(children: [\n  NgEditor(label: 'Project description', value: document,\n    onChanged: (v) => setState(() => document = v)),\n  NgButton(onPressed: () => setState(() => saved = document.toJson()),\n    child: const Text('Save JSON')),\n  Text(saved),\n]);"
+  },
+  "NgForm": {
+    "title": "Form validation",
+    "blazor": "<NgForm Model=\"model\" OnValidSubmit=\"Save\">\n    <NgTextBox Label=\"Name\" @bind-Value=\"model.Name\"/>\n    <NgButton Type=\"submit\" Primary>Save</NgButton>\n</NgForm>\n<p>@status</p>\n@code {\n private Draft model=new(); private string? status;\n private void Save()=>status=$\"Saved: {model.Name}\";\n public class Draft { [System.ComponentModel.DataAnnotations.Required] public string? Name {get;set;} }\n}",
+    "flutter": "String name = '';\nWidget build(BuildContext context) => NgForm(submitLabel: 'Save',\n  onValidSubmit: () => debugPrint('Saved: $name'),\n  child: NgTextBox(label: 'Name', onChanged: (v) => name = v,\n    validator: (v) => v == null || v.trim().isEmpty ? 'Enter a name' : null));"
+  },
+  "NgLinearGauge": {
+    "title": "Linear gauge",
+    "blazor": "<NgLinearGauge Label=\"Load\" Value=\"72\" Min=\"0\" Max=\"100\" Unit=\"%\"/>",
+    "flutter": "Widget build(BuildContext context) => const NgLinearGauge(label: 'Load',\n  value: 72, min: 0, max: 100, unit: '%');"
+  },
+  "NgMap": {
+    "title": "Interactive map",
+    "blazor": "<NgMap Label=\"Objects\" Value=\"map\" ClusterMarkers=\"true\" ClusterRadius=\"60\" @bind-View=\"view\" @bind-SelectedId=\"selected\"\n    OnMapClick=\"Clicked\" TileUrlTemplate=\"https://tile.openstreetmap.org/{z}/{x}/{y}.png\"\n    Attribution=\"© OpenStreetMap contributors\" AttributionUrl=\"https://www.openstreetmap.org/copyright\"/>\n<p>Selected: @selected; last point: @last</p>\n@code {\n private string? selected; private string last=\"\";\n private NgMapView view=new(50.4501,30.5234,13);\n private NgMapModel map=new(\n   [new(\"office\",\"Office\",new(50.4501,30.5234)),new(\"park\",\"Park\",new(50.4466,30.5410))],\n   [new(\"line\",\"Line\",[new(50.4501,30.5234),new(50.4466,30.5410)])]);\n private void Clicked(NgMapPoint p){last=$\"{p.Latitude:F4}, {p.Longitude:F4}\";}\n}",
+    "flutter": "String? selected;\nString last = '';\nNgMapView view = NgMapView(latitude: 50.4501, longitude: 30.5234, zoom: 13);\nfinal map = NgMapModel(markers: [\n  NgMapMarker('office', 'Office', NgMapPoint(50.4501, 30.5234)),\n  NgMapMarker('park', 'Park', NgMapPoint(50.4466, 30.5410)),\n], paths: [NgMapPath('line', 'Line', [\n  NgMapPoint(50.4501, 30.5234), NgMapPoint(50.4466, 30.5410),\n])]);\nWidget build(BuildContext context) => NgMap(label: 'Objects', value: map,\n  view: view, selectedId: selected, clusterMarkers: true, clusterRadius: 60,\n  onViewChanged: (v) => setState(() => view = v),\n  onSelectedIdChanged: (id) => setState(() => selected = id),\n  onMapClick: (p) => setState(() => last = '${p.latitude}, ${p.longitude}'),\n  tileUrlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',\n  attribution: '© OpenStreetMap contributors',\n  attributionUrl: 'https://www.openstreetmap.org/copyright');"
+  },
+  "NgMultiSelect": {
+    "title": "Multiple selection",
+    "blazor": "<NgMultiSelect Label=\"Services\" Items=\"options\" MaxSelected=\"2\" @bind-Value=\"selected\"/>\n@code { private string[] selected=[]; private NgOption[] options=[new(\"a\",\"Delivery\"),new(\"b\",\"Assembly\")]; }",
+    "flutter": "List<String> selected = [];\nWidget build(BuildContext context) => NgMultiSelect(label: 'Services', value: selected,\n  items: const [NgOption('a','Delivery'),NgOption('b','Assembly')], maxSelected: 2,\n  onChanged: (v) => setState(() => selected = v));"
+  },
+  "NgNotification": {
+    "title": "Notification",
+    "blazor": "<NgNotification @bind-Visible=\"visible\" Tone=\"success\">Saved</NgNotification>\n@code { private bool visible=true; }",
+    "flutter": "bool visible = true;\nWidget build(BuildContext context) => visible ? NgNotification(message: 'Saved',\n  onDismiss: () => setState(() => visible = false)) : const SizedBox.shrink();"
+  },
+  "NgNumericTextBox": {
+    "title": "Numeric input",
+    "blazor": "<NgNumericTextBox Label=\"Quantity\" Min=\"0\" Max=\"100\" Step=\"1\" @bind-Value=\"quantity\"/>\n@code { private decimal? quantity=5; }",
+    "flutter": "double? quantity = 5;\nWidget build(BuildContext context) => NgNumericTextBox(label: 'Quantity',\n  value: quantity, min: 0, max: 100, required: true,\n  onChanged: (v) => setState(() => quantity = v));"
+  },
+  "NgPager": {
+    "title": "Pagination",
+    "blazor": "<NgPager Total=\"items.Length\" @bind-Page=\"page\" @bind-PageSize=\"size\"/>\n@foreach(var item in items.Skip((page-1)*size).Take(size)){<p>@item</p>}\n@code { private int page=1,size=5; private string[] items=Enumerable.Range(1,18).Select(i=>$\"Row {i}\").ToArray(); }",
+    "flutter": "int page = 1, size = 5;\nWidget build(BuildContext context) => NgPager(total: 18, page: page, pageSize: size,\n  onPageChanged: (v) => setState(() => page = v),\n  onPageSizeChanged: (v) => setState(() { size = v; page = 1; }));"
+  },
+  "NgPdfViewer": {
+    "title": "PDF viewer",
+    "blazor": "<NgPdfViewer Label=\"Guide\" Source=\"samples/nextgen-guide.pdf\" Height=\"720\" Dark=\"false\"/>\n<p>PDF must be hosted by the application at this address.</p>",
+    "flutter": "Widget build(BuildContext context) => const NgPdfViewer(\n  label: 'Guide', source: 'samples/nextgen-guide.pdf', height: 720);"
+  },
+  "NgPivotGrid": {
+    "title": "Pivot grid",
+    "blazor": "<NgPivotGrid Items=\"records\" RowField=\"Team\" ColumnField=\"Quarter\" Aggregate=\"NgAggregate.Average\" OnCellSelected=\"p=>count=p.Records.Count\"/>\n<p>Source records: @count</p>\n@code { private int count; private NgPivotRecord[] records=[new(\"a\",new Dictionary<string,string>{{\"Team\",\"Design\"},{\"Quarter\",\"Q1\"}},100),new(\"b\",new Dictionary<string,string>{{\"Team\",\"Design\"},{\"Quarter\",\"Q1\"}},200)]; }",
+    "flutter": "int count = 0;\nWidget build(BuildContext context) => NgPivotGrid(rowField: 'Team', columnField: 'Quarter',\n  aggregate: NgAggregate.average, items: [\n    NgPivotRecord('a', {'Team':'Design','Quarter':'Q1'},100),\n    NgPivotRecord('b', {'Team':'Design','Quarter':'Q1'},200)],\n  onCellSelected: (p) => setState(() => count = p.records.length));"
+  },
+  "NgPromptBox": {
+    "title": "Prompt input",
+    "blazor": "<NgPromptBox Label=\"Prompt\" @bind-Value=\"prompt\" Busy=\"busy\" OnSubmit=\"Submit\" OnCancel=\"Cancel\"/>\n<p>@result</p>\n@code {\n private string prompt=\"\",result=\"\"; private bool busy; private int revision;\n private async Task Submit(string text) {\n  var request=++revision; busy=true;\n  await Task.Delay(700); // Local example; replace with an application handler.\n  if(request!=revision)return;\n  result=$\"Received prompt: {text}\"; busy=false;\n }\n private void Cancel(){revision++;busy=false;result=\"Cancelled\";}\n}",
+    "flutter": "String prompt = '', result = '';\nbool busy = false;\nint revision = 0;\nFuture<void> submit(String text) async {\n  final request = ++revision;\n  setState(() => busy = true);\n  await Future<void>.delayed(const Duration(milliseconds: 700));\n  if (!mounted || request != revision) return;\n  setState(() { result = 'Received prompt: $text'; busy = false; });\n}\nWidget build(BuildContext context) => NgPromptBox(label: 'Prompt', value: prompt,\n  onChanged: (v) => setState(() => prompt = v), busy: busy,\n  onSubmit: submit,\n  onCancel: () => setState(() { revision++; busy = false; result = 'Cancelled'; }));"
+  },
+  "NgRadioGroup": {
+    "title": "Radio group",
+    "blazor": "<NgRadioGroup Label=\"Team\" Items=\"options\" @bind-Value=\"team\"/>\n@code { private string team=\"design\"; private NgOption[] options=[new(\"design\",\"Design\"),new(\"dev\",\"Engineering\"),new(\"locked\",\"Unavailable\",true)]; }",
+    "flutter": "String? team = 'design';\nWidget build(BuildContext context) => NgRadioGroup(label: 'Team', value: team,\n  items: const [NgOption('design','Design'), NgOption('dev','Engineering'),\n    NgOption('locked','Unavailable', disabled: true)],\n  onChanged: (v) => setState(() => team = v));"
+  },
+  "NgScheduler": {
+    "title": "Weekly scheduler",
+    "blazor": "<NgScheduler @bind-Date=\"week\" Items=\"events\" OnCreate=\"day=>message=day.ToShortDateString()\" OnEdit=\"item=>message=item.Title\"/>\n<p>@message</p>\n@code { private DateTime week=new(2026,10,19); private string? message; private NgScheduleEvent[] events=[new(\"a\",\"Meeting\",new(2026,10,19,10,0,0),new(2026,10,19,11,0,0))]; }",
+    "flutter": "DateTime week = DateTime(2026,10,19);\nWidget build(BuildContext context) => NgScheduler(date: week,\n  items: [NgScheduleEvent('a','Meeting',DateTime(2026,10,19,10),DateTime(2026,10,19,11))],\n  onDateChanged: (v) => setState(() => week = v),\n  onCreate: (day) => debugPrint('Add $day'),\n  onEdit: (item) => debugPrint(item.title));"
+  },
+  "NgSpreadsheet": {
+    "title": "Spreadsheet",
+    "blazor": "<NgSpreadsheet @bind-Value=\"sheet\"/>\n@code { private NgSheet sheet=new(8,5,new Dictionary<string,string>{{\"A1\",\"10\"},{\"B1\",\"20\"},{\"C1\",\"=SUM(A1:B1)\"}}); }",
+    "flutter": "NgSheet sheet = NgSheet(rows: 8, columns: 5, cells: {'A1':'10','B1':'20','C1':'=SUM(A1:B1)'});\nWidget build(BuildContext context) => NgSpreadsheet(value: sheet,\n  onChanged: (v) => setState(() => sheet = v));"
+  },
+  "NgStepper": {
+    "title": "Step progress",
+    "blazor": "<NgStepper Items=\"steps\" @bind-Value=\"current\" Linear />\n<p>Current index: @current</p>\n@code {\n private int current;\n private NgStep[] steps=[new(\"Contact\"),new(\"Preferences\",Optional:true),new(\"Review\")];\n}",
+    "flutter": "int current = 0;\nfinal steps = const [NgStep('Contact'), NgStep('Preferences', optional: true), NgStep('Review')];\nWidget build(BuildContext context) => NgStepper(items: steps, value: current, linear: true,\n  onChanged: (v) => setState(() => current = v));"
+  },
+  "NgSwitch": {
+    "title": "Switch",
+    "blazor": "<NgSwitch Label=\"Notifications\" @bind-Value=\"enabled\"/>\n@code { private bool enabled=true; }",
+    "flutter": "bool enabled = true;\nWidget build(BuildContext context) => NgSwitch(label: 'Notifications',\n  value: enabled, onChanged: (v) => setState(() => enabled = v));"
+  },
+  "NgTabs": {
+    "title": "Tabs",
+    "blazor": "<NgTabs Items=\"tabs\" @bind-SelectedIndex=\"index\"/>\n@code { private int index; private NgTab[] tabs=[new(\"Overview\",b=>b.AddContent(0,\"Summary\")),new(\"Details\",b=>b.AddContent(0,\"Details\"))]; }",
+    "flutter": "int index = 0;\nWidget build(BuildContext context) => NgTabs(selectedIndex: index,\n  items: const [NgTab('Overview',Text('Summary')),NgTab('Details',Text('Details'))],\n  onChanged: (v) => setState(() => index = v));"
+  },
+  "NgTextArea": {
+    "title": "Multiline text",
+    "blazor": "<NgTextArea Label=\"Description\" @bind-Value=\"text\" Rows=\"4\" MaxLength=\"500\"/>\n<p>@text</p>\n@code { private string? text=\"Initial text\"; }",
+    "flutter": "final text = TextEditingController(text: 'Initial text');\n@override void dispose() { text.dispose(); super.dispose(); }\nWidget build(BuildContext context) => NgTextArea(label: 'Description',\n  controller: text, validator: (v) => v == null || v.trim().isEmpty ? 'Enter text' : null, rows: 4, maxLength: 500);"
+  },
+  "NgTextBox": {
+    "title": "Single-line text",
+    "blazor": "<NgTextBox Label=\"Description\" @bind-Value=\"text\"/>\n<p>@text</p>\n@code { private string? text=\"Initial text\"; }",
+    "flutter": "final text = TextEditingController(text: 'Initial text');\n@override void dispose() { text.dispose(); super.dispose(); }\nWidget build(BuildContext context) => NgTextBox(label: 'Description',\n  controller: text, validator: (v) => v == null || v.trim().isEmpty ? 'Enter text' : null);"
+  },
+  "NgTimePicker": {
+    "title": "Time picker",
+    "blazor": "<NgTimePicker Label=\"Date\" @bind-Value=\"value\"/>\n@code { private TimeOnly? value=new(9,30); }",
+    "flutter": "TimeOfDay? value = const TimeOfDay(hour: 9, minute: 30);\nWidget build(BuildContext context) => NgTimePicker(value: value,\n  onChanged: (v) => setState(() => value = v));"
+  },
+  "NgTooltip": {
+    "title": "Tooltip",
+    "blazor": "<NgTooltip Text=\"Create a copy\"><NgButton>Copy</NgButton></NgTooltip>",
+    "flutter": "Widget build(BuildContext context) => NgTooltip(text: 'Create a copy',\n  child: NgButton(onPressed: () {}, child: const Text('Copy')));"
+  },
+  "NgTreeList": {
+    "title": "Tree list",
+    "blazor": "<NgTreeList TItem=\"string\" Items=\"nodes\" Columns=\"columns\" @bind-ExpandedIds=\"expanded\" @bind-SelectedId=\"selected\"/>\n@code { private string? selected; private HashSet<string> expanded=[\"root\"]; private NgTreeNode<string>[] nodes=[new(\"root\",\"Projects\",[new(\"a\",\"Design\"),new(\"b\",\"Engineering\")])]; private NgDataColumn<string>[] columns=[new(\"name\",\"Name\",s=>s)]; }",
+    "flutter": "Set<String> expanded = {'root'}; String? selected;\nWidget build(BuildContext context) => NgTreeList<String>(\n  items: const [NgTreeNode('root','Projects',children: [NgTreeNode('a','Design'),NgTreeNode('b','Engineering')])],\n  columns: [NgDataColumn('name','Name',(s) => s)],\n  expandedIds: expanded, selectedId: selected,\n  onExpandedChanged: (v) => setState(() => expanded = v),\n  onSelected: (v) => setState(() => selected = v));"
+  },
+  "NgTreeView": {
+    "title": "Tree view",
+    "blazor": "<NgTreeView TItem=\"string\" Items=\"nodes\" Text=\"s=>s\" @bind-ExpandedIds=\"expanded\" @bind-SelectedId=\"selected\"/>\n@code { private string? selected; private HashSet<string> expanded=[\"root\"]; private NgTreeNode<string>[] nodes=[new(\"root\",\"Projects\",[new(\"a\",\"Design\"),new(\"b\",\"Engineering\")])]; }",
+    "flutter": "Set<String> expanded = {'root'}; String? selected;\nWidget build(BuildContext context) => NgTreeView<String>(\n  items: const [NgTreeNode('root','Projects',children: [NgTreeNode('a','Design'),NgTreeNode('b','Engineering')])],\n  text: (s) => s,\n  expandedIds: expanded, selectedId: selected,\n  onExpandedChanged: (v) => setState(() => expanded = v),\n  onSelected: (v) => setState(() => selected = v));"
+  },
+  "NgWizard": {
+    "title": "Multi-step wizard",
+    "blazor": "<NgWizard Items=\"steps\" @bind-Value=\"current\" ValidateStep=\"Validate\" OnFinish=\"Save\" Context=\"index\">\n @if(index==0){<label>Name <input @bind=\"name\" @bind:event=\"oninput\" /></label>}\n else{<p>Review: @name</p>}\n</NgWizard>\n<p>@status</p>\n@code {\n private int current; private string name=\"\",status=\"Not saved\";\n private NgStep[] steps=[new(\"Contact\"),new(\"Review\")];\n private Task<string?> Validate(int index)=>Task.FromResult<string?>(index==0&&name.Trim().Length<2?\"Enter at least two characters.\":null);\n private Task Save(){status=$\"Saved: {name}\";return Task.CompletedTask;}\n}",
+    "flutter": "int current = 0;\nString name = '', status = 'Not saved';\nfinal steps = const [NgStep('Contact'), NgStep('Review')];\nWidget build(BuildContext context) => Column(children: [\n NgWizard(items: steps, value: current,\n  onChanged: (v) => setState(() => current = v),\n  validateStep: (index) async => index == 0 && name.trim().length < 2 ? 'Enter at least two characters.' : null,\n  onFinish: () async { setState(() => status = 'Saved: $name'); },\n  contentBuilder: (context, index) => index == 0\n    ? TextFormField(initialValue: name, decoration: const InputDecoration(labelText: 'Name'), onChanged: (v) => name = v)\n    : Text('Review: $name')),\n Text(status),\n]);"
+  }
+}

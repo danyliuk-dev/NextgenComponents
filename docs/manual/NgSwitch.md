@@ -1,52 +1,52 @@
-# NgSwitch — Переключатель
+# NgSwitch — Switch
 
-[Оглавление](README.md) · [Подключение](getting-started.md) · [Модели](models.md)
+[Manual](README.md) · [Getting started](getting-started.md) · [Code examples](code-examples.md) · [Models](models.md)
 
-## Когда использовать
+## When to use it
 
-Редактирует независимое логическое состояние.
+Edit a Boolean option.
 
-## Поведение и практические правила
+## Behavior and practical rules
 
-Состояние хранит родитель: обязательно сохраняйте новое значение из callback. Во Flutter onChanged: null отключает управление; в Blazor используйте Disabled. Label должен объяснять, что именно включается. Поддерживается только true/false, третьего состояния нет. Для группы взаимоисключающих вариантов используйте NgRadioGroup.
+The parent owns Value/value. Store ValueChanged/onChanged and pass the updated value back; Flutter needs setState or your state manager. Disabled prevents interaction. The label provides the accessible name. Keyboard focus and Space toggle the control. These components represent true/false, not a tri-state value; validate application requirements separately.
 
-## Blazor: рабочий пример
+## Blazor example
 
 ```razor
-<NgSwitch Label="Уведомления" @bind-Value="enabled"/>
+<NgSwitch Label="Notifications" @bind-Value="enabled"/>
 @code { private bool enabled=true; }
 ```
 
-## Flutter: рабочий пример
+## Flutter example
 
 ```dart
 bool enabled = true;
-Widget build(BuildContext context) => NgSwitch(label: 'Уведомления',
+Widget build(BuildContext context) => NgSwitch(label: 'Notifications',
   value: enabled, onChanged: (v) => setState(() => enabled = v));
 ```
 
-## Параметры и события Blazor
+## Blazor parameters and events
 
-Имена чувствительны к регистру. `?` в типе разрешает null. Параметры с `EditorRequired` отмечены как обязательные; остальные имеют значение по умолчанию CLR или инициализатор ниже.
+Names are case-sensitive. `?` permits null. `EditorRequired` parameters are marked required; other values use the initializer or CLR default.
 
-| Параметр | Тип | По умолчанию / требование | Назначение |
+| Parameter | Type | Default / requirement | Purpose |
 |---|---|---|---|
-| `Label` | `string` | "" | Подпись элемента или доступное имя. |
-| `Value` | `bool` | false | Текущее значение; тип и правила описаны выше. |
-| `ValueChanged` | `EventCallback<bool>` | не задан | Новое значение для родителя; сохраните его в модели. |
-| `ValueExpression` | `System.Linq.Expressions.Expression<Func<bool>>?` | не задан | Выражение поля модели для валидации. @bind-Value создаёт автоматически; при ручных Value/ValueChanged передайте явно, даже вне формы. |
-| `Disabled` | `bool` | false | true запрещает действия пользователя. |
-| `AdditionalAttributes` | `Dictionary<string,object>?` | не задан | Дополнительные HTML/ARIA атрибуты; не используйте для обхода проверок модели. |
+| `Label` | `string` | "" | Visible label or accessible name. |
+| `Value` | `bool` | false | Current value; see state ownership and model rules above. |
+| `ValueChanged` | `EventCallback<bool>` | not set | New value for the parent to store and pass back. |
+| `ValueExpression` | `System.Linq.Expressions.Expression<Func<bool>>?` | not set | Expression identifying the model field; @bind-Value supplies it automatically. |
+| `Disabled` | `bool` | false | Disable user interaction. |
+| `AdditionalAttributes` | `Dictionary<string,object>?` | not set | Additional HTML/ARIA attributes; do not bypass component validation. |
 
-## Параметры и события Flutter
+## Flutter parameters and events
 
-`required` в конструкторе означает обязательный аргумент, даже если его тип допускает null. `key` — стандартный Flutter Key. Значения по умолчанию приведены в точной сигнатуре ниже.
+`required` marks a mandatory argument even if its type is nullable. `key` is the standard Flutter Key. The exact constructor below specifies defaults.
 
-| Аргумент | Тип | Назначение |
+| Argument | Type | Purpose |
 |---|---|---|
-| `label` | `String` | Подпись элемента или доступное имя. |
-| `value` | `bool` | Текущее значение; тип и правила описаны выше. |
-| `onChanged` | `ValueChanged<bool>?` | Новое значение для родителя; обновите состояние через setState. |
+| `label` | `String` | Visible label or accessible name. |
+| `value` | `bool` | Current value; see state ownership and model rules above. |
+| `onChanged` | `ValueChanged<bool>?` | Store the new value using setState or your state manager. |
 
 ```dart
 const NgSwitch({
@@ -57,17 +57,17 @@ const NgSwitch({
   });
 ```
 
-## Интеграция и диагностика
+## Integration and troubleshooting
 
-Если интерфейс не обновляется, проверьте, сохраняет ли родитель результат callback и передаёт ли новое значение обратно. Для Blazor нужен интерактивный render mode; для Flutter — setState или используемый менеджер состояния. Данные формы отправляйте только после её успешной валидации.
+If the UI does not update, confirm that the parent stores callback values and passes them back. Blazor event handlers need interactive rendering; Flutter requires setState or a state manager. Submit form data only after successful validation.
 
-Проверяйте понятную подпись, пустое состояние, недоступность и размер контейнера. Клавиатурные возможности не означают полной сертификации screen reader. Сейчас проверяется Web в Chrome; нативные мобильные платформы будут проверяться отдельно.
+Check accessible labels, empty/invalid states, disabled actions and narrow layouts. Keyboard support is not full screen-reader certification. Current visual verification targets Web in visible Chrome on Linux/iMac; native mobile platforms are a separate phase.
 
-## Исходники и полный сценарий
+## Source and complete examples
 
-- [Blazor](../../src/NextgenComponents.Blazor/NgSwitch.razor)
-- [Flutter](../../packages/nextgen_components/lib/src/components.dart)
-- [Галереи и запуск](../../README.md#run)
-- [Матрица возможностей](../catalog.md)
+- [Blazor source](../../src/NextgenComponents.Blazor/NgSwitch.razor)
+- [Flutter source](../../packages/nextgen_components/lib/src/components.dart)
+- [Galleries and launch commands](../../README.md#run)
+- [Capability matrix](../catalog.md)
 
-Версия параметров сгенерирована из текущего исходного кода. Примеры и правила сопровождаются отдельно в `scripts/manual_content.py`; после изменения API выполните `python3 scripts/generate_manual.py`.
+API declarations are generated from current source. Curated examples and behavior live in `scripts/manual_content.py`; regenerate with `python3 scripts/generate_manual.py`.
