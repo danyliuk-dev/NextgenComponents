@@ -1,0 +1,13 @@
+name: nextgen_gallery
+description: Nextgen Components Flutter gallery.
+publish_to: none
+version: 0.1.0+1
+environment:
+  sdk: '>=3.10.0 <4.0.0'
+dependencies:
+  flutter:
+    sdk: flutter
+  nextgen_components:
+    path: ../../packages/nextgen_components
+flutter:
+  uses-material-design: true

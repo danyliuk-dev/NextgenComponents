@@ -1,0 +1,11 @@
+@inherits InputBase<string?>
+<label class="ng-field" for="@Id">@Label
+<input @attributes="AdditionalAttributes" id="@Id" class="ng-input @CssClass" value="@CurrentValueAsString" @oninput="e => CurrentValueAsString = e.Value?.ToString()" disabled="@Disabled" placeholder="@Placeholder" />
+</label>
+@code {
+ [Parameter] public string Id { get; set; } = "ng-" + Guid.NewGuid().ToString("N");
+ [Parameter] public string Label { get; set; } = "";
+ [Parameter] public string? Placeholder { get; set; }
+ [Parameter] public bool Disabled { get; set; }
+ protected override bool TryParseValueFromString(string? value, out string? result, [System.Diagnostics.CodeAnalysis.NotNullWhen(false)] out string? validationErrorMessage) { result=value; validationErrorMessage=null; return true; }
+}

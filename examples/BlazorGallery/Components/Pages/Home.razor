@@ -1,0 +1,40 @@
+@page "/"
+@using System.ComponentModel.DataAnnotations
+<PageTitle>Nextgen • Blazor</PageTitle>
+<div class="ng-scope gallery" data-ng-theme="@(dark ? "dark" : "light")" data-ng-density="@(compact ? "compact" : "normal")">
+<main>
+<nav><strong><span class="brand-icon">N</span> NEXTGEN COMPONENTS</strong><div class="row"><NgSwitch Label="Dark theme" @bind-Value="dark" /><NgCheckBox Label="Compact" @bind-Value="compact" /></div></nav>
+<section class="hero"><p class="eyebrow">BLAZOR / FOUNDATION 0.1</p><h1>A consistent interface.<br />On every platform.</h1><p>Explore the first collection of Nextgen controls. Edit the form, switch themes, and try the interactions.</p></section>
+@if (notification) { <div class="notice"><NgNotification @bind-Visible="notification">Workspace settings saved for @model.Name.</NgNotification></div> }
+<section class="panel"><div class="panel-heading"><h2>Workspace settings</h2><span class="tag">INTERACTIVE DEMO</span></div>
+<EditForm Model="model" OnValidSubmit="Save"><DataAnnotationsValidator />
+<div class="fields"><div><NgTextBox Label="Display name" @bind-Value="model.Name" /><ValidationMessage For="() => model.Name" /></div>
+<NgDropDownList Label="Team" Items="teams" @bind-Value="model.Team" />
+<div><NgNumericTextBox Label="Seats (1–100)" @bind-Value="model.Seats" Min="1" Max="100" /><ValidationMessage For="() => model.Seats" /></div>
+<NgTextBox Label="Workspace ID" @bind-Value="workspaceId" Disabled /></div>
+<NgRadioGroup Label="Access level" Items="roles" @bind-Value="model.Access" />
+<div class="row preferences"><NgCheckBox Label="Email updates" @bind-Value="model.Updates" /><NgSwitch Label="Workspace active" @bind-Value="model.Active" /></div>
+<div class="row actions"><NgButton Primary Type="submit">Save settings</NgButton><NgButton OnClick="() => dialog = true">Open dialog</NgButton><NgButton Disabled>Disabled</NgButton><NgTooltip Text="Changes apply to this demo only"><span class="info">ⓘ</span></NgTooltip></div>
+</EditForm></section>
+<section class="panel"><h2>Explore the collection</h2><NgTabs Items="tabs" @bind-SelectedIndex="selectedTab" /></section>
+<footer class="page-footer">NEXTGEN COMPONENTS <span>Blazor + Flutter</span></footer>
+<NgDialog Title="Workspace preview" @bind-Open="dialog"><ChildContent><dl><dt>Display name</dt><dd>@model.Name</dd><dt>Team</dt><dd>@model.Team</dd><dt>Seats</dt><dd>@model.Seats</dd><dt>Access</dt><dd>@model.Access</dd></dl></ChildContent><Actions><NgButton Primary OnClick="() => dialog = false">Done</NgButton></Actions></NgDialog>
+</main></div>
+@code {
+ private bool dark, compact, notification, dialog;
+ private int selectedTab;
+ private string? workspaceId="NG-2026-001";
+ private readonly Settings model = new();
+ private readonly NgOption[] teams = [new("design", "Design"), new("engineering", "Engineering"), new("operations", "Operations")];
+ private readonly NgOption[] roles = [new("viewer", "Viewer"), new("editor", "Editor"), new("admin", "Administrator")];
+ private readonly NgTab[] tabs = [new("Overview", @<p>11 foundation controls. Shared colors, dimensions, light and dark themes.</p>), new("Keyboard", @<p>Use Tab to move between controls. Space toggles checkboxes. Arrow keys switch tabs. Escape closes dialogs.</p>), new("Roadmap", @<p>Next: calendars and forms, data grids and trees, charts and scheduling, document tools.</p>)];
+ private void Save() => notification=true;
+ public sealed class Settings {
+  [Required(ErrorMessage="Display name is required")] public string? Name { get; set; } = "Alex Morgan";
+  public string Team { get; set; } = "design";
+  [Range(1,100,ErrorMessage="Seats must be between 1 and 100")] public decimal? Seats { get; set; } = 5;
+  public string Access { get; set; } = "editor";
+  public bool Updates { get; set; } = true;
+  public bool Active { get; set; } = true;
+ }
+}

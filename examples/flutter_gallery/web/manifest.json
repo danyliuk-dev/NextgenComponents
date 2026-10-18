@@ -1,0 +1,19 @@
+{
+  "name": "Nextgen Components",
+  "short_name": "Nextgen",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#f5f5f5",
+  "theme_color": "#c43d32",
+  "description": "Native Flutter component gallery",
+  "orientation": "portrait-primary",
+  "prefer_related_applications": false,
+  "icons": [
+    {
+      "src": "favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

@@ -1,0 +1,9 @@
+**/bin/
+**/obj/
+**/.dart_tool/
+**/build/
+**/.flutter-plugins*
+artifacts/
+.tmp/
+**/.idea/
+**/*.iml

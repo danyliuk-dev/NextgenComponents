@@ -1,0 +1,24 @@
+@implements IAsyncDisposable
+@inject IJSRuntime JS
+<dialog @ref="element" class="ng-dialog" aria-labelledby="@id" @onclose="Closed">
+<header><h2 id="@id">@Title</h2><NgButton aria-label="Close dialog" OnClick="Close">×</NgButton></header>
+<div class="ng-dialog-body">@ChildContent</div>
+@if (Actions is not null) { <footer>@Actions</footer> }
+</dialog>
+@code {
+ [Parameter] public bool Open { get; set; }
+ [Parameter] public EventCallback<bool> OpenChanged { get; set; }
+ [Parameter] public string Title { get; set; } = "Dialog";
+ [Parameter] public RenderFragment? ChildContent { get; set; }
+ [Parameter] public RenderFragment? Actions { get; set; }
+ private readonly string id = "ng-" + Guid.NewGuid().ToString("N");
+ private ElementReference element;
+ private IJSObjectReference? module;
+ protected override async Task OnAfterRenderAsync(bool firstRender) {
+ module ??= await JS.InvokeAsync<IJSObjectReference>("import", "./_content/NextgenComponents.Blazor/nextgen.js");
+ await module.InvokeVoidAsync("dialog", element, Open);
+ }
+ private Task Close() => OpenChanged.InvokeAsync(false);
+ private Task Closed() => Open ? OpenChanged.InvokeAsync(false) : Task.CompletedTask;
+ public async ValueTask DisposeAsync() { if (module is not null) { try { await module.DisposeAsync(); } catch (JSDisconnectedException) { } } }
+}

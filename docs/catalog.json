@@ -1,0 +1,2092 @@
+{
+  "source": "https://www.telerik.com/blazor-ui",
+  "retrieved": "2026-10-18",
+  "scope": "Published Blazor component index, including chart variants; not the union of all Telerik product suites.",
+  "components": [
+    {
+      "name": "AI Prompt",
+      "category": "AI Interface",
+      "reference": "https://www.telerik.com/blazor-ui/ai-prompt",
+      "phase": 5,
+      "blazor": {
+        "status": "planned",
+        "component": null
+      },
+      "flutter": {
+        "status": "planned",
+        "component": null
+      },
+      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+    },
+    {
+      "name": "Inline AI Prompt",
+      "category": "AI Interface",
+      "reference": "https://www.telerik.com/blazor-ui/inline-ai-prompt",
+      "phase": 5,
+      "blazor": {
+        "status": "planned",
+        "component": null
+      },
+      "flutter": {
+        "status": "planned",
+        "component": null
+      },
+      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+    },
+    {
+      "name": "LLM Kit",
+      "category": "AI Interface",
+      "reference": "https://www.telerik.com/blazor-ui/llm-kit",
+      "phase": 5,
+      "blazor": {
+        "status": "planned",
+        "component": null
+      },
+      "flutter": {
+        "status": "planned",
+        "component": null
+      },
+      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+    },
+    {
+      "name": "PromptBox",
+      "category": "AI Interface",
+      "reference": "https://www.telerik.com/blazor-ui/promptbox",
+      "phase": 5,
+      "blazor": {
+        "status": "planned",
+        "component": null
+      },
+      "flutter": {
+        "status": "planned",
+        "component": null
+      },
+      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+    },
+    {
+      "name": "SmartPasteButton",
+      "category": "AI Interface",
+      "reference": "https://www.telerik.com/blazor-ui/smartpastebutton",
+      "phase": 5,
+      "blazor": {
+        "status": "planned",
+        "component": null
+      },
+      "flutter": {
+        "status": "planned",
+        "component": null
+      },
+      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+    },
+    {
+      "name": "AppBar",
+      "category": "Navigation",
+      "reference": "https://www.telerik.com/blazor-ui/appbar",
+      "phase": 2,
+      "blazor": {
+        "status": "planned",
+        "component": null
+      },
+      "flutter": {
+        "status": "planned",
+        "component": null
+      },
+      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+    },
+    {
+      "name": "Breadcrumb",
+      "category": "Navigation",
+      "reference": "https://www.telerik.com/blazor-ui/breadcrumb",
+      "phase": 2,
+      "blazor": {
+        "status": "planned",
+        "component": null
+      },
+      "flutter": {
+        "status": "planned",
+        "component": null
+      },
+      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+    },
+    {
+      "name": "Button Group",
+      "category": "Navigation",
+      "reference": "https://www.telerik.com/blazor-ui/buttongroup",
+      "phase": 2,
+      "blazor": {
+        "status": "planned",
+        "component": null
+      },
+      "flutter": {
+        "status": "planned",
+        "component": null
+      },
+      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+    },
+    {
+      "name": "Buttons",
+      "category": "Navigation",
+      "reference": "https://www.telerik.com/blazor-ui/buttons",
+      "phase": 1,
+      "blazor": {
+        "status": "foundation",
+        "component": "NgButton"
+      },
+      "flutter": {
+        "status": "foundation",
+        "component": "NgButton"
+      },
+      "featureSpec": "docs/foundation.md"
+    },
+    {
+      "name": "Chip",
+      "category": "Navigation",
+      "reference": "https://www.telerik.com/blazor-ui/chip",
+      "phase": 2,
+      "blazor": {
+        "status": "planned",
+        "component": null
+      },
+      "flutter": {
+        "status": "planned",
+        "component": null
+      },
+      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+    },
+    {
+      "name": "ChipList",
+      "category": "Navigation",
+      "reference": "https://www.telerik.com/blazor-ui/chiplist",
+      "phase": 2,
+      "blazor": {
+        "status": "planned",
+        "component": null
+      },
+      "flutter": {
+        "status": "planned",
+        "component": null
+      },
+      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+    },
+    {
+      "name": "Context Menu",
+      "category": "Navigation",
+      "reference": "https://www.telerik.com/blazor-ui/context-menu",
+      "phase": 2,
+      "blazor": {
+        "status": "planned",
+        "component": null
+      },
+      "flutter": {
+        "status": "planned",
+        "component": null
+      },
+      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+    },
+    {
+      "name": "Drawer",
+      "category": "Navigation",
+      "reference": "https://www.telerik.com/blazor-ui/drawer",
+      "phase": 2,
+      "blazor": {
+        "status": "planned",
+        "component": null
+      },
+      "flutter": {
+        "status": "planned",
+        "component": null
+      },
+      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+    },
+    {
+      "name": "DropDownButton",
+      "category": "Navigation",
+      "reference": "https://www.telerik.com/blazor-ui/dropdownbutton",
+      "phase": 2,
+      "blazor": {
+        "status": "planned",
+        "component": null
+      },
+      "flutter": {
+        "status": "planned",
+        "component": null
+      },
+      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+    },
+    {
+      "name": "Floating Action Button",
+      "category": "Navigation",
+      "reference": "https://www.telerik.com/blazor-ui/floating-action-button",
+      "phase": 2,
+      "blazor": {
+        "status": "planned",
+        "component": null
+      },
+      "flutter": {
+        "status": "planned",
+        "component": null
+      },
+      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+    },
+    {
+      "name": "Menu",
+      "category": "Navigation",
+      "reference": "https://www.telerik.com/blazor-ui/menu",
+      "phase": 2,
+      "blazor": {
+        "status": "planned",
+        "component": null
+      },
+      "flutter": {
+        "status": "planned",
+        "component": null
+      },
+      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+    },
+    {
+      "name": "Segmented Control",
+      "category": "Navigation",
+      "reference": "https://www.telerik.com/blazor-ui/segmented-control",
+      "phase": 2,
+      "blazor": {
+        "status": "planned",
+        "component": null
+      },
+      "flutter": {
+        "status": "planned",
+        "component": null
+      },
+      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+    },
+    {
+      "name": "Speech-to-Text Button",
+      "category": "Navigation",
+      "reference": "https://www.telerik.com/blazor-ui/speech-to-text-button",
+      "phase": 2,
+      "blazor": {
+        "status": "planned",
+        "component": null
+      },
+      "flutter": {
+        "status": "planned",
+        "component": null
+      },
+      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+    },
+    {
+      "name": "Split Button",
+      "category": "Navigation",
+      "reference": "https://www.telerik.com/blazor-ui/split-button",
+      "phase": 2,
+      "blazor": {
+        "status": "planned",
+        "component": null
+      },
+      "flutter": {
+        "status": "planned",
+        "component": null
+      },
+      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+    },
+    {
+      "name": "Stepper",
+      "category": "Navigation",
+      "reference": "https://www.telerik.com/blazor-ui/stepper",
+      "phase": 2,
+      "blazor": {
+        "status": "planned",
+        "component": null
+      },
+      "flutter": {
+        "status": "planned",
+        "component": null
+      },
+      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+    },
+    {
+      "name": "Switch",
+      "category": "Navigation",
+      "reference": "https://www.telerik.com/blazor-ui/switch",
+      "phase": 1,
+      "blazor": {
+        "status": "foundation",
+        "component": "NgSwitch"
+      },
+      "flutter": {
+        "status": "foundation",
+        "component": "NgSwitch"
+      },
+      "featureSpec": "docs/foundation.md"
+    },
+    {
+      "name": "TabStrip",
+      "category": "Navigation",
+      "reference": "https://www.telerik.com/blazor-ui/tabstrip",
+      "phase": 1,
+      "blazor": {
+        "status": "foundation",
+        "component": "NgTabs"
+      },
+      "flutter": {
+        "status": "foundation",
+        "component": "NgTabs"
+      },
+      "featureSpec": "docs/foundation.md"
+    },
+    {
+      "name": "Toggle Button",
+      "category": "Navigation",
+      "reference": "https://www.telerik.com/blazor-ui/togglebutton",
+      "phase": 2,
+      "blazor": {
+        "status": "planned",
+        "component": null
+      },
+      "flutter": {
+        "status": "planned",
+        "component": null
+      },
+      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+    },
+    {
+      "name": "ToolBar",
+      "category": "Navigation",
+      "reference": "https://www.telerik.com/blazor-ui/toolbar",
+      "phase": 2,
+      "blazor": {
+        "status": "planned",
+        "component": null
+      },
+      "flutter": {
+        "status": "planned",
+        "component": null
+      },
+      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+    },
+    {
+      "name": "TreeView",
+      "category": "Navigation",
+      "reference": "https://www.telerik.com/blazor-ui/treeview",
+      "phase": 2,
+      "blazor": {
+        "status": "planned",
+        "component": null
+      },
+      "flutter": {
+        "status": "planned",
+        "component": null
+      },
+      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+    },
+    {
+      "name": "Data Grid",
+      "category": "Data Management",
+      "reference": "https://www.telerik.com/blazor-ui/grid",
+      "phase": 3,
+      "blazor": {
+        "status": "planned",
+        "component": null
+      },
+      "flutter": {
+        "status": "planned",
+        "component": null
+      },
+      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+    },
+    {
+      "name": "Filter",
+      "category": "Data Management",
+      "reference": "https://www.telerik.com/blazor-ui/filter",
+      "phase": 3,
+      "blazor": {
+        "status": "planned",
+        "component": null
+      },
+      "flutter": {
+        "status": "planned",
+        "component": null
+      },
+      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+    },
+    {
+      "name": "ListView",
+      "category": "Data Management",
+      "reference": "https://www.telerik.com/blazor-ui/listview",
+      "phase": 3,
+      "blazor": {
+        "status": "planned",
+        "component": null
+      },
+      "flutter": {
+        "status": "planned",
+        "component": null
+      },
+      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+    },
+    {
+      "name": "Pager",
+      "category": "Data Management",
+      "reference": "https://www.telerik.com/blazor-ui/pager",
+      "phase": 3,
+      "blazor": {
+        "status": "planned",
+        "component": null
+      },
+      "flutter": {
+        "status": "planned",
+        "component": null
+      },
+      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+    },
+    {
+      "name": "PivotGrid",
+      "category": "Data Management",
+      "reference": "https://www.telerik.com/blazor-ui/pivotgrid",
+      "phase": 5,
+      "blazor": {
+        "status": "planned",
+        "component": null
+      },
+      "flutter": {
+        "status": "planned",
+        "component": null
+      },
+      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+    },
+    {
+      "name": "Spreadsheet",
+      "category": "Data Management",
+      "reference": "https://www.telerik.com/blazor-ui/spreadsheet",
+      "phase": 5,
+      "blazor": {
+        "status": "planned",
+        "component": null
+      },
+      "flutter": {
+        "status": "planned",
+        "component": null
+      },
+      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+    },
+    {
+      "name": "TaskBoard",
+      "category": "Data Management",
+      "reference": "https://www.telerik.com/blazor-ui/taskboard",
+      "phase": 3,
+      "blazor": {
+        "status": "planned",
+        "component": null
+      },
+      "flutter": {
+        "status": "planned",
+        "component": null
+      },
+      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+    },
+    {
+      "name": "TreeList",
+      "category": "Data Management",
+      "reference": "https://www.telerik.com/blazor-ui/treelist",
+      "phase": 3,
+      "blazor": {
+        "status": "planned",
+        "component": null
+      },
+      "flutter": {
+        "status": "planned",
+        "component": null
+      },
+      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+    },
+    {
+      "name": "DropZone",
+      "category": "File Upload & Management",
+      "reference": "https://www.telerik.com/blazor-ui/dropzone",
+      "phase": 2,
+      "blazor": {
+        "status": "planned",
+        "component": null
+      },
+      "flutter": {
+        "status": "planned",
+        "component": null
+      },
+      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+    },
+    {
+      "name": "File Manager",
+      "category": "File Upload & Management",
+      "reference": "https://www.telerik.com/blazor-ui/file-manager",
+      "phase": 5,
+      "blazor": {
+        "status": "planned",
+        "component": null
+      },
+      "flutter": {
+        "status": "planned",
+        "component": null
+      },
+      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+    },
+    {
+      "name": "FileSelect",
+      "category": "File Upload & Management",
+      "reference": "https://www.telerik.com/blazor-ui/fileselect",
+      "phase": 2,
+      "blazor": {
+        "status": "planned",
+        "component": null
+      },
+      "flutter": {
+        "status": "planned",
+        "component": null
+      },
+      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+    },
+    {
+      "name": "PDF Viewer",
+      "category": "File Upload & Management",
+      "reference": "https://www.telerik.com/blazor-ui/pdf-viewer",
+      "phase": 5,
+      "blazor": {
+        "status": "planned",
+        "component": null
+      },
+      "flutter": {
+        "status": "planned",
+        "component": null
+      },
+      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+    },
+    {
+      "name": "Upload",
+      "category": "File Upload & Management",
+      "reference": "https://www.telerik.com/blazor-ui/upload",
+      "phase": 2,
+      "blazor": {
+        "status": "planned",
+        "component": null
+      },
+      "flutter": {
+        "status": "planned",
+        "component": null
+      },
+      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+    },
+    {
+      "name": "Diagram",
+      "category": "Diagrams and Maps",
+      "reference": "https://www.telerik.com/blazor-ui/diagram",
+      "phase": 5,
+      "blazor": {
+        "status": "planned",
+        "component": null
+      },
+      "flutter": {
+        "status": "planned",
+        "component": null
+      },
+      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+    },
+    {
+      "name": "Map",
+      "category": "Diagrams and Maps",
+      "reference": "https://www.telerik.com/blazor-ui/map",
+      "phase": 5,
+      "blazor": {
+        "status": "planned",
+        "component": null
+      },
+      "flutter": {
+        "status": "planned",
+        "component": null
+      },
+      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+    },
+    {
+      "name": "Badge",
+      "category": "Labels",
+      "reference": "https://www.telerik.com/blazor-ui/badge",
+      "phase": 2,
+      "blazor": {
+        "status": "planned",
+        "component": null
+      },
+      "flutter": {
+        "status": "planned",
+        "component": null
+      },
+      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+    },
+    {
+      "name": "FloatingLabel",
+      "category": "Labels",
+      "reference": "https://www.telerik.com/blazor-ui/floatinglabel",
+      "phase": 2,
+      "blazor": {
+        "status": "planned",
+        "component": null
+      },
+      "flutter": {
+        "status": "planned",
+        "component": null
+      },
+      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+    },
+    {
+      "name": "FontIcon",
+      "category": "Icons",
+      "reference": "https://www.telerik.com/blazor-ui/fonticon",
+      "phase": 2,
+      "blazor": {
+        "status": "planned",
+        "component": null
+      },
+      "flutter": {
+        "status": "planned",
+        "component": null
+      },
+      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+    },
+    {
+      "name": "SVGIcon",
+      "category": "Icons",
+      "reference": "https://www.telerik.com/blazor-ui/svgicon",
+      "phase": 2,
+      "blazor": {
+        "status": "planned",
+        "component": null
+      },
+      "flutter": {
+        "status": "planned",
+        "component": null
+      },
+      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+    },
+    {
+      "name": "Area Chart",
+      "category": "Data Visualization",
+      "reference": "https://www.telerik.com/blazor-ui/area-chart",
+      "phase": 4,
+      "blazor": {
+        "status": "planned",
+        "component": null
+      },
+      "flutter": {
+        "status": "planned",
+        "component": null
+      },
+      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+    },
+    {
+      "name": "Bar Chart",
+      "category": "Data Visualization",
+      "reference": "https://www.telerik.com/blazor-ui/bar-chart",
+      "phase": 4,
+      "blazor": {
+        "status": "planned",
+        "component": null
+      },
+      "flutter": {
+        "status": "planned",
+        "component": null
+      },
+      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+    },
+    {
+      "name": "Barcode",
+      "category": "Data Visualization",
+      "reference": "https://www.telerik.com/blazor-ui/barcode",
+      "phase": 4,
+      "blazor": {
+        "status": "planned",
+        "component": null
+      },
+      "flutter": {
+        "status": "planned",
+        "component": null
+      },
+      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+    },
+    {
+      "name": "Bubble Chart",
+      "category": "Data Visualization",
+      "reference": "https://www.telerik.com/blazor-ui/bubble-chart",
+      "phase": 4,
+      "blazor": {
+        "status": "planned",
+        "component": null
+      },
+      "flutter": {
+        "status": "planned",
+        "component": null
+      },
+      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+    },
+    {
+      "name": "Candlestick Chart",
+      "category": "Data Visualization",
+      "reference": "https://www.telerik.com/blazor-ui/candlestick-chart",
+      "phase": 4,
+      "blazor": {
+        "status": "planned",
+        "component": null
+      },
+      "flutter": {
+        "status": "planned",
+        "component": null
+      },
+      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+    },
+    {
+      "name": "Chart",
+      "category": "Data Visualization",
+      "reference": "https://www.telerik.com/blazor-ui/chart",
+      "phase": 4,
+      "blazor": {
+        "status": "planned",
+        "component": null
+      },
+      "flutter": {
+        "status": "planned",
+        "component": null
+      },
+      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+    },
+    {
+      "name": "Column Chart",
+      "category": "Data Visualization",
+      "reference": "https://www.telerik.com/blazor-ui/column-chart",
+      "phase": 4,
+      "blazor": {
+        "status": "planned",
+        "component": null
+      },
+      "flutter": {
+        "status": "planned",
+        "component": null
+      },
+      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+    },
+    {
+      "name": "Donut Chart",
+      "category": "Data Visualization",
+      "reference": "https://www.telerik.com/blazor-ui/donut-chart",
+      "phase": 4,
+      "blazor": {
+        "status": "planned",
+        "component": null
+      },
+      "flutter": {
+        "status": "planned",
+        "component": null
+      },
+      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+    },
+    {
+      "name": "Heatmap",
+      "category": "Data Visualization",
+      "reference": "https://www.telerik.com/blazor-ui/heatmap",
+      "phase": 4,
+      "blazor": {
+        "status": "planned",
+        "component": null
+      },
+      "flutter": {
+        "status": "planned",
+        "component": null
+      },
+      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+    },
+    {
+      "name": "Line Chart",
+      "category": "Data Visualization",
+      "reference": "https://www.telerik.com/blazor-ui/line-chart",
+      "phase": 4,
+      "blazor": {
+        "status": "planned",
+        "component": null
+      },
+      "flutter": {
+        "status": "planned",
+        "component": null
+      },
+      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+    },
+    {
+      "name": "OHLC Chart",
+      "category": "Data Visualization",
+      "reference": "https://www.telerik.com/blazor-ui/ohlc-chart",
+      "phase": 4,
+      "blazor": {
+        "status": "planned",
+        "component": null
+      },
+      "flutter": {
+        "status": "planned",
+        "component": null
+      },
+      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+    },
+    {
+      "name": "Pie Chart",
+      "category": "Data Visualization",
+      "reference": "https://www.telerik.com/blazor-ui/pie-chart",
+      "phase": 4,
+      "blazor": {
+        "status": "planned",
+        "component": null
+      },
+      "flutter": {
+        "status": "planned",
+        "component": null
+      },
+      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+    },
+    {
+      "name": "QR Code",
+      "category": "Data Visualization",
+      "reference": "https://www.telerik.com/blazor-ui/qr-code",
+      "phase": 4,
+      "blazor": {
+        "status": "planned",
+        "component": null
+      },
+      "flutter": {
+        "status": "planned",
+        "component": null
+      },
+      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+    },
+    {
+      "name": "Radar Area Chart",
+      "category": "Data Visualization",
+      "reference": "https://www.telerik.com/blazor-ui/radar-area-chart",
+      "phase": 4,
+      "blazor": {
+        "status": "planned",
+        "component": null
+      },
+      "flutter": {
+        "status": "planned",
+        "component": null
+      },
+      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+    },
+    {
+      "name": "Radar Column Chart",
+      "category": "Data Visualization",
+      "reference": "https://www.telerik.com/blazor-ui/radar-column-chart",
+      "phase": 4,
+      "blazor": {
+        "status": "planned",
+        "component": null
+      },
+      "flutter": {
+        "status": "planned",
+        "component": null
+      },
+      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+    },
+    {
+      "name": "Radar Line Chart",
+      "category": "Data Visualization",
+      "reference": "https://www.telerik.com/blazor-ui/radar-line-chart",
+      "phase": 4,
+      "blazor": {
+        "status": "planned",
+        "component": null
+      },
+      "flutter": {
+        "status": "planned",
+        "component": null
+      },
+      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+    },
+    {
+      "name": "Range Area Chart",
+      "category": "Data Visualization",
+      "reference": "https://www.telerik.com/blazor-ui/range-area-chart",
+      "phase": 4,
+      "blazor": {
+        "status": "planned",
+        "component": null
+      },
+      "flutter": {
+        "status": "planned",
+        "component": null
+      },
+      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+    },
+    {
+      "name": "Range Bar Chart",
+      "category": "Data Visualization",
+      "reference": "https://www.telerik.com/blazor-ui/range-bar-chart",
+      "phase": 4,
+      "blazor": {
+        "status": "planned",
+        "component": null
+      },
+      "flutter": {
+        "status": "planned",
+        "component": null
+      },
+      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+    },
+    {
+      "name": "Range Column Chart",
+      "category": "Data Visualization",
+      "reference": "https://www.telerik.com/blazor-ui/range-column-chart",
+      "phase": 4,
+      "blazor": {
+        "status": "planned",
+        "component": null
+      },
+      "flutter": {
+        "status": "planned",
+        "component": null
+      },
+      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+    },
+    {
+      "name": "Sankey Chart",
+      "category": "Data Visualization",
+      "reference": "https://www.telerik.com/blazor-ui/sankey-chart",
+      "phase": 4,
+      "blazor": {
+        "status": "planned",
+        "component": null
+      },
+      "flutter": {
+        "status": "planned",
+        "component": null
+      },
+      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+    },
+    {
+      "name": "Scatter Chart",
+      "category": "Data Visualization",
+      "reference": "https://www.telerik.com/blazor-ui/scatter-chart",
+      "phase": 4,
+      "blazor": {
+        "status": "planned",
+        "component": null
+      },
+      "flutter": {
+        "status": "planned",
+        "component": null
+      },
+      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+    },
+    {
+      "name": "Scatter Line Chart",
+      "category": "Data Visualization",
+      "reference": "https://www.telerik.com/blazor-ui/scatter-line-chart",
+      "phase": 4,
+      "blazor": {
+        "status": "planned",
+        "component": null
+      },
+      "flutter": {
+        "status": "planned",
+        "component": null
+      },
+      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+    },
+    {
+      "name": "Stock Chart",
+      "category": "Data Visualization",
+      "reference": "https://www.telerik.com/blazor-ui/stock-chart",
+      "phase": 4,
+      "blazor": {
+        "status": "planned",
+        "component": null
+      },
+      "flutter": {
+        "status": "planned",
+        "component": null
+      },
+      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+    },
+    {
+      "name": "Trendline Chart",
+      "category": "Data Visualization",
+      "reference": "https://www.telerik.com/blazor-ui/trendline-chart",
+      "phase": 4,
+      "blazor": {
+        "status": "planned",
+        "component": null
+      },
+      "flutter": {
+        "status": "planned",
+        "component": null
+      },
+      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+    },
+    {
+      "name": "Waterfall Chart",
+      "category": "Data Visualization",
+      "reference": "https://www.telerik.com/blazor-ui/waterfall-chart",
+      "phase": 4,
+      "blazor": {
+        "status": "planned",
+        "component": null
+      },
+      "flutter": {
+        "status": "planned",
+        "component": null
+      },
+      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+    },
+    {
+      "name": "AutoComplete",
+      "category": "Editors",
+      "reference": "https://www.telerik.com/blazor-ui/autocomplete",
+      "phase": 2,
+      "blazor": {
+        "status": "planned",
+        "component": null
+      },
+      "flutter": {
+        "status": "planned",
+        "component": null
+      },
+      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+    },
+    {
+      "name": "CheckBox",
+      "category": "Editors",
+      "reference": "https://www.telerik.com/blazor-ui/checkbox",
+      "phase": 1,
+      "blazor": {
+        "status": "foundation",
+        "component": "NgCheckBox"
+      },
+      "flutter": {
+        "status": "foundation",
+        "component": "NgCheckBox"
+      },
+      "featureSpec": "docs/foundation.md"
+    },
+    {
+      "name": "ColorGradient",
+      "category": "Editors",
+      "reference": "https://www.telerik.com/blazor-ui/colorgradient",
+      "phase": 2,
+      "blazor": {
+        "status": "planned",
+        "component": null
+      },
+      "flutter": {
+        "status": "planned",
+        "component": null
+      },
+      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+    },
+    {
+      "name": "ColorPalette",
+      "category": "Editors",
+      "reference": "https://www.telerik.com/blazor-ui/colorpalette",
+      "phase": 2,
+      "blazor": {
+        "status": "planned",
+        "component": null
+      },
+      "flutter": {
+        "status": "planned",
+        "component": null
+      },
+      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+    },
+    {
+      "name": "ColorPicker",
+      "category": "Editors",
+      "reference": "https://www.telerik.com/blazor-ui/colorpicker",
+      "phase": 2,
+      "blazor": {
+        "status": "planned",
+        "component": null
+      },
+      "flutter": {
+        "status": "planned",
+        "component": null
+      },
+      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+    },
+    {
+      "name": "ComboBox",
+      "category": "Editors",
+      "reference": "https://www.telerik.com/blazor-ui/combobox",
+      "phase": 2,
+      "blazor": {
+        "status": "planned",
+        "component": null
+      },
+      "flutter": {
+        "status": "planned",
+        "component": null
+      },
+      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+    },
+    {
+      "name": "DateInput",
+      "category": "Editors",
+      "reference": "https://www.telerik.com/blazor-ui/date-input",
+      "phase": 2,
+      "blazor": {
+        "status": "planned",
+        "component": null
+      },
+      "flutter": {
+        "status": "planned",
+        "component": null
+      },
+      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+    },
+    {
+      "name": "DatePicker",
+      "category": "Editors",
+      "reference": "https://www.telerik.com/blazor-ui/datepicker",
+      "phase": 2,
+      "blazor": {
+        "status": "planned",
+        "component": null
+      },
+      "flutter": {
+        "status": "planned",
+        "component": null
+      },
+      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+    },
+    {
+      "name": "DateRange Picker",
+      "category": "Editors",
+      "reference": "https://www.telerik.com/blazor-ui/daterange-picker",
+      "phase": 2,
+      "blazor": {
+        "status": "planned",
+        "component": null
+      },
+      "flutter": {
+        "status": "planned",
+        "component": null
+      },
+      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+    },
+    {
+      "name": "DateTimePicker",
+      "category": "Editors",
+      "reference": "https://www.telerik.com/blazor-ui/datetimepicker",
+      "phase": 2,
+      "blazor": {
+        "status": "planned",
+        "component": null
+      },
+      "flutter": {
+        "status": "planned",
+        "component": null
+      },
+      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+    },
+    {
+      "name": "DropDownList",
+      "category": "Editors",
+      "reference": "https://www.telerik.com/blazor-ui/dropdownlist",
+      "phase": 1,
+      "blazor": {
+        "status": "foundation",
+        "component": "NgDropDownList"
+      },
+      "flutter": {
+        "status": "foundation",
+        "component": "NgDropDownList"
+      },
+      "featureSpec": "docs/foundation.md"
+    },
+    {
+      "name": "DropDownTree",
+      "category": "Editors",
+      "reference": "https://www.telerik.com/blazor-ui/dropdowntree",
+      "phase": 2,
+      "blazor": {
+        "status": "planned",
+        "component": null
+      },
+      "flutter": {
+        "status": "planned",
+        "component": null
+      },
+      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+    },
+    {
+      "name": "FlatColorPicker",
+      "category": "Editors",
+      "reference": "https://www.telerik.com/blazor-ui/flatcolorpicker",
+      "phase": 2,
+      "blazor": {
+        "status": "planned",
+        "component": null
+      },
+      "flutter": {
+        "status": "planned",
+        "component": null
+      },
+      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+    },
+    {
+      "name": "ListBox",
+      "category": "Editors",
+      "reference": "https://www.telerik.com/blazor-ui/listbox",
+      "phase": 2,
+      "blazor": {
+        "status": "planned",
+        "component": null
+      },
+      "flutter": {
+        "status": "planned",
+        "component": null
+      },
+      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+    },
+    {
+      "name": "MaskedTextBox",
+      "category": "Editors",
+      "reference": "https://www.telerik.com/blazor-ui/maskedtextbox",
+      "phase": 2,
+      "blazor": {
+        "status": "planned",
+        "component": null
+      },
+      "flutter": {
+        "status": "planned",
+        "component": null
+      },
+      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+    },
+    {
+      "name": "MultiColumn ComboBox",
+      "category": "Editors",
+      "reference": "https://www.telerik.com/blazor-ui/multicolumncombobox",
+      "phase": 2,
+      "blazor": {
+        "status": "planned",
+        "component": null
+      },
+      "flutter": {
+        "status": "planned",
+        "component": null
+      },
+      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+    },
+    {
+      "name": "MultiSelect",
+      "category": "Editors",
+      "reference": "https://www.telerik.com/blazor-ui/multiselect",
+      "phase": 2,
+      "blazor": {
+        "status": "planned",
+        "component": null
+      },
+      "flutter": {
+        "status": "planned",
+        "component": null
+      },
+      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+    },
+    {
+      "name": "Numeric TextBox",
+      "category": "Editors",
+      "reference": "https://www.telerik.com/blazor-ui/numeric-textbox",
+      "phase": 1,
+      "blazor": {
+        "status": "foundation",
+        "component": "NgNumericTextBox"
+      },
+      "flutter": {
+        "status": "foundation",
+        "component": "NgNumericTextBox"
+      },
+      "featureSpec": "docs/foundation.md"
+    },
+    {
+      "name": "RadioGroup",
+      "category": "Editors",
+      "reference": "https://www.telerik.com/blazor-ui/radiogroup",
+      "phase": 1,
+      "blazor": {
+        "status": "foundation",
+        "component": "NgRadioGroup"
+      },
+      "flutter": {
+        "status": "foundation",
+        "component": "NgRadioGroup"
+      },
+      "featureSpec": "docs/foundation.md"
+    },
+    {
+      "name": "Rating",
+      "category": "Editors",
+      "reference": "https://www.telerik.com/blazor-ui/rating",
+      "phase": 2,
+      "blazor": {
+        "status": "planned",
+        "component": null
+      },
+      "flutter": {
+        "status": "planned",
+        "component": null
+      },
+      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+    },
+    {
+      "name": "Rich Text Editor",
+      "category": "Editors",
+      "reference": "https://www.telerik.com/blazor-ui/editor",
+      "phase": 5,
+      "blazor": {
+        "status": "planned",
+        "component": null
+      },
+      "flutter": {
+        "status": "planned",
+        "component": null
+      },
+      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+    },
+    {
+      "name": "Signature",
+      "category": "Editors",
+      "reference": "https://www.telerik.com/blazor-ui/signature",
+      "phase": 2,
+      "blazor": {
+        "status": "planned",
+        "component": null
+      },
+      "flutter": {
+        "status": "planned",
+        "component": null
+      },
+      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+    },
+    {
+      "name": "TextArea",
+      "category": "Editors",
+      "reference": "https://www.telerik.com/blazor-ui/textarea",
+      "phase": 2,
+      "blazor": {
+        "status": "planned",
+        "component": null
+      },
+      "flutter": {
+        "status": "planned",
+        "component": null
+      },
+      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+    },
+    {
+      "name": "TextBox",
+      "category": "Editors",
+      "reference": "https://www.telerik.com/blazor-ui/textbox",
+      "phase": 1,
+      "blazor": {
+        "status": "foundation",
+        "component": "NgTextBox"
+      },
+      "flutter": {
+        "status": "foundation",
+        "component": "NgTextBox"
+      },
+      "featureSpec": "docs/foundation.md"
+    },
+    {
+      "name": "TimePicker",
+      "category": "Editors",
+      "reference": "https://www.telerik.com/blazor-ui/timepicker",
+      "phase": 2,
+      "blazor": {
+        "status": "planned",
+        "component": null
+      },
+      "flutter": {
+        "status": "planned",
+        "component": null
+      },
+      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+    },
+    {
+      "name": "Calendar",
+      "category": "Scheduling",
+      "reference": "https://www.telerik.com/blazor-ui/calendar",
+      "phase": 4,
+      "blazor": {
+        "status": "planned",
+        "component": null
+      },
+      "flutter": {
+        "status": "planned",
+        "component": null
+      },
+      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+    },
+    {
+      "name": "Gantt",
+      "category": "Scheduling",
+      "reference": "https://www.telerik.com/blazor-ui/gantt",
+      "phase": 4,
+      "blazor": {
+        "status": "planned",
+        "component": null
+      },
+      "flutter": {
+        "status": "planned",
+        "component": null
+      },
+      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+    },
+    {
+      "name": "Scheduler",
+      "category": "Scheduling",
+      "reference": "https://www.telerik.com/blazor-ui/scheduler",
+      "phase": 4,
+      "blazor": {
+        "status": "planned",
+        "component": null
+      },
+      "flutter": {
+        "status": "planned",
+        "component": null
+      },
+      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+    },
+    {
+      "name": "Animation Container",
+      "category": "Layout",
+      "reference": "https://www.telerik.com/blazor-ui/animation-container",
+      "phase": 2,
+      "blazor": {
+        "status": "planned",
+        "component": null
+      },
+      "flutter": {
+        "status": "planned",
+        "component": null
+      },
+      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+    },
+    {
+      "name": "Avatar",
+      "category": "Layout",
+      "reference": "https://www.telerik.com/blazor-ui/avatar",
+      "phase": 2,
+      "blazor": {
+        "status": "planned",
+        "component": null
+      },
+      "flutter": {
+        "status": "planned",
+        "component": null
+      },
+      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+    },
+    {
+      "name": "Card",
+      "category": "Layout",
+      "reference": "https://www.telerik.com/blazor-ui/card",
+      "phase": 2,
+      "blazor": {
+        "status": "planned",
+        "component": null
+      },
+      "flutter": {
+        "status": "planned",
+        "component": null
+      },
+      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+    },
+    {
+      "name": "Carousel",
+      "category": "Layout",
+      "reference": "https://www.telerik.com/blazor-ui/carousel",
+      "phase": 2,
+      "blazor": {
+        "status": "planned",
+        "component": null
+      },
+      "flutter": {
+        "status": "planned",
+        "component": null
+      },
+      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+    },
+    {
+      "name": "DockManager",
+      "category": "Layout",
+      "reference": "https://www.telerik.com/blazor-ui/dockmanager",
+      "phase": 2,
+      "blazor": {
+        "status": "planned",
+        "component": null
+      },
+      "flutter": {
+        "status": "planned",
+        "component": null
+      },
+      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+    },
+    {
+      "name": "Expansion Panel",
+      "category": "Layout",
+      "reference": "https://www.telerik.com/blazor-ui/expansion-panel",
+      "phase": 2,
+      "blazor": {
+        "status": "planned",
+        "component": null
+      },
+      "flutter": {
+        "status": "planned",
+        "component": null
+      },
+      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+    },
+    {
+      "name": "Form",
+      "category": "Layout",
+      "reference": "https://www.telerik.com/blazor-ui/form",
+      "phase": 2,
+      "blazor": {
+        "status": "planned",
+        "component": null
+      },
+      "flutter": {
+        "status": "planned",
+        "component": null
+      },
+      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+    },
+    {
+      "name": "GridLayout",
+      "category": "Layout",
+      "reference": "https://www.telerik.com/blazor-ui/gridlayout",
+      "phase": 2,
+      "blazor": {
+        "status": "planned",
+        "component": null
+      },
+      "flutter": {
+        "status": "planned",
+        "component": null
+      },
+      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+    },
+    {
+      "name": "MediaQuery",
+      "category": "Layout",
+      "reference": "https://www.telerik.com/blazor-ui/mediaquery",
+      "phase": 2,
+      "blazor": {
+        "status": "planned",
+        "component": null
+      },
+      "flutter": {
+        "status": "planned",
+        "component": null
+      },
+      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+    },
+    {
+      "name": "PanelBar",
+      "category": "Layout",
+      "reference": "https://www.telerik.com/blazor-ui/panelbar",
+      "phase": 2,
+      "blazor": {
+        "status": "planned",
+        "component": null
+      },
+      "flutter": {
+        "status": "planned",
+        "component": null
+      },
+      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+    },
+    {
+      "name": "Splitter",
+      "category": "Layout",
+      "reference": "https://www.telerik.com/blazor-ui/splitter",
+      "phase": 2,
+      "blazor": {
+        "status": "planned",
+        "component": null
+      },
+      "flutter": {
+        "status": "planned",
+        "component": null
+      },
+      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+    },
+    {
+      "name": "StackLayout",
+      "category": "Layout",
+      "reference": "https://www.telerik.com/blazor-ui/stacklayout",
+      "phase": 2,
+      "blazor": {
+        "status": "planned",
+        "component": null
+      },
+      "flutter": {
+        "status": "planned",
+        "component": null
+      },
+      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+    },
+    {
+      "name": "TileLayout",
+      "category": "Layout",
+      "reference": "https://www.telerik.com/blazor-ui/tilelayout",
+      "phase": 2,
+      "blazor": {
+        "status": "planned",
+        "component": null
+      },
+      "flutter": {
+        "status": "planned",
+        "component": null
+      },
+      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+    },
+    {
+      "name": "Tooltip",
+      "category": "Layout",
+      "reference": "https://www.telerik.com/blazor-ui/tooltip",
+      "phase": 1,
+      "blazor": {
+        "status": "foundation",
+        "component": "NgTooltip"
+      },
+      "flutter": {
+        "status": "foundation",
+        "component": "NgTooltip"
+      },
+      "featureSpec": "docs/foundation.md"
+    },
+    {
+      "name": "Window",
+      "category": "Layout",
+      "reference": "https://www.telerik.com/blazor-ui/window",
+      "phase": 2,
+      "blazor": {
+        "status": "planned",
+        "component": null
+      },
+      "flutter": {
+        "status": "planned",
+        "component": null
+      },
+      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+    },
+    {
+      "name": "Wizard",
+      "category": "Layout",
+      "reference": "https://www.telerik.com/blazor-ui/wizard",
+      "phase": 2,
+      "blazor": {
+        "status": "planned",
+        "component": null
+      },
+      "flutter": {
+        "status": "planned",
+        "component": null
+      },
+      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+    },
+    {
+      "name": "Arc Gauge",
+      "category": "Gauges",
+      "reference": "https://www.telerik.com/blazor-ui/arc-gauge",
+      "phase": 4,
+      "blazor": {
+        "status": "planned",
+        "component": null
+      },
+      "flutter": {
+        "status": "planned",
+        "component": null
+      },
+      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+    },
+    {
+      "name": "Circular Gauge",
+      "category": "Gauges",
+      "reference": "https://www.telerik.com/blazor-ui/circular-gauge",
+      "phase": 4,
+      "blazor": {
+        "status": "planned",
+        "component": null
+      },
+      "flutter": {
+        "status": "planned",
+        "component": null
+      },
+      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+    },
+    {
+      "name": "Linear Gauge",
+      "category": "Gauges",
+      "reference": "https://www.telerik.com/blazor-ui/linear-gauge",
+      "phase": 4,
+      "blazor": {
+        "status": "planned",
+        "component": null
+      },
+      "flutter": {
+        "status": "planned",
+        "component": null
+      },
+      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+    },
+    {
+      "name": "Radial Gauge",
+      "category": "Gauges",
+      "reference": "https://www.telerik.com/blazor-ui/radial-gauge",
+      "phase": 4,
+      "blazor": {
+        "status": "planned",
+        "component": null
+      },
+      "flutter": {
+        "status": "planned",
+        "component": null
+      },
+      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+    },
+    {
+      "name": "Chat",
+      "category": "Interactivity & UX",
+      "reference": "https://www.telerik.com/blazor-ui/chat-(conversational-ui)",
+      "phase": 2,
+      "blazor": {
+        "status": "planned",
+        "component": null
+      },
+      "flutter": {
+        "status": "planned",
+        "component": null
+      },
+      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+    },
+    {
+      "name": "ChunkProgressBar",
+      "category": "Interactivity & UX",
+      "reference": "https://www.telerik.com/blazor-ui/chunkprogressbar",
+      "phase": 2,
+      "blazor": {
+        "status": "planned",
+        "component": null
+      },
+      "flutter": {
+        "status": "planned",
+        "component": null
+      },
+      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+    },
+    {
+      "name": "Dialog",
+      "category": "Interactivity & UX",
+      "reference": "https://www.telerik.com/blazor-ui/dialog",
+      "phase": 1,
+      "blazor": {
+        "status": "foundation",
+        "component": "NgDialog"
+      },
+      "flutter": {
+        "status": "foundation",
+        "component": "NgDialog"
+      },
+      "featureSpec": "docs/foundation.md"
+    },
+    {
+      "name": "Loader",
+      "category": "Interactivity & UX",
+      "reference": "https://www.telerik.com/blazor-ui/loader",
+      "phase": 2,
+      "blazor": {
+        "status": "planned",
+        "component": null
+      },
+      "flutter": {
+        "status": "planned",
+        "component": null
+      },
+      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+    },
+    {
+      "name": "Loader Container",
+      "category": "Interactivity & UX",
+      "reference": "https://www.telerik.com/blazor-ui/loader-container",
+      "phase": 2,
+      "blazor": {
+        "status": "planned",
+        "component": null
+      },
+      "flutter": {
+        "status": "planned",
+        "component": null
+      },
+      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+    },
+    {
+      "name": "Notification",
+      "category": "Interactivity & UX",
+      "reference": "https://www.telerik.com/blazor-ui/notification",
+      "phase": 1,
+      "blazor": {
+        "status": "foundation",
+        "component": "NgNotification"
+      },
+      "flutter": {
+        "status": "foundation",
+        "component": "NgNotification"
+      },
+      "featureSpec": "docs/foundation.md"
+    },
+    {
+      "name": "Popover",
+      "category": "Interactivity & UX",
+      "reference": "https://www.telerik.com/blazor-ui/popover",
+      "phase": 2,
+      "blazor": {
+        "status": "planned",
+        "component": null
+      },
+      "flutter": {
+        "status": "planned",
+        "component": null
+      },
+      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+    },
+    {
+      "name": "Popup",
+      "category": "Interactivity & UX",
+      "reference": "https://www.telerik.com/blazor-ui/popup",
+      "phase": 2,
+      "blazor": {
+        "status": "planned",
+        "component": null
+      },
+      "flutter": {
+        "status": "planned",
+        "component": null
+      },
+      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+    },
+    {
+      "name": "ProgressBar",
+      "category": "Interactivity & UX",
+      "reference": "https://www.telerik.com/blazor-ui/progressbar",
+      "phase": 2,
+      "blazor": {
+        "status": "planned",
+        "component": null
+      },
+      "flutter": {
+        "status": "planned",
+        "component": null
+      },
+      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+    },
+    {
+      "name": "RangeSlider",
+      "category": "Interactivity & UX",
+      "reference": "https://www.telerik.com/blazor-ui/rangeslider",
+      "phase": 2,
+      "blazor": {
+        "status": "planned",
+        "component": null
+      },
+      "flutter": {
+        "status": "planned",
+        "component": null
+      },
+      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+    },
+    {
+      "name": "Skeleton",
+      "category": "Interactivity & UX",
+      "reference": "https://www.telerik.com/blazor-ui/skeleton",
+      "phase": 2,
+      "blazor": {
+        "status": "planned",
+        "component": null
+      },
+      "flutter": {
+        "status": "planned",
+        "component": null
+      },
+      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+    },
+    {
+      "name": "Slider",
+      "category": "Interactivity & UX",
+      "reference": "https://www.telerik.com/blazor-ui/slider",
+      "phase": 2,
+      "blazor": {
+        "status": "planned",
+        "component": null
+      },
+      "flutter": {
+        "status": "planned",
+        "component": null
+      },
+      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+    },
+    {
+      "name": "ValidationMessage",
+      "category": "Interactivity & UX",
+      "reference": "https://www.telerik.com/blazor-ui/validation-message",
+      "phase": 2,
+      "blazor": {
+        "status": "planned",
+        "component": null
+      },
+      "flutter": {
+        "status": "planned",
+        "component": null
+      },
+      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+    },
+    {
+      "name": "ValidationSummary",
+      "category": "Interactivity & UX",
+      "reference": "https://www.telerik.com/blazor-ui/validationsummary",
+      "phase": 2,
+      "blazor": {
+        "status": "planned",
+        "component": null
+      },
+      "flutter": {
+        "status": "planned",
+        "component": null
+      },
+      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+    },
+    {
+      "name": "ValidationTooltip",
+      "category": "Interactivity & UX",
+      "reference": "https://www.telerik.com/blazor-ui/validationtooltip",
+      "phase": 2,
+      "blazor": {
+        "status": "planned",
+        "component": null
+      },
+      "flutter": {
+        "status": "planned",
+        "component": null
+      },
+      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+    },
+    {
+      "name": "Visual Studio Code",
+      "category": "Productivity Tools",
+      "reference": "https://www.telerik.com/blazor-ui/visual-studio-code",
+      "phase": 2,
+      "blazor": {
+        "status": "planned",
+        "component": null
+      },
+      "flutter": {
+        "status": "planned",
+        "component": null
+      },
+      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+    },
+    {
+      "name": "Reporting Integration",
+      "category": "Reporting",
+      "reference": "https://www.telerik.com/blazor-ui/blazor-reporting",
+      "phase": 2,
+      "blazor": {
+        "status": "planned",
+        "component": null
+      },
+      "flutter": {
+        "status": "planned",
+        "component": null
+      },
+      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+    },
+    {
+      "name": "PDFProcessing",
+      "category": "Document Processing",
+      "reference": "https://www.telerik.com/blazor-ui/pdfprocessing",
+      "phase": 2,
+      "blazor": {
+        "status": "planned",
+        "component": null
+      },
+      "flutter": {
+        "status": "planned",
+        "component": null
+      },
+      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+    },
+    {
+      "name": "SpreadProcessing",
+      "category": "Document Processing",
+      "reference": "https://www.telerik.com/blazor-ui/spreadprocessing",
+      "phase": 2,
+      "blazor": {
+        "status": "planned",
+        "component": null
+      },
+      "flutter": {
+        "status": "planned",
+        "component": null
+      },
+      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+    },
+    {
+      "name": "SpreadStreamProcessing",
+      "category": "Document Processing",
+      "reference": "https://www.telerik.com/blazor-ui/spreadstreamprocessing",
+      "phase": 2,
+      "blazor": {
+        "status": "planned",
+        "component": null
+      },
+      "flutter": {
+        "status": "planned",
+        "component": null
+      },
+      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+    },
+    {
+      "name": "WordsProcessing",
+      "category": "Document Processing",
+      "reference": "https://www.telerik.com/blazor-ui/wordprocessing",
+      "phase": 2,
+      "blazor": {
+        "status": "planned",
+        "component": null
+      },
+      "flutter": {
+        "status": "planned",
+        "component": null
+      },
+      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+    },
+    {
+      "name": "ZipLibrary",
+      "category": "Document Processing",
+      "reference": "https://www.telerik.com/blazor-ui/ziplibrary",
+      "phase": 2,
+      "blazor": {
+        "status": "planned",
+        "component": null
+      },
+      "flutter": {
+        "status": "planned",
+        "component": null
+      },
+      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+    }
+  ]
+}

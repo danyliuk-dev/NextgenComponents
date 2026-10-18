@@ -1,0 +1,1 @@
+<Project Sdk="Microsoft.NET.Sdk.Web"><PropertyGroup><UseAppHost>false</UseAppHost></PropertyGroup><ItemGroup><ProjectReference Include="../../src/NextgenComponents.Blazor/NextgenComponents.Blazor.csproj" /></ItemGroup></Project>

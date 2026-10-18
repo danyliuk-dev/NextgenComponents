@@ -1,0 +1,7 @@
+<span class="ng-tooltip-anchor" tabindex="0" aria-describedby="@id">
+@ChildContent<span class="ng-tooltip" role="tooltip" id="@id">@Text</span></span>
+@code {
+ [Parameter] public string Text { get; set; } = "";
+ [Parameter] public RenderFragment? ChildContent { get; set; }
+ private readonly string id = "ng-" + Guid.NewGuid().ToString("N");
+}

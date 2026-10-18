@@ -1,0 +1,11 @@
+@if (Visible) {
+<div class="ng-notification ng-@Tone" role="@(Tone == "error" ? "alert" : "status")">
+<span>@ChildContent</span><NgButton aria-label="Dismiss notification" OnClick="() => VisibleChanged.InvokeAsync(false)">×</NgButton>
+</div>
+}
+@code {
+ [Parameter] public bool Visible { get; set; } = true;
+ [Parameter] public EventCallback<bool> VisibleChanged { get; set; }
+ [Parameter] public string Tone { get; set; } = "success";
+ [Parameter] public RenderFragment? ChildContent { get; set; }
+}
