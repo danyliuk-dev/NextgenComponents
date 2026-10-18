@@ -1,0 +1,12 @@
+<div class="ng-gauge" role="meter" aria-label="@Label" aria-valuemin="@Min" aria-valuemax="@Max" aria-valuenow="@Math.Clamp(Value,Min,Max)" aria-valuetext="@($"{Value:G6} {Unit}")">
+<div class="ng-gauge-heading"><strong>@Label</strong><span>@Value.ToString("G6") @Unit</span></div><div class="ng-gauge-track"><div style="width:@(NgChartMath.F(fraction*100))%"></div></div><div class="ng-gauge-heading"><small>@Min</small><small>@Max</small></div>
+</div>
+@code {
+ [Parameter] public string Label{get;set;}="Progress";
+ [Parameter] public double Value{get;set;}
+ [Parameter] public double Min{get;set;}=0;
+ [Parameter] public double Max{get;set;}=100;
+ [Parameter] public string Unit{get;set;}="%";
+ private double fraction;
+ protected override void OnParametersSet()=>fraction=NgChartMath.Fraction(Value,Min,Max);
+}

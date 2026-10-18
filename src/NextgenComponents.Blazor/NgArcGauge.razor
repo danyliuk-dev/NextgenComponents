@@ -1,0 +1,11 @@
+<div class="ng-gauge" role="meter" aria-label="@Label" aria-valuemin="@Min" aria-valuemax="@Max" aria-valuenow="@Math.Clamp(Value,Min,Max)" aria-valuetext="@($"{Value:G6} {Unit}")"><strong>@Label</strong>
+<svg viewBox="0 0 240 150" class="ng-arc-gauge" aria-hidden="true"><path d="M 20 125 A 100 100 0 0 1 220 125" fill="none" stroke="var(--ng-border)" stroke-width="14" stroke-linecap="round"/><path d="M 20 125 A 100 100 0 0 1 220 125" fill="none" stroke="var(--ng-primary)" visibility="@(fraction>0?"visible":"hidden")" stroke-width="14" stroke-linecap="round" pathLength="100" stroke-dasharray="@($"{NgChartMath.F(fraction*100)} 100")"/><text x="120" y="112" text-anchor="middle" fill="currentColor" font-size="26">@Value.ToString("G6") @Unit</text></svg><div class="ng-gauge-heading"><small>@Min</small><small>@Max</small></div></div>
+@code {
+ [Parameter] public string Label{get;set;}="Progress";
+ [Parameter] public double Value{get;set;}
+ [Parameter] public double Min{get;set;}=0;
+ [Parameter] public double Max{get;set;}=100;
+ [Parameter] public string Unit{get;set;}="%";
+ private double fraction;
+ protected override void OnParametersSet()=>fraction=NgChartMath.Fraction(Value,Min,Max);
+}

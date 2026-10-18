@@ -1,0 +1,26 @@
+@page "/analytics"
+<PageTitle>Nextgen • Analytics and schedule</PageTitle>
+<div class="ng-scope gallery" data-ng-theme="@(dark?"dark":"light")" data-ng-density="@(compact?"compact":"normal")"><main>
+<nav><strong><span class="brand-icon">N</span> NEXTGEN COMPONENTS</strong><div class="row"><a href="/">Foundation</a><a href="/data">Data workspace</a><NgSwitch Label="Dark theme" @bind-Value="dark"/><NgCheckBox Label="Compact" @bind-Value="compact"/></div></nav>
+<section class="hero"><p class="eyebrow">BLAZOR / ANALYTICS AND SCHEDULE 0.4</p><h1>See the trend.<br/>Plan what comes next.</h1><p>Compare delivery results, inspect individual values and manage the team's weekly schedule.</p></section>
+<section class="panel"><div class="fields"><NgDropDownList Label="Chart type" Items="kinds" @bind-Value="kind"/><NgCheckBox Label="Show empty data" @bind-Value="empty"/></div>
+<NgChart Title="Delivery overview" Kind="Kind" Categories="(empty?[]:categories)" Series="ChartSeries" OnPointSelected="p=>selection=p.Label"/>
+<p role="status">Selected data: @(selection??"none")</p></section>
+<div class="fields"><section class="panel"><NgLinearGauge Label="Delivery target" Value="72"/></section><section class="panel"><NgArcGauge Label="Team capacity" Value="84"/></section></div>
+<section class="panel"><NgScheduler Label="Team schedule" @bind-Date="week" Items="events" OnCreate="Create" OnEdit="Edit"/><p role="status">@message</p></section>
+<NgDialog Title="Event details" @bind-Open="editing"><ChildContent>@if(draft is not null){<NgForm @key="draft" Model="draft" OnValidSubmit="Save"><div class="fields"><NgTextBox Label="Event title" @bind-Value="draft.Title"/><NgDateTimePicker Label="Starts" @bind-Value="draft.Start"/><NgDateTimePicker Label="Ends" @bind-Value="draft.End"/></div>@if(error is not null){<p role="alert" class="ng-field-error">@error</p>}<div class="row"><NgButton Primary Type="submit">Save event</NgButton><NgButton OnClick="()=>editing=false">Cancel</NgButton>@if(events.Any(e=>e.Id==draft.Id)){<NgButton OnClick="Delete">Delete event</NgButton>}</div></NgForm>}</ChildContent></NgDialog>
+<footer class="page-footer">31 CONTROLS / 37 CATALOGUE ENTRIES <span>WEB FIRST</span></footer>
+</main></div>
+@code {
+ private bool dark,compact,empty,editing;private string kind="Column";private string? selection,error,message;private DateTime week=new(2026,10,19);private Draft? draft;
+ private readonly string[] categories=["Mon","Tue","Wed","Thu","Fri"];
+ private readonly NgOption[] kinds=Enum.GetNames<NgChartKind>().Select(k=>new NgOption(k,k)).ToArray();
+ private NgChartKind Kind=>Enum.Parse<NgChartKind>(kind);
+ private IReadOnlyList<NgChartSeries> ChartSeries=>empty?[]:Kind is NgChartKind.Pie or NgChartKind.Donut?[new("Completed",[35,55,40,70,60])]:[new("Completed",[35,55,null,70,60]),new("Variance",[-12,8,18,-6,24])];
+ private List<NgScheduleEvent> events=[new("review","Design review",new(2026,10,19,10,0,0),new(2026,10,19,11,0,0)),new("release","Release window",new(2026,10,21,23,0,0),new(2026,10,22,1,0,0)),new("retro","Team retrospective",new(2026,10,23,15,0,0),new(2026,10,23,16,0,0))];
+ private void Create(DateTime day){draft=new(){Id=Guid.NewGuid().ToString("N"),Title="New event",Start=day.AddHours(9),End=day.AddHours(10)};error=null;editing=true;}
+ private void Edit(NgScheduleEvent e){draft=new(){Id=e.Id,Title=e.Title,Start=e.Start,End=e.End};error=null;editing=true;}
+ private void Save(){if(draft?.Start is null||draft.End is null){error="Start and end are required.";return;}var item=new NgScheduleEvent(draft.Id,draft.Title??"",draft.Start.Value,draft.End.Value);error=NgScheduleRules.Validate(item);if(error is not null)return;events=events.Where(e=>e.Id!=item.Id).Append(item).ToList();message=$"Saved {item.Title}";editing=false;}
+ private void Delete(){events=events.Where(e=>e.Id!=draft!.Id).ToList();message=$"Deleted {draft!.Title}";editing=false;}
+ public sealed class Draft {public string Id{get;set;}="";[System.ComponentModel.DataAnnotations.Required]public string? Title{get;set;}public DateTime? Start{get;set;}public DateTime? End{get;set;}}
+}

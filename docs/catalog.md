@@ -2,7 +2,7 @@
 
 Snapshot: 2026-10-18. 139 named entries from the [Telerik Blazor index](https://www.telerik.com/blazor-ui). Chart variants count separately.
 
-`foundation` means an implemented subset, not Telerik feature parity. See [foundation](foundation.md), [forms/dates](forms-and-dates.md) and [data workspace](data-workspace.md). `planned` has no implementation yet.
+`foundation` means an implemented subset, not Telerik feature parity. See [foundation](foundation.md), [forms/dates](forms-and-dates.md) [data workspace](data-workspace.md) and [analytics/schedule](analytics-and-schedule.md). `planned` has no implementation yet.
 
 | Category | Telerik entry | Blazor | Flutter | Phase |
 |---|---|---|---|---|
@@ -50,18 +50,18 @@ Snapshot: 2026-10-18. 139 named entries from the [Telerik Blazor index](https://
 | Labels | [FloatingLabel](https://www.telerik.com/blazor-ui/floatinglabel) | planned | planned | 2 |
 | Icons | [FontIcon](https://www.telerik.com/blazor-ui/fonticon) | planned | planned | 2 |
 | Icons | [SVGIcon](https://www.telerik.com/blazor-ui/svgicon) | planned | planned | 2 |
-| Data Visualization | [Area Chart](https://www.telerik.com/blazor-ui/area-chart) | planned | planned | 4 |
-| Data Visualization | [Bar Chart](https://www.telerik.com/blazor-ui/bar-chart) | planned | planned | 4 |
+| Data Visualization | [Area Chart](https://www.telerik.com/blazor-ui/area-chart) | foundation: `NgChart` | foundation: `NgChart` | 4 |
+| Data Visualization | [Bar Chart](https://www.telerik.com/blazor-ui/bar-chart) | foundation: `NgChart` | foundation: `NgChart` | 4 |
 | Data Visualization | [Barcode](https://www.telerik.com/blazor-ui/barcode) | planned | planned | 4 |
 | Data Visualization | [Bubble Chart](https://www.telerik.com/blazor-ui/bubble-chart) | planned | planned | 4 |
 | Data Visualization | [Candlestick Chart](https://www.telerik.com/blazor-ui/candlestick-chart) | planned | planned | 4 |
-| Data Visualization | [Chart](https://www.telerik.com/blazor-ui/chart) | planned | planned | 4 |
-| Data Visualization | [Column Chart](https://www.telerik.com/blazor-ui/column-chart) | planned | planned | 4 |
-| Data Visualization | [Donut Chart](https://www.telerik.com/blazor-ui/donut-chart) | planned | planned | 4 |
+| Data Visualization | [Chart](https://www.telerik.com/blazor-ui/chart) | foundation: `NgChart` | foundation: `NgChart` | 4 |
+| Data Visualization | [Column Chart](https://www.telerik.com/blazor-ui/column-chart) | foundation: `NgChart` | foundation: `NgChart` | 4 |
+| Data Visualization | [Donut Chart](https://www.telerik.com/blazor-ui/donut-chart) | foundation: `NgChart` | foundation: `NgChart` | 4 |
 | Data Visualization | [Heatmap](https://www.telerik.com/blazor-ui/heatmap) | planned | planned | 4 |
-| Data Visualization | [Line Chart](https://www.telerik.com/blazor-ui/line-chart) | planned | planned | 4 |
+| Data Visualization | [Line Chart](https://www.telerik.com/blazor-ui/line-chart) | foundation: `NgChart` | foundation: `NgChart` | 4 |
 | Data Visualization | [OHLC Chart](https://www.telerik.com/blazor-ui/ohlc-chart) | planned | planned | 4 |
-| Data Visualization | [Pie Chart](https://www.telerik.com/blazor-ui/pie-chart) | planned | planned | 4 |
+| Data Visualization | [Pie Chart](https://www.telerik.com/blazor-ui/pie-chart) | foundation: `NgChart` | foundation: `NgChart` | 4 |
 | Data Visualization | [QR Code](https://www.telerik.com/blazor-ui/qr-code) | planned | planned | 4 |
 | Data Visualization | [Radar Area Chart](https://www.telerik.com/blazor-ui/radar-area-chart) | planned | planned | 4 |
 | Data Visualization | [Radar Column Chart](https://www.telerik.com/blazor-ui/radar-column-chart) | planned | planned | 4 |
@@ -102,7 +102,7 @@ Snapshot: 2026-10-18. 139 named entries from the [Telerik Blazor index](https://
 | Editors | [TimePicker](https://www.telerik.com/blazor-ui/timepicker) | foundation: `NgTimePicker` | foundation: `NgTimePicker` | 2 |
 | Scheduling | [Calendar](https://www.telerik.com/blazor-ui/calendar) | foundation: `NgCalendar` | foundation: `NgCalendar` | 2 |
 | Scheduling | [Gantt](https://www.telerik.com/blazor-ui/gantt) | planned | planned | 4 |
-| Scheduling | [Scheduler](https://www.telerik.com/blazor-ui/scheduler) | planned | planned | 4 |
+| Scheduling | [Scheduler](https://www.telerik.com/blazor-ui/scheduler) | foundation: `NgScheduler` | foundation: `NgScheduler` | 4 |
 | Layout | [Animation Container](https://www.telerik.com/blazor-ui/animation-container) | planned | planned | 2 |
 | Layout | [Avatar](https://www.telerik.com/blazor-ui/avatar) | planned | planned | 2 |
 | Layout | [Card](https://www.telerik.com/blazor-ui/card) | planned | planned | 2 |
@@ -119,9 +119,9 @@ Snapshot: 2026-10-18. 139 named entries from the [Telerik Blazor index](https://
 | Layout | [Tooltip](https://www.telerik.com/blazor-ui/tooltip) | foundation: `NgTooltip` | foundation: `NgTooltip` | 1 |
 | Layout | [Window](https://www.telerik.com/blazor-ui/window) | planned | planned | 2 |
 | Layout | [Wizard](https://www.telerik.com/blazor-ui/wizard) | planned | planned | 2 |
-| Gauges | [Arc Gauge](https://www.telerik.com/blazor-ui/arc-gauge) | planned | planned | 4 |
+| Gauges | [Arc Gauge](https://www.telerik.com/blazor-ui/arc-gauge) | foundation: `NgArcGauge` | foundation: `NgArcGauge` | 4 |
 | Gauges | [Circular Gauge](https://www.telerik.com/blazor-ui/circular-gauge) | planned | planned | 4 |
-| Gauges | [Linear Gauge](https://www.telerik.com/blazor-ui/linear-gauge) | planned | planned | 4 |
+| Gauges | [Linear Gauge](https://www.telerik.com/blazor-ui/linear-gauge) | foundation: `NgLinearGauge` | foundation: `NgLinearGauge` | 4 |
 | Gauges | [Radial Gauge](https://www.telerik.com/blazor-ui/radial-gauge) | planned | planned | 4 |
 | Interactivity & UX | [Chat](https://www.telerik.com/blazor-ui/chat-(conversational-ui)) | planned | planned | 2 |
 | Interactivity & UX | [ChunkProgressBar](https://www.telerik.com/blazor-ui/chunkprogressbar) | planned | planned | 2 |

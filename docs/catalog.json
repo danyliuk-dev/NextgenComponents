@@ -669,14 +669,14 @@
       "reference": "https://www.telerik.com/blazor-ui/area-chart",
       "phase": 4,
       "blazor": {
-        "status": "planned",
-        "component": null
+        "status": "foundation",
+        "component": "NgChart"
       },
       "flutter": {
-        "status": "planned",
-        "component": null
+        "status": "foundation",
+        "component": "NgChart"
       },
-      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+      "featureSpec": "docs/analytics-and-schedule.md (Area Chart mode)"
     },
     {
       "name": "Bar Chart",
@@ -684,14 +684,14 @@
       "reference": "https://www.telerik.com/blazor-ui/bar-chart",
       "phase": 4,
       "blazor": {
-        "status": "planned",
-        "component": null
+        "status": "foundation",
+        "component": "NgChart"
       },
       "flutter": {
-        "status": "planned",
-        "component": null
+        "status": "foundation",
+        "component": "NgChart"
       },
-      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+      "featureSpec": "docs/analytics-and-schedule.md (Bar Chart mode)"
     },
     {
       "name": "Barcode",
@@ -744,14 +744,14 @@
       "reference": "https://www.telerik.com/blazor-ui/chart",
       "phase": 4,
       "blazor": {
-        "status": "planned",
-        "component": null
+        "status": "foundation",
+        "component": "NgChart"
       },
       "flutter": {
-        "status": "planned",
-        "component": null
+        "status": "foundation",
+        "component": "NgChart"
       },
-      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+      "featureSpec": "docs/analytics-and-schedule.md"
     },
     {
       "name": "Column Chart",
@@ -759,14 +759,14 @@
       "reference": "https://www.telerik.com/blazor-ui/column-chart",
       "phase": 4,
       "blazor": {
-        "status": "planned",
-        "component": null
+        "status": "foundation",
+        "component": "NgChart"
       },
       "flutter": {
-        "status": "planned",
-        "component": null
+        "status": "foundation",
+        "component": "NgChart"
       },
-      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+      "featureSpec": "docs/analytics-and-schedule.md (Column Chart mode)"
     },
     {
       "name": "Donut Chart",
@@ -774,14 +774,14 @@
       "reference": "https://www.telerik.com/blazor-ui/donut-chart",
       "phase": 4,
       "blazor": {
-        "status": "planned",
-        "component": null
+        "status": "foundation",
+        "component": "NgChart"
       },
       "flutter": {
-        "status": "planned",
-        "component": null
+        "status": "foundation",
+        "component": "NgChart"
       },
-      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+      "featureSpec": "docs/analytics-and-schedule.md (Donut Chart mode)"
     },
     {
       "name": "Heatmap",
@@ -804,14 +804,14 @@
       "reference": "https://www.telerik.com/blazor-ui/line-chart",
       "phase": 4,
       "blazor": {
-        "status": "planned",
-        "component": null
+        "status": "foundation",
+        "component": "NgChart"
       },
       "flutter": {
-        "status": "planned",
-        "component": null
+        "status": "foundation",
+        "component": "NgChart"
       },
-      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+      "featureSpec": "docs/analytics-and-schedule.md (Line Chart mode)"
     },
     {
       "name": "OHLC Chart",
@@ -834,14 +834,14 @@
       "reference": "https://www.telerik.com/blazor-ui/pie-chart",
       "phase": 4,
       "blazor": {
-        "status": "planned",
-        "component": null
+        "status": "foundation",
+        "component": "NgChart"
       },
       "flutter": {
-        "status": "planned",
-        "component": null
+        "status": "foundation",
+        "component": "NgChart"
       },
-      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+      "featureSpec": "docs/analytics-and-schedule.md (Pie Chart mode)"
     },
     {
       "name": "QR Code",
@@ -1449,14 +1449,14 @@
       "reference": "https://www.telerik.com/blazor-ui/scheduler",
       "phase": 4,
       "blazor": {
-        "status": "planned",
-        "component": null
+        "status": "foundation",
+        "component": "NgScheduler"
       },
       "flutter": {
-        "status": "planned",
-        "component": null
+        "status": "foundation",
+        "component": "NgScheduler"
       },
-      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+      "featureSpec": "docs/analytics-and-schedule.md"
     },
     {
       "name": "Animation Container",
@@ -1704,14 +1704,14 @@
       "reference": "https://www.telerik.com/blazor-ui/arc-gauge",
       "phase": 4,
       "blazor": {
-        "status": "planned",
-        "component": null
+        "status": "foundation",
+        "component": "NgArcGauge"
       },
       "flutter": {
-        "status": "planned",
-        "component": null
+        "status": "foundation",
+        "component": "NgArcGauge"
       },
-      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+      "featureSpec": "docs/analytics-and-schedule.md"
     },
     {
       "name": "Circular Gauge",
@@ -1734,14 +1734,14 @@
       "reference": "https://www.telerik.com/blazor-ui/linear-gauge",
       "phase": 4,
       "blazor": {
-        "status": "planned",
-        "component": null
+        "status": "foundation",
+        "component": "NgLinearGauge"
       },
       "flutter": {
-        "status": "planned",
-        "component": null
+        "status": "foundation",
+        "component": "NgLinearGauge"
       },
-      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+      "featureSpec": "docs/analytics-and-schedule.md"
     },
     {
       "name": "Radial Gauge",

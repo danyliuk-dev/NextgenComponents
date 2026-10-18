@@ -2,7 +2,7 @@
 
 Native Blazor and Flutter foundation libraries with a shared design-token source and a Telerik Blazor component roadmap.
 
-**Current release: 0.3 data workspace, 27 components on each platform.** This is not a complete Telerik replacement or API-compatible clone. The [catalog](docs/catalog.md) tracks 139 named entries from the published Telerik Blazor index; chart variants are counted separately. See [foundation capabilities](docs/foundation.md) and [forms/date capabilities](docs/forms-and-dates.md) and [data workspace capabilities and gaps](docs/data-workspace.md).
+**Current release: 0.4 analytics and scheduling, 31 controls on each platform (37 catalogue entries including chart modes).** This is not a complete Telerik replacement or API-compatible clone. The [catalog](docs/catalog.md) tracks 139 named entries from the published Telerik Blazor index; chart variants are counted separately. See [foundation capabilities](docs/foundation.md) and [forms/date capabilities](docs/forms-and-dates.md) and [data workspace capabilities and gaps](docs/data-workspace.md) and [analytics/schedule capabilities](docs/analytics-and-schedule.md).
 
 ## Layout
 
@@ -78,7 +78,7 @@ flutter test
 1. Shared theme, catalog, 11 foundation components and galleries (implemented subset).
 2. Forms and dates: 11 more controls and a complete booking example (0.2 implemented subset). Remaining input/layout features stay in the catalogue.
 3. Grid, TreeList, TreeView, Pager and Breadcrumb (0.3 implemented subset); advanced data features remain in the capability matrix.
-4. Charts, gauges and scheduling.
+4. Charts (six modes), linear/arc gauges and weekly scheduling (0.4 implemented subset); advanced visualization and scheduling remain planned.
 5. Editors, Spreadsheet, PDF Viewer, PivotGrid, diagrams, maps and AI interfaces.
 
 Each planned component needs a feature-level audit of its reference before implementation. Basic rendering is not completion: sorting/filtering/editing, keyboard behavior, accessibility, localization and performance must be tracked where applicable.

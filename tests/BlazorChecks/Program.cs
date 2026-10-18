@@ -62,6 +62,30 @@ await Check<NgBreadcrumb>(new(){["Items"]=new NgBreadcrumbItem[]{new("all","All 
 await Check<NgDataGrid<(string Id,int Budget)>>(new(){["Items"]=data,["Columns"]=dataColumns,["RowId"]=(Func<(string Id,int Budget),string>)(r=>r.Id)},"Budget", "9000", "Select page");
 await Check<NgTreeView<string>>(new(){["Items"]=tree,["Text"]=(Func<string,string>)(s=>s)},"role=\"tree\"", "Root", "aria-expanded=\"false\"");
 await Check<NgTreeList<string>>(new(){["Items"]=tree,["Columns"]=new NgDataColumn<string>[]{new("name","Name",s=>s)}},"Root", "Expand Root", "Search Hierarchy");
+NgChartSeries[] signed=[new("Values",[-10,0,20])];
+var chart=NgChartMath.Build(NgChartKind.Column,["A","B","C"],signed);
+var bars=chart.Marks.Where(m=>m.Point!=null).ToArray();
+Rule(bars.Length==3 && bars.All(m=>m.Coordinates.All(double.IsFinite)) && bars[0].Coordinates[1]>bars[2].Coordinates[1],"signed chart bars share a finite zero baseline");
+Rule(NgChartMath.Build(NgChartKind.Line,["A","B"],[new("Large",[0,1e308])]).Marks.All(m=>m.Coordinates.All(double.IsFinite)),"large finite chart ticks do not overflow");
+var gaps=NgChartMath.Build(NgChartKind.Line,["A","B","C"],[new("Gap",[1,null,3])]);
+Rule(gaps.Marks.Count(m=>m.Kind=="dot")==2 && !gaps.Marks.Any(m=>m.Kind=="line"&&m.Color!="grid"),"null points break lines");
+Rule(NgChartMath.Build(NgChartKind.Area,["A","B","C"],signed,new HashSet<int>{0}).Marks.Count==0,"hidden series produces empty chart");
+foreach(var kind in Enum.GetValues<NgChartKind>()) Rule(NgChartMath.Build(kind,["Only"],[new("One",[1])]).Marks.Any(m=>m.Point!=null),$"single point {kind}");
+void Reject(Action action,string label){try{action();throw new Exception(label+" accepted");}catch(ArgumentException){Rule(true,label);}}
+Reject(()=>NgChartMath.Build(NgChartKind.Pie,["A"],[new("Negative",[-1])]),"negative pie rejected");
+Reject(()=>NgChartMath.Build(NgChartKind.Line,["A"],[new("Bad",[double.NaN])]),"nonfinite chart rejected");
+Reject(()=>NgChartMath.Build(NgChartKind.Line,["A"],[new("Bad",[1,2])]),"mismatched categories rejected");
+Rule(NgChartMath.Fraction(-1,0,100)==0&&NgChartMath.Fraction(150,0,100)==1,"gauge clamps outside bounds");
+Reject(()=>NgChartMath.Fraction(1,1,1),"empty gauge range rejected");
+var overnight=new NgScheduleEvent("x","Overnight",new(2026,12,31,23,0,0),new(2027,1,1,1,0,0));
+Rule(NgScheduleRules.ForDay([overnight],new(2026,12,31)).Count==1&&NgScheduleRules.ForDay([overnight],new(2027,1,1)).Count==1,"overnight event in both calendar days");
+Rule(NgScheduleRules.ForDay([overnight with {End=new(2027,1,1)}],new(2027,1,1)).Count==0,"midnight end excluded from next day");
+Rule(NgScheduleRules.WeekStart(new(2027,1,3))==new DateTime(2026,12,28),"week crosses year boundary");
+Rule(NgScheduleRules.Validate(overnight with {End=overnight.Start})!=null,"zero duration rejected");
+await Check<NgChart>(new(){["Categories"]=new[]{"A","B","C"},["Series"]=signed},"<svg", "Values", "Chart data", "role=\"button\"");
+await Check<NgLinearGauge>(new(){["Value"]=150d},"role=\"meter\"", "aria-valuenow=\"100\"");
+await Check<NgArcGauge>(new(){["Value"]=84d},"84", "<svg");
+await Check<NgScheduler>(new(){["Date"]=new DateTime(2026,12,31),["Items"]=new[]{overnight}},"Overnight", "2027-01-01", "Previous week");
 Console.WriteLine($"{count} rendering and data/date-rule checks passed. Browser interaction requires the separate visual run.");
 sealed class NoBrowserJS : IJSRuntime {
  public ValueTask<TValue> InvokeAsync<TValue>(string identifier, object?[]? args) => throw new InvalidOperationException("JS must not execute in SSR");

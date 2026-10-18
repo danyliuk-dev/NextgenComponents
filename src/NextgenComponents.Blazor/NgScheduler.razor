@@ -1,0 +1,15 @@
+<section class="ng-scheduler" aria-label="@Label"><div class="ng-schedule-toolbar"><h3>@Label</h3><div class="row"><NgButton OnClick="()=>Move(-7)" aria-label="Previous week">‹</NgButton><strong>@week.ToString("MMM d") – @week.AddDays(6).ToString("MMM d, yyyy")</strong><NgButton OnClick="()=>Move(7)" aria-label="Next week">›</NgButton><NgButton OnClick="()=>DateChanged.InvokeAsync(DateTime.Today)">Today</NgButton></div></div>
+<div class="ng-week">@for(var i=0;i<7;i++){var day=week.AddDays(i);var events=NgScheduleRules.ForDay(Items,day);<section class="ng-schedule-day" aria-label="@day.ToString("yyyy-MM-dd")"><h4>@day.ToString("ddd dd")</h4><NgButton aria-label="@($"Add event {day:yyyy-MM-dd}")" OnClick="()=>OnCreate.InvokeAsync(day)">+ Add</NgButton>
+@foreach(var item in events){<button type="button" class="ng-schedule-event" @onclick="()=>OnEdit.InvokeAsync(item)"><strong>@item.Title</strong><span>@item.Start.ToString("MMM d HH:mm") – @item.End.ToString("MMM d HH:mm")</span></button>}
+@if(events.Count==0){<small class="ng-empty">No events</small>}</section>}</div></section>
+@code {
+ [Parameter] public string Label{get;set;}="Schedule";
+ [Parameter] public DateTime Date{get;set;}=DateTime.Today;
+ [Parameter] public EventCallback<DateTime> DateChanged{get;set;}
+ [Parameter] public IReadOnlyList<NgScheduleEvent> Items{get;set;}=[];
+ [Parameter] public EventCallback<DateTime> OnCreate{get;set;}
+ [Parameter] public EventCallback<NgScheduleEvent> OnEdit{get;set;}
+ private DateTime week;
+ protected override void OnParametersSet(){week=NgScheduleRules.WeekStart(Date);if(week.Year<=1||week.Year>=9999)throw new ArgumentException("Scheduler supports years 2–9998.");if(Items.Select(x=>x.Id).Distinct().Count()!=Items.Count||Items.Any(e=>NgScheduleRules.Validate(e)!=null))throw new ArgumentException("Events require unique IDs, a title and End > Start.");}
+ private Task Move(int days)=>DateChanged.InvokeAsync(week.AddDays(days));
+}
