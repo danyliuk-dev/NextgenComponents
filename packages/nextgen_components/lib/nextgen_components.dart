@@ -21,3 +21,5 @@ export 'src/steps.dart';
 
 export 'src/navigation.dart';
 export 'src/selection.dart';
+
+export 'src/chips.dart';

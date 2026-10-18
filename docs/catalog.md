@@ -15,8 +15,8 @@ Snapshot: 2026-10-18. 139 named entries from the [Telerik Blazor index](https://
 | Navigation | [Breadcrumb](https://www.telerik.com/blazor-ui/breadcrumb) | foundation: `NgBreadcrumb` | foundation: `NgBreadcrumb` | 3 |
 | Navigation | [Button Group](https://www.telerik.com/blazor-ui/buttongroup) | foundation: `NgButtonGroup` | foundation: `NgButtonGroup` | 2 |
 | Navigation | [Buttons](https://www.telerik.com/blazor-ui/buttons) | foundation: `NgButton` | foundation: `NgButton` | 1 |
-| Navigation | [Chip](https://www.telerik.com/blazor-ui/chip) | planned | planned | 2 |
-| Navigation | [ChipList](https://www.telerik.com/blazor-ui/chiplist) | planned | planned | 2 |
+| Navigation | [Chip](https://www.telerik.com/blazor-ui/chip) | foundation: `NgChip` | foundation: `NgChip` | 2 |
+| Navigation | [ChipList](https://www.telerik.com/blazor-ui/chiplist) | foundation: `NgChipList` | foundation: `NgChipList` | 2 |
 | Navigation | [Context Menu](https://www.telerik.com/blazor-ui/context-menu) | planned | planned | 2 |
 | Navigation | [Drawer](https://www.telerik.com/blazor-ui/drawer) | foundation: `NgDrawer` | foundation: `NgDrawer` | 2 |
 | Navigation | [DropDownButton](https://www.telerik.com/blazor-ui/dropdownbutton) | planned | planned | 2 |

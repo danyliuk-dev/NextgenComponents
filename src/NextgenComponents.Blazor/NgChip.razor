@@ -1,0 +1,16 @@
+<span class="ng-chip @(Value?"ng-chip-selected":"") @(Disabled?"ng-chip-disabled":"")">
+@if(Selectable){<button class="ng-chip-label" type="button" aria-pressed="@(Value?"true":"false")" disabled="@(Disabled||!ValueChanged.HasDelegate)" @onclick="Toggle">@Label</button>}
+else {<span class="ng-chip-label">@Label</span>}
+@if(OnRemove.HasDelegate){<button class="ng-chip-remove" type="button" aria-label="@($"Remove {Label}")" disabled="@Disabled" @onclick="Remove">×</button>}
+</span>
+@code {
+ [Parameter,EditorRequired] public string Label {get;set;}="";
+ [Parameter] public bool Value {get;set;}
+ [Parameter] public EventCallback<bool> ValueChanged {get;set;}
+ [Parameter] public bool Selectable {get;set;}=true;
+ [Parameter] public bool Disabled {get;set;}
+ [Parameter] public EventCallback OnRemove {get;set;}
+ protected override void OnParametersSet(){if(string.IsNullOrWhiteSpace(Label)||Label.Length>120)throw new ArgumentException("Use a nonblank label of at most 120 characters.");}
+ private Task Toggle()=>Disabled||!Selectable?Task.CompletedTask:ValueChanged.InvokeAsync(!Value);
+ private Task Remove()=>Disabled?Task.CompletedTask:OnRemove.InvokeAsync();
+}

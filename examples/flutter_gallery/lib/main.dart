@@ -1,3 +1,4 @@
+import 'chips_gallery.dart';
 import 'selection_gallery.dart';
 import 'navigation_gallery.dart';
 import 'code_gallery.dart';
@@ -37,7 +38,8 @@ class _GalleryState extends State<Gallery> {
       steps = false,
       code = false,
       navigation = false,
-      selection = false;
+      selection = false,
+      chips = false;
   @override
   Widget build(BuildContext context) => MaterialApp(
     title: 'Nextgen • Flutter',
@@ -45,7 +47,13 @@ class _GalleryState extends State<Gallery> {
     theme: NgTheme.light(compact: compact),
     darkTheme: NgTheme.dark(compact: compact),
     themeMode: dark ? ThemeMode.dark : ThemeMode.light,
-    home: selection
+    home: chips
+        ? ChipsGallery(
+            dark: dark,
+            onDark: (v) => setState(() => dark = v),
+            onBack: () => setState(() => chips = false),
+          )
+        : selection
         ? SelectionGallery(
             dark: dark,
             onDark: (v) => setState(() => dark = v),
@@ -136,6 +144,7 @@ class _GalleryState extends State<Gallery> {
             onData: () => setState(() => data = true),
             onAnalytics: () => setState(() => analytics = true),
             onNavigation: () => setState(() => navigation = true),
+            onChips: () => setState(() => chips = true),
             onSelection: () => setState(() => selection = true),
             onCode: () => setState(() => code = true),
             onSteps: () => setState(() => steps = true),
@@ -167,6 +176,7 @@ class GalleryPage extends StatefulWidget {
       onSteps,
       onCode,
       onNavigation,
+      onChips,
       onSelection;
   final ValueChanged<bool> onDark, onCompact;
   const GalleryPage({
@@ -183,6 +193,7 @@ class GalleryPage extends StatefulWidget {
     required this.onSteps,
     required this.onCode,
     required this.onNavigation,
+    required this.onChips,
     required this.onSelection,
     required this.dark,
     required this.compact,
@@ -256,6 +267,10 @@ class _GalleryPageState extends State<GalleryPage> {
                         fontWeight: FontWeight.bold,
                         letterSpacing: 1,
                       ),
+                    ),
+                    TextButton(
+                      onPressed: widget.onChips,
+                      child: const Text('Chips and tags'),
                     ),
                     TextButton(
                       onPressed: widget.onSelection,

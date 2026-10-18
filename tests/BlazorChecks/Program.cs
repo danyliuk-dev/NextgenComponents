@@ -227,6 +227,12 @@ Reject(()=>NgSelectionRules.Validate(Enumerable.Range(0,51).Select(i=>new NgOpti
 await Check<NgToggleButton>(new(){["Label"]="Bold <safe>",["Value"]=true},"aria-pressed=\"true\"","Bold &lt;safe&gt;","disabled");
 await Check<NgButtonGroup>(new(){["Items"]=choices,["Value"]=choiceValue,["Vertical"]=true},"role=\"group\"","ng-button-group-vertical","aria-pressed=\"true\"","Locked");
 await Check<NgButtonGroup>(new(),"No options");
+await Check<NgChip>(new(){["Label"]="<unsafe>",["Value"]=true,["Disabled"]=true,["OnRemove"]=EventCallback.Factory.Create(new object(),()=>{})},"&lt;unsafe&gt;","aria-pressed=\"true\"","disabled","Remove &lt;unsafe&gt;");
+await Check<NgChip>(new(){["Label"]="Published",["Selectable"]=false},"<span class=\"ng-chip-label\">Published</span>");
+await Check<NgChipList>(new(){["Items"]=Array.Empty<NgOption>()},"No tags","role=\"group\"");
+await Check<NgChipList>(new(){["Items"]=options,["Value"]=new string[]{"a"},["OnRemove"]=EventCallback.Factory.Create<string>(new object(),_=>{})},"Remove Alpha","Remove Beta","ng-chip-selected","disabled");
+var enabledChip = await renderer.Dispatcher.InvokeAsync(async () => (await renderer.RenderComponentAsync<NgChip>(ParameterView.FromDictionary(new Dictionary<string,object?>{["Label"]="Tag",["Selectable"]=false,["OnRemove"]=EventCallback.Factory.Create(new object(),()=>{})}))).ToHtmlString());
+Rule(!enabledChip.Contains("disabled="),"enabled chip removal is not disabled");
 Console.WriteLine($"{count} rendering and data/date-rule checks passed. Browser interaction requires the separate visual run.");
 sealed class NoBrowserJS : IJSRuntime {
  public ValueTask<TValue> InvokeAsync<TValue>(string identifier, object?[]? args) => throw new InvalidOperationException("JS must not execute in SSR");

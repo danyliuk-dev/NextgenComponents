@@ -144,14 +144,14 @@
       "reference": "https://www.telerik.com/blazor-ui/chip",
       "phase": 2,
       "blazor": {
-        "status": "planned",
-        "component": null
+        "status": "foundation",
+        "component": "NgChip"
       },
       "flutter": {
-        "status": "planned",
-        "component": null
+        "status": "foundation",
+        "component": "NgChip"
       },
-      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+      "featureSpec": "Implemented subset; see docs/chips.md and the English component manual."
     },
     {
       "name": "ChipList",
@@ -159,14 +159,14 @@
       "reference": "https://www.telerik.com/blazor-ui/chiplist",
       "phase": 2,
       "blazor": {
-        "status": "planned",
-        "component": null
+        "status": "foundation",
+        "component": "NgChipList"
       },
       "flutter": {
-        "status": "planned",
-        "component": null
+        "status": "foundation",
+        "component": "NgChipList"
       },
-      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+      "featureSpec": "Implemented subset; see docs/chips.md and the English component manual."
     },
     {
       "name": "Context Menu",

@@ -1,0 +1,18 @@
+<div class="ng-chip-list" role="group" aria-label="@Label">
+@foreach(var item in Items){<NgChip @key="item.Value" Label="@item.Label" Value="@(Value.Contains(item.Value))" Selectable="Selectable" Disabled="@(Disabled||item.Disabled)" ValueChanged="@(ValueChanged.HasDelegate?EventCallback.Factory.Create<bool>(this,_=>Select(item.Value)):default)" OnRemove="@(OnRemove.HasDelegate?EventCallback.Factory.Create(this,()=>Remove(item.Value)):default)"/>}
+@if(Items.Count==0){<span class="ng-muted">No tags</span>}
+</div>
+@code {
+ [Parameter] public string Label {get;set;}="Tags";
+ [Parameter,EditorRequired] public IReadOnlyList<NgOption> Items {get;set;}=[];
+ [Parameter] public IReadOnlyList<string> Value {get;set;}=[];
+ [Parameter] public EventCallback<IReadOnlyList<string>> ValueChanged {get;set;}
+ [Parameter] public EventCallback<string> OnRemove {get;set;}
+ [Parameter] public bool Selectable {get;set;}=true;
+ [Parameter] public bool Multiple {get;set;}
+ [Parameter] public bool AllowEmpty {get;set;}=true;
+ [Parameter] public bool Disabled {get;set;}
+ protected override void OnParametersSet()=>NgSelectionRules.Validate(Items,Value,Multiple);
+ private Task Select(string id){if(Disabled||!Selectable)return Task.CompletedTask;var next=NgSelectionRules.Toggle(Items,Value,id,Multiple,AllowEmpty);return next.SequenceEqual(Value)?Task.CompletedTask:ValueChanged.InvokeAsync(next);}
+ private Task Remove(string id)=>Disabled||!Items.Any(x=>x.Value==id&&!x.Disabled)?Task.CompletedTask:OnRemove.InvokeAsync(id);
+}
