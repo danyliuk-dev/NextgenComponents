@@ -1,0 +1,16 @@
+@inject NavigationManager Navigation
+<section class="ng-pdf-viewer" aria-label="@Label">
+<h3>@Label</h3>
+<iframe @key="FrameUrl" src="@FrameUrl" title="@Label" style="@($"width:100%;height:{Height}px;border:1px solid var(--ng-border,#b8b8b8);border-radius:4px")"></iframe>
+</section>
+@code {
+ [Parameter] public string Label { get; set; } = "PDF viewer";
+ [Parameter] public string? Source { get; set; }
+ [Parameter] public int Height { get; set; } = 640;
+ [Parameter] public bool Dark { get; set; }
+ private string FrameUrl => Navigation.ToAbsoluteUri("_content/NextgenComponents.Blazor/pdf-viewer/index.html") + "?theme=" + (Dark?"dark":"light") + "&source=" + Uri.EscapeDataString(string.IsNullOrWhiteSpace(Source)?"":Navigation.ToAbsoluteUri(Source).ToString());
+ protected override void OnParametersSet() {
+  if(Height<400||Height>1600)throw new ArgumentOutOfRangeException(nameof(Height),"Use 400–1600 pixels.");
+  if(!string.IsNullOrWhiteSpace(Source)&&Navigation.ToAbsoluteUri(Source).Scheme is not ("http" or "https"))throw new ArgumentException("Source must be a relative or HTTP(S) URL.",nameof(Source));
+ }
+}

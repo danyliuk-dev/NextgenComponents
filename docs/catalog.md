@@ -42,7 +42,7 @@ Snapshot: 2026-10-18. 139 named entries from the [Telerik Blazor index](https://
 | File Upload & Management | [DropZone](https://www.telerik.com/blazor-ui/dropzone) | planned | planned | 2 |
 | File Upload & Management | [File Manager](https://www.telerik.com/blazor-ui/file-manager) | planned | planned | 5 |
 | File Upload & Management | [FileSelect](https://www.telerik.com/blazor-ui/fileselect) | planned | planned | 2 |
-| File Upload & Management | [PDF Viewer](https://www.telerik.com/blazor-ui/pdf-viewer) | planned | planned | 5 |
+| File Upload & Management | [PDF Viewer](https://www.telerik.com/blazor-ui/pdf-viewer) | foundation: NgPdfViewer | foundation: NgPdfViewer | 5 |
 | File Upload & Management | [Upload](https://www.telerik.com/blazor-ui/upload) | planned | planned | 2 |
 | Diagrams and Maps | [Diagram](https://www.telerik.com/blazor-ui/diagram) | foundation: `NgDiagram` | foundation: `NgDiagram` | 5 |
 | Diagrams and Maps | [Map](https://www.telerik.com/blazor-ui/map) | planned | planned | 5 |

@@ -1,3 +1,4 @@
+import 'pdf_gallery.dart';
 import 'diagram_gallery.dart';
 import 'editor_gallery.dart';
 import 'package:flutter/material.dart';
@@ -23,7 +24,8 @@ class _GalleryState extends State<Gallery> {
       analytics = false,
       workbook = false,
       editor = false,
-      diagram = false;
+      diagram = false,
+      pdf = false;
   @override
   Widget build(BuildContext context) => MaterialApp(
     title: 'Nextgen • Flutter',
@@ -31,7 +33,13 @@ class _GalleryState extends State<Gallery> {
     theme: NgTheme.light(compact: compact),
     darkTheme: NgTheme.dark(compact: compact),
     themeMode: dark ? ThemeMode.dark : ThemeMode.light,
-    home: diagram
+    home: pdf
+        ? PdfGallery(
+            dark: dark,
+            onDark: (v) => setState(() => dark = v),
+            onBack: () => setState(() => pdf = false),
+          )
+        : diagram
         ? DiagramGallery(
             dark: dark,
             compact: compact,
@@ -83,6 +91,7 @@ class _GalleryState extends State<Gallery> {
             onForms: () => setState(() => forms = true),
             onData: () => setState(() => data = true),
             onAnalytics: () => setState(() => analytics = true),
+            onPdf: () => setState(() => pdf = true),
             onDiagram: () => setState(() => diagram = true),
             onEditor: () => setState(() => editor = true),
             onWorkbook: () => setState(() => workbook = true),
@@ -101,7 +110,8 @@ class GalleryPage extends StatefulWidget {
       onAnalytics,
       onWorkbook,
       onEditor,
-      onDiagram;
+      onDiagram,
+      onPdf;
   final ValueChanged<bool> onDark, onCompact;
   const GalleryPage({
     super.key,
@@ -111,6 +121,7 @@ class GalleryPage extends StatefulWidget {
     required this.onWorkbook,
     required this.onEditor,
     required this.onDiagram,
+    required this.onPdf,
     required this.dark,
     required this.compact,
     required this.onDark,
@@ -183,6 +194,10 @@ class _GalleryPageState extends State<GalleryPage> {
                         fontWeight: FontWeight.bold,
                         letterSpacing: 1,
                       ),
+                    ),
+                    TextButton(
+                      onPressed: widget.onPdf,
+                      child: const Text('PDF Viewer'),
                     ),
                     TextButton(
                       onPressed: widget.onDiagram,

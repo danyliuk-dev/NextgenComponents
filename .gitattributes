@@ -1,0 +1,6 @@
+# PDF documents are binary, even when their content streams happen to be ASCII.
+*.pdf binary
+# Preserve upstream PDF.js distributions and license text byte-for-byte.
+shared/pdf-viewer/vendor/** -whitespace
+packages/nextgen_components/assets/pdf-viewer/vendor/** -whitespace
+src/NextgenComponents.Blazor/wwwroot/pdf-viewer/vendor/** -whitespace

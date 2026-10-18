@@ -147,3 +147,14 @@ Screenshots inspected:
 - 390px web viewport reviewed in both implementations; toolbar wraps and the sample nodes remain visible at reduced zoom. Automated Flutter widget coverage additionally verifies scrolling to a distant node in a 5000×5000 canvas in read-only mode; model tests cover padding, zoom bounds, empty data and invalid viewport sizes.
 - Inspected screenshots: [Blazor](screenshots/fit-blazor.png), [Flutter](screenshots/fit-flutter.png), [Blazor narrow](screenshots/fit-blazor-narrow.png), [Flutter narrow](screenshots/fit-flutter-narrow.png).
 - Native mobile remains untested. Fit includes node bounds, not overflow from long connection labels; 25% minimum can leave very large graphs partly outside the viewport.
+
+## 0.8 — PDF Viewer (2026-10-18)
+
+- .NET build: zero warnings/errors; 121 rendering/model checks passed. Flutter: web build, 56 tests and analyzer passed. All 36 Blazor + 36 Flutter manual examples compiled/analyzed. Theme/contrast checks passed.
+- Original three-page gallery PDF generated with ReportLab; page 2 rendered with Poppler and visually inspected before browser review.
+- Normal foreground Chrome on local Linux iMac, isolated profile nextgen-components-review-08 / CDP 9341, coordinated with the other Codex task. Shared browser regression script: scripts/pdf-browser-check.mjs blazor|flutter.
+- Both frameworks: three-page load, previous/next and invalid page entry, search across all pages, result navigation and extracted text, clearing search, fit width vs fit page, zoom, original-byte download (SHA-256), malformed file rejection and local File API recovery passed. Local-file automation exercised browser File inputs; the native OS file picker itself was not automated.
+- Missing URL and source recovery verified in both galleries; empty source verified in Blazor. Dark mode and 390px web layouts visually inspected in both; no horizontal document overflow in the Flutter iframe.
+- Search status was separated from page-render status after a resize-triggered fit obscured the match count during the initial browser run; the final regression passed.
+- Screenshots: [Blazor](screenshots/pdf-blazor.png), [Blazor narrow dark](screenshots/pdf-blazor-narrow.png), [Flutter](screenshots/pdf-flutter.png), [Flutter dark](screenshots/pdf-flutter-dark.png), [Flutter narrow](screenshots/pdf-flutter-narrow.png).
+- Native platforms display an explicit unsupported placeholder. Screen-reader certification, non-Chrome browsers, CJK/font edge cases, password-protected and very large PDF stress tests remain unverified. Current feature limits are in pdf-viewer.md and the component manual.

@@ -1,0 +1,11 @@
+@page "/pdf"
+<PageTitle>Nextgen • PDF viewer</PageTitle>
+<div class="ng-scope gallery" data-ng-theme="@(dark?"dark":"light")"><main>
+<nav><strong>N NEXTGEN COMPONENTS</strong><div class="row"><a href="/">Foundation</a><NgSwitch Label="Dark theme" @bind-Value="dark"/></div></nav>
+<section class="hero"><p class="eyebrow">BLAZOR / PDF VIEWER 0.8</p><h1>A clear view.<br/>Every page.</h1><p>Open, navigate, search and download documents in your browser.</p></section>
+<section class="panel"><div class="row"><NgButton OnClick='()=>source="samples/nextgen-guide.pdf"'>Sample PDF</NgButton><NgButton OnClick='()=>source=null'>Empty viewer</NgButton><NgButton OnClick='()=>source="samples/missing.pdf"'>Missing document</NgButton></div>
+<NgPdfViewer Label="Document preview" Source="@source" Dark="@dark" Height="720"/>
+<p>Open PDF stays on your device. Up to 20 MiB / 200 pages. Use Page text to select and copy extracted text.</p></section>
+<footer>36 CONTROLS / 42 CATALOGUE ENTRIES · WEB FIRST</footer>
+</main></div>
+@code {private bool dark;private string? source="samples/nextgen-guide.pdf";}

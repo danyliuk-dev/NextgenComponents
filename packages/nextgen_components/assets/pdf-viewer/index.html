@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>PDF viewer</title><link rel="stylesheet" href="viewer.css"></head>
+<body>
+<main aria-label="PDF viewer">
+<div class="toolbar" role="group" aria-label="PDF document">
+<label class="file-button">Open PDF<input id="file" type="file" accept="application/pdf,.pdf"></label>
+<button id="download" disabled>Download</button><span id="name">No document</span>
+</div>
+<div class="toolbar" role="group" aria-label="PDF navigation">
+<button id="previous" disabled>Previous</button>
+<label>Page <input id="page" type="number" min="1" value="1" disabled></label><span id="pages">of 0</span>
+<button id="next" disabled>Next</button>
+<button id="out" disabled aria-label="Zoom out">−</button><output id="zoom">100%</output><button id="in" disabled aria-label="Zoom in">+</button>
+<button id="width" disabled>Fit width</button><button id="fit" disabled>Fit page</button>
+</div>
+<form id="search-form" class="toolbar" role="search">
+<label>Find text <input id="query" maxlength="100" type="search" disabled></label><button id="search" disabled>Find</button><button id="clear" type="button">Clear</button>
+</form>
+<p id="status" role="status" aria-live="polite">Choose a PDF to begin.</p>
+<p id="search-status" role="status"></p>
+<div id="results" aria-label="Search results"></div>
+<div id="viewport" tabindex="0" aria-label="PDF page scroll area"><canvas id="canvas" role="img" aria-label="No PDF page"></canvas></div>
+<details id="text-panel"><summary>Page text (select and copy)</summary><pre id="text"></pre></details>
+</main>
+<script type="module" src="viewer.mjs"></script>
+</body></html>

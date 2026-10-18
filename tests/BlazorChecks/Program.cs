@@ -6,7 +6,7 @@ using Microsoft.JSInterop;
 using NextgenComponents.Blazor;
 using System.Linq.Expressions;
 
-var services = new ServiceCollection().AddLogging().AddSingleton<IJSRuntime, NoBrowserJS>().BuildServiceProvider();
+var services = new ServiceCollection().AddLogging().AddSingleton<IJSRuntime, NoBrowserJS>().AddSingleton<NavigationManager, TestNavigation>().BuildServiceProvider();
 await using var renderer = new HtmlRenderer(services, services.GetRequiredService<ILoggerFactory>());
 var count = 0;
 async Task Check<T>(Dictionary<string, object?> parameters, params string[] expected) where T : IComponent {
@@ -149,8 +149,12 @@ Rule(new NgDiagramModel().FitView(400,300)==new NgDiagramView(1,0,0),"empty fit 
 Rule(new NgDiagramModel([new("first","First",0,0),new("last","Last",4800,4800)],width:5000,height:5000).FitView(300,200).Zoom==.25,"fit honors minimum zoom");
 Rule(offsetGraph.FitView(148,98).Zoom==.5,"fit reserves 24px padding and respects both dimensions");
 Reject(()=>offsetGraph.FitView(double.NaN,300),"fit rejects nonfinite viewport");
+await Check<NgPdfViewer>(new(){["Label"]="Invoice",["Source"]="samples/test.pdf",["Dark"]=true},"title=\"Invoice\"","theme=dark","source=http%3A%2F%2Flocalhost%2Fsamples%2Ftest.pdf");
+await Check<NgPdfViewer>(new(),"PDF viewer","source=");
 Console.WriteLine($"{count} rendering and data/date-rule checks passed. Browser interaction requires the separate visual run.");
 sealed class NoBrowserJS : IJSRuntime {
  public ValueTask<TValue> InvokeAsync<TValue>(string identifier, object?[]? args) => throw new InvalidOperationException("JS must not execute in SSR");
  public ValueTask<TValue> InvokeAsync<TValue>(string identifier, CancellationToken cancellationToken, object?[]? args) => InvokeAsync<TValue>(identifier,args);
 }
+
+sealed class TestNavigation : NavigationManager { public TestNavigation()=>Initialize("http://localhost/","http://localhost/"); protected override void NavigateToCore(string uri,bool forceLoad){} }

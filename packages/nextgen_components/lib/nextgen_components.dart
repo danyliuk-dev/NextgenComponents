@@ -11,3 +11,4 @@ export 'src/visualization.dart';
 export 'src/workbook.dart';
 export 'src/editor.dart';
 export 'src/diagram.dart';
+export 'src/pdf_viewer.dart';
