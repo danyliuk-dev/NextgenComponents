@@ -1,7 +1,7 @@
-<span class="ng-chip @(Value?"ng-chip-selected":"") @(Disabled?"ng-chip-disabled":"")">
-@if(Selectable){<button class="ng-chip-label" type="button" aria-pressed="@(Value?"true":"false")" disabled="@(Disabled||!ValueChanged.HasDelegate)" @onclick="Toggle">@Label</button>}
-else {<span class="ng-chip-label">@Label</span>}
-@if(OnRemove.HasDelegate){<button class="ng-chip-remove" type="button" aria-label="@($"Remove {Label}")" disabled="@Disabled" @onclick="Remove">×</button>}
+<span class="ng-chip ng-chip-@Size ng-chip-rounded-@Rounded ng-chip-@FillMode ng-chip-tone-@ThemeColor @(Value?"ng-chip-selected":"") @(Disabled?"ng-chip-disabled":"")">
+@if(Selectable||OnClick.HasDelegate){<button class="ng-chip-label" type="button" aria-label="@Label" aria-pressed="@(Selectable?(Value?"true":"false"):null)" disabled="@(Disabled||(!ValueChanged.HasDelegate&&!OnClick.HasDelegate))" @onclick="Activate">@Content</button>}
+else {<span class="ng-chip-label" aria-label="@Label">@Content</span>}
+@if(OnRemove.HasDelegate){<button class="ng-chip-remove" type="button" aria-label="@($"Remove {Label}")" disabled="@Disabled" @onclick="Remove"><span aria-hidden="true">@if(RemoveContent is not null){@RemoveContent}else{<text>×</text>}</span></button>}
 </span>
 @code {
  [Parameter,EditorRequired] public string Label {get;set;}="";
@@ -10,7 +10,16 @@ else {<span class="ng-chip-label">@Label</span>}
  [Parameter] public bool Selectable {get;set;}=true;
  [Parameter] public bool Disabled {get;set;}
  [Parameter] public EventCallback OnRemove {get;set;}
- protected override void OnParametersSet(){if(string.IsNullOrWhiteSpace(Label)||Label.Length>120)throw new ArgumentException("Use a nonblank label of at most 120 characters.");}
- private Task Toggle()=>Disabled||!Selectable?Task.CompletedTask:ValueChanged.InvokeAsync(!Value);
+ [Parameter] public EventCallback OnClick {get;set;}
+ [Parameter] public string Size {get;set;}="md";
+ [Parameter] public string Rounded {get;set;}="full";
+ [Parameter] public string FillMode {get;set;}="outline";
+ [Parameter] public string ThemeColor {get;set;}="base";
+ [Parameter] public RenderFragment? Leading {get;set;}
+ [Parameter] public RenderFragment? ChildContent {get;set;}
+ [Parameter] public RenderFragment? RemoveContent {get;set;}
+ private RenderFragment Content => @<text>@if(Leading is not null){<span class="ng-chip-leading" aria-hidden="true">@Leading</span>}@if(ChildContent is not null){@ChildContent}else{@Label}</text>;
+ protected override void OnParametersSet(){if(string.IsNullOrWhiteSpace(Label)||Label.Length>120)throw new ArgumentException("Use a nonblank label of at most 120 characters.");NgChipRules.Validate(Size,Rounded,FillMode,ThemeColor);}
+ private async Task Activate(){if(Disabled)return;var next=!Value;if(Selectable&&ValueChanged.HasDelegate)await ValueChanged.InvokeAsync(next);await OnClick.InvokeAsync();}
  private Task Remove()=>Disabled?Task.CompletedTask:OnRemove.InvokeAsync();
 }

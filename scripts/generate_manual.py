@@ -5,6 +5,15 @@ from manual_content import D
 root=Path(__file__).resolve().parents[1]
 out=root/'docs/manual';out.mkdir(exist_ok=True)
 help={
+'itemappearance':'Per-item nullable presentation overrides; unspecified values inherit list defaults.',
+'canremove':'Pure predicate controlling whether an item offers a remove action.',
+'leadingtemplate':'Decorative leading content for an item; no nested interactive elements.',
+'leadingbuilder':'Decorative leading widget for an item; no nested interactive controls.',
+'removecontent':'Decorative replacement for the remove symbol; accessible action label is retained.',
+'removeicon':'Replacement widget for the remove symbol; accessible action label is retained.',
+'fillmode':'Chip fill: solid or outline; see the documented defaults.',
+'rounded':'Chip corners: sm, md, lg or full.',
+'themecolor':'Chip semantic color: base, info, success, warning or error.',
 'label':'Visible label or accessible name.','title':'Heading for the section or dialog.',
 'value':'Current value; see state ownership and model rules above.',
 'valuechanged':'New value for the parent to store and pass back.',
@@ -49,7 +58,7 @@ for p in (root/'packages/nextgen_components/lib/src').glob('*.dart'):
  for m in re.finditer(r'class (Ng\w+)(?:<[^\n]+>)? extends (?:StatefulWidget|StatelessWidget)',s):
   end=s.find('@override',m.end());flutter[m[1]]=(p,s[m.end():end])
 def md(s):return s.replace('|','\\|').replace('\n',' ')
-index=['# Nextgen Components manual','','Version 0.14.0. Detailed guidance for every public Blazor and Flutter Web component. This documents the implemented API, not full Telerik feature parity.','','Start with [Getting started](getting-started.md) and [Code examples](code-examples.md). See [data models and formulas](models.md) for shared model contracts and [verification](../verification.md) for tested behavior.','','Each page contains a Blazor example and a Flutter example, followed by API tables and integration rules. Flutter snippets belong inside a State class with the Material and Nextgen imports; the getting-started page supplies the full application shell.','','| Component | Purpose |','|---|---|']
+index=['# Nextgen Components manual','','Version 0.15.0. Detailed guidance for every public Blazor and Flutter Web component. This documents the implemented API, not full Telerik feature parity.','','Start with [Getting started](getting-started.md) and [Code examples](code-examples.md). See [data models and formulas](models.md) for shared model contracts and [verification](../verification.md) for tested behavior.','','Each page contains a Blazor example and a Flutter example, followed by API tables and integration rules. Flutter snippets belong inside a State class with the Material and Nextgen imports; the getting-started page supplies the full application shell.','','| Component | Purpose |','|---|---|']
 for p in sorted((root/'src/NextgenComponents.Blazor').glob('Ng*.razor')):
  n=p.stem;d=D[n];source=p.read_text();fp,fs=flutter[n]
  lines=[f'# {n} — {d["title"]}','','[Manual](README.md) · [Getting started](getting-started.md) · [Code examples](code-examples.md) · [Models](models.md)','','## When to use it','',d['use'],'','## Behavior and practical rules','',d['notes'],'','## Blazor example','','```razor',d['blazor'],'```','','## Flutter example','','```dart',d['dart'],'```','','## Blazor parameters and events','','Names are case-sensitive. `?` permits null. `EditorRequired` parameters are marked required; other values use the initializer or CLR default.','','| Parameter | Type | Default / requirement | Purpose |','|---|---|---|---|']

@@ -22,6 +22,26 @@ class _ChipsGalleryState extends State<ChipsGallery> {
       multiple = true,
       selectable = true;
   String message = 'Ready';
+  String size = 'md', rounded = 'full', fill = 'outline', lastClick = 'none';
+  bool custom = false;
+  Widget choice(
+    String label,
+    String value,
+    List<String> values,
+    ValueChanged<String> update,
+  ) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text(label),
+      DropdownButton<String>(
+        value: value,
+        items: [
+          for (final v in values) DropdownMenuItem(value: v, child: Text(v)),
+        ],
+        onChanged: (v) => setState(() => update(v!)),
+      ),
+    ],
+  );
   static List<NgOption> initial() => const [
     NgOption('design', 'Design'),
     NgOption('web', 'Web'),
@@ -72,7 +92,7 @@ class _ChipsGalleryState extends State<ChipsGallery> {
               ),
               const SizedBox(height: 16),
               const Text(
-                'FLUTTER WEB / CHIPS 0.14 · Select topics, remove a tag, or show a compact status. Your application owns every change.',
+                'FLUTTER WEB / CHIPS 0.15 · Select topics, remove a tag, or show a compact status. Your application owns every change.',
               ),
               const SizedBox(height: 28),
               Wrap(
@@ -114,10 +134,80 @@ class _ChipsGalleryState extends State<ChipsGallery> {
                 ],
               ),
               const SizedBox(height: 24),
+              Text(
+                'Appearance and content',
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+              Wrap(
+                spacing: 20,
+                runSpacing: 12,
+                children: [
+                  choice('Size', size, ['sm', 'md', 'lg'], (v) => size = v),
+                  choice('Rounded', rounded, [
+                    'sm',
+                    'md',
+                    'lg',
+                    'full',
+                  ], (v) => rounded = v),
+                  choice('Fill mode', fill, [
+                    'solid',
+                    'outline',
+                  ], (v) => fill = v),
+                  NgCheckBox(
+                    label: 'Custom content',
+                    value: custom,
+                    onChanged: (v) => setState(() => custom = v),
+                  ),
+                ],
+              ),
+              const Text(
+                'Templates can show an icon, avatar or custom text. The accessible name always comes from the label.',
+              ),
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  for (final tone in [
+                    'base',
+                    'info',
+                    'success',
+                    'warning',
+                    'error',
+                  ])
+                    NgChip(
+                      label: tone,
+                      selectable: false,
+                      size: size,
+                      rounded: rounded,
+                      fillMode: fill,
+                      themeColor: tone,
+                    ),
+                ],
+              ),
+              const SizedBox(height: 24),
               Text('Topics', style: Theme.of(context).textTheme.titleLarge),
               const SizedBox(height: 12),
               NgChipList(
                 label: 'Topics',
+                size: size,
+                rounded: rounded,
+                fillMode: fill,
+                canRemove: (item) => item.value != 'flutter',
+                itemAppearance: (item) => NgChipAppearance(
+                  themeColor: item.value == 'design' ? 'info' : 'base',
+                ),
+                itemBuilder: custom
+                    ? (item) => Text(
+                        '${item.label} · ${item.label.length}',
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      )
+                    : null,
+                leadingBuilder: custom
+                    ? (_) => const Icon(Icons.star, size: 18)
+                    : null,
+                removeIcon: const Icon(Icons.remove, size: 18),
+                onClick: (id) => setState(() => lastClick = id),
                 items: items,
                 value: selected,
                 multiple: multiple,
@@ -136,6 +226,7 @@ class _ChipsGalleryState extends State<ChipsGallery> {
                   'Selected: ${selected.isEmpty ? "none" : selected.join(", ")} · Tags: ${items.length} · $message',
                 ),
               ),
+              Text('Flutter is not removable. Last click: $lastClick'),
               const SizedBox(height: 28),
               Text(
                 'Status and standalone selection',
@@ -155,6 +246,15 @@ class _ChipsGalleryState extends State<ChipsGallery> {
                 ],
               ),
               const SizedBox(height: 16),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: NgChip(
+                  label: 'Open activity',
+                  selectable: false,
+                  disabled: disabled,
+                  onClick: () => setState(() => lastClick = 'activity'),
+                ),
+              ),
               const Text(
                 'Removal is a request. Enable protection to reject removal of Design without changing the list.',
               ),

@@ -228,11 +228,20 @@ await Check<NgToggleButton>(new(){["Label"]="Bold <safe>",["Value"]=true},"aria-
 await Check<NgButtonGroup>(new(){["Items"]=choices,["Value"]=choiceValue,["Vertical"]=true},"role=\"group\"","ng-button-group-vertical","aria-pressed=\"true\"","Locked");
 await Check<NgButtonGroup>(new(),"No options");
 await Check<NgChip>(new(){["Label"]="<unsafe>",["Value"]=true,["Disabled"]=true,["OnRemove"]=EventCallback.Factory.Create(new object(),()=>{})},"&lt;unsafe&gt;","aria-pressed=\"true\"","disabled","Remove &lt;unsafe&gt;");
-await Check<NgChip>(new(){["Label"]="Published",["Selectable"]=false},"<span class=\"ng-chip-label\">Published</span>");
+await Check<NgChip>(new(){["Label"]="Published",["Selectable"]=false},"aria-label=\"Published\">Published</span>");
 await Check<NgChipList>(new(){["Items"]=Array.Empty<NgOption>()},"No tags","role=\"group\"");
 await Check<NgChipList>(new(){["Items"]=options,["Value"]=new string[]{"a"},["OnRemove"]=EventCallback.Factory.Create<string>(new object(),_=>{})},"Remove Alpha","Remove Beta","ng-chip-selected","disabled");
 var enabledChip = await renderer.Dispatcher.InvokeAsync(async () => (await renderer.RenderComponentAsync<NgChip>(ParameterView.FromDictionary(new Dictionary<string,object?>{["Label"]="Tag",["Selectable"]=false,["OnRemove"]=EventCallback.Factory.Create(new object(),()=>{})}))).ToHtmlString());
 Rule(!enabledChip.Contains("disabled="),"enabled chip removal is not disabled");
+foreach(var sizeValue in new[]{"sm","md","lg"})foreach(var corners in new[]{"sm","md","lg","full"})foreach(var fillValue in new[]{"solid","outline"})foreach(var tone in new[]{"base","info","success","warning","error"}) NgChipRules.Validate(sizeValue,corners,fillValue,tone);
+Rule(true,"all 120 chip appearance combinations accepted");
+Reject(()=>NgChipRules.Validate("xl","full","solid","base"),"reject chip size");
+Reject(()=>NgChipRules.Validate("md","invalid","solid","base"),"reject chip rounded");
+Reject(()=>NgChipRules.Validate("md","full","invalid","base"),"reject chip fill");
+Reject(()=>NgChipRules.Validate("md","full","solid","invalid"),"reject chip tone");
+await Check<NgChip>(new(){["Label"]="Accessible label",["Size"]="lg",["Rounded"]="sm",["FillMode"]="solid",["ThemeColor"]="success",["ChildContent"]=Text("Custom content"),["Leading"]=Text("Icon"),["RemoveContent"]=Text("Remove symbol"),["OnRemove"]=EventCallback.Factory.Create(new object(),()=>{})},"ng-chip-lg","ng-chip-rounded-sm","ng-chip-solid","ng-chip-tone-success","aria-label=\"Accessible label\"","Custom content","Icon","Remove symbol");
+var chipListHtml = await renderer.Dispatcher.InvokeAsync(async () => (await renderer.RenderComponentAsync<NgChipList>(ParameterView.FromDictionary(new Dictionary<string,object?>{["Items"]=options,["OnRemove"]=EventCallback.Factory.Create<string>(new object(),_=>{}),["CanRemove"]=(Func<NgOption,bool>)(item=>item.Value=="a"),["ItemAppearance"]=(Func<NgOption,NgChipAppearance>)(item=>new(ThemeColor:"warning"))}))).ToHtmlString());
+Rule(chipListHtml.Contains("Remove Alpha")&&!chipListHtml.Contains("Remove Beta")&&chipListHtml.Contains("ng-chip-tone-warning"),"conditional removal and item appearance");
 Console.WriteLine($"{count} rendering and data/date-rule checks passed. Browser interaction requires the separate visual run.");
 sealed class NoBrowserJS : IJSRuntime {
  public ValueTask<TValue> InvokeAsync<TValue>(string identifier, object?[]? args) => throw new InvalidOperationException("JS must not execute in SSR");

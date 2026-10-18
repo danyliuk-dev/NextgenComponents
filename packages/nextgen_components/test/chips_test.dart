@@ -4,6 +4,103 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:nextgen_components/nextgen_components.dart';
 
 void main() {
+  test(
+    'appearance validation accepts all combinations and rejects invalid values',
+    () {
+      for (final size in ['sm', 'md', 'lg'])
+        for (final rounded in ['sm', 'md', 'lg', 'full'])
+          for (final fill in ['solid', 'outline'])
+            for (final tone in [
+              'base',
+              'info',
+              'success',
+              'warning',
+              'error',
+            ]) {
+              NgChipRules.validate(size, rounded, fill, tone);
+            }
+      for (final values in [
+        ['xl', 'full', 'solid', 'base'],
+        ['md', 'bad', 'solid', 'base'],
+        ['md', 'full', 'bad', 'base'],
+        ['md', 'full', 'solid', 'bad'],
+      ]) {
+        expect(
+          () =>
+              NgChipRules.validate(values[0], values[1], values[2], values[3]),
+          throwsArgumentError,
+        );
+      }
+    },
+  );
+  testWidgets(
+    'templates retain name; click follows selection; removal is independent',
+    (t) async {
+      final events = <String>[];
+      await t.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: NgChip(
+              label: 'Accessible',
+              child: const Text('Custom'),
+              leading: const Icon(Icons.star),
+              removeIcon: const Icon(Icons.remove),
+              size: 'lg',
+              rounded: 'sm',
+              fillMode: 'solid',
+              themeColor: 'success',
+              onChanged: (v) => events.add('selection:$v'),
+              onClick: () => events.add('click'),
+              onRemove: () => events.add('remove'),
+            ),
+          ),
+        ),
+      );
+      final semantics = t.ensureSemantics();
+      expect(find.bySemanticsLabel('Accessible'), findsWidgets);
+      await t.tap(find.text('Custom'));
+      await t.pumpAndSettle();
+      expect(events, ['selection:true', 'click']);
+      await t.tap(find.byTooltip('Remove Accessible'));
+      await t.pumpAndSettle();
+      expect(events, ['selection:true', 'click', 'remove']);
+      expect(
+        t.widget<InputChip>(find.byType(InputChip)).labelStyle!.fontSize,
+        16,
+      );
+      semantics.dispose();
+    },
+  );
+  testWidgets('command-only chip and per-item overrides', (t) async {
+    int clicks = 0;
+    await t.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: NgChipList(
+            items: const [NgOption('a', 'Alpha'), NgOption('b', 'Beta')],
+            selectable: false,
+            onClick: (_) => clicks++,
+            onRemove: (_) {},
+            canRemove: (item) => item.value == 'a',
+            itemAppearance: (item) => NgChipAppearance(
+              size: item.value == 'a' ? 'sm' : 'lg',
+              themeColor: 'info',
+            ),
+            itemBuilder: (item) => Text('Custom ${item.label}'),
+          ),
+        ),
+      ),
+    );
+    await t.tap(find.text('Custom Beta'));
+    await t.pumpAndSettle();
+    expect(clicks, 1);
+    expect(find.byTooltip('Remove Alpha'), findsOneWidget);
+    expect(find.byTooltip('Remove Beta'), findsNothing);
+    final chips = t.widgetList<InputChip>(find.byType(InputChip)).toList();
+    expect(chips[0].labelStyle!.fontSize, 12);
+    expect(chips[1].labelStyle!.fontSize, 16);
+  });
+
   testWidgets('selection and removal are independent controlled requests', (
     t,
   ) async {

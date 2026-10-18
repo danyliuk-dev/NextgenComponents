@@ -1487,3 +1487,31 @@ D.update({'NgChip': {'title': 'Compact selectable or removable tag',
                         '    items = items.where((item) => item.value != id).toList();\n'
                         '    selected = selected.where((value) => value != id).toList();\n'
                         '  }));'}})
+
+# 0.15: appearance, templates and independent command events.
+for name in ('NgChip', 'NgChipList'):
+    D[name]['notes'] = D[name]['notes'].replace('Icons, avatars, custom templates, drag sorting, editable tags and virtualization are deferred.', 'Icons and avatars can be supplied as leading content, and custom labels and remove icons are supported. Drag sorting, editable tags and virtualization are not established Telerik Chip/ChipList requirements and remain possible extensions, not parity claims.')
+    D[name]['notes'] += """
+
+### Appearance and custom content (0.15)
+
+Size/size accepts sm, md or lg. Rounded/rounded accepts sm, md, lg or full. FillMode/fillMode accepts solid or outline. ThemeColor/themeColor accepts base, info, success, warning or error. Invalid values throw; defaults remain md/full/outline/base for compatibility with 0.14. These defaults differ from Telerik. Colors adapt to light/dark themes; this is not a pixel-match claim.
+
+Leading/leading accepts decorative content such as a small icon or avatar. ChildContent/child replaces the visible label. RemoveContent/removeIcon replaces the removal symbol. Always retain a meaningful Label/label: it supplies the accessible name regardless of the visual template. Do not put buttons, links, text fields or other interactive controls inside these templates. The parent owns image loading and image errors; there is no built-in avatar downloader or Telerik SVG icon registry.
+
+OnClick/onClick is independent of selection: it runs after the selection callback on activation, also when selection is disabled. Removal only invokes the remove callback. Disabled chips invoke neither. A missing selection callback keeps selection unchanged, while an available click callback can still run a command. Blazor awaits the selection handler before invoking click; the next boolean is calculated before either callback. Flutter callbacks are synchronous. Do not use click to toggle selection a second time.
+"""
+D['NgChipList']['notes'] += """
+
+### Per-item presentation
+
+ItemTemplate/itemBuilder and LeadingTemplate/leadingBuilder receive NgOption. ItemAppearance/itemAppearance returns NgChipAppearance: its nullable size, rounded, fill mode and theme color override list defaults independently. CanRemove/canRemove hides the remove action for selected items without disabling selection. It defaults to true and still requires the list removal callback. This predicate controls availability; reject a permitted request by leaving parent state unchanged. Functions should be pure, because rendering can evaluate them again.
+
+This is a typed NgOption adapter contract, not Telerik generic model reflection or property-name binding. Map application data to NgOption and resolve additional fields by stable ID in the template. The current 50-item limit and keyboard/listbox differences are tracked in the feature parity matrix.
+"""
+D['NgChip']['blazor'] = '<NgChip Label="Build succeeded" Selectable="false" ThemeColor="success" FillMode="solid" Size="lg" Rounded="md" OnClick="()=>clicks++">\n    <Leading><span>✓</span></Leading>\n    <ChildContent><strong>Build succeeded</strong></ChildContent>\n</NgChip>\n@if (visible) {\n    <NgChip Label="Favourite" @bind-Value="selected" OnRemove="()=>visible=false">\n        <RemoveContent>−</RemoveContent>\n    </NgChip>\n}\n<p>Activity opened @clicks times</p>\n@code {\n    private bool selected, visible = true;\n    private int clicks;\n}'
+D['NgChip']['dart'] = "bool selected = false, visible = true;\nint clicks = 0;\nWidget build(BuildContext context) => Wrap(spacing: 8, children: [\n  NgChip(label: 'Build succeeded', selectable: false, themeColor: 'success',\n    fillMode: 'solid', size: 'lg', rounded: 'md', leading: const Icon(Icons.check, size: 18),\n    child: const Text('Build succeeded'), onClick: () => setState(() => clicks++)),\n  if (visible) NgChip(label: 'Favourite', value: selected,\n    onChanged: (v) => setState(() => selected = v),\n    removeIcon: const Icon(Icons.remove, size: 18),\n    onRemove: () => setState(() => visible = false)),\n  Text('Activity opened $clicks times'),\n]);"
+D['NgChipList']['blazor'] = D['NgChipList']['blazor'].replace('Multiple OnRemove="Remove" />', 'Multiple OnRemove="Remove" CanRemove="item=>item.Value!=\"locked\"" FillMode="solid" ItemAppearance="item=>new NgChipAppearance(ThemeColor:item.Value==\"design\"?\"info\":\"base\")"><ItemTemplate Context="item"><strong>@item.Label</strong></ItemTemplate><LeadingTemplate><span>★</span></LeadingTemplate></NgChipList>')
+D['NgChipList']['dart'] = D['NgChipList']['dart'].replace('value: selected, multiple: true,', "value: selected, multiple: true, fillMode: 'solid',\n  canRemove: (item) => item.value != 'locked',\n  itemAppearance: (item) => NgChipAppearance(themeColor: item.value == 'design' ? 'info' : 'base'),\n  itemBuilder: (item) => Text(item.label, style: const TextStyle(fontWeight: FontWeight.bold)),\n  leadingBuilder: (_) => const Icon(Icons.star, size: 18),")
+
+D['NgChipList']['blazor'] = D['NgChipList']['blazor'].replace('CanRemove="item=>item.Value!=\"locked\""', 'CanRemove="@(item=>item.Value!=\"locked\")"').replace('ItemAppearance="item=>new NgChipAppearance(ThemeColor:item.Value==\"design\"?\"info\":\"base\")"', 'ItemAppearance="@(item=>new NgChipAppearance(ThemeColor:item.Value==\"design\"?\"info\":\"base\"))"')

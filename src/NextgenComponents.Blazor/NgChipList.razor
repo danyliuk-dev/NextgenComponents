@@ -1,5 +1,13 @@
 <div class="ng-chip-list" role="group" aria-label="@Label">
-@foreach(var item in Items){<NgChip @key="item.Value" Label="@item.Label" Value="@(Value.Contains(item.Value))" Selectable="Selectable" Disabled="@(Disabled||item.Disabled)" ValueChanged="@(ValueChanged.HasDelegate?EventCallback.Factory.Create<bool>(this,_=>Select(item.Value)):default)" OnRemove="@(OnRemove.HasDelegate?EventCallback.Factory.Create(this,()=>Remove(item.Value)):default)"/>}
+@foreach(var item in Items){
+ var appearance=ItemAppearance?.Invoke(item);
+ <NgChip @key="item.Value" Label="@item.Label" Value="@(Value.Contains(item.Value))" Selectable="Selectable" Disabled="@(Disabled||item.Disabled)"
+ Size="@(appearance?.Size??Size)" Rounded="@(appearance?.Rounded??Rounded)" FillMode="@(appearance?.FillMode??FillMode)" ThemeColor="@(appearance?.ThemeColor??ThemeColor)"
+ Leading="@(LeadingTemplate is null?null:LeadingTemplate(item))" ChildContent="@(ItemTemplate is null?null:ItemTemplate(item))" RemoveContent="RemoveContent"
+ ValueChanged="@(ValueChanged.HasDelegate?EventCallback.Factory.Create<bool>(this,_=>Select(item.Value)):default)"
+ OnClick="@(OnClick.HasDelegate?EventCallback.Factory.Create(this,()=>OnClick.InvokeAsync(item.Value)):default)"
+ OnRemove="@(OnRemove.HasDelegate&&(CanRemove?.Invoke(item)??true)?EventCallback.Factory.Create(this,()=>Remove(item.Value)):default)"/>
+}
 @if(Items.Count==0){<span class="ng-muted">No tags</span>}
 </div>
 @code {
@@ -8,11 +16,21 @@
  [Parameter] public IReadOnlyList<string> Value {get;set;}=[];
  [Parameter] public EventCallback<IReadOnlyList<string>> ValueChanged {get;set;}
  [Parameter] public EventCallback<string> OnRemove {get;set;}
+ [Parameter] public EventCallback<string> OnClick {get;set;}
  [Parameter] public bool Selectable {get;set;}=true;
  [Parameter] public bool Multiple {get;set;}
  [Parameter] public bool AllowEmpty {get;set;}=true;
  [Parameter] public bool Disabled {get;set;}
- protected override void OnParametersSet()=>NgSelectionRules.Validate(Items,Value,Multiple);
+ [Parameter] public string Size {get;set;}="md";
+ [Parameter] public string Rounded {get;set;}="full";
+ [Parameter] public string FillMode {get;set;}="outline";
+ [Parameter] public string ThemeColor {get;set;}="base";
+ [Parameter] public Func<NgOption,NgChipAppearance>? ItemAppearance {get;set;}
+ [Parameter] public Func<NgOption,bool>? CanRemove {get;set;}
+ [Parameter] public RenderFragment<NgOption>? ItemTemplate {get;set;}
+ [Parameter] public RenderFragment<NgOption>? LeadingTemplate {get;set;}
+ [Parameter] public RenderFragment? RemoveContent {get;set;}
+ protected override void OnParametersSet(){NgSelectionRules.Validate(Items,Value,Multiple);NgChipRules.Validate(Size,Rounded,FillMode,ThemeColor);}
  private Task Select(string id){if(Disabled||!Selectable)return Task.CompletedTask;var next=NgSelectionRules.Toggle(Items,Value,id,Multiple,AllowEmpty);return next.SequenceEqual(Value)?Task.CompletedTask:ValueChanged.InvokeAsync(next);}
- private Task Remove(string id)=>Disabled||!Items.Any(x=>x.Value==id&&!x.Disabled)?Task.CompletedTask:OnRemove.InvokeAsync(id);
+ private Task Remove(string id)=>Disabled||!Items.Any(x=>x.Value==id&&!x.Disabled&&(CanRemove?.Invoke(x)??true))?Task.CompletedTask:OnRemove.InvokeAsync(id);
 }

@@ -2,7 +2,7 @@
 
 Blazor and Flutter component libraries with a shared design-token source and a Telerik Blazor component roadmap.
 
-**Current release: 0.14.0 Chip and ChipList, 47 controls on each Web platform (53 catalogue entries including chart modes).** This is not a complete Telerik replacement or API-compatible clone. The [catalog](docs/catalog.md) tracks 139 named entries from the published Telerik Blazor index; chart variants are counted separately. See [foundation capabilities](docs/foundation.md) and [forms/date capabilities](docs/forms-and-dates.md) and [data workspace capabilities and gaps](docs/data-workspace.md) and [analytics/schedule capabilities](docs/analytics-and-schedule.md).
+**Current release: 0.15.0 Chip presentation and templates, 47 controls on each Web platform (53 catalogue entries including chart modes).** This is not a complete Telerik replacement or API-compatible clone. The [catalog](docs/catalog.md) tracks 139 named entries from the published Telerik Blazor index; chart variants are counted separately. See [foundation capabilities](docs/foundation.md) and [forms/date capabilities](docs/forms-and-dates.md) and [data workspace capabilities and gaps](docs/data-workspace.md) and [analytics/schedule capabilities](docs/analytics-and-schedule.md).
 
 ## Manual
 
@@ -92,6 +92,10 @@ flutter test
 ```
 
 `BlazorChecks` verifies server-rendered output and accessibility attributes; it does not replace real browser interaction tests. Visual review must use visible Chrome locally on Linux on iMac. See [verification](docs/verification.md) for this run's actual results.
+
+## Feature parity tracking
+
+**47 implemented components does not mean 47 complete Telerik equivalents.** See the [feature parity matrix](docs/parity.md) for implementation, verification and remaining work separately. No component currently carries a full-parity claim. Existing groups are audited and completed before adding new component names; Chip/ChipList is the first detailed audit in this process.
 
 ## Roadmap
 
