@@ -2,7 +2,7 @@
 
 Snapshot: 2026-10-18. 139 named entries from the [Telerik Blazor index](https://www.telerik.com/blazor-ui). Chart variants count separately.
 
-`foundation` means the limited working subset documented in [foundation.md](foundation.md), not Telerik feature parity. `planned` has no implementation yet.
+`foundation` means the limited working subset documented in [foundation.md](foundation.md) and [forms-and-dates.md](forms-and-dates.md), not Telerik feature parity. `planned` has no implementation yet.
 
 | Category | Telerik entry | Blazor | Flutter | Phase |
 |---|---|---|---|---|
@@ -75,32 +75,32 @@ Snapshot: 2026-10-18. 139 named entries from the [Telerik Blazor index](https://
 | Data Visualization | [Stock Chart](https://www.telerik.com/blazor-ui/stock-chart) | planned | planned | 4 |
 | Data Visualization | [Trendline Chart](https://www.telerik.com/blazor-ui/trendline-chart) | planned | planned | 4 |
 | Data Visualization | [Waterfall Chart](https://www.telerik.com/blazor-ui/waterfall-chart) | planned | planned | 4 |
-| Editors | [AutoComplete](https://www.telerik.com/blazor-ui/autocomplete) | planned | planned | 2 |
+| Editors | [AutoComplete](https://www.telerik.com/blazor-ui/autocomplete) | foundation: `NgAutoComplete` | foundation: `NgAutoComplete` | 2 |
 | Editors | [CheckBox](https://www.telerik.com/blazor-ui/checkbox) | foundation: `NgCheckBox` | foundation: `NgCheckBox` | 1 |
 | Editors | [ColorGradient](https://www.telerik.com/blazor-ui/colorgradient) | planned | planned | 2 |
 | Editors | [ColorPalette](https://www.telerik.com/blazor-ui/colorpalette) | planned | planned | 2 |
 | Editors | [ColorPicker](https://www.telerik.com/blazor-ui/colorpicker) | planned | planned | 2 |
-| Editors | [ComboBox](https://www.telerik.com/blazor-ui/combobox) | planned | planned | 2 |
-| Editors | [DateInput](https://www.telerik.com/blazor-ui/date-input) | planned | planned | 2 |
-| Editors | [DatePicker](https://www.telerik.com/blazor-ui/datepicker) | planned | planned | 2 |
-| Editors | [DateRange Picker](https://www.telerik.com/blazor-ui/daterange-picker) | planned | planned | 2 |
-| Editors | [DateTimePicker](https://www.telerik.com/blazor-ui/datetimepicker) | planned | planned | 2 |
+| Editors | [ComboBox](https://www.telerik.com/blazor-ui/combobox) | foundation: `NgComboBox` | foundation: `NgComboBox` | 2 |
+| Editors | [DateInput](https://www.telerik.com/blazor-ui/date-input) | foundation: `NgDateInput` | foundation: `NgDateInput` | 2 |
+| Editors | [DatePicker](https://www.telerik.com/blazor-ui/datepicker) | foundation: `NgDatePicker` | foundation: `NgDatePicker` | 2 |
+| Editors | [DateRange Picker](https://www.telerik.com/blazor-ui/daterange-picker) | foundation: `NgDateRangePicker` | foundation: `NgDateRangePicker` | 2 |
+| Editors | [DateTimePicker](https://www.telerik.com/blazor-ui/datetimepicker) | foundation: `NgDateTimePicker` | foundation: `NgDateTimePicker` | 2 |
 | Editors | [DropDownList](https://www.telerik.com/blazor-ui/dropdownlist) | foundation: `NgDropDownList` | foundation: `NgDropDownList` | 1 |
 | Editors | [DropDownTree](https://www.telerik.com/blazor-ui/dropdowntree) | planned | planned | 2 |
 | Editors | [FlatColorPicker](https://www.telerik.com/blazor-ui/flatcolorpicker) | planned | planned | 2 |
 | Editors | [ListBox](https://www.telerik.com/blazor-ui/listbox) | planned | planned | 2 |
 | Editors | [MaskedTextBox](https://www.telerik.com/blazor-ui/maskedtextbox) | planned | planned | 2 |
 | Editors | [MultiColumn ComboBox](https://www.telerik.com/blazor-ui/multicolumncombobox) | planned | planned | 2 |
-| Editors | [MultiSelect](https://www.telerik.com/blazor-ui/multiselect) | planned | planned | 2 |
+| Editors | [MultiSelect](https://www.telerik.com/blazor-ui/multiselect) | foundation: `NgMultiSelect` | foundation: `NgMultiSelect` | 2 |
 | Editors | [Numeric TextBox](https://www.telerik.com/blazor-ui/numeric-textbox) | foundation: `NgNumericTextBox` | foundation: `NgNumericTextBox` | 1 |
 | Editors | [RadioGroup](https://www.telerik.com/blazor-ui/radiogroup) | foundation: `NgRadioGroup` | foundation: `NgRadioGroup` | 1 |
 | Editors | [Rating](https://www.telerik.com/blazor-ui/rating) | planned | planned | 2 |
 | Editors | [Rich Text Editor](https://www.telerik.com/blazor-ui/editor) | planned | planned | 5 |
 | Editors | [Signature](https://www.telerik.com/blazor-ui/signature) | planned | planned | 2 |
-| Editors | [TextArea](https://www.telerik.com/blazor-ui/textarea) | planned | planned | 2 |
+| Editors | [TextArea](https://www.telerik.com/blazor-ui/textarea) | foundation: `NgTextArea` | foundation: `NgTextArea` | 2 |
 | Editors | [TextBox](https://www.telerik.com/blazor-ui/textbox) | foundation: `NgTextBox` | foundation: `NgTextBox` | 1 |
-| Editors | [TimePicker](https://www.telerik.com/blazor-ui/timepicker) | planned | planned | 2 |
-| Scheduling | [Calendar](https://www.telerik.com/blazor-ui/calendar) | planned | planned | 4 |
+| Editors | [TimePicker](https://www.telerik.com/blazor-ui/timepicker) | foundation: `NgTimePicker` | foundation: `NgTimePicker` | 2 |
+| Scheduling | [Calendar](https://www.telerik.com/blazor-ui/calendar) | foundation: `NgCalendar` | foundation: `NgCalendar` | 2 |
 | Scheduling | [Gantt](https://www.telerik.com/blazor-ui/gantt) | planned | planned | 4 |
 | Scheduling | [Scheduler](https://www.telerik.com/blazor-ui/scheduler) | planned | planned | 4 |
 | Layout | [Animation Container](https://www.telerik.com/blazor-ui/animation-container) | planned | planned | 2 |
@@ -109,7 +109,7 @@ Snapshot: 2026-10-18. 139 named entries from the [Telerik Blazor index](https://
 | Layout | [Carousel](https://www.telerik.com/blazor-ui/carousel) | planned | planned | 2 |
 | Layout | [DockManager](https://www.telerik.com/blazor-ui/dockmanager) | planned | planned | 2 |
 | Layout | [Expansion Panel](https://www.telerik.com/blazor-ui/expansion-panel) | planned | planned | 2 |
-| Layout | [Form](https://www.telerik.com/blazor-ui/form) | planned | planned | 2 |
+| Layout | [Form](https://www.telerik.com/blazor-ui/form) | foundation: `NgForm` | foundation: `NgForm` | 2 |
 | Layout | [GridLayout](https://www.telerik.com/blazor-ui/gridlayout) | planned | planned | 2 |
 | Layout | [MediaQuery](https://www.telerik.com/blazor-ui/mediaquery) | planned | planned | 2 |
 | Layout | [PanelBar](https://www.telerik.com/blazor-ui/panelbar) | planned | planned | 2 |

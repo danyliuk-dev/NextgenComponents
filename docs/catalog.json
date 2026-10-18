@@ -1044,14 +1044,14 @@
       "reference": "https://www.telerik.com/blazor-ui/autocomplete",
       "phase": 2,
       "blazor": {
-        "status": "planned",
-        "component": null
+        "status": "foundation",
+        "component": "NgAutoComplete"
       },
       "flutter": {
-        "status": "planned",
-        "component": null
+        "status": "foundation",
+        "component": "NgAutoComplete"
       },
-      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+      "featureSpec": "docs/forms-and-dates.md"
     },
     {
       "name": "CheckBox",
@@ -1119,14 +1119,14 @@
       "reference": "https://www.telerik.com/blazor-ui/combobox",
       "phase": 2,
       "blazor": {
-        "status": "planned",
-        "component": null
+        "status": "foundation",
+        "component": "NgComboBox"
       },
       "flutter": {
-        "status": "planned",
-        "component": null
+        "status": "foundation",
+        "component": "NgComboBox"
       },
-      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+      "featureSpec": "docs/forms-and-dates.md"
     },
     {
       "name": "DateInput",
@@ -1134,14 +1134,14 @@
       "reference": "https://www.telerik.com/blazor-ui/date-input",
       "phase": 2,
       "blazor": {
-        "status": "planned",
-        "component": null
+        "status": "foundation",
+        "component": "NgDateInput"
       },
       "flutter": {
-        "status": "planned",
-        "component": null
+        "status": "foundation",
+        "component": "NgDateInput"
       },
-      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+      "featureSpec": "docs/forms-and-dates.md"
     },
     {
       "name": "DatePicker",
@@ -1149,14 +1149,14 @@
       "reference": "https://www.telerik.com/blazor-ui/datepicker",
       "phase": 2,
       "blazor": {
-        "status": "planned",
-        "component": null
+        "status": "foundation",
+        "component": "NgDatePicker"
       },
       "flutter": {
-        "status": "planned",
-        "component": null
+        "status": "foundation",
+        "component": "NgDatePicker"
       },
-      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+      "featureSpec": "docs/forms-and-dates.md"
     },
     {
       "name": "DateRange Picker",
@@ -1164,14 +1164,14 @@
       "reference": "https://www.telerik.com/blazor-ui/daterange-picker",
       "phase": 2,
       "blazor": {
-        "status": "planned",
-        "component": null
+        "status": "foundation",
+        "component": "NgDateRangePicker"
       },
       "flutter": {
-        "status": "planned",
-        "component": null
+        "status": "foundation",
+        "component": "NgDateRangePicker"
       },
-      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+      "featureSpec": "docs/forms-and-dates.md"
     },
     {
       "name": "DateTimePicker",
@@ -1179,14 +1179,14 @@
       "reference": "https://www.telerik.com/blazor-ui/datetimepicker",
       "phase": 2,
       "blazor": {
-        "status": "planned",
-        "component": null
+        "status": "foundation",
+        "component": "NgDateTimePicker"
       },
       "flutter": {
-        "status": "planned",
-        "component": null
+        "status": "foundation",
+        "component": "NgDateTimePicker"
       },
-      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+      "featureSpec": "docs/forms-and-dates.md"
     },
     {
       "name": "DropDownList",
@@ -1284,14 +1284,14 @@
       "reference": "https://www.telerik.com/blazor-ui/multiselect",
       "phase": 2,
       "blazor": {
-        "status": "planned",
-        "component": null
+        "status": "foundation",
+        "component": "NgMultiSelect"
       },
       "flutter": {
-        "status": "planned",
-        "component": null
+        "status": "foundation",
+        "component": "NgMultiSelect"
       },
-      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+      "featureSpec": "docs/forms-and-dates.md"
     },
     {
       "name": "Numeric TextBox",
@@ -1374,14 +1374,14 @@
       "reference": "https://www.telerik.com/blazor-ui/textarea",
       "phase": 2,
       "blazor": {
-        "status": "planned",
-        "component": null
+        "status": "foundation",
+        "component": "NgTextArea"
       },
       "flutter": {
-        "status": "planned",
-        "component": null
+        "status": "foundation",
+        "component": "NgTextArea"
       },
-      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+      "featureSpec": "docs/forms-and-dates.md"
     },
     {
       "name": "TextBox",
@@ -1404,29 +1404,29 @@
       "reference": "https://www.telerik.com/blazor-ui/timepicker",
       "phase": 2,
       "blazor": {
-        "status": "planned",
-        "component": null
+        "status": "foundation",
+        "component": "NgTimePicker"
       },
       "flutter": {
-        "status": "planned",
-        "component": null
+        "status": "foundation",
+        "component": "NgTimePicker"
       },
-      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+      "featureSpec": "docs/forms-and-dates.md"
     },
     {
       "name": "Calendar",
       "category": "Scheduling",
       "reference": "https://www.telerik.com/blazor-ui/calendar",
-      "phase": 4,
+      "phase": 2,
       "blazor": {
-        "status": "planned",
-        "component": null
+        "status": "foundation",
+        "component": "NgCalendar"
       },
       "flutter": {
-        "status": "planned",
-        "component": null
+        "status": "foundation",
+        "component": "NgCalendar"
       },
-      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+      "featureSpec": "docs/forms-and-dates.md"
     },
     {
       "name": "Gantt",
@@ -1554,14 +1554,14 @@
       "reference": "https://www.telerik.com/blazor-ui/form",
       "phase": 2,
       "blazor": {
-        "status": "planned",
-        "component": null
+        "status": "foundation",
+        "component": "NgForm"
       },
       "flutter": {
-        "status": "planned",
-        "component": null
+        "status": "foundation",
+        "component": "NgForm"
       },
-      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+      "featureSpec": "docs/forms-and-dates.md"
     },
     {
       "name": "GridLayout",

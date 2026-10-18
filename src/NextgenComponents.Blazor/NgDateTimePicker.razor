@@ -1,0 +1,23 @@
+@inherits InputBase<DateTime?>
+<div class="ng-field"><label for="@Id">@Label</label>
+<input @attributes="AdditionalAttributes" id="@Id" class="ng-input @CssClass" placeholder="yyyy-mm-dd hh:mm" value="@CurrentValueAsString" @oninput="Changed" disabled="@Disabled" aria-invalid="@(error is not null ? "true" : "false")" aria-describedby="@(error is not null ? Id+"-error" : null)" />
+<input type="datetime-local" class="ng-input ng-native-picker" aria-label="Choose @Label" value="@(Value?.ToString("yyyy-MM-ddTHH:mm"))" min="@(Min?.ToString("yyyy-MM-ddTHH:mm"))" max="@(Max?.ToString("yyyy-MM-ddTHH:mm"))" disabled="@Disabled" @onchange="Changed" />
+@if(error is not null) { <span id="@(Id+"-error")" class="ng-field-error" role="status">@error</span> }
+</div>
+@code {
+ [Parameter] public string Id { get; set; } = "ng-"+Guid.NewGuid().ToString("N");
+ [Parameter] public string Label { get; set; } = "Date and time";
+ [Parameter] public DateTime? Min { get; set; }
+ [Parameter] public DateTime? Max { get; set; }
+ [Parameter] public bool Disabled { get; set; }
+ private string? error;
+ private void Changed(ChangeEventArgs e) { error=null; CurrentValueAsString=e.Value?.ToString(); }
+ protected override string? FormatValueAsString(DateTime? value) => value?.ToString("yyyy-MM-dd HH:mm");
+ protected override bool TryParseValueFromString(string? value, out DateTime? result, [System.Diagnostics.CodeAnalysis.NotNullWhen(false)] out string? validationErrorMessage) {
+  error=null; result=null;
+  if(!NgDateRules.TryDateTime(value,out var parsed)) error="Enter a valid value (yyyy-mm-dd hh:mm).";
+  else if ((Min is not null && parsed < Min) || (Max is not null && parsed > Max)) error="Value is outside the allowed range.";
+  else result=parsed;
+  validationErrorMessage=error; return error is null;
+ }
+}

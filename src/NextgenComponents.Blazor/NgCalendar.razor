@@ -1,0 +1,55 @@
+@using System.Globalization
+@inject IJSRuntime JS
+<div class="ng-calendar" aria-label="@Label" @ref="root">
+    <header>
+        <NgButton Disabled="@(Disabled || month <= FirstMonth)" OnClick="() => MoveMonth(-1)" aria-label="Previous month">‹</NgButton>
+        <strong aria-live="polite">@month.ToString("MMMM yyyy", Culture)</strong>
+        <NgButton Disabled="@(Disabled || month >= LastMonth)" OnClick="() => MoveMonth(1)" aria-label="Next month">›</NgButton>
+    </header>
+    <div class="ng-calendar-grid" role="grid" aria-label="@month.ToString("MMMM yyyy", Culture)">
+        <div role="row" class="ng-calendar-week">
+            @for (var i=0; i<7; i++) { <span role="columnheader">@Culture.DateTimeFormat.AbbreviatedDayNames[((int)FirstDayOfWeek+i)%7]</span> }
+        </div>
+        @for (var week=0; week<6; week++) {
+            <div role="row" class="ng-calendar-week">
+            @for (var day=0; day<7; day++) {
+                var offset = week*7+day - (((int)month.DayOfWeek-(int)FirstDayOfWeek+7)%7);
+                var number = month.DayNumber + offset;
+                if (number < DateOnly.MinValue.DayNumber || number > DateOnly.MaxValue.DayNumber) { <span role="gridcell"></span> }
+                else { var date=DateOnly.FromDayNumber(number); var selectable=!Disabled && NgDateRules.Allowed(date,Min,Max,DisabledDate);
+                    <span role="gridcell" aria-selected="@(Value == date ? "true" : "false")"><button type="button" class="ng-day @(date.Month != month.Month ? "ng-other-month" : "") @(Value == date ? "ng-selected" : "")" aria-label="@date.ToString("yyyy-MM-dd")" aria-current="@(date == DateOnly.FromDateTime(DateTime.Today) ? "date" : null)" disabled="@(!selectable)" data-ng-day="@date.ToString("yyyy-MM-dd")" @onclick="() => Select(date)">@date.Day</button></span>
+                }
+            }
+            </div>
+        }
+    </div>
+    <NgButton Disabled="@(Disabled || !NgDateRules.Allowed(DateOnly.FromDateTime(DateTime.Today), Min, Max, DisabledDate))" OnClick="() => Select(DateOnly.FromDateTime(DateTime.Today))">Today</NgButton>
+</div>
+@code {
+    [Parameter] public DateOnly? Value { get; set; }
+    [Parameter] public EventCallback<DateOnly?> ValueChanged { get; set; }
+    [Parameter] public DateOnly? Min { get; set; }
+    [Parameter] public DateOnly? Max { get; set; }
+    [Parameter] public Func<DateOnly,bool>? DisabledDate { get; set; }
+    [Parameter] public bool Disabled { get; set; }
+    [Parameter] public string Label { get; set; } = "Calendar";
+    [Parameter] public CultureInfo Culture { get; set; } = CultureInfo.CurrentCulture;
+    [Parameter] public DayOfWeek FirstDayOfWeek { get; set; } = DayOfWeek.Monday;
+    private DateOnly month, previous;
+    private bool initialized;
+    private ElementReference root;
+    private DateOnly FirstMonth => new((Min ?? DateOnly.MinValue).Year, (Min ?? DateOnly.MinValue).Month, 1);
+    private DateOnly LastMonth => new((Max ?? DateOnly.MaxValue).Year, (Max ?? DateOnly.MaxValue).Month, 1);
+    protected override void OnParametersSet() {
+        if (Min > Max) throw new ArgumentException("Min must not exceed Max.");
+        var chosen=Value ?? DateOnly.FromDateTime(DateTime.Today);
+        if (!initialized || previous != chosen) { month = new(chosen.Year, chosen.Month, 1); previous=chosen; initialized=true; }
+        if(month < FirstMonth) month=FirstMonth;
+        if(month > LastMonth) month=LastMonth;
+    }
+    private void MoveMonth(int offset) => month = month.AddMonths(offset);
+    private Task Select(DateOnly date) => Disabled || !NgDateRules.Allowed(date,Min,Max,DisabledDate) ? Task.CompletedTask : ValueChanged.InvokeAsync(date);
+    protected override async Task OnAfterRenderAsync(bool firstRender) {
+        if(firstRender) { var module=await JS.InvokeAsync<IJSObjectReference>("import", "./_content/NextgenComponents.Blazor/nextgen.js"); await module.InvokeVoidAsync("calendar",root); await module.DisposeAsync(); }
+    }
+}

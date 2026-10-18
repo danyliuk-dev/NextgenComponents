@@ -1,0 +1,32 @@
+@inherits InputBase<string?>
+@inject IJSRuntime JS
+<div @ref="root" class="ng-combo ng-field" @onkeydown="KeyDown"><label for="@Id">@Label</label>
+<input id="@Id" class="ng-input @CssClass" value="@query" @oninput="Search" @onfocus="() => open=true" disabled="@Disabled" role="combobox" aria-expanded="@(open ? "true" : "false")" aria-autocomplete="list" aria-controls="@(Id+"-options")" aria-activedescendant="@(open && active>=0 && active<Filtered.Count ? Id+"-option-"+active : null)" autocomplete="off" />
+@if(open && !Disabled) {
+ <div class="ng-options" role="listbox" id="@(Id+"-options")" aria-label="@Label">
+ @if(Filtered.Count==0) { <span class="ng-empty">No matches</span> }
+ @for(var i=0;i<Filtered.Count;i++) { var option=Filtered[i];var index=i;
+ <button type="button" role="option" id="@(Id+"-option-"+i)" class="ng-option @(active==i ? "ng-active" : "")" disabled="@option.Disabled" aria-selected="@(Value==option.Value ? "true":"false")" @onclick="() => Select(option)">@option.Label</button>
+ }
+ </div>
+}
+@if(error is not null) { <span class="ng-field-error" role="status">@error</span> }
+</div>
+@code {
+ private ElementReference root;
+ protected override async Task OnAfterRenderAsync(bool first) { if(first) { var module=await JS.InvokeAsync<IJSObjectReference>("import","./_content/NextgenComponents.Blazor/nextgen.js");await module.InvokeVoidAsync("combo",root);await module.DisposeAsync(); } }
+ [Parameter] public string Id { get; set; } = "ng-"+Guid.NewGuid().ToString("N");
+ [Parameter] public string Label { get; set; } = "Choose an option";
+ [Parameter] public IReadOnlyList<NgOption> Items { get; set; } = [];
+ [Parameter] public bool Disabled { get; set; }
+ private string query="";
+ private string? previous,error;
+ private bool open,initialized;
+ private int active=-1;
+ private List<NgOption> Filtered => Items.Where(x=>x.Label.Contains(query,StringComparison.CurrentCultureIgnoreCase)).ToList();
+ protected override void OnParametersSet() { if(!initialized || Value!=previous) { query=Items.FirstOrDefault(x=>x.Value==Value)?.Label ?? ""; previous=Value; initialized=true; } }
+ private void Search(ChangeEventArgs e) { error=null;query=e.Value?.ToString()??"";open=true;active=-1;var match=Items.FirstOrDefault(x=>!x.Disabled && string.Equals(x.Label,query,StringComparison.CurrentCultureIgnoreCase)); CurrentValueAsString=match?.Value ?? (query.Length==0 ? "" : "\u0000"+query);previous=Value; }
+ private void Select(NgOption option) { if(option.Disabled)return;CurrentValueAsString=option.Value;previous=Value;query=option.Label;open=false;error=null; }
+ private void KeyDown(KeyboardEventArgs e) { if(e.Key=="Escape") { open=false;return; } if(e.Key=="ArrowDown"||e.Key=="ArrowUp") {open=true;var list=Filtered; if(list.Count>0){var direction=e.Key=="ArrowDown"?1:-1;for(var count=0;count<list.Count;count++){active=(active+direction+list.Count)%list.Count;if(!list[active].Disabled)break;}}} if(e.Key=="Enter" && open && active>=0 && active<Filtered.Count) Select(Filtered[active]); }
+ protected override bool TryParseValueFromString(string? value,out string? result,[System.Diagnostics.CodeAnalysis.NotNullWhen(false)] out string? validationErrorMessage) { error=null;result=null;if(string.IsNullOrEmpty(value)) { validationErrorMessage=null;return true; }var match=Items.FirstOrDefault(x=>x.Value==value && !x.Disabled);if(match is null)error="Choose an option from the list.";else result=match.Value;validationErrorMessage=error;return error is null; }
+}

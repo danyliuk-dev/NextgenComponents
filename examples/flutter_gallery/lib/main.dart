@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'forms_gallery.dart';
 import 'package:nextgen_components/nextgen_components.dart';
 
 void main() => runApp(const Gallery());
@@ -10,7 +11,7 @@ class Gallery extends StatefulWidget {
 }
 
 class _GalleryState extends State<Gallery> {
-  bool dark = false, compact = false;
+  bool dark = false, compact = false, forms = false;
   @override
   Widget build(BuildContext context) => MaterialApp(
     title: 'Nextgen • Flutter',
@@ -18,20 +19,31 @@ class _GalleryState extends State<Gallery> {
     theme: NgTheme.light(compact: compact),
     darkTheme: NgTheme.dark(compact: compact),
     themeMode: dark ? ThemeMode.dark : ThemeMode.light,
-    home: GalleryPage(
-      dark: dark,
-      compact: compact,
-      onDark: (v) => setState(() => dark = v),
-      onCompact: (v) => setState(() => compact = v),
-    ),
+    home: forms
+        ? FormsGallery(
+            dark: dark,
+            compact: compact,
+            onDark: (v) => setState(() => dark = v),
+            onCompact: (v) => setState(() => compact = v),
+            onBack: () => setState(() => forms = false),
+          )
+        : GalleryPage(
+            onForms: () => setState(() => forms = true),
+            dark: dark,
+            compact: compact,
+            onDark: (v) => setState(() => dark = v),
+            onCompact: (v) => setState(() => compact = v),
+          ),
   );
 }
 
 class GalleryPage extends StatefulWidget {
   final bool dark, compact;
+  final VoidCallback onForms;
   final ValueChanged<bool> onDark, onCompact;
   const GalleryPage({
     super.key,
+    required this.onForms,
     required this.dark,
     required this.compact,
     required this.onDark,
@@ -104,6 +116,10 @@ class _GalleryPageState extends State<GalleryPage> {
                         fontWeight: FontWeight.bold,
                         letterSpacing: 1,
                       ),
+                    ),
+                    TextButton(
+                      onPressed: widget.onForms,
+                      child: const Text('Forms and dates'),
                     ),
                     NgSwitch(
                       label: 'Dark theme',

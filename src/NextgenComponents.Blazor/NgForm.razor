@@ -1,0 +1,13 @@
+<EditForm Model="Model" OnValidSubmit="OnValidSubmit" OnInvalidSubmit="OnInvalidSubmit" FormName="Name" class="ng-form">
+<DataAnnotationsValidator />
+@if(ShowSummary) { <div class="ng-validation-summary" role="status"><ValidationSummary /></div> }
+@ChildContent
+</EditForm>
+@code {
+ [Parameter, EditorRequired] public object Model { get; set; } = default!;
+ [Parameter] public string Name { get; set; } = "ng-form";
+ [Parameter] public bool ShowSummary { get; set; } = true;
+ [Parameter] public RenderFragment? ChildContent { get; set; }
+ [Parameter] public EventCallback<EditContext> OnValidSubmit { get; set; }
+ [Parameter] public EventCallback<EditContext> OnInvalidSubmit { get; set; }
+}

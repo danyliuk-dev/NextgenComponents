@@ -1,6 +1,6 @@
 # Foundation 0.1 capabilities
 
-The API is intentionally small and native to each platform. It is not source-compatible with Telerik. Both packages expose 11 components. `NgRadioGroup` covers the first-stage Radio requirement and `NgTabs` covers Tabs.
+The API is intentionally small and native to each platform. It is not source-compatible with Telerik. This stage documents 11 foundation components; version 0.2 adds 11 more in [forms and dates](forms-and-dates.md). `NgRadioGroup` covers the first-stage Radio requirement and `NgTabs` covers Tabs.
 
 | Component | Blazor implemented | Flutter implemented | Deferred / limits |
 |---|---|---|---|
