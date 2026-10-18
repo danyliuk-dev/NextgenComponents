@@ -17,7 +17,15 @@ help={
 'validatestep':'Async current-step validation; null/empty allows forward navigation or completion.',
 'onfinish':'Completion handler; success disables subsequent completion until reset.',
 'linear':'Restrict forward navigation to the next enabled step; earlier steps remain accessible.',
-'vertical':'Stack step headers vertically instead of wrapping them horizontally.',
+'vertical':'Use a vertical root layout; see the component keyboard and layout rules.',
+'selectedid':'Current selected item ID; the parent owns this value.',
+'selectedidchanged':'Selected item ID for the parent to store.',
+'onselectedidchanged':'Selected item ID for the parent to store.',
+'oninvoke':'Enabled leaf command ID; dispatch the application action in this handler.',
+'expanded':'Whether the drawer is open; controlled by the parent.',
+'expandedchanged':'Requested open state; store it in the parent.',
+'onexpandedchanged':'Requested open state; store it with setState or your state manager.',
+'overlay':'Use a modal overlay instead of a Push panel.',
 'onclick':'Application click handler.','onpressed':'Application action; null disables the button.',
 'initialvalue':'Starting field value, not continuous controlled state.',
 'controller':'Text controller; do not combine with initialValue. Dispose in its owner.',
@@ -39,7 +47,7 @@ for p in (root/'packages/nextgen_components/lib/src').glob('*.dart'):
  for m in re.finditer(r'class (Ng\w+)(?:<[^\n]+>)? extends (?:StatefulWidget|StatelessWidget)',s):
   end=s.find('@override',m.end());flutter[m[1]]=(p,s[m.end():end])
 def md(s):return s.replace('|','\\|').replace('\n',' ')
-index=['# Nextgen Components manual','','Version 0.11.0. Detailed guidance for every public Blazor and Flutter Web component. This documents the implemented API, not full Telerik feature parity.','','Start with [Getting started](getting-started.md) and [Code examples](code-examples.md). See [data models and formulas](models.md) for shared model contracts and [verification](../verification.md) for tested behavior.','','Each page contains a Blazor example and a Flutter example, followed by API tables and integration rules. Flutter snippets belong inside a State class with the Material and Nextgen imports; the getting-started page supplies the full application shell.','','| Component | Purpose |','|---|---|']
+index=['# Nextgen Components manual','','Version 0.12.0. Detailed guidance for every public Blazor and Flutter Web component. This documents the implemented API, not full Telerik feature parity.','','Start with [Getting started](getting-started.md) and [Code examples](code-examples.md). See [data models and formulas](models.md) for shared model contracts and [verification](../verification.md) for tested behavior.','','Each page contains a Blazor example and a Flutter example, followed by API tables and integration rules. Flutter snippets belong inside a State class with the Material and Nextgen imports; the getting-started page supplies the full application shell.','','| Component | Purpose |','|---|---|']
 for p in sorted((root/'src/NextgenComponents.Blazor').glob('Ng*.razor')):
  n=p.stem;d=D[n];source=p.read_text();fp,fs=flutter[n]
  lines=[f'# {n} — {d["title"]}','','[Manual](README.md) · [Getting started](getting-started.md) · [Code examples](code-examples.md) · [Models](models.md)','','## When to use it','',d['use'],'','## Behavior and practical rules','',d['notes'],'','## Blazor example','','```razor',d['blazor'],'```','','## Flutter example','','```dart',d['dart'],'```','','## Blazor parameters and events','','Names are case-sensitive. `?` permits null. `EditorRequired` parameters are marked required; other values use the initializer or CLR default.','','| Parameter | Type | Default / requirement | Purpose |','|---|---|---|---|']
@@ -60,6 +68,9 @@ assert set(D)=={p.stem for p in (root/'src/NextgenComponents.Blazor').glob('Ng*.
 print(f'Generated {len(D)} component manuals')
 # The demo browsers use the same reviewed snippets as the manual and compiler checks.
 import json
-examples=json.dumps({name:{'title':d['title'],'blazor':d['blazor'],'flutter':d['dart']} for name,d in sorted(D.items())},ensure_ascii=False,indent=2)+'\n'
+from code_highlight import tokenize
+example_data={name:{'title':d['title'],'blazor':d['blazor'],'flutter':d['dart'],'blazorTokens':tokenize(d['blazor'],'razor'),'flutterTokens':tokenize(d['dart'],'dart')} for name,d in sorted(D.items())}
+# One generated record per line keeps token assets compact and diffs reviewable.
+examples='{\n'+',\n'.join(json.dumps(name)+': '+json.dumps(data,ensure_ascii=False,separators=(',',':')) for name,data in example_data.items())+'\n}\n'
 (root/'examples/BlazorGallery/wwwroot/component-examples.json').write_text(examples)
 asset=root/'examples/flutter_gallery/assets/component-examples.json';asset.parent.mkdir(exist_ok=True);asset.write_text(examples)

@@ -18,10 +18,10 @@ Snapshot: 2026-10-18. 139 named entries from the [Telerik Blazor index](https://
 | Navigation | [Chip](https://www.telerik.com/blazor-ui/chip) | planned | planned | 2 |
 | Navigation | [ChipList](https://www.telerik.com/blazor-ui/chiplist) | planned | planned | 2 |
 | Navigation | [Context Menu](https://www.telerik.com/blazor-ui/context-menu) | planned | planned | 2 |
-| Navigation | [Drawer](https://www.telerik.com/blazor-ui/drawer) | planned | planned | 2 |
+| Navigation | [Drawer](https://www.telerik.com/blazor-ui/drawer) | foundation: `NgDrawer` | foundation: `NgDrawer` | 2 |
 | Navigation | [DropDownButton](https://www.telerik.com/blazor-ui/dropdownbutton) | planned | planned | 2 |
 | Navigation | [Floating Action Button](https://www.telerik.com/blazor-ui/floating-action-button) | planned | planned | 2 |
-| Navigation | [Menu](https://www.telerik.com/blazor-ui/menu) | planned | planned | 2 |
+| Navigation | [Menu](https://www.telerik.com/blazor-ui/menu) | foundation: `NgMenu` | foundation: `NgMenu` | 2 |
 | Navigation | [Segmented Control](https://www.telerik.com/blazor-ui/segmented-control) | planned | planned | 2 |
 | Navigation | [Speech-to-Text Button](https://www.telerik.com/blazor-ui/speech-to-text-button) | planned | planned | 2 |
 | Navigation | [Split Button](https://www.telerik.com/blazor-ui/split-button) | planned | planned | 2 |

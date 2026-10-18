@@ -38,8 +38,8 @@ Names are case-sensitive. `?` permits null. `EditorRequired` parameters are mark
 | `Label` | `string` | "Folders" | Visible label or accessible name. |
 | `Items` | `IReadOnlyList<NgTreeNode<TItem>>` | required | Input collection. Replace it when changing records or configuration. |
 | `Text` | `Func<TItem,string>` | required | See the behavior rules and model contract above. |
-| `SelectedId` | `string?` | not set | See the behavior rules and model contract above. |
-| `SelectedIdChanged` | `EventCallback<string?>` | not set | See the behavior rules and model contract above. |
+| `SelectedId` | `string?` | not set | Current selected item ID; the parent owns this value. |
+| `SelectedIdChanged` | `EventCallback<string?>` | not set | Selected item ID for the parent to store. |
 | `ExpandedIds` | `HashSet<string>` | [] | See the behavior rules and model contract above. |
 | `ExpandedIdsChanged` | `EventCallback<HashSet<string>>` | not set | See the behavior rules and model contract above. |
 
@@ -52,10 +52,10 @@ Names are case-sensitive. `?` permits null. `EditorRequired` parameters are mark
 | `items` | `List<NgTreeNode<T>>` | Input collection. Replace it when changing records or configuration. |
 | `text` | `String Function(T)` | See the behavior rules and model contract above. |
 | `label` | `String` | Visible label or accessible name. |
-| `selectedId` | `String?` | See the behavior rules and model contract above. |
+| `selectedId` | `String?` | Current selected item ID; the parent owns this value. |
 | `expandedIds` | `Set<String>` | See the behavior rules and model contract above. |
 | `onSelected` | `ValueChanged<String>?` | See the behavior rules and model contract above. |
-| `onExpandedChanged` | `ValueChanged<Set<String>>` | See the behavior rules and model contract above. |
+| `onExpandedChanged` | `ValueChanged<Set<String>>` | Requested open state; store it with setState or your state manager. |
 
 ```dart
 const NgTreeView({

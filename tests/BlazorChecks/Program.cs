@@ -201,6 +201,18 @@ Rule(NgStepRules.CanMove(steps,0,2,true)&&!NgStepRules.CanMove(steps,0,3,true)&&
 Rule(NgStepRules.CanMove(steps,0,3,false)&&!NgStepRules.CanMove(steps,0,1,false)&&!NgStepRules.CanMove(steps,0,0,false),"nonlinear and current/disabled contract");
 foreach(var invalid in new[]{-1,1,4}){try{NgStepRules.Validate(steps,invalid);throw new Exception("invalid current accepted");}catch(ArgumentException){Rule(true,"invalid active step rejected");}}
 try{NgStepRules.Adjacent(steps,0,0);throw new Exception("zero direction accepted");}catch(ArgumentOutOfRangeException){Rule(true,"zero direction rejected");}
+var menuChildren=new List<NgMenuItem>{new("leaf","Leaf")};var menuGroup=new NgMenuItem("group","Group",children:menuChildren);menuChildren.Clear();
+Rule(menuGroup.Children.Count==1,"menu copies caller children");
+NgNavigationRules.ValidateMenu([menuGroup]);
+Rule(NgNavigationRules.CanInvoke([menuGroup],"leaf")&&!NgNavigationRules.CanInvoke([menuGroup],"group"),"menu invokes leaf only");
+Rule(!NgNavigationRules.CanInvoke([new("blocked","Blocked",true,[menuGroup])],"leaf"),"disabled ancestor blocks command");
+Reject(()=>NgNavigationRules.ValidateMenu([menuGroup,new("leaf","Duplicate")]),"duplicate menu ID");
+Reject(()=>NgNavigationRules.ValidateMenu([new("a","A",children:[new("b","B",children:[menuGroup])])]),"menu depth limit");
+Reject(()=>NgNavigationRules.ValidateMenu(Enumerable.Range(0,101).Select(i=>new NgMenuItem("n"+i,"Node")).ToArray()),"menu count limit");
+Reject(()=>NgNavigationRules.ValidateDrawer([new("a","A"),new("a","Duplicate")],260),"duplicate drawer ID");
+Reject(()=>NgNavigationRules.ValidateDrawer([],199),"drawer width limit");
+await Check<NgMenu>(new(){["Items"]=new[]{menuGroup},["Label"]="Commands <safe>"},"menubar","Commands &lt;safe&gt;","aria-haspopup=\"menu\"","popover=\"auto\"");
+await Check<NgDrawer>(new(){["Items"]=new[]{new NgOption("a","Overview")},["Expanded"]=true,["Overlay"]=false,["SelectedId"]="a"},"ng-drawer-push","aria-current=\"page\"","Overview");
 Console.WriteLine($"{count} rendering and data/date-rule checks passed. Browser interaction requires the separate visual run.");
 sealed class NoBrowserJS : IJSRuntime {
  public ValueTask<TValue> InvokeAsync<TValue>(string identifier, object?[]? args) => throw new InvalidOperationException("JS must not execute in SSR");

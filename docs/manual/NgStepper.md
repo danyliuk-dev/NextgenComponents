@@ -47,7 +47,7 @@ Names are case-sensitive. `?` permits null. `EditorRequired` parameters are mark
 | `Value` | `int` | 0 | Current value; see state ownership and model rules above. |
 | `ValueChanged` | `EventCallback<int>` | not set | New value for the parent to store and pass back. |
 | `Linear` | `bool` | false | Restrict forward navigation to the next enabled step; earlier steps remain accessible. |
-| `Vertical` | `bool` | false | Stack step headers vertically instead of wrapping them horizontally. |
+| `Vertical` | `bool` | false | Use a vertical root layout; see the component keyboard and layout rules. |
 | `Disabled` | `bool` | false | Disable user interaction. |
 
 ## Flutter parameters and events
@@ -61,7 +61,7 @@ Names are case-sensitive. `?` permits null. `EditorRequired` parameters are mark
 | `value` | `int` | Current value; see state ownership and model rules above. |
 | `onChanged` | `ValueChanged<int>?` | Store the new value using setState or your state manager. |
 | `linear` | `bool` | Restrict forward navigation to the next enabled step; earlier steps remain accessible. |
-| `vertical` | `bool` | Stack step headers vertically instead of wrapping them horizontally. |
+| `vertical` | `bool` | Use a vertical root layout; see the component keyboard and layout rules. |
 | `disabled` | `bool` | Disable user interaction. |
 
 ```dart

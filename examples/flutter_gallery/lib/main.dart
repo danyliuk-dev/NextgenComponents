@@ -1,3 +1,4 @@
+import 'navigation_gallery.dart';
 import 'code_gallery.dart';
 import 'steps_gallery.dart';
 import 'ai_gallery.dart';
@@ -33,7 +34,8 @@ class _GalleryState extends State<Gallery> {
       map = false,
       ai = false,
       steps = false,
-      code = false;
+      code = false,
+      navigation = false;
   @override
   Widget build(BuildContext context) => MaterialApp(
     title: 'Nextgen • Flutter',
@@ -41,7 +43,13 @@ class _GalleryState extends State<Gallery> {
     theme: NgTheme.light(compact: compact),
     darkTheme: NgTheme.dark(compact: compact),
     themeMode: dark ? ThemeMode.dark : ThemeMode.light,
-    home: code
+    home: navigation
+        ? NavigationGallery(
+            dark: dark,
+            onDark: (v) => setState(() => dark = v),
+            onBack: () => setState(() => navigation = false),
+          )
+        : code
         ? CodeGallery(onBack: () => setState(() => code = false))
         : steps
         ? StepsGallery(
@@ -119,6 +127,7 @@ class _GalleryState extends State<Gallery> {
             onForms: () => setState(() => forms = true),
             onData: () => setState(() => data = true),
             onAnalytics: () => setState(() => analytics = true),
+            onNavigation: () => setState(() => navigation = true),
             onCode: () => setState(() => code = true),
             onSteps: () => setState(() => steps = true),
             onAi: () => setState(() => ai = true),
@@ -147,7 +156,8 @@ class GalleryPage extends StatefulWidget {
       onMap,
       onAi,
       onSteps,
-      onCode;
+      onCode,
+      onNavigation;
   final ValueChanged<bool> onDark, onCompact;
   const GalleryPage({
     super.key,
@@ -162,6 +172,7 @@ class GalleryPage extends StatefulWidget {
     required this.onAi,
     required this.onSteps,
     required this.onCode,
+    required this.onNavigation,
     required this.dark,
     required this.compact,
     required this.onDark,
@@ -234,6 +245,10 @@ class _GalleryPageState extends State<GalleryPage> {
                         fontWeight: FontWeight.bold,
                         letterSpacing: 1,
                       ),
+                    ),
+                    TextButton(
+                      onPressed: widget.onNavigation,
+                      child: const Text("Menu and drawer"),
                     ),
                     TextButton(
                       onPressed: widget.onCode,

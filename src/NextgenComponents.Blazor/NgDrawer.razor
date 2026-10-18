@@ -1,0 +1,29 @@
+@implements IAsyncDisposable
+@inject IJSRuntime JS
+<div class="ng-drawer @(Expanded&&!Overlay?"ng-drawer-push":"")" style="--ng-drawer-width:@(Width)px">
+ @if(!Overlay&&Expanded){<aside class="ng-drawer-panel" aria-label="@Label">@Panel</aside>}
+ <div class="ng-drawer-content"><NgButton Disabled="@(!ExpandedChanged.HasDelegate)" aria-expanded="@(Expanded?"true":"false")" OnClick="()=>ExpandedChanged.InvokeAsync(!Expanded)">@(Expanded?"Close navigation":"Open navigation")</NgButton><div class="ng-drawer-page">@ChildContent</div></div>
+ <dialog class="ng-drawer-dialog" @ref="dialog" aria-label="@Label" @oncancel="Close" @oncancel:preventDefault="true">@Panel</dialog>
+</div>
+@code {
+ [Parameter] public string Label {get;set;}="Navigation";
+ [Parameter,EditorRequired] public IReadOnlyList<NgOption> Items {get;set;}=[];
+ [Parameter] public string? SelectedId {get;set;}
+ [Parameter] public EventCallback<string> SelectedIdChanged {get;set;}
+ [Parameter] public bool Expanded {get;set;}
+ [Parameter] public EventCallback<bool> ExpandedChanged {get;set;}
+ [Parameter] public bool Overlay {get;set;}=true;
+ [Parameter] public int Width {get;set;}=260;
+ [Parameter] public RenderFragment? ChildContent {get;set;}
+ private ElementReference dialog;private IJSObjectReference? module;private DotNetObjectReference<NgDrawer>? reference;private bool disposed;
+ private RenderFragment Panel=>@<div class="ng-drawer-inner"><header><strong>@Label</strong><NgButton aria-label="Close navigation" OnClick="Close">×</NgButton></header><nav aria-label="@Label">
+ @foreach(var item in Items){<button type="button" class="ng-drawer-item" disabled="@item.Disabled" aria-current="@(SelectedId==item.Value?"page":null)" @onclick="()=>Select(item.Value)">@item.Label</button>}
+ @if(Items.Count==0){<p>No destinations</p>}
+ </nav></div>;
+ protected override void OnParametersSet(){NgNavigationRules.ValidateDrawer(Items,Width);if(Expanded&&Overlay&&!ExpandedChanged.HasDelegate)throw new ArgumentException("An expanded overlay requires ExpandedChanged to close it.");}
+ private async Task Select(string key){if(!Items.Any(x=>x.Value==key&&!x.Disabled))return;await SelectedIdChanged.InvokeAsync(key);if(Overlay&&!disposed)await ExpandedChanged.InvokeAsync(false);}
+ private Task Close()=>ExpandedChanged.InvokeAsync(false);
+ [JSInvokable] public Task Dismiss()=>disposed?Task.CompletedTask:Close();
+ protected override async Task OnAfterRenderAsync(bool firstRender){if(disposed)return;module??=await JS.InvokeAsync<IJSObjectReference>("import","./_content/NextgenComponents.Blazor/navigation.js");reference??=DotNetObjectReference.Create(this);await module.InvokeVoidAsync("drawer",dialog,Expanded&&Overlay,reference);}
+ public async ValueTask DisposeAsync(){disposed=true;if(module is not null){try{await module.InvokeVoidAsync("disposeDrawer",dialog);await module.DisposeAsync();}catch(JSDisconnectedException){}catch(TaskCanceledException){}}reference?.Dispose();}
+}

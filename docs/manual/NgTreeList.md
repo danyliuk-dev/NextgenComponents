@@ -40,8 +40,8 @@ Names are case-sensitive. `?` permits null. `EditorRequired` parameters are mark
 | `Columns` | `IReadOnlyList<NgDataColumn<TItem>>` | [] | Column definitions; see the data model and example. |
 | `ExpandedIds` | `HashSet<string>` | [] | See the behavior rules and model contract above. |
 | `ExpandedIdsChanged` | `EventCallback<HashSet<string>>` | not set | See the behavior rules and model contract above. |
-| `SelectedId` | `string?` | not set | See the behavior rules and model contract above. |
-| `SelectedIdChanged` | `EventCallback<string?>` | not set | See the behavior rules and model contract above. |
+| `SelectedId` | `string?` | not set | Current selected item ID; the parent owns this value. |
+| `SelectedIdChanged` | `EventCallback<string?>` | not set | Selected item ID for the parent to store. |
 
 ## Flutter parameters and events
 
@@ -52,9 +52,9 @@ Names are case-sensitive. `?` permits null. `EditorRequired` parameters are mark
 | `items` | `List<NgTreeNode<T>>` | Input collection. Replace it when changing records or configuration. |
 | `columns` | `List<NgDataColumn<T>>` | Column definitions; see the data model and example. |
 | `expandedIds` | `Set<String>` | See the behavior rules and model contract above. |
-| `onExpandedChanged` | `ValueChanged<Set<String>>` | See the behavior rules and model contract above. |
+| `onExpandedChanged` | `ValueChanged<Set<String>>` | Requested open state; store it with setState or your state manager. |
 | `onSelected` | `ValueChanged<String>?` | See the behavior rules and model contract above. |
-| `selectedId` | `String?` | See the behavior rules and model contract above. |
+| `selectedId` | `String?` | Current selected item ID; the parent owns this value. |
 | `label` | `String` | Visible label or accessible name. |
 
 ```dart

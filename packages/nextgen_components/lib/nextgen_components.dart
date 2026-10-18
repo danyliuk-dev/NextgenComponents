@@ -18,3 +18,5 @@ export 'src/map.dart';
 export 'src/prompt.dart';
 
 export 'src/steps.dart';
+
+export 'src/navigation.dart';

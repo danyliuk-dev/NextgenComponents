@@ -10,6 +10,7 @@ Every component manual contains **Blazor example** and **Flutter example** secti
 |---|---|
 | Install and create an application | [Getting started](getting-started.md) |
 | Submit validated data | [NgForm](NgForm.md), [NgDateRangePicker](NgDateRangePicker.md) |
+| Add workspace commands and navigation | [NgMenu](NgMenu.md), [NgDrawer](NgDrawer.md) |
 | Build a multi-step workflow | [NgWizard](NgWizard.md), [NgStepper](NgStepper.md) |
 | Display and select business records | [NgDataGrid](NgDataGrid.md), [NgTreeList](NgTreeList.md) |
 | Aggregate local data | [NgPivotGrid](NgPivotGrid.md), [NgChart](NgChart.md) |
@@ -38,3 +39,5 @@ NgPdfViewer displays an existing PDF; it does not generate reports. NextgenRepor
 ## Validate your integration
 
 Check an empty value, a valid submission, invalid input, callback-driven updates, asynchronous failure/retry, dark theme and a narrow viewport. Do not copy demo delays or local-only saves into a production service: replace them with your authenticated backend and appropriate idempotency/cancellation.
+
+Code blocks in the local manual and both demo browsers use syntax colors for keywords, strings, comments, tags, types and numbers. **Copy code** copies the original source, including indentation and line breaks.

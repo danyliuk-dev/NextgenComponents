@@ -7,3 +7,5 @@ Compile/analyze examples with `python3 scripts/check_manual_examples.py` (option
 Update the capability matrix, catalogue, gallery and verification evidence with each feature. Do not mark full Telerik parity for a limited subset. Run appropriate library tests and review interactions in visible local Chrome on Linux iMac. Coordinate browser use before opening an isolated profile; preserve unrelated sessions. Native mobile testing remains a separate phase.
 
 Demo and documentation text, including code sample labels, must be English. The manual generator also produces demo code-browser assets; regenerate and validate examples together.
+
+The generated demo assets also contain lossless syntax tokens. Run `python3 scripts/check_code_highlight.py` after changing the tokenizer or examples; copied source must remain identical and HTML must remain escaped.

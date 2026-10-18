@@ -8,6 +8,7 @@ C# properties generally use PascalCase; Dart uses lowerCamelCase. Replace input 
 
 | Model | Contract |
 |---|---|
+| NgMenuItem | ID, text, disabled and read-only children; max 3 levels / 100 nodes. See [Menu](NgMenu.md). |
 | NgStep | Label, Disabled, Optional and nullable Valid; see [Stepper](NgStepper.md) and [Wizard](NgWizard.md). |
 | NgPromptResponse | Immutable Id, Prompt, Text; IDs increase within a session. |
 | NgPromptFeedback | Response and Helpful: true, false or null to clear a vote. |

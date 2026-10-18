@@ -36,6 +36,33 @@ class _CodeGalleryState extends State<CodeGallery> {
   }
 
   String get code => examples?[selected]?[framework] as String? ?? '';
+  List<TextSpan> get codeSpans =>
+      ((examples?[selected]?['${framework}Tokens'] as List?) ?? [])
+          .map(
+            (token) => TextSpan(
+              text: token['text'] as String,
+              style: TextStyle(
+                color: Color(
+                  const {
+                        'comment': 0xffa4b4c9,
+                        'string': 0xfface4ae,
+                        'keyword': 0xffc4a7ff,
+                        'tag': 0xff7dd3fc,
+                        'type': 0xff7dd3fc,
+                        'attribute': 0xffffd08a,
+                        'function': 0xffffd08a,
+                        'number': 0xffffba8a,
+                        'punctuation': 0xffcbd5e1,
+                      }[token['kind']] ??
+                      0xffe3edf9,
+                ),
+                fontStyle: token['kind'] == 'comment'
+                    ? FontStyle.italic
+                    : FontStyle.normal,
+              ),
+            ),
+          )
+          .toList();
   Future<void> copy() async {
     try {
       await Clipboard.setData(ClipboardData(text: code));
@@ -128,12 +155,14 @@ class _CodeGalleryState extends State<CodeGallery> {
                 const SizedBox(height: 12),
                 Container(
                   padding: const EdgeInsets.all(20),
-                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                  child: SelectableText(
-                    code,
+                  color: const Color(0xff15243a),
+                  child: SelectableText.rich(
+                    TextSpan(children: codeSpans),
                     style: const TextStyle(
                       fontFamily: 'monospace',
                       fontSize: 14,
+                      height: 1.6,
+                      color: Color(0xffe3edf9),
                     ),
                   ),
                 ),

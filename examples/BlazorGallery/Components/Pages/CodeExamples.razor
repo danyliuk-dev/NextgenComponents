@@ -11,7 +11,7 @@
 <div class="row"><a href="@($"http://127.0.0.1:5182/docs/manual/{selected}.md")" target="_blank" rel="noopener">Full component manual</a><NgButton OnClick="Copy">Copy code</NgButton></div>
 <NgRadioGroup Label="Framework" Items="frameworks" @bind-Value="framework"/>
 <p>@(framework=="blazor"?"Place in an interactive Razor page with @using NextgenComponents.Blazor.":"Place fields and build method inside a State class with the Material and Nextgen imports.")</p>
-<pre class="demo-code"><code>@Code</code></pre><p role="status">@notice</p></section>
+<pre class="demo-code"><code>@foreach(var token in Tokens){<span class="@($"syntax-{token.kind}")">@token.text</span>}</code></pre><p role="status">@notice</p></section>
 </main></div>
 @code {
  private Dictionary<string,Example> examples=[];private string selected="NgWizard";private string? framework="blazor",notice;
@@ -19,5 +19,7 @@
  private string Code=>examples.TryGetValue(selected,out var e)?framework=="blazor"?e.blazor:e.flutter:"";
  protected override void OnInitialized()=>examples=JsonSerializer.Deserialize<Dictionary<string,Example>>(File.ReadAllText(Path.Combine(Host.WebRootPath,"component-examples.json")))!;
  private async Task Copy(){try{await JS.InvokeVoidAsync("navigator.clipboard.writeText",Code);notice="Code copied.";}catch(JSException){notice="Select the code and copy it manually.";}}
- public sealed record Example(string title,string blazor,string flutter);
+ private Token[] Tokens=>examples.TryGetValue(selected,out var e)?framework=="blazor"?e.blazorTokens:e.flutterTokens:[];
+ public sealed record Token(string kind,string text);
+ public sealed record Example(string title,string blazor,string flutter,Token[] blazorTokens,Token[] flutterTokens);
 }

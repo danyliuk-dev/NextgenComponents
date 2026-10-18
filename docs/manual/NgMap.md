@@ -86,8 +86,8 @@ Names are case-sensitive. `?` permits null. `EditorRequired` parameters are mark
 | `Value` | `NgMapModel` | new() | Current value; see state ownership and model rules above. |
 | `View` | `NgMapView` | new() | See the behavior rules and model contract above. |
 | `ViewChanged` | `EventCallback<NgMapView>` | not set | See the behavior rules and model contract above. |
-| `SelectedId` | `string?` | not set | See the behavior rules and model contract above. |
-| `SelectedIdChanged` | `EventCallback<string?>` | not set | See the behavior rules and model contract above. |
+| `SelectedId` | `string?` | not set | Current selected item ID; the parent owns this value. |
+| `SelectedIdChanged` | `EventCallback<string?>` | not set | Selected item ID for the parent to store. |
 | `OnMapClick` | `EventCallback<NgMapPoint>` | not set | See the behavior rules and model contract above. |
 | `TileUrlTemplate` | `string?` | not set | See the behavior rules and model contract above. |
 | `Attribution` | `string` | "" | See the behavior rules and model contract above. |
@@ -106,7 +106,7 @@ Names are case-sensitive. `?` permits null. `EditorRequired` parameters are mark
 | `label` | `String` | Visible label or accessible name. |
 | `value` | `NgMapModel` | Current value; see state ownership and model rules above. |
 | `view` | `NgMapView?` | See the behavior rules and model contract above. |
-| `selectedId` | `String?` | See the behavior rules and model contract above. |
+| `selectedId` | `String?` | Current selected item ID; the parent owns this value. |
 | `tileUrlTemplate` | `String?` | See the behavior rules and model contract above. |
 | `attributionUrl` | `String?` | See the behavior rules and model contract above. |
 | `attribution` | `String` | See the behavior rules and model contract above. |
@@ -114,7 +114,7 @@ Names are case-sensitive. `?` permits null. `EditorRequired` parameters are mark
 | `clusterMarkers` | `bool` | See the behavior rules and model contract above. |
 | `clusterRadius` | `int` | See the behavior rules and model contract above. |
 | `onViewChanged` | `ValueChanged<NgMapView>?` | See the behavior rules and model contract above. |
-| `onSelectedIdChanged` | `ValueChanged<String?>?` | See the behavior rules and model contract above. |
+| `onSelectedIdChanged` | `ValueChanged<String?>?` | Selected item ID for the parent to store. |
 | `onMapClick` | `ValueChanged<NgMapPoint>?` | See the behavior rules and model contract above. |
 
 ```dart

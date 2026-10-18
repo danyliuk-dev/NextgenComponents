@@ -189,14 +189,14 @@
       "reference": "https://www.telerik.com/blazor-ui/drawer",
       "phase": 2,
       "blazor": {
-        "status": "planned",
-        "component": null
+        "status": "foundation",
+        "component": "NgDrawer"
       },
       "flutter": {
-        "status": "planned",
-        "component": null
+        "status": "foundation",
+        "component": "NgDrawer"
       },
-      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+      "featureSpec": "Implemented subset; see docs/navigation.md and the English component manual."
     },
     {
       "name": "DropDownButton",
@@ -234,14 +234,14 @@
       "reference": "https://www.telerik.com/blazor-ui/menu",
       "phase": 2,
       "blazor": {
-        "status": "planned",
-        "component": null
+        "status": "foundation",
+        "component": "NgMenu"
       },
       "flutter": {
-        "status": "planned",
-        "component": null
+        "status": "foundation",
+        "component": "NgMenu"
       },
-      "featureSpec": "Not yet audited; reference page defines the target, no feature parity claimed."
+      "featureSpec": "Implemented subset; see docs/navigation.md and the English component manual."
     },
     {
       "name": "Segmented Control",
