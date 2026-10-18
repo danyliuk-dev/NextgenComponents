@@ -122,3 +122,7 @@ NgMapPoint stores latitude/longitude; NgMapView adds zoom. NgMapMarker contains 
 `NgChipData<T>` maps your records to a read-only list of `NgOption` values. Required selectors provide the stable ID and accessible text; optional selectors provide disabled state, removal permission and `NgChipAppearance`. Pass these mappings explicitly to ChipList. Resolve the original record with `GetItem(id)` (Blazor) or `getItem(id)` (Flutter) in event handlers or templates.
 
 This is a snapshot of mapped fields, not a deep copy of application records. Rebuild after edits or collection changes and update selected IDs together with removed records. Unknown lookup IDs throw; malformed mappings fail during construction. See [ChipList](NgChipList.md) for complete, compiled examples on both platforms.
+
+## Button appearance overrides (0.26)
+
+`NgButtonAppearance` has nullable `Size/size`, `Rounded/rounded`, `FillMode/fillMode` and `ThemeColor/themeColor` fields. Return it from ButtonGroup's `ItemAppearance/itemAppearance` callback. Null fields inherit the corresponding group setting; it does not change the item's ID, command/toggle kind, visibility or selected value. See the [ButtonGroup manual](NgButtonGroup.md) for supported tokens and a compiled mixed-command example.

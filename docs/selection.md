@@ -19,3 +19,9 @@ Open **Toggle buttons** in either demo (Blazor route `/selection`). The complete
 This is an original subset, audited against the official [ToggleButton overview](https://www.telerik.com/blazor-ui/documentation/components/togglebutton/overview), [ButtonGroup overview](https://www.telerik.com/blazor-ui/documentation/components/buttongroup/overview) and [selection rules](https://www.telerik.com/blazor-ui/documentation/components/buttongroup/selection).
 
 The current API uses data-bound plain-text options and a single controlled selection callback. Mixed command/toggle child components, icons, arbitrary templates, separate click events and appearance variants are not implemented. SegmentedControl remains a separate planned component. The group uses toggle-button semantics, not an arrow-key radio group. Native mobile testing remains deferred.
+
+## 0.26: selection-button component block
+
+ToggleButton and ButtonGroup now support independent click events, mixed command/toggle groups, display templates and decorative icons, visibility without discarding selection, size/corner/fill/color settings and per-item appearance, plus platform-specific identity/help/focus hooks. The parent owns command effects and all selected state. Commands cannot be selected. Detailed compiled examples and event ordering are in the two component manuals.
+
+The demo combines these capabilities in one formatting panel. Original tokens and a data-driven model differ from Telerik; inherited APIs, native form button types, width API and screen-reader certification remain in the parity matrix. This is a component-block delivery, not a full-parity claim.

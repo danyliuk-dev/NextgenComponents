@@ -1,0 +1,52 @@
+{
+  "actions": [
+    {
+      "method": "Page.navigate",
+      "params": {
+        "url": "http://127.0.0.1:5180/selection"
+      }
+    },
+    {
+      "evaluate": "new Promise(r=>setTimeout(r,1200))"
+    },
+    {
+      "evaluate": "(()=>{const root=document.querySelector('.ng-scope');const old=root.dataset.ngTheme;const button=document.createElement('button');button.textContent='Contrast';button.style.position='fixed';button.style.left='-9999px';root.append(button);const surface=document.createElement('div');surface.style.background='var(--ng-surface)';root.append(surface);const lum=c=>{const a=c.match(/[\\d.]+/g).slice(0,3).map(Number).map(v=>{v/=255;return v<=.04045?v/12.92:((v+.055)/1.055)**2.4});return a[0]*.2126+a[1]*.7152+a[2]*.0722};let count=0,min=100;try{for(const theme of ['light','dark']){root.dataset.ngTheme=theme;for(const tone of ['base','primary','secondary','tertiary','info','success','warning','error','dark','light','inverse'])for(const fill of ['solid','outline','flat','link','clear'])for(const selected of [false,true]){button.className=`ng-button ng-button-style ng-button-tone-${tone} ng-button-fill-${fill} ${selected?'ng-selected':''}`;const s=getComputedStyle(button);const bg=s.backgroundColor==='rgba(0, 0, 0, 0)'?getComputedStyle(surface).backgroundColor:s.backgroundColor;const a=lum(s.color),b=lum(bg),ratio=(Math.max(a,b)+.05)/(Math.min(a,b)+.05);if(ratio<4.5)throw Error(`${theme} ${tone} ${fill} ${selected}: ${ratio}`);min=Math.min(min,ratio);count++;}}return {count,minContrast:min};}finally{root.dataset.ngTheme=old;button.remove();surface.remove();}})()"
+    },
+    {
+      "evaluate": "(()=>{document.querySelector('#mixed-example').scrollIntoView({block:'center',behavior:'instant'});const names=['Button size','Button corners','Button fill','Button color'];const values=['lg','full','solid','tertiary'];for(let i=0;i<names.length;i++){const e=[...document.querySelectorAll('#mixed-example label')].find(x=>x.textContent.includes(names[i]))?.querySelector('select');if(!e)throw Error(names[i]);e.value=values[i];e.dispatchEvent(new Event('change',{bubbles:true}));}})()"
+    },
+    {
+      "evaluate": "new Promise(r=>setTimeout(r,400))"
+    },
+    {
+      "evaluate": "(()=>{const b=document.querySelector('#format-actions button');if(!b.classList.contains('ng-button-size-lg')||!b.classList.contains('ng-button-tone-tertiary'))throw Error('settings not applied');return b.className})()"
+    },
+    {
+      "evaluate": "document.querySelector('nav input').click()"
+    },
+    {
+      "evaluate": "new Promise(r=>setTimeout(r,350))"
+    },
+    {
+      "screenshot": "selection026-blazor-dark.png"
+    },
+    {
+      "method": "Emulation.setDeviceMetricsOverride",
+      "params": {
+        "width": 390,
+        "height": 844,
+        "deviceScaleFactor": 1,
+        "mobile": false
+      }
+    },
+    {
+      "evaluate": "document.querySelector('#mixed-example').scrollIntoView({block:'start',behavior:'instant'});(()=>{if(document.documentElement.scrollWidth>innerWidth)throw Error('Horizontal overflow');return true})()"
+    },
+    {
+      "screenshot": "selection026-blazor-narrow.png"
+    },
+    {
+      "method": "Emulation.clearDeviceMetricsOverride"
+    }
+  ]
+}

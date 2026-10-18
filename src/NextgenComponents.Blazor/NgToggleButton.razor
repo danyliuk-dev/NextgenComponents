@@ -1,9 +1,27 @@
-<button type="button" class="ng-button ng-toggle-button @(Value?"ng-selected ng-primary":"")" aria-pressed="@(Value?"true":"false")" disabled="@(Disabled||!ValueChanged.HasDelegate)" @onclick="Toggle">@Label</button>
+@if(Visible){<button @ref="button" id="@Id" title="@Title" tabindex="@TabIndex" type="button" class="ng-button ng-toggle-button @NgButtonRules.Classes(Size,Rounded,FillMode,ThemeColor) @Class @(Value?"ng-selected":"")" aria-label="@(AriaLabel??Label)" aria-labelledby="@AriaLabelledBy" aria-describedby="@AriaDescribedBy" aria-pressed="@(Value?"true":"false")" disabled="@(Disabled||(!ValueChanged.HasDelegate&&!OnClick.HasDelegate))" @onclick="Toggle">@if(Leading is not null){<span aria-hidden="true">@Leading</span>}@if(ChildContent is not null){@ChildContent}else{@Label}</button>}
 @code {
+ [Parameter] public string? Id {get;set;}
+ [Parameter] public string? Class {get;set;}
+ [Parameter] public string? Title {get;set;}
+ [Parameter] public string? AriaLabel {get;set;}
+ [Parameter] public string? AriaLabelledBy {get;set;}
+ [Parameter] public string? AriaDescribedBy {get;set;}
+ [Parameter] public int TabIndex {get;set;}
+ [Parameter] public bool Visible {get;set;}=true;
+ [Parameter] public string Size {get;set;}="md";
+ [Parameter] public string Rounded {get;set;}="md";
+ [Parameter] public string FillMode {get;set;}="outline";
+ [Parameter] public string ThemeColor {get;set;}="primary";
+ [Parameter] public RenderFragment? Leading {get;set;}
+ [Parameter] public RenderFragment? ChildContent {get;set;}
+ private ElementReference button;
+ public ValueTask FocusAsync()=>Visible&&!Disabled&&(ValueChanged.HasDelegate||OnClick.HasDelegate)?button.FocusAsync():ValueTask.CompletedTask;
+
  [Parameter,EditorRequired] public string Label {get;set;}="Toggle";
  [Parameter] public bool Value {get;set;}
  [Parameter] public EventCallback<bool> ValueChanged {get;set;}
+ [Parameter] public EventCallback OnClick {get;set;}
  [Parameter] public bool Disabled {get;set;}
- protected override void OnParametersSet(){if(string.IsNullOrWhiteSpace(Label)||Label.Length>120)throw new ArgumentException("Use a nonblank label of at most 120 characters.");}
- private Task Toggle()=>Disabled?Task.CompletedTask:ValueChanged.InvokeAsync(!Value);
+ protected override void OnParametersSet(){NgButtonRules.Validate(Size,Rounded,FillMode,ThemeColor);NgChipRules.ValidateTabIndex(TabIndex);NgChipRules.ValidateAccessibility(Id,AriaLabelledBy,AriaDescribedBy);if(AriaLabel is not null&&string.IsNullOrWhiteSpace(AriaLabel))throw new ArgumentException("AriaLabel must be nonblank.");if(string.IsNullOrWhiteSpace(Label)||Label.Length>120)throw new ArgumentException("Use a nonblank label of at most 120 characters.");}
+ private async Task Toggle(){if(Disabled)return;if(ValueChanged.HasDelegate)await ValueChanged.InvokeAsync(!Value);await OnClick.InvokeAsync();}
 }

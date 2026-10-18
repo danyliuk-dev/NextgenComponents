@@ -1,16 +1,41 @@
-<div class="ng-button-group @(Vertical?"ng-button-group-vertical":"")" role="group" aria-label="@Label">
-@foreach(var item in Items){<NgToggleButton @key="item.Value" Label="@item.Label" Value="@(Value.Contains(item.Value))" Disabled="@(Disabled||item.Disabled||!ValueChanged.HasDelegate)" ValueChanged="_=>Select(item.Value)"/>}
-@if(Items.Count==0){<span class="ng-muted">No options</span>}
+<div id="@Id" class="@Class ng-button-group @(Vertical?"ng-button-group-vertical":"")" role="group" aria-label="@Label" aria-labelledby="@AriaLabelledBy" aria-describedby="@AriaDescribedBy">
+@foreach(var item in Items.Where(x=>visibleIds.Contains(x.Value))){
+ var appearance=ItemAppearance?.Invoke(item);
+ var size=appearance?.Size??Size;var rounded=appearance?.Rounded??Rounded;var fill=appearance?.FillMode??FillMode;var tone=appearance?.ThemeColor??ThemeColor;
+ if(commandIds.Contains(item.Value)){
+  <button @key="item.Value" type="button" class="ng-button @NgButtonRules.Classes(size,rounded,fill,tone)" aria-label="@item.Label" disabled="@(Disabled||item.Disabled||!OnClick.HasDelegate)" @onclick="()=>Click(item.Value)">@if(LeadingTemplate is not null){<span aria-hidden="true">@LeadingTemplate(item)</span>}@if(ItemTemplate is not null){@ItemTemplate(item)}else{@item.Label}</button>
+ }else{
+  <NgToggleButton Size="@size" Rounded="@rounded" FillMode="@fill" ThemeColor="@tone" Leading="@(LeadingTemplate is null?null:LeadingTemplate(item))" ChildContent="@(ItemTemplate is null?null:ItemTemplate(item))" @key="item.Value" Label="@item.Label" Value="@(Value.Contains(item.Value))" Disabled="@(Disabled||item.Disabled)" ValueChanged="@(ValueChanged.HasDelegate?EventCallback.Factory.Create<bool>(this,_=>Select(item.Value)):default)" OnClick="@(OnClick.HasDelegate?EventCallback.Factory.Create(this,()=>Click(item.Value)):default)"/>
+ }
+}
+@if(visibleIds.Count==0){<span class="ng-muted">No options</span>}
 </div>
 @code {
+ [Parameter] public string? Id {get;set;}
+ [Parameter] public string? Class {get;set;}
+ [Parameter] public string? AriaLabelledBy {get;set;}
+ [Parameter] public string? AriaDescribedBy {get;set;}
+ [Parameter] public string Size {get;set;}="md";
+ [Parameter] public string Rounded {get;set;}="md";
+ [Parameter] public string FillMode {get;set;}="outline";
+ [Parameter] public string ThemeColor {get;set;}="primary";
+ [Parameter] public Func<NgOption,NgButtonAppearance>? ItemAppearance {get;set;}
+ [Parameter] public Func<NgOption,bool>? IsVisible {get;set;}
+ [Parameter] public RenderFragment<NgOption>? ItemTemplate {get;set;}
+ [Parameter] public RenderFragment<NgOption>? LeadingTemplate {get;set;}
+
  [Parameter] public string Label {get;set;}="Options";
  [Parameter,EditorRequired] public IReadOnlyList<NgOption> Items {get;set;}=[];
  [Parameter] public IReadOnlyList<string> Value {get;set;}=[];
  [Parameter] public EventCallback<IReadOnlyList<string>> ValueChanged {get;set;}
+ [Parameter] public Func<NgOption,bool>? IsCommand {get;set;}
+ [Parameter] public EventCallback<string> OnClick {get;set;}
  [Parameter] public bool Multiple {get;set;}
  [Parameter] public bool AllowEmpty {get;set;}=true;
  [Parameter] public bool Disabled {get;set;}
  [Parameter] public bool Vertical {get;set;}
- protected override void OnParametersSet()=>NgSelectionRules.Validate(Items,Value,Multiple);
+ private HashSet<string> commandIds=[],visibleIds=[];
+ protected override void OnParametersSet(){NgButtonRules.Validate(Size,Rounded,FillMode,ThemeColor);NgChipRules.ValidateAccessibility(Id,AriaLabelledBy,AriaDescribedBy);if(string.IsNullOrWhiteSpace(Label))throw new ArgumentException("Label must be nonblank.");visibleIds=Items.Where(x=>IsVisible?.Invoke(x)??true).Select(x=>x.Value).ToHashSet(StringComparer.Ordinal);NgSelectionRules.Validate(Items,Value,Multiple);commandIds=Items.Where(x=>IsCommand?.Invoke(x)??false).Select(x=>x.Value).ToHashSet(StringComparer.Ordinal);if(Value.Any(commandIds.Contains))throw new ArgumentException("Command IDs cannot be selected.");}
+ private Task Click(string id)=>Disabled||!visibleIds.Contains(id)||!Items.Any(x=>x.Value==id&&!x.Disabled)?Task.CompletedTask:OnClick.InvokeAsync(id);
  private Task Select(string id){if(Disabled)return Task.CompletedTask;var next=NgSelectionRules.Toggle(Items,Value,id,Multiple,AllowEmpty);return next.SequenceEqual(Value)?Task.CompletedTask:ValueChanged.InvokeAsync(next);}
 }

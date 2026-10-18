@@ -2,15 +2,36 @@
 <PageTitle>Nextgen • Toggle buttons</PageTitle>
 <div class="ng-scope gallery" data-ng-theme="@(dark?"dark":"light")"><main>
 <nav><a href="/code-examples">Code examples</a><strong>N NEXTGEN COMPONENTS</strong><div class="row"><a href="/">Foundation</a><NgSwitch Label="Dark theme" @bind-Value="dark"/></div></nav>
-<section class="hero"><p class="eyebrow">BLAZOR / SELECTION 0.13</p><h1>Make a choice.<br/>See the change.</h1><p>Use a toggle for one setting, a single-choice group for alignment, and multiple choices for text styles.</p></section>
+<section class="hero"><p class="eyebrow">BLAZOR / SELECTION 0.26</p><h1>Make a choice.<br/>See the change.</h1><p>Use a toggle for one setting, a single-choice group for alignment, and multiple choices for text styles.</p></section>
 <section class="panel"><div class="row"><NgCheckBox Label="Disable controls" @bind-Value="disabled"/><NgCheckBox Label="Vertical groups" @bind-Value="vertical"/><NgCheckBox Label="Allow empty alignment" @bind-Value="allowEmpty"/><NgCheckBox Label="Empty options" @bind-Value="empty"/><NgButton OnClick="Reset">Reset settings</NgButton></div>
 <h2>Preview settings</h2><NgToggleButton Label="Show border" Value="border" ValueChanged="SetBorder" Disabled="disabled"/>
 <h3>Alignment · choose one</h3><NgButtonGroup Label="Text alignment" Items="@(empty?Array.Empty<NgOption>():alignments)" Value="@(empty?Array.Empty<string>():alignment)" ValueChanged="SetAlignment" AllowEmpty="allowEmpty" Disabled="disabled" Vertical="vertical"/>
 <h3>Text styles · choose several</h3><NgButtonGroup Label="Text styles" Items="@(empty?Array.Empty<NgOption>():styles)" Value="@(empty?Array.Empty<string>():format)" ValueChanged="SetFormat" Multiple Disabled="disabled" Vertical="vertical"/>
 <div id="selection-preview" style="margin-top:28px;padding:24px;border:@(border?"2px solid var(--ng-primary)":"2px solid transparent");text-align:@(alignment.FirstOrDefault()??"left");font-weight:@(format.Contains("bold")?"700":"400");font-style:@(format.Contains("italic")?"italic":"normal")">Build something clear and useful.</div>
 <p id="selection-status" role="status">Alignment: @(alignment.FirstOrDefault()??"none") · Styles: @(format.Count==0?"none":string.Join(", ",format)) · Border: @(border?"on":"off") · Changes: @changes</p></section>
-<footer>45 CONTROLS / 51 CATALOGUE ENTRIES · WEB FIRST</footer></main></div>
+<section class="panel" id="mixed-example"><h2>Formatting commands and choices</h2><p>Strong and Emphasis retain selection. Clear formatting is a command; the application handles its effect. Export is disabled. Templates keep stable accessible names.</p>
+<div class="row"><NgDropDownList Label="Button size" Items="buttonSizes" @bind-Value="buttonSize"/><NgDropDownList Label="Button corners" Items="buttonCorners" @bind-Value="buttonRounded"/><NgDropDownList Label="Button fill" Items="buttonFills" @bind-Value="buttonFill"/><NgDropDownList Label="Button color" Items="buttonTones" @bind-Value="buttonTone"/></div>
+<div class="row"><NgCheckBox Label="Hide Emphasis" @bind-Value="hideEmphasis"/><NgCheckBox Label="Disable formatting" @bind-Value="mixedDisabled"/><NgCheckBox Label="Vertical formatting" @bind-Value="mixedVertical"/></div>
+<p id="format-help">Choose text styles or run an available command.</p>
+<NgButtonGroup Id="format-actions" Label="Formatting actions" AriaDescribedBy="format-help" Items="mixedItems" Value="mixedValue" ValueChanged="SetMixed" Multiple IsCommand="IsCommand" IsVisible="ShowMixed" OnClick="RunMixed" Disabled="mixedDisabled" Vertical="mixedVertical" Size="@buttonSize" Rounded="@buttonRounded" FillMode="@buttonFill" ThemeColor="@buttonTone" ItemAppearance="CommandAppearance">
+<LeadingTemplate Context="item"><span>@(IsCommand(item)?"↗":"★")</span></LeadingTemplate><ItemTemplate Context="item"><strong>@item.Label</strong></ItemTemplate>
+</NgButtonGroup>
+<p id="mixed-status" role="status">Selected: @(mixedValue.Count==0?"none":string.Join(",",mixedValue)) · @mixedLog</p>
+</section>
+<footer>47 CONTROLS / 53 CATALOGUE ENTRIES · WEB FIRST</footer></main></div>
 @code {
+ private string buttonSize="md",buttonRounded="md",buttonFill="outline",buttonTone="primary",mixedLog="Ready";
+ private bool hideEmphasis,mixedDisabled,mixedVertical;
+ private IReadOnlyList<string> mixedValue=["strong"];
+ private readonly NgOption[] mixedItems=[new("strong","Strong"),new("emphasis","Emphasis"),new("clear","Clear formatting"),new("export","Export (unavailable)",true)];
+ private bool ShowMixed(NgOption item)=>!hideEmphasis||item.Value!="emphasis";
+ private static bool IsCommand(NgOption item)=>item.Value is "clear" or "export";
+ private static NgButtonAppearance CommandAppearance(NgOption item)=>new(ThemeColor:item.Value=="clear"?"info":item.Value=="export"?"error":null);
+ private void SetMixed(IReadOnlyList<string> value){mixedValue=value;mixedLog="changed:"+string.Join(",",value);}
+ private void RunMixed(string id){mixedLog+=" | clicked:"+id;if(id=="clear")mixedValue=[];}
+ private static NgOption[] Options(params string[] values)=>values.Select(x=>new NgOption(x,x)).ToArray();
+ private readonly NgOption[] buttonSizes=Options("sm","md","lg"),buttonCorners=Options("sm","md","lg","full"),buttonFills=Options("solid","outline","flat","link","clear"),buttonTones=Options("base","primary","secondary","tertiary","info","success","warning","error","dark","light","inverse");
+
  private bool dark,disabled,vertical,allowEmpty,empty,border;private int changes;
  private IReadOnlyList<string> alignment=["left"],format=[];
  private readonly NgOption[] alignments=[new("left","Left"),new("center","Center"),new("right","Right"),new("justify","Justify (unavailable)",true)];

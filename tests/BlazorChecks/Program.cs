@@ -224,6 +224,14 @@ Reject(()=>NgSelectionRules.Validate(choices,["a","b"],false),"multiple IDs in s
 Reject(()=>NgSelectionRules.Validate(choices,["missing"],true),"unknown selection ID");
 Reject(()=>NgSelectionRules.Validate([choices[0],choices[0]],[],true),"duplicate option IDs");
 Reject(()=>NgSelectionRules.Validate(Enumerable.Range(0,51).Select(i=>new NgOption("n"+i,"Node")).ToArray(),[],true),"selection item limit");
+await Check<NgToggleButton>(new(){["Label"]="Flag",["AriaLabel"]="Flag setting",["Id"]="flag",["TabIndex"]=-1,["Size"]="lg",["Rounded"]="full",["FillMode"]="link",["ThemeColor"]="success",["Leading"]=Text("★"),["ChildContent"]=Text("Custom"),["OnClick"]=EventCallback.Factory.Create(new object(),()=>{})},"aria-label=\"Flag setting\"","tabindex=\"-1\"","ng-button-size-lg","ng-button-fill-link","Custom");
+var hiddenButton=await renderer.Dispatcher.InvokeAsync(async()=>(await renderer.RenderComponentAsync<NgToggleButton>(ParameterView.FromDictionary(new Dictionary<string,object?>{["Label"]="Hidden",["Visible"]=false}))).ToHtmlString());
+Rule(!hiddenButton.Contains("button"),"hidden toggle has no action DOM");
+var mixedButtons=await renderer.Dispatcher.InvokeAsync(async()=>(await renderer.RenderComponentAsync<NgButtonGroup>(ParameterView.FromDictionary(new Dictionary<string,object?>{["Items"]=options,["IsCommand"]=(Func<NgOption,bool>)(x=>x.Value=="a"),["OnClick"]=EventCallback.Factory.Create<string>(new object(),_=>{}),["ItemTemplate"]=(RenderFragment<NgOption>)(x=>Text("Custom "+x.Label))}))).ToHtmlString());
+Rule(mixedButtons.Contains("aria-label=\"Alpha\"")&&System.Text.RegularExpressions.Regex.Matches(mixedButtons,"aria-pressed=").Count==options.Length-1,"commands omit pressed state while preserving labelled templates");
+try { await Check<NgButtonGroup>(new(){["Items"]=options,["Value"]=new[]{"a"},["IsCommand"]=(Func<NgOption,bool>)(x=>x.Value=="a")});throw new Exception("Selected command accepted"); } catch(ArgumentException){Rule(true,"selected command rejected");}
+Reject(()=>NgButtonRules.Validate("xl","md","outline","primary"),"invalid button size");
+Reject(()=>NgButtonRules.Validate("md","md","gradient","primary"),"invalid button fill");
 await Check<NgToggleButton>(new(){["Label"]="Bold <safe>",["Value"]=true},"aria-pressed=\"true\"","Bold &lt;safe&gt;","disabled");
 await Check<NgButtonGroup>(new(){["Items"]=choices,["Value"]=choiceValue,["Vertical"]=true},"role=\"group\"","ng-button-group-vertical","aria-pressed=\"true\"","Locked");
 await Check<NgButtonGroup>(new(),"No options");

@@ -22,6 +22,159 @@ class _SelectionGalleryState extends State<SelectionGallery> {
       empty = false,
       border = false;
   int changes = 0;
+  String buttonSize = 'md',
+      buttonRounded = 'md',
+      buttonFill = 'outline',
+      buttonTone = 'primary',
+      mixedLog = 'Ready';
+  bool hideEmphasis = false, mixedDisabled = false, mixedVertical = false;
+  List<String> mixedValue = ['strong'];
+  final mixedItems = const [
+    NgOption('strong', 'Strong'),
+    NgOption('emphasis', 'Emphasis'),
+    NgOption('clear', 'Clear formatting'),
+    NgOption('export', 'Export (unavailable)', disabled: true),
+  ];
+  bool isCommand(NgOption item) => ['clear', 'export'].contains(item.value);
+  Widget setting(
+    String label,
+    List<String> values,
+    String value,
+    ValueChanged<String> change,
+  ) => SizedBox(
+    width: 180,
+    child: DropdownButtonFormField<String>(
+      initialValue: value,
+      decoration: InputDecoration(labelText: label),
+      items: values
+          .map((v) => DropdownMenuItem(value: v, child: Text(v)))
+          .toList(),
+      onChanged: (v) => setState(() => change(v!)),
+    ),
+  );
+  Widget mixedExample() => Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      Text(
+        'Formatting commands and choices',
+        style: Theme.of(context).textTheme.titleLarge,
+      ),
+      const Text(
+        'Strong and Emphasis retain selection. Clear formatting is a command; the application handles its effect. Export is disabled. Templates keep stable accessible names.',
+      ),
+      const SizedBox(height: 16),
+      Wrap(
+        spacing: 16,
+        runSpacing: 12,
+        children: [
+          setting(
+            'Button size',
+            ['sm', 'md', 'lg'],
+            buttonSize,
+            (v) => buttonSize = v,
+          ),
+          setting(
+            'Button corners',
+            ['sm', 'md', 'lg', 'full'],
+            buttonRounded,
+            (v) => buttonRounded = v,
+          ),
+          setting(
+            'Button fill',
+            ['solid', 'outline', 'flat', 'link', 'clear'],
+            buttonFill,
+            (v) => buttonFill = v,
+          ),
+          setting(
+            'Button color',
+            [
+              'base',
+              'primary',
+              'secondary',
+              'tertiary',
+              'info',
+              'success',
+              'warning',
+              'error',
+              'dark',
+              'light',
+              'inverse',
+            ],
+            buttonTone,
+            (v) => buttonTone = v,
+          ),
+        ],
+      ),
+      const SizedBox(height: 16),
+      Wrap(
+        spacing: 16,
+        children: [
+          NgCheckBox(
+            label: 'Hide Emphasis',
+            value: hideEmphasis,
+            onChanged: (v) => setState(() => hideEmphasis = v),
+          ),
+          NgCheckBox(
+            label: 'Disable formatting',
+            value: mixedDisabled,
+            onChanged: (v) => setState(() => mixedDisabled = v),
+          ),
+          NgCheckBox(
+            label: 'Vertical formatting',
+            value: mixedVertical,
+            onChanged: (v) => setState(() => mixedVertical = v),
+          ),
+        ],
+      ),
+      const Text('Choose text styles or run an available command.'),
+      const SizedBox(height: 8),
+      NgButtonGroup(
+        label: 'Formatting actions',
+        semanticIdentifier: 'format-actions',
+        semanticHint: 'Choose text styles or run an available command.',
+        items: mixedItems,
+        value: mixedValue,
+        multiple: true,
+        isCommand: isCommand,
+        isVisible: (item) => !hideEmphasis || item.value != 'emphasis',
+        onChanged: (v) => setState(() {
+          mixedValue = v;
+          mixedLog = 'changed:${v.join(",")}';
+        }),
+        onClick: (id) => setState(() {
+          mixedLog += ' | clicked:$id';
+          if (id == 'clear') mixedValue = [];
+        }),
+        disabled: mixedDisabled,
+        vertical: mixedVertical,
+        size: buttonSize,
+        rounded: buttonRounded,
+        fillMode: buttonFill,
+        themeColor: buttonTone,
+        itemAppearance: (item) => NgButtonAppearance(
+          themeColor: item.value == 'clear'
+              ? 'info'
+              : item.value == 'export'
+              ? 'error'
+              : null,
+        ),
+        leadingBuilder: (item) =>
+            Icon(isCommand(item) ? Icons.north_east : Icons.star, size: 16),
+        itemBuilder: (item) => Text(
+          item.label,
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
+      ),
+      const SizedBox(height: 12),
+      Semantics(
+        liveRegion: true,
+        child: Text(
+          'Selected: ${mixedValue.isEmpty ? "none" : mixedValue.join(",")} · $mixedLog',
+        ),
+      ),
+    ],
+  );
+
   List<String> alignment = ['left'], format = [];
   final alignments = const [
     NgOption('left', 'Left'),
@@ -73,7 +226,7 @@ class _SelectionGalleryState extends State<SelectionGallery> {
               ),
               const SizedBox(height: 16),
               const Text(
-                'FLUTTER WEB / SELECTION 0.13 · Use a toggle for one setting, a single-choice group for alignment, and multiple choices for text styles.',
+                'FLUTTER WEB / SELECTION 0.26 · Use a toggle for one setting, a single-choice group for alignment, and multiple choices for text styles.',
               ),
               const SizedBox(height: 28),
               Wrap(
@@ -189,7 +342,9 @@ class _SelectionGalleryState extends State<SelectionGallery> {
                 ),
               ),
               const SizedBox(height: 32),
-              const Text('45 CONTROLS / 51 CATALOGUE ENTRIES · WEB FIRST'),
+              mixedExample(),
+              const SizedBox(height: 32),
+              const Text('47 CONTROLS / 53 CATALOGUE ENTRIES · WEB FIRST'),
             ],
           ),
         ),

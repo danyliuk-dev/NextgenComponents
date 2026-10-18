@@ -9,8 +9,8 @@ lines = ['# Feature parity with Telerik UI for Blazor', '',
 '## Completion rule', '',
 'A component can be marked complete only after every reference feature is recorded, both implementations and detailed English examples exist, meaningful automated checks and visible Chrome scenarios pass, and remaining differences are explicitly accepted. Unknown is not complete. A test pass proves the tested behavior, not all reference behavior.', '',
 '## Current work order', '',
-'1. Finish the Chip/ChipList audit below: listbox and selection semantics, model binding and sizing limits, then accessibility and remaining public API differences.',
-'2. Audit the existing selection/navigation group (ToggleButton, ButtonGroup, Menu, Drawer, Stepper, Wizard) against complete public reference pages.',
+'1. Chip/ChipList remaining gaps stay tracked below; do not mark full parity or silently accept them. Work is delivered in component blocks, not one release per parameter.',
+'2. Active block: ToggleButton and ButtonGroup together (commands, selection, events, templates, appearance and accessibility). Then audit Menu/Drawer and Stepper/Wizard as paired blocks.',
 '3. Continue through existing editors/forms, data management, visualization and complex editors. Add new component names only after closing the active group or recording a user-approved exception.', '',
 '## Chip and ChipList feature matrix', '',
 'Sources: [Chip API](https://www.telerik.com/blazor-ui/documentation/api/telerik.blazor.components.telerikchip), [Chip appearance](https://www.telerik.com/blazor-ui/documentation/components/chip/appearance), [Chip events](https://www.telerik.com/blazor-ui/documentation/components/chip/events), [ChipList binding](https://www.telerik.com/blazor-ui/documentation/components/chiplist/data-bind), [ChipList templates](https://www.telerik.com/blazor-ui/documentation/components/chiplist/templates), [ChipList appearance](https://www.telerik.com/blazor-ui/documentation/components/chiplist/appearance), [keyboard demo](https://demos.telerik.com/blazor-ui/chiplist/keyboard-navigation), [RTL reference](https://www.telerik.com/blazor-ui/documentation/globalization/rtl-support), [ARIA reference](https://www.telerik.com/blazor-ui/documentation/components/chiplist/accessibility/wai-aria-support).', '',
@@ -43,11 +43,24 @@ rows = [
 ('ThemeBuilder / Telerik icon packages','Not compatible','Not compatible','Original themes/content slots; no commercial tooling compatibility claim.'),
 ('Native mobile platforms','Deferred','Deferred','User chose Web first. Native validation is a separate phase.')]
 lines += ['| '+' | '.join(row)+' |' for row in rows]
+lines += ['', '## ToggleButton and ButtonGroup audit (0.26)', '',
+'Sources: [ToggleButton overview](https://www.telerik.com/blazor-ui/documentation/components/togglebutton/overview), [ToggleButton appearance](https://www.telerik.com/blazor-ui/documentation/components/togglebutton/appearance), [ButtonGroup overview](https://www.telerik.com/blazor-ui/documentation/components/buttongroup/overview), [button kinds and visibility](https://www.telerik.com/blazor-ui/documentation/components/buttongroup/buttons), [events](https://www.telerik.com/blazor-ui/documentation/components/buttongroup/events).', '',
+'| Feature | Blazor and Flutter Web | Remaining difference |', '|---|---|---|',
+'| Controlled single/multiple selection and disabled state | Implemented; existing rules retained | Defaults and callback API differ; 50-item cap remains |',
+'| Mixed commands and toggles, independent click | Implemented in 0.26 | NgOption predicates and ID callbacks, not declarative Telerik child types/event args |',
+'| Visibility without losing selected state | Implemented in 0.26 | Application owns focus after hiding the focused item |',
+'| Decorative icons/images and custom content | Implemented slots in 0.26 | No Telerik icon package or built-in image loader |',
+'| Size, rounded, five fill modes, eleven color tokens | Implemented in 0.26; shared per-item override | Original theme values/defaults; no exact pixel or ThemeBuilder compatibility |',
+'| Identity, accessible names/help, toggle focus | Implemented platform contracts in 0.26 | CSS/DOM hooks are Blazor-only; Flutter uses Semantics and FocusNode |',
+'| Keyboard activation | Native Tab/Shift+Tab and Enter/Space | No composite arrow navigation; TabIndex limited to -1/0 |',
+'| Layout | Horizontal wrapping and vertical groups | Width belongs to application layout; no dedicated Width parameter |',
+'| Other reference APIs | Not complete | Native submit/reset type, arbitrary HTML attributes and full inherited API audit remain; screen-reader certification unverified |',
+'', 'No full-parity verdict: the component block is usable and documented, with remaining reference/API gaps recorded above.']
 lines += ['', 'Dragging, editable tag input and virtualization are not established requirements in the audited Chip/ChipList references. They are optional extension proposals, not invented parity gaps.', '', 'See [capability notes](chips.md), [verification evidence](verification.md) and the [manual](manual/README.md).', '', '## Complete catalogue inventory', '', 'The inventory includes chart modes as separate entries. “Not assessed” means the full reference feature checklist has not yet been completed; earlier capability documents remain useful evidence for implemented subsets.', '', '| Reference component | Blazor availability | Flutter availability | Full feature audit |', '|---|---|---|---|']
 for c in catalog['components']:
     cells=[]
     for platform in ('blazor','flutter'):
         v=c[platform];cells.append('Implemented subset: '+v['component'] if v['component'] else 'Not implemented')
-    lines.append(f"| [{c['name']}]({c['reference']}) | {' | '.join(cells)} | "+('Partial — matrix above' if c['name'] in ('Chip','ChipList') else 'Not assessed')+' |')
+    lines.append(f"| [{c['name']}]({c['reference']}) | {' | '.join(cells)} | "+('Partial — matrix above' if c['name'] in ('Chip','ChipList','ToggleButton','ButtonGroup') else 'Not assessed')+' |')
 (root/'docs/parity.md').write_text('\n'.join(lines)+'\n')
 print(f"Generated {len(catalog['components'])} parity inventory entries")
