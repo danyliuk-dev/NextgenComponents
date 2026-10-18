@@ -104,7 +104,7 @@ abstract final class NgChipRules {
 
 class NgChip extends StatelessWidget {
   final String label;
-  final String? semanticIdentifier, semanticHint;
+  final String? semanticIdentifier, semanticHint, semanticLabel;
   final int tabIndex;
   final String? removeLabel;
   final bool value, selectable, disabled;
@@ -117,6 +117,7 @@ class NgChip extends StatelessWidget {
     required this.label,
     this.tabIndex = 0,
     this.semanticIdentifier,
+    this.semanticLabel,
     this.semanticHint,
     this.removeLabel,
     this.value = false,
@@ -136,6 +137,9 @@ class NgChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     NgChipRules.validateTabIndex(tabIndex);
+    if (semanticLabel != null && semanticLabel!.trim().isEmpty) {
+      throw ArgumentError("semanticLabel must be nonblank when supplied.");
+    }
     NgChipRules.validateSemantics(semanticIdentifier, semanticHint);
     final content = _buildContent(context);
     final annotated = semanticIdentifier == null && semanticHint == null
@@ -190,7 +194,7 @@ class NgChip extends StatelessWidget {
       ),
     );
     final text = Semantics(
-      label: label,
+      label: semanticLabel ?? label,
       excludeSemantics: true,
       child: child ?? Text(label),
     );
@@ -260,7 +264,11 @@ class NgChip extends StatelessWidget {
         Opacity(
           opacity: disabled ? .5 : 1,
           child: remove == null
-              ? Semantics(label: label, excludeSemantics: true, child: chip)
+              ? Semantics(
+                  label: semanticLabel ?? label,
+                  excludeSemantics: true,
+                  child: chip,
+                )
               : chip,
         ),
       );
@@ -293,7 +301,7 @@ class NgChip extends StatelessWidget {
     );
     return !selectable && onRemove == null
         ? Semantics(
-            label: label,
+            label: semanticLabel ?? label,
             button: true,
             enabled: !disabled,
             onTap: disabled ? null : activate,

@@ -3,6 +3,95 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:nextgen_components/nextgen_components.dart';
 
 void main() {
+  testWidgets(
+    'accessible chip name updates independently of text and removal',
+    (t) async {
+      final handle = t.ensureSemantics();
+      String? name = 'CI — Continuous integration';
+      var selected = false, removed = false;
+      late StateSetter update;
+      await t.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: StatefulBuilder(
+              builder: (context, setState) {
+                update = setState;
+                return NgChip(
+                  label: 'CI',
+                  semanticLabel: name,
+                  value: selected,
+                  onChanged: (v) => setState(() => selected = v),
+                  onRemove: () => removed = true,
+                );
+              },
+            ),
+          ),
+        ),
+      );
+      expect(find.text('CI'), findsOneWidget);
+      expect(find.text('CI — Continuous integration'), findsNothing);
+      expect(
+        find.bySemanticsLabel(RegExp('CI — Continuous integration')),
+        findsWidgets,
+      );
+      await t.tap(find.text('CI'));
+      await t.pumpAndSettle();
+      expect(selected, isTrue);
+      update(() => name = 'CI — Build completed');
+      await t.pumpAndSettle();
+      expect(
+        find.bySemanticsLabel(RegExp('CI — Build completed')),
+        findsWidgets,
+      );
+      expect(selected, isTrue);
+      expect(find.byTooltip('Remove CI'), findsOneWidget);
+      await t.tap(find.byTooltip('Remove CI'));
+      await t.pumpAndSettle();
+      expect(removed, isTrue);
+      expect(selected, isTrue);
+      update(() => name = null);
+      await t.pumpAndSettle();
+      expect(find.bySemanticsLabel(RegExp('^CI')), findsWidgets);
+      expect(find.bySemanticsLabel(RegExp('Build completed')), findsNothing);
+      handle.dispose();
+    },
+  );
+  testWidgets(
+    'static, command and disabled chips retain accessible name override',
+    (t) async {
+      final handle = t.ensureSemantics();
+      for (final mode in ['static', 'command', 'disabled']) {
+        var clicked = false;
+        await t.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: NgChip(
+                label: 'CI',
+                semanticLabel: 'CI status',
+                selectable: false,
+                disabled: mode == 'disabled',
+                onClick: mode == 'static' ? null : () => clicked = true,
+              ),
+            ),
+          ),
+        );
+        expect(find.bySemanticsLabel('CI status'), findsWidgets);
+        await t.tap(find.text('CI'));
+        await t.pumpAndSettle();
+        expect(clicked, mode == 'command');
+      }
+      handle.dispose();
+    },
+  );
+  testWidgets('blank accessible chip name is rejected', (t) async {
+    await t.pumpWidget(
+      const MaterialApp(
+        home: NgChip(label: 'CI', semanticLabel: '  '),
+      ),
+    );
+    expect(t.takeException(), isArgumentError);
+  });
+
   testWidgets('list identity and hint update without replacing named actions', (
     t,
   ) async {

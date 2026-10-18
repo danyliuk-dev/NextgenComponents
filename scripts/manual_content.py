@@ -1762,3 +1762,24 @@ To try the selection-only contract, omit OnRemove/onRemove from the compiled exa
 
 D['NgChipList']['notes'] = D['NgChipList']['notes'].replace('Those roles, public accessibility hooks and screen-reader validation remain explicit gaps in the parity matrix.', 'Remaining role differences and screen-reader validation are tracked in the parity matrix; public identity, naming and help hooks are available since 0.22.')
 D['NgChipList']['blazor'] = '<h2>Selection-only listbox</h2>\n<NgChipList Label="Selection-only business topics" Items="data.Items" @bind-Value="selected" Multiple />\n' + D['NgChipList']['blazor']
+
+# 0.25: accessible names independent from visible chip text.
+D['NgChip']['notes'] += """
+
+### Accessible name versus visible text (0.25)
+
+AriaLabel (Blazor) and semanticLabel (Flutter) optionally replace the main chip's accessible name. Null uses Label/label, preserving existing applications. A supplied name must be nonblank; visible Label/label remains required and retains its 120-character limit. The override does not change visible text, templates, selection, click handling, disabled state or Tab traversal.
+
+Use a meaningful name that includes the visible wording: for a visible CI chip, use CI — Continuous integration. This helps people using speech input identify the same control. Avoid using an unrelated name to hide what a control actually does. For longer instructions use AriaDescribedBy/semanticHint instead of overloading the name. Resolve translations in the application and rebuild normally when they change.
+
+Blazor AriaLabelledBy takes precedence over AriaLabel when it references an existing naming element; AriaLabel then takes precedence over Label. Flutter semanticLabel is its native semantics override, not a DOM aria-labelledby API. Both static statuses and interactive chips support the override. A static Blazor chip with an explicit accessible name exposes a non-focusable group for that name.
+
+The remove action is independent: its default stays Remove {visible label}, and RemoveLabel/removeLabel can override it separately. The main accessible name never changes removal permissions or callbacks. ItemTemplate and ChildContent remain display-only; their text does not replace the explicit accessible name.
+
+The demo's Visible text and accessible name section changes CI's full name at runtime while keeping selected state. No screen-reader certification is implied. ChipList still uses each NgOption label for its main item name; this release adds the override to standalone NgChip only.
+"""
+D['NgChip']['notes'] = D['NgChip']['notes'].replace('The accessible name remains Label/label', 'The accessible name defaults to Label/label')
+D['NgChip']['blazor'] = D['NgChip']['blazor'].replace('Id="build-status"', 'Id="build-status" AriaLabel="Build succeeded — Open build activity"')
+D['NgChip']['dart'] = D['NgChip']['dart'].replace("semanticIdentifier: 'build-status'", "semanticIdentifier: 'build-status', semanticLabel: 'Build succeeded — Open build activity'")
+
+D['NgChip']['notes'] = D['NgChip']['notes'].replace('it supplies the accessible name regardless of the visual template.', 'it supplies the default accessible name regardless of the visual template; AriaLabel/semanticLabel can override the main name since 0.25.')

@@ -26,7 +26,7 @@ A missing selection callback prevents selection. Removal remains independently a
 
 Size/size accepts sm, md or lg. Rounded/rounded accepts sm, md, lg or full. FillMode/fillMode accepts solid or outline. ThemeColor/themeColor accepts base, info, success, warning or error. Invalid values throw; defaults remain md/full/outline/base for compatibility with 0.14. These defaults differ from Telerik. Colors adapt to light/dark themes; this is not a pixel-match claim.
 
-Leading/leading accepts decorative content such as a small icon or avatar. ChildContent/child replaces the visible label. RemoveContent/removeIcon replaces the removal symbol. Always retain a meaningful Label/label: it supplies the accessible name regardless of the visual template. Do not put buttons, links, text fields or other interactive controls inside these templates. The parent owns image loading and image errors; there is no built-in avatar downloader or Telerik SVG icon registry.
+Leading/leading accepts decorative content such as a small icon or avatar. ChildContent/child replaces the visible label. RemoveContent/removeIcon replaces the removal symbol. Always retain a meaningful Label/label: it supplies the default accessible name regardless of the visual template; AriaLabel/semanticLabel can override the main name since 0.25. Do not put buttons, links, text fields or other interactive controls inside these templates. The parent owns image loading and image errors; there is no built-in avatar downloader or Telerik SVG icon registry.
 
 OnClick/onClick is independent of selection: it runs after the selection callback on activation, also when selection is disabled. Removal only invokes the remove callback. Disabled chips invoke neither. A missing selection callback keeps selection unchanged, while an available click callback can still run a command. Blazor awaits the selection handler before invoking click; the next boolean is calculated before either callback. Flutter callbacks are synchronous. Do not use click to toggle selection a second time.
 
@@ -69,11 +69,24 @@ For a standalone Chip, the setting applies to both its main action and removal a
 Exclusion does not disable the control: mouse/touch, accessibility activation, application focus, arrow navigation and removal continue to work. A focused item is not blurred when the setting changes. FocusAsync()/NgChipListController.focus() can still enter a skipped list, and Tab then leaves it. Returning the setting to 0 restores its remembered enabled entry. Selection and collection state remain parent-owned. Provide another accessible way to enter a list when excluding it; the demo includes a Focus directional topics button.
 
 
+### Accessible name versus visible text (0.25)
+
+AriaLabel (Blazor) and semanticLabel (Flutter) optionally replace the main chip's accessible name. Null uses Label/label, preserving existing applications. A supplied name must be nonblank; visible Label/label remains required and retains its 120-character limit. The override does not change visible text, templates, selection, click handling, disabled state or Tab traversal.
+
+Use a meaningful name that includes the visible wording: for a visible CI chip, use CI — Continuous integration. This helps people using speech input identify the same control. Avoid using an unrelated name to hide what a control actually does. For longer instructions use AriaDescribedBy/semanticHint instead of overloading the name. Resolve translations in the application and rebuild normally when they change.
+
+Blazor AriaLabelledBy takes precedence over AriaLabel when it references an existing naming element; AriaLabel then takes precedence over Label. Flutter semanticLabel is its native semantics override, not a DOM aria-labelledby API. Both static statuses and interactive chips support the override. A static Blazor chip with an explicit accessible name exposes a non-focusable group for that name.
+
+The remove action is independent: its default stays Remove {visible label}, and RemoveLabel/removeLabel can override it separately. The main accessible name never changes removal permissions or callbacks. ItemTemplate and ChildContent remain display-only; their text does not replace the explicit accessible name.
+
+The demo's Visible text and accessible name section changes CI's full name at runtime while keeping selected state. No screen-reader certification is implied. ChipList still uses each NgOption label for its main item name; this release adds the override to standalone NgChip only.
+
+
 ## Blazor example
 
 ```razor
 <p id="build-help">Opens the build activity summary.</p>
-<NgChip TabIndex="0" Id="build-status" Class="build-status" AriaDescribedBy="build-help" Label="Build succeeded" Selectable="false" ThemeColor="success" FillMode="solid" Size="lg" Rounded="md" OnClick="()=>clicks++">
+<NgChip TabIndex="0" Id="build-status" AriaLabel="Build succeeded — Open build activity" Class="build-status" AriaDescribedBy="build-help" Label="Build succeeded" Selectable="false" ThemeColor="success" FillMode="solid" Size="lg" Rounded="md" OnClick="()=>clicks++">
     <Leading><span>✓</span></Leading>
     <ChildContent><strong>Build succeeded</strong></ChildContent>
 </NgChip>
@@ -95,7 +108,7 @@ Exclusion does not disable the control: mouse/touch, accessibility activation, a
 bool selected = false, visible = true;
 int clicks = 0;
 Widget build(BuildContext context) => Wrap(spacing: 8, children: [
-  NgChip(tabIndex: 0, semanticIdentifier: 'build-status', semanticHint: 'Opens the build activity summary.', label: 'Build succeeded', selectable: false, themeColor: 'success',
+  NgChip(tabIndex: 0, semanticIdentifier: 'build-status', semanticLabel: 'Build succeeded — Open build activity', semanticHint: 'Opens the build activity summary.', label: 'Build succeeded', selectable: false, themeColor: 'success',
     fillMode: 'solid', size: 'lg', rounded: 'md', leading: const Icon(Icons.check, size: 18),
     child: const Text('Build succeeded'), onClick: () => setState(() => clicks++)),
   if (visible) NgChip(label: 'Favourite', value: selected,
@@ -115,6 +128,7 @@ Names are case-sensitive. `?` permits null. `EditorRequired` parameters are mark
 | `TabIndex` | `int` | 0 | 0 keeps normal Tab participation; -1 skips forward/reverse Tab while preserving pointer/application focus. Other values are rejected. |
 | `Id` | `string?` | not set | See the behavior rules and model contract above. |
 | `Class` | `string?` | not set | See the behavior rules and model contract above. |
+| `AriaLabel` | `string?` | not set | Optional nonblank main-chip accessible name; labelled-by takes precedence. Visible text and removal names are unchanged. |
 | `AriaLabelledBy` | `string?` | not set | Space-separated existing DOM IDs for the accessible name; takes precedence over Label. |
 | `AriaDescribedBy` | `string?` | not set | Space-separated existing DOM IDs for contextual guidance; see target-element rules. |
 | `Label` | `string` | required | Visible label or accessible name. |
@@ -142,6 +156,7 @@ Names are case-sensitive. `?` permits null. `EditorRequired` parameters are mark
 | `label` | `String` | Visible label or accessible name. |
 | `semanticIdentifier` | `String?` | Optional nonblank automation identifier in the Flutter semantics tree; not a widget Key or DOM id. |
 | `semanticHint` | `String?` | Optional nonblank contextual guidance in the semantics tree; not a visible tooltip. |
+| `semanticLabel` | `String?` | Optional nonblank native accessible name for the main chip; null uses label. |
 | `tabIndex` | `int` | 0 keeps normal Tab participation; -1 skips forward/reverse Tab while preserving pointer/application focus. Other values are rejected. |
 | `removeLabel` | `String?` | Complete nonblank accessible removal name; for ChipList, a callback receiving NgOption. |
 | `value` | `bool` | Current value; see state ownership and model rules above. |
@@ -164,6 +179,7 @@ const NgChip({
     required this.label,
     this.tabIndex = 0,
     this.semanticIdentifier,
+    this.semanticLabel,
     this.semanticHint,
     this.removeLabel,
     this.value = false,

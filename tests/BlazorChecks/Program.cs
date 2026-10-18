@@ -235,6 +235,9 @@ var semanticHtml = await renderer.Dispatcher.InvokeAsync(async () => (await rend
 Rule(!semanticHtml.Contains("aria-pressed")&&!semanticHtml.Contains("aria-multiselectable"),"single listbox has selected state without pressed or multiselectable");
 var removableSemanticHtml = await renderer.Dispatcher.InvokeAsync(async () => (await renderer.RenderComponentAsync<NgChipList>(ParameterView.FromDictionary(new Dictionary<string,object?>{["Items"]=options,["OnRemove"]=EventCallback.Factory.Create<string>(new object(),_=>{})}))).ToHtmlString());
 Rule(removableSemanticHtml.Contains("role=\"group\"")&&!removableSemanticHtml.Contains("role=\"option\"")&&removableSemanticHtml.Contains("aria-pressed"),"removable chips retain separate accessible buttons");
+await Check<NgChip>(new(){["Label"]="CI",["AriaLabel"]="CI — Continuous integration",["Value"]=true,["OnRemove"]=EventCallback.Factory.Create(new object(),()=>{})},"aria-label=\"CI &#x2014; Continuous integration\"","aria-pressed=\"true\"","Remove CI",">CI</button>");
+await Check<NgChip>(new(){["Label"]="CI",["AriaLabel"]="CI status",["Selectable"]=false},"role=\"group\"","aria-label=\"CI status\"");
+try { await Check<NgChip>(new(){["Label"]="CI",["AriaLabel"]="  "});throw new Exception("Blank accessible name accepted"); } catch(ArgumentException){Rule(true,"blank chip accessible name rejected");}
 await Check<NgChipList>(new(){["Items"]=Array.Empty<NgOption>()},"No tags","role=\"listbox\"");
 await Check<NgChipList>(new(){["Items"]=options,["Value"]=new string[]{"a"},["OnRemove"]=EventCallback.Factory.Create<string>(new object(),_=>{})},"Remove Alpha","Remove Beta","ng-chip-selected","disabled");
 var enabledChip = await renderer.Dispatcher.InvokeAsync(async () => (await renderer.RenderComponentAsync<NgChip>(ParameterView.FromDictionary(new Dictionary<string,object?>{["Label"]="Tag",["Selectable"]=false,["OnRemove"]=EventCallback.Factory.Create(new object(),()=>{})}))).ToHtmlString());

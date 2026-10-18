@@ -31,3 +31,7 @@ See [NgChip](manual/NgChip.md) and [NgChipList](manual/NgChipList.md) for compil
 Selectable lists without an OnRemove callback now expose a horizontal listbox with selected options, including multiple-selection metadata. Removable lists remain groups of buttons so each remove action stays accessible. Changing the callback or Multiple at runtime preserves selection and remembered focus. Standalone Chip is unchanged. See the manual for the exact contract and the Selection semantics demo for interactive comparison.
 
 Flutter retains its existing native chip semantics; its installed SDK has no listbox/option role values. Type-ahead, removable-list parity and screen-reader validation remain open.
+
+## 0.25: independent accessible Chip names
+
+Standalone Chip now accepts AriaLabel (Blazor) or semanticLabel (Flutter). It defaults to the visible label and supports runtime updates without resetting selection. Removal retains its own name and action. The English manual includes compiled examples and explains precedence, static/disabled states and label-in-name guidance. ChipList item names still use NgOption labels; existing listbox and screen-reader limitations remain open.

@@ -56,6 +56,7 @@ class _ChipsGalleryState extends State<ChipsGallery> {
         'Removed ${item.name} · owner ${item.owner} · ${records.length} records';
   });
   bool updatedMetadata = false;
+  bool expandedChipName = false, ciSelected = false;
   String get businessHeading =>
       updatedMetadata ? 'Assigned business records' : 'Business records';
   String get businessHelp => updatedMetadata
@@ -334,7 +335,7 @@ class _ChipsGalleryState extends State<ChipsGallery> {
               ),
               const SizedBox(height: 16),
               const Text(
-                'FLUTTER WEB / CHIPS 0.24 · Select topics, remove a tag, or show a compact status. Your application owns every change.',
+                'FLUTTER WEB / CHIPS 0.25 · Select topics, remove a tag, or show a compact status. Your application owns every change.',
               ),
               const SizedBox(height: 28),
               Wrap(
@@ -419,7 +420,7 @@ class _ChipsGalleryState extends State<ChipsGallery> {
                 ],
               ),
               const Text(
-                'Templates can show an icon, avatar or custom text. The accessible name always comes from the label.',
+                'Templates can show an icon, avatar or custom text. By default, the accessible name comes from the label.',
               ),
               const SizedBox(height: 12),
               Wrap(
@@ -549,6 +550,35 @@ class _ChipsGalleryState extends State<ChipsGallery> {
               const Text(
                 'Removal is a request. Enable protection to reject removal of Design without changing the list.',
               ),
+              const SizedBox(height: 32),
+              Text(
+                'Visible text and accessible name',
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+              const Text(
+                'The visible abbreviation stays CI. Its accessible name includes the abbreviation and its meaning. Updating the name keeps selection unchanged.',
+              ),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: NgChip(
+                  label: 'CI',
+                  semanticIdentifier: 'ci-chip',
+                  semanticLabel: expandedChipName
+                      ? 'CI — Continuous integration, build completed'
+                      : 'CI — Continuous integration',
+                  value: ciSelected,
+                  onChanged: (v) => setState(() => ciSelected = v),
+                ),
+              ),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: TextButton(
+                  onPressed: () =>
+                      setState(() => expandedChipName = !expandedChipName),
+                  child: const Text('Update chip name'),
+                ),
+              ),
+              Text('CI selected: $ciSelected'),
               const SizedBox(height: 32),
               businessExample(),
               directionExample(),

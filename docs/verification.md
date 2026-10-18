@@ -382,3 +382,12 @@ Remaining: listbox/option semantics, broader traversal/API compatibility and scr
 - `scripts/chips-selection-tree-check.mjs` verified Chrome's actual accessibility tree: named horizontal listbox, selected Documentation option, disabled Locked option and single-select metadata. This is not screen-reader certification.
 - Inspected screenshots of Blazor, Flutter Web and the English manual with highlighted code and left navigation: `screenshots/chips024-blazor.png`, `screenshots/chips024-flutter.png`, `screenshots/chips024-manual.png`.
 - Remaining: removable-list listbox semantics, Flutter listbox/option roles, type-ahead/range selection and screen-reader verification. Mobile remains deferred. W3C listbox guidance does not support interactive controls inside options; removable lists deliberately retain separate accessible buttons.
+
+## 0.25 — Independent accessible names for standalone Chip
+
+- 229 Blazor rendering/rule checks passed; gallery build completed without warnings/errors. New coverage verifies independent main names, unchanged removal names, static named groups and rejection of blank overrides.
+- 108 Flutter tests passed; Dart analysis is clean. Added checks for runtime name updates with controlled selection, fallback to the visible label, separate removal, static/command/disabled states and blank-name rejection.
+- All 47 Blazor and 47 Flutter manual examples compile/analyze. All 94 code examples retain lossless syntax highlighting. Both gallery builds succeeded; Flutter's pre-existing CupertinoIcons font warning remains.
+- Visible foreground Chrome on local Linux/iMac, separate review-025 profile, CDP 9341: `scripts/chips-name-check.mjs blazor` and `flutter` use real pointer interactions and inspect the actual accessibility tree. Each verifies the original full name, selected state, then the updated full name with selection retained. The visible CI abbreviation stays unchanged. Flutter exports checkbox/checked; Blazor exports button/pressed.
+- Visually inspected both demos and the English manual with highlighted examples and tree navigation. Evidence: `screenshots/chips025-blazor.png`, `screenshots/chips025-flutter.png`, `screenshots/chips025-manual.png`.
+- This is the standalone AriaLabel/semanticLabel contract; ChipList item labels, listbox limitations, mobile deferral and lack of screen-reader certification remain as documented in the parity matrix.
