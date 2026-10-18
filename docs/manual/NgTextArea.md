@@ -14,23 +14,48 @@ The documentation launcher embeds these running examples here. Choose a framewor
 
 ## Behavior and practical rules
 
-Blazor uses InputBase<string?>: prefer @bind-Value, which supplies Value, ValueChanged and ValueExpression. With manual binding, supply ValueExpression even outside a form. Flutter initialValue is a starting value, not a controlled value: use TextEditingController for programmatic changes, do not combine it with initialValue, and dispose it in its owner. In a Flutter form validator returns null for valid input or an error string. Keep drafts separate from saved records. TextArea supports rows and multiline input; limits and required rules belong to the field/form configuration. A validation error must block saving the entire form.
+### Editing and ownership
+Blazor uses @bind-Value and InputBase/EditContext validation. Flutter uses an application-owned TextEditingController or initialValue, never both; initialValue is not a continuously controlled value. Dispose controllers and FocusNodes in their owner. Programmatic controller changes do not invoke onChanged.
+
+ReadOnly/readOnly permits focus, selection and copying without editing. Disabled/enabled=false prevents normal interaction. Placeholder is a hint, not a replacement for the visible label. HelperText/helperText is persistent guidance. Blazor merges its helper ID with caller-supplied aria-describedby.
+
+PrefixTemplate/SuffixTemplate and prefix/suffix accept decorative content beside the editor. Keep decoration short; provide separate labelled controls for interactive actions. These slots do not replace the field label or validator. Use FocusAsync after rendering in Blazor, or an owned focusNode.requestFocus() in Flutter.
+
+MaxLength must be positive when supplied. It limits user entry, not application data: validate on the server too. Browser maxlength counts UTF-16 units; Flutter counts grapheme clusters and displays its native counter. Emoji limits can therefore differ. Existing/programmatic overlong values are not silently truncated. Rows must be 1–30; this is a fixed-row editor, not automatic resizing.
+
+OnCommit is the Blazor native change event (normally blur, or Enter for a single-line input); ValueChanged still fires while typing. Flutter onSubmitted is the platform submission action, not a blur event; multiline Enter normally inserts a newline. These are deliberately documented platform contracts, not identical event timing.
+
+### Current scope
+No debounce, automatic resize, password mode, automatic clear button, full appearance variants or certified screen-reader parity. Native/mobile verification remains deferred. Application supplies localized labels, guidance and validation errors.
 
 ## Blazor example
 
 ```razor
-<NgTextArea Label="Description" @bind-Value="text" Rows="4" MaxLength="500"/>
-<p>@text</p>
-@code { private string? text="Initial text"; }
+<NgCheckBox Label="Read only" @bind-Value="locked"/>
+<NgTextArea @ref="editor" Label="Delivery notes" @bind-Value="text" ReadOnly="locked" MaxLength="80" HelperText="Use a short, descriptive note." OnCommit="v=>committed=v">
+<PrefixTemplate><span aria-hidden="true">✎</span></PrefixTemplate>
+</NgTextArea>
+<NgButton OnClick="()=>editor!.FocusAsync().AsTask()">Focus editor</NgButton>
+<p>Current: @text</p><p>Committed: @committed</p>
+@code { private NgTextArea? editor; private bool locked; private string? text="Design review",committed; }
+
 ```
 
 ## Flutter example
 
 ```dart
-final text = TextEditingController(text: 'Initial text');
-@override void dispose() { text.dispose(); super.dispose(); }
-Widget build(BuildContext context) => NgTextArea(label: 'Description',
-  controller: text, validator: (v) => v == null || v.trim().isEmpty ? 'Enter text' : null, rows: 4, maxLength: 500);
+bool locked = false; String submitted = '';
+final editor = TextEditingController(text:'Design review');
+final focus = FocusNode();
+@override void dispose(){editor.dispose();focus.dispose();super.dispose();}
+Widget build(BuildContext context)=>Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
+NgCheckBox(label:'Read only',value:locked,onChanged:(v)=>setState(()=>locked=v)),
+NgTextArea(label:'Delivery notes',controller:editor,focusNode:focus,readOnly:locked,maxLength:80,
+helperText:'Use a short, descriptive note.',prefix:const Icon(Icons.edit_outlined),
+onChanged:(_)=>setState((){}),onSubmitted:(v)=>setState(()=>submitted=v)),
+NgButton(onPressed:()=>focus.requestFocus(),child:const Text('Focus editor')),
+Text('Current: ${editor.text}'),Text('Submitted: $submitted')]);
+
 ```
 
 ## Blazor parameters and events
@@ -42,9 +67,14 @@ Names are case-sensitive. `?` permits null. `EditorRequired` parameters are mark
 | `Id` | `string` | "ng-"+Guid.NewGuid().ToString("N") | See the behavior rules and model contract above. |
 | `Label` | `string` | "Notes" | Visible label or accessible name. |
 | `Placeholder` | `string?` | not set | Hint displayed for empty input. |
-| `Rows` | `int` | 4 | See the behavior rules and model contract above. |
-| `MaxLength` | `int?` | not set | See the behavior rules and model contract above. |
 | `Disabled` | `bool` | false | Disable user interaction. |
+| `ReadOnly` | `bool` | false | Prevent changes while retaining supported viewing actions. |
+| `MaxLength` | `int?` | not set | See the behavior rules and model contract above. |
+| `HelperText` | `string?` | not set | See the behavior rules and model contract above. |
+| `PrefixTemplate` | `RenderFragment?` | not set | See the behavior rules and model contract above. |
+| `SuffixTemplate` | `RenderFragment?` | not set | See the behavior rules and model contract above. |
+| `OnCommit` | `EventCallback<string?>` | not set | See the behavior rules and model contract above. |
+| `Rows` | `int` | 4 | See the behavior rules and model contract above. |
 | `Value` | `string?` | model value | Current field value. |
 | `ValueChanged` | `EventCallback<string?>` | not set | Value change callback. |
 | `ValueExpression` | `Expression<Func<string?>>` | required | Supplied by @bind-Value; pass explicitly with manual binding. |
@@ -62,8 +92,15 @@ Names are case-sensitive. `?` permits null. `EditorRequired` parameters are mark
 | `onChanged` | `ValueChanged<String>?` | Store the new value using setState or your state manager. |
 | `validator` | `FormFieldValidator<String>?` | Return null when valid or a user-facing validation error. |
 | `rows` | `int` | See the behavior rules and model contract above. |
+| `placeholder` | `String?` | Hint displayed for empty input. |
 | `maxLength` | `int?` | See the behavior rules and model contract above. |
 | `enabled` | `bool` | See the behavior rules and model contract above. |
+| `readOnly` | `bool` | Prevent changes while retaining supported viewing actions. |
+| `focusNode` | `FocusNode?` | See the behavior rules and model contract above. |
+| `helperText` | `String?` | See the behavior rules and model contract above. |
+| `prefix` | `Widget?` | See the behavior rules and model contract above. |
+| `suffix` | `Widget?` | See the behavior rules and model contract above. |
+| `onSubmitted` | `ValueChanged<String>?` | See the behavior rules and model contract above. |
 
 ```dart
 const NgTextArea({
@@ -74,8 +111,15 @@ const NgTextArea({
     this.onChanged,
     this.validator,
     this.rows = 4,
+    this.placeholder,
     this.maxLength,
     this.enabled = true,
+    this.readOnly = false,
+    this.focusNode,
+    this.helperText,
+    this.prefix,
+    this.suffix,
+    this.onSubmitted,
   });
 ```
 

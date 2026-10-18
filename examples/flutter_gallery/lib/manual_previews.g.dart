@@ -68,17 +68,33 @@ Widget build(BuildContext context) => NgButton(primary: true,
 }
 class NgTextBoxExample extends StatefulWidget { const NgTextBoxExample({super.key}); @override State<NgTextBoxExample> createState()=>_NgTextBoxExampleState(); }
 class _NgTextBoxExampleState extends State<NgTextBoxExample> {
-final text = TextEditingController(text: 'Initial text');
-@override void dispose() { text.dispose(); super.dispose(); }
-Widget build(BuildContext context) => NgTextBox(label: 'Description',
-  controller: text, validator: (v) => v == null || v.trim().isEmpty ? 'Enter text' : null);
+bool locked = false; String submitted = '';
+final editor = TextEditingController(text:'Design review');
+final focus = FocusNode();
+@override void dispose(){editor.dispose();focus.dispose();super.dispose();}
+Widget build(BuildContext context)=>Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
+NgCheckBox(label:'Read only',value:locked,onChanged:(v)=>setState(()=>locked=v)),
+NgTextBox(label:'Project name',controller:editor,focusNode:focus,readOnly:locked,maxLength:80,
+helperText:'Use a short, descriptive name.',prefix:const Icon(Icons.edit_outlined),
+onChanged:(_)=>setState((){}),onSubmitted:(v)=>setState(()=>submitted=v)),
+NgButton(onPressed:()=>focus.requestFocus(),child:const Text('Focus editor')),
+Text('Current: ${editor.text}'),Text('Submitted: $submitted')]);
+
 }
 class NgTextAreaExample extends StatefulWidget { const NgTextAreaExample({super.key}); @override State<NgTextAreaExample> createState()=>_NgTextAreaExampleState(); }
 class _NgTextAreaExampleState extends State<NgTextAreaExample> {
-final text = TextEditingController(text: 'Initial text');
-@override void dispose() { text.dispose(); super.dispose(); }
-Widget build(BuildContext context) => NgTextArea(label: 'Description',
-  controller: text, validator: (v) => v == null || v.trim().isEmpty ? 'Enter text' : null, rows: 4, maxLength: 500);
+bool locked = false; String submitted = '';
+final editor = TextEditingController(text:'Design review');
+final focus = FocusNode();
+@override void dispose(){editor.dispose();focus.dispose();super.dispose();}
+Widget build(BuildContext context)=>Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
+NgCheckBox(label:'Read only',value:locked,onChanged:(v)=>setState(()=>locked=v)),
+NgTextArea(label:'Delivery notes',controller:editor,focusNode:focus,readOnly:locked,maxLength:80,
+helperText:'Use a short, descriptive note.',prefix:const Icon(Icons.edit_outlined),
+onChanged:(_)=>setState((){}),onSubmitted:(v)=>setState(()=>submitted=v)),
+NgButton(onPressed:()=>focus.requestFocus(),child:const Text('Focus editor')),
+Text('Current: ${editor.text}'),Text('Submitted: $submitted')]);
+
 }
 class NgNumericTextBoxExample extends StatefulWidget { const NgNumericTextBoxExample({super.key}); @override State<NgNumericTextBoxExample> createState()=>_NgNumericTextBoxExampleState(); }
 class _NgNumericTextBoxExampleState extends State<NgNumericTextBoxExample> {
@@ -175,11 +191,20 @@ Widget build(BuildContext context) => NgDateRangePicker(label: 'Period', value: 
 }
 class NgFormExample extends StatefulWidget { const NgFormExample({super.key}); @override State<NgFormExample> createState()=>_NgFormExampleState(); }
 class _NgFormExampleState extends State<NgFormExample> {
-String name = '';
-Widget build(BuildContext context) => NgForm(submitLabel: 'Save',
-  onValidSubmit: () => debugPrint('Saved: $name'),
-  child: NgTextBox(label: 'Name', onChanged: (v) => name = v,
-    validator: (v) => v == null || v.trim().isEmpty ? 'Enter a name' : null));
+int revision = 0; bool fail = false; String name = '', notes = '', status = 'Not saved';
+Widget build(BuildContext context)=>Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
+NgCheckBox(label:'Simulate save failure',value:fail,onChanged:(v)=>setState(()=>fail=v)),
+NgForm(key:ValueKey(revision),submitLabel:'Save application',onValidSubmit:()async{
+final version=revision,denied=fail;final snapshot=name;
+await Future<void>.delayed(const Duration(seconds:1));
+if(denied)throw StateError('Demo failure');
+if(mounted&&version==revision)setState(()=>status='Saved: $snapshot');
+},child:Column(children:[
+NgTextBox(label:'Application name',initialValue:name,maxLength:80,helperText:'Required before saving.',onChanged:(v)=>name=v,validator:(v)=>v==null||v.trim().isEmpty?'Enter an application name.':null),
+NgTextArea(label:'Notes',initialValue:notes,rows:3,maxLength:200,onChanged:(v)=>notes=v)])),
+NgButton(onPressed:()=>setState((){revision++;name='';notes='';status='Not saved';}),child:const Text('Reset application')),
+Text(status)]);
+
 }
 class NgTabsExample extends StatefulWidget { const NgTabsExample({super.key}); @override State<NgTabsExample> createState()=>_NgTabsExampleState(); }
 class _NgTabsExampleState extends State<NgTabsExample> {

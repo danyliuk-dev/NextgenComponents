@@ -1,13 +1,24 @@
-<EditForm Model="Model" OnValidSubmit="OnValidSubmit" OnInvalidSubmit="OnInvalidSubmit" FormName="Name" class="ng-form">
+@implements IDisposable
+<EditForm Model="Model" OnValidSubmit="Submit" OnInvalidSubmit="Invalid" FormName="Name" class="ng-form">
 <DataAnnotationsValidator />
-@if(ShowSummary) { <div class="ng-validation-summary" role="status"><ValidationSummary /></div> }
-@ChildContent
+@if(ShowSummary){<div class="ng-validation-summary" role="status"><ValidationSummary /></div>}
+<fieldset class="ng-form-fields" disabled="@(Disabled||busy)" aria-busy="@(busy?"true":"false")">@ChildContent</fieldset>
+@if(busy){<p role="status">@BusyText</p>}
+@if(error){<p class="ng-form-error" role="alert">@ErrorText</p>}
 </EditForm>
 @code {
- [Parameter, EditorRequired] public object Model { get; set; } = default!;
- [Parameter] public string Name { get; set; } = "ng-form";
- [Parameter] public bool ShowSummary { get; set; } = true;
- [Parameter] public RenderFragment? ChildContent { get; set; }
- [Parameter] public EventCallback<EditContext> OnValidSubmit { get; set; }
- [Parameter] public EventCallback<EditContext> OnInvalidSubmit { get; set; }
+ [Parameter,EditorRequired] public object Model {get;set;}=default!;
+ [Parameter] public string Name {get;set;}="ng-form";
+ [Parameter] public bool ShowSummary {get;set;}=true;
+ [Parameter] public bool Disabled {get;set;}
+ [Parameter] public string BusyText {get;set;}="Saving…";
+ [Parameter] public string ErrorText {get;set;}="Unable to save. Try again.";
+ [Parameter] public RenderFragment? ChildContent {get;set;}
+ [Parameter] public EventCallback<EditContext> OnValidSubmit {get;set;}
+ [Parameter] public EventCallback<EditContext> OnInvalidSubmit {get;set;}
+ private bool busy,error,disposed;private object? previous;private int revision;
+ protected override void OnParametersSet(){if(!ReferenceEquals(previous,Model)){previous=Model;revision++;busy=false;error=false;}}
+ private async Task Submit(EditContext context){if(Disabled||busy||disposed||!OnValidSubmit.HasDelegate)return;var version=++revision;busy=true;error=false;try{await OnValidSubmit.InvokeAsync(context);}catch(Exception){if(!disposed&&revision==version)error=true;}finally{if(!disposed&&revision==version)busy=false;}}
+ private Task Invalid(EditContext context)=>Disabled||busy||disposed?Task.CompletedTask:OnInvalidSubmit.InvokeAsync(context);
+ public void Dispose(){disposed=true;revision++;}
 }

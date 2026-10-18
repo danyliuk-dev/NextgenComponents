@@ -32,3 +32,11 @@ Invalid drafts remain visible and block form validation without overwriting the 
 - Light/dark and normal/compact themes share tokens. Popups and native picker rendering retain framework/browser differences.
 
 Next major stage: data presentation and navigation (grid, tree, paging and related controls). Mobile and native desktop builds and physical-device interaction remain deferred by agreement.
+
+## Text editors and form submission (0.29)
+
+TextBox and TextArea add read-only mode, helper text, prefix/suffix decoration and public focus hooks. TextBox now also has a length limit; TextArea rejects invalid row/length configuration. Blazor merges helper descriptions with external ARIA description IDs. OnCommit uses the native change event; Flutter onSubmitted is the platform submission action. Length counting follows each platform and differs for emoji.
+
+Form awaits asynchronous saving, blocks repeated submissions and shows configurable busy/error text. Failed saves can be retried. Flutter preserves field state when validation summaries appear or disappear. Application-owned drafts, transport cancellation and backend idempotency remain separate. Replace model and key to reset the entire form.
+
+The Forms and dates gallery demonstrates these features with read-only text, simulated save failure and async saving. Detailed examples: [TextBox](manual/NgTextBox.md), [TextArea](manual/NgTextArea.md), [Form](manual/NgForm.md). Full feature gaps are recorded in [parity](parity.md).

@@ -1,4 +1,8 @@
 @* Generated from scripts/manual_content.py *@
-<NgTextArea Label="Description" @bind-Value="text" Rows="4" MaxLength="500"/>
-<p>@text</p>
-@code { private string? text="Initial text"; }
+<NgCheckBox Label="Read only" @bind-Value="locked"/>
+<NgTextArea @ref="editor" Label="Delivery notes" @bind-Value="text" ReadOnly="locked" MaxLength="80" HelperText="Use a short, descriptive note." OnCommit="v=>committed=v">
+<PrefixTemplate><span aria-hidden="true">✎</span></PrefixTemplate>
+</NgTextArea>
+<NgButton OnClick="()=>editor!.FocusAsync().AsTask()">Focus editor</NgButton>
+<p>Current: @text</p><p>Committed: @committed</p>
+@code { private NgTextArea? editor; private bool locked; private string? text="Design review",committed; }

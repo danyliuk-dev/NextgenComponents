@@ -158,3 +158,9 @@ textarea.ng-input { resize:vertical; min-height:80px; }
 .ng-wizard[data-position=start],.ng-wizard[data-position=end]{display:grid;grid-template-columns:minmax(150px,240px) minmax(0,1fr);gap:24px;align-items:start}
 .ng-wizard[data-position=end]{grid-template-columns:minmax(0,1fr) minmax(150px,240px)}.ng-wizard[data-position=end]>.ng-wizard-stepper{grid-column:2;grid-row:1}.ng-wizard[data-position=end]>.ng-wizard-body{grid-column:1;grid-row:1}
 @media(max-width:600px){.ng-wizard[data-position=start],.ng-wizard[data-position=end]{display:flex;flex-direction:column}.ng-wizard-stepper{min-width:0;width:100%}}
+
+/* Text adornments remain siblings of the labelled editor. */
+.ng-text-editor{display:flex;align-items:center;gap:8px;min-width:0}.ng-text-editor>.ng-input{min-width:0;flex:1}.ng-input-adornment{flex-shrink:0;color:var(--ng-muted)}.ng-field>small{color:var(--ng-muted)}.ng-input[readonly]{background:var(--ng-bg)}
+.ng-form-fields{border:0;padding:0;margin:0;min-width:0}.ng-form-error{color:var(--ng-error)}
+
+.ng-text-field{margin-block-end:12px}

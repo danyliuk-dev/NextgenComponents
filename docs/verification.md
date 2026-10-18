@@ -443,3 +443,17 @@ Both Web implementations add indicator/label templates, three display modes, RTL
 - Visual evidence: [Blazor RTL indicators](screenshots/steps028-blazor-side-indicators.png), [Blazor narrow](screenshots/steps028-blazor-side-narrow.png), [Flutter RTL indicators](screenshots/steps028-flutter-side-indicators.png), [Flutter narrow](screenshots/steps028-flutter-side-narrow.png), [completed Flutter workflow](screenshots/steps028-flutter-completed.png).
 
 Reset invalidates local pending results; it does not cancel network operations or undo external save effects. Automatic form integration, per-step event/template overrides, complete localization, focus transfer/arrow navigation, animation and native/mobile/screen-reader certification remain open. Next planned block: existing forms and input components.
+
+## TextBox, TextArea and Form block (0.29, 2026-10-19)
+
+Both Web implementations add text read-only mode, helper text, decorative prefix/suffix slots and focus hooks. TextBox adds a positive maximum length. TextArea validates row/length configuration. Form awaits asynchronous saves, prevents duplicate submission, blocks content interaction while saving, reports invalid submissions and displays configurable busy/failure text with retry.
+
+- **250 Blazor rendering/data checks** and **127 Flutter tests** passed. New tests cover helper/ARIA merging, read-only rendering and focus, parameter validation, required read-only values, invalid submit, duplicate pending callbacks, retry and disposal during a failing save.
+- Tests caught Flutter field state being lost when the validation summary disappeared. A stable content key now preserves the draft; the invalid-input → correction → failed save → successful retry regression passes.
+- Blazor gallery builds passed with zero warnings/errors. Flutter Web release builds and Dart analysis passed. Existing CupertinoIcons font-family build warning remains. All **47 Blazor + 47 Flutter manual examples** compile/analyze, and **94 lossless highlighting checks** pass.
+- Coordinated visible Chrome on local Linux/iMac: `scripts/text-form-check.mjs blazor|flutter` passed public focus, read-only typing protection, text editing, validation failure, simulated save failure, draft retention, retry, pending-save reset and 390 px layout.
+- `scripts/text-form-gallery-check.mjs blazor|flutter` checked the actual Forms and dates gallery, read-only text, async workshop saving with the complete result, dark theme and narrow viewport.
+- All six updated live manual previews loaded without captured runtime exceptions, console errors or error panels. Screenshot inspection also led to added spacing below Blazor text guidance.
+- Evidence: [Blazor gallery](screenshots/forms029-blazor-gallery-dark.png), [Flutter gallery](screenshots/forms029-flutter-gallery-dark.png), [Blazor live form](screenshots/forms029-blazor-manual.png), [Flutter save error](screenshots/forms029-flutter-error.png), [Flutter narrow form](screenshots/forms029-flutter-narrow.png).
+
+No full Telerik parity or native/screen-reader certification is claimed. Automatic form generation, conditional schema, appearance variants, debounce, clear/password modes and auto-resize remain tracked gaps. Browser and Flutter length counting and commit-event timing differ as documented. Reset does not cancel transport or roll back external save effects. Next block: existing AutoComplete, ComboBox and MultiSelect.

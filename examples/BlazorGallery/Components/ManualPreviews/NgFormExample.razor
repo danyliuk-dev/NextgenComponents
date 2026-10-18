@@ -1,11 +1,15 @@
 @* Generated from scripts/manual_content.py *@
-<NgForm Model="model" OnValidSubmit="Save">
-    <NgTextBox Label="Name" @bind-Value="model.Name"/>
-    <NgButton Type="submit" Primary>Save</NgButton>
+<NgCheckBox Label="Simulate save failure" @bind-Value="fail"/>
+<NgForm @key="model" Model="model" OnValidSubmit="Save">
+<NgTextBox Label="Application name" @bind-Value="model.Name" MaxLength="80" HelperText="Required before saving."/>
+<NgTextArea Label="Notes" @bind-Value="model.Notes" Rows="3" MaxLength="200"/>
+<NgButton Type="submit" Primary>Save application</NgButton>
 </NgForm>
-<p>@status</p>
+<NgButton OnClick="Reset">Reset application</NgButton>
+<p role="status">@status</p>
 @code {
- private Draft model=new(); private string? status;
- private void Save()=>status=$"Saved: {model.Name}";
- public class Draft { [System.ComponentModel.DataAnnotations.Required] public string? Name {get;set;} }
+ private Draft model=new(); private bool fail; private string status="Not saved";
+ private void Reset(){model=new();status="Not saved";}
+ private async Task Save(){var draft=model;var denied=fail;var name=draft.Name;await Task.Delay(1000);if(denied)throw new InvalidOperationException();if(ReferenceEquals(model,draft))status=$"Saved: {name}";}
+ public class Draft{[System.ComponentModel.DataAnnotations.Required] public string? Name{get;set;} public string? Notes{get;set;}}
 }

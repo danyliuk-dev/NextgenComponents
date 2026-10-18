@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'components.dart';
 
@@ -8,8 +9,13 @@ class NgTextArea extends StatelessWidget {
   final ValueChanged<String>? onChanged;
   final FormFieldValidator<String>? validator;
   final int rows;
+  final String? placeholder;
   final int? maxLength;
-  final bool enabled;
+  final bool enabled, readOnly;
+  final FocusNode? focusNode;
+  final String? helperText;
+  final Widget? prefix, suffix;
+  final ValueChanged<String>? onSubmitted;
   const NgTextArea({
     super.key,
     this.label = 'Notes',
@@ -18,22 +24,46 @@ class NgTextArea extends StatelessWidget {
     this.onChanged,
     this.validator,
     this.rows = 4,
+    this.placeholder,
     this.maxLength,
     this.enabled = true,
+    this.readOnly = false,
+    this.focusNode,
+    this.helperText,
+    this.prefix,
+    this.suffix,
+    this.onSubmitted,
   });
   @override
-  Widget build(BuildContext context) => TextFormField(
-    controller: controller,
-    initialValue: initialValue,
-    onChanged: onChanged,
-    validator: validator,
-    minLines: rows,
-    maxLines: rows,
-    maxLength: maxLength,
-    enabled: enabled,
-    autovalidateMode: AutovalidateMode.onUserInteraction,
-    decoration: InputDecoration(labelText: label, alignLabelWithHint: true),
-  );
+  Widget build(BuildContext context) {
+    if (maxLength != null && maxLength! <= 0)
+      throw ArgumentError('maxLength must be positive.');
+    if (controller != null && initialValue != null)
+      throw ArgumentError('Use controller or initialValue, not both.');
+    if (rows < 1 || rows > 30) throw ArgumentError('Use 1–30 rows.');
+    return TextFormField(
+      controller: controller,
+      initialValue: initialValue,
+      onChanged: onChanged,
+      validator: validator,
+      minLines: rows,
+      maxLines: rows,
+      maxLength: maxLength,
+      enabled: enabled,
+      readOnly: readOnly,
+      focusNode: focusNode,
+      onFieldSubmitted: onSubmitted,
+      autovalidateMode: AutovalidateMode.onUserInteraction,
+      decoration: InputDecoration(
+        labelText: label,
+        hintText: placeholder,
+        helperText: helperText,
+        prefixIcon: prefix,
+        suffixIcon: suffix,
+        alignLabelWithHint: true,
+      ),
+    );
+  }
 }
 
 class NgAutoComplete extends StatelessWidget {
@@ -302,7 +332,10 @@ class _NgMultiSelectState extends State<NgMultiSelect> {
 
 class NgForm extends StatefulWidget {
   final Widget child;
-  final VoidCallback onValidSubmit;
+  final FutureOr<void> Function() onValidSubmit;
+  final VoidCallback? onInvalidSubmit;
+  final bool enabled, showSummary;
+  final String busyText, errorText;
   final String submitLabel;
   final GlobalKey<FormState>? formKey;
   const NgForm({
@@ -310,6 +343,11 @@ class NgForm extends StatefulWidget {
     required this.child,
     required this.onValidSubmit,
     this.submitLabel = 'Save',
+    this.onInvalidSubmit,
+    this.enabled = true,
+    this.showSummary = true,
+    this.busyText = 'Saving…',
+    this.errorText = 'Unable to save. Try again.',
     this.formKey,
   });
   @override
@@ -318,14 +356,35 @@ class NgForm extends StatefulWidget {
 
 class _NgFormState extends State<NgForm> {
   final internalKey = GlobalKey<FormState>();
-  bool invalid = false;
+  bool invalid = false, busy = false, error = false;
+  Future<void> submit() async {
+    if (!mounted || busy || !widget.enabled) return;
+    final valid = (widget.formKey ?? internalKey).currentState!.validate();
+    setState(() {
+      invalid = !valid;
+      error = false;
+    });
+    if (!valid) {
+      widget.onInvalidSubmit?.call();
+      return;
+    }
+    setState(() => busy = true);
+    try {
+      await widget.onValidSubmit();
+    } catch (_) {
+      if (mounted) setState(() => error = true);
+    } finally {
+      if (mounted) setState(() => busy = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) => Form(
     key: widget.formKey ?? internalKey,
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (invalid)
+        if (invalid && widget.showSummary)
           Padding(
             padding: const EdgeInsets.only(bottom: 16),
             child: Semantics(
@@ -336,18 +395,29 @@ class _NgFormState extends State<NgForm> {
               ),
             ),
           ),
-        widget.child,
+        AbsorbPointer(
+          key: const ValueKey('ng-form-content'),
+          absorbing: busy || !widget.enabled,
+          child: ExcludeFocus(
+            excluding: busy || !widget.enabled,
+            child: widget.child,
+          ),
+        ),
+        if (busy) Semantics(liveRegion: true, child: Text(widget.busyText)),
+        if (error)
+          Semantics(
+            liveRegion: true,
+            child: Text(
+              widget.errorText,
+              style: TextStyle(color: Theme.of(context).colorScheme.error),
+            ),
+          ),
         const SizedBox(height: 24),
         Align(
           alignment: Alignment.centerLeft,
           child: NgButton(
             primary: true,
-            onPressed: () {
-              final valid = (widget.formKey ?? internalKey).currentState!
-                  .validate();
-              setState(() => invalid = !valid);
-              if (valid) widget.onValidSubmit();
-            },
+            onPressed: busy || !widget.enabled ? null : submit,
             child: Text(widget.submitLabel),
           ),
         ),

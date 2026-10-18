@@ -32,6 +32,7 @@ class _FormsGalleryState extends State<FormsGallery> {
   );
   List<String> services = ['room'];
   int revision = 0;
+  bool readOnly = false, fail = false;
   final min = DateTime(2026), max = DateTime(2026, 12, 31);
   static const people = [
     NgOption('alex', 'Alex Morgan'),
@@ -109,7 +110,7 @@ class _FormsGalleryState extends State<FormsGallery> {
               ),
               const SizedBox(height: 40),
               Text(
-                'FLUTTER / FORMS AND DATES 0.2',
+                'FLUTTER / FORMS AND DATES 0.29',
                 style: TextStyle(color: Theme.of(context).colorScheme.primary),
               ),
               const SizedBox(height: 16),
@@ -122,6 +123,20 @@ class _FormsGalleryState extends State<FormsGallery> {
                 'Plan a team workshop. Dates use yyyy-mm-dd; Sundays are unavailable for the workshop.',
               ),
               const SizedBox(height: 28),
+              Wrap(
+                children: [
+                  NgCheckBox(
+                    label: 'Read only text',
+                    value: readOnly,
+                    onChanged: (v) => setState(() => readOnly = v),
+                  ),
+                  NgCheckBox(
+                    label: 'Simulate save failure',
+                    value: fail,
+                    onChanged: (v) => setState(() => fail = v),
+                  ),
+                ],
+              ),
               if (saved != null)
                 Padding(
                   padding: const EdgeInsets.only(bottom: 20),
@@ -147,10 +162,17 @@ class _FormsGalleryState extends State<FormsGallery> {
                 child: NgForm(
                   key: ValueKey(revision),
                   submitLabel: 'Save workshop',
-                  onValidSubmit: () => setState(
-                    () => saved =
-                        '$name · $city · $person · ${NgDateRules.dateText(date)} ${NgDateRules.timeText(time)} · ${NgDateRules.dateText(range?.start)} – ${NgDateRules.dateText(range?.end)} · ${services.join(', ')}',
-                  ),
+                  onValidSubmit: () async {
+                    final version = revision, denied = fail;
+                    final snapshot =
+                        '$name · $city · $person · ${NgDateRules.dateText(date)} ${NgDateRules.timeText(time)} · ${NgDateRules.dateText(range?.start)} – ${NgDateRules.dateText(range?.end)} · ${services.join(', ')}';
+                    await Future<void>.delayed(
+                      const Duration(milliseconds: 1200),
+                    );
+                    if (denied) throw StateError('Demo failure');
+                    if (mounted && version == revision)
+                      setState(() => saved = snapshot);
+                  },
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -165,6 +187,10 @@ class _FormsGalleryState extends State<FormsGallery> {
                       fields([
                         NgTextBox(
                           label: 'Workshop name',
+                          readOnly: readOnly,
+                          maxLength: 80,
+                          helperText: 'Required. Use a descriptive name.',
+                          prefix: const Icon(Icons.edit_outlined),
                           initialValue: name,
                           onChanged: (v) => name = v,
                           validator: (v) => (v == null || v.trim().isEmpty)
@@ -260,6 +286,8 @@ class _FormsGalleryState extends State<FormsGallery> {
                       const SizedBox(height: 24),
                       NgTextArea(
                         label: 'Notes',
+                        readOnly: readOnly,
+                        helperText: 'Share preparation details with the team.',
                         initialValue: notes,
                         maxLength: 500,
                         onChanged: (v) => notes = v,
@@ -274,7 +302,7 @@ class _FormsGalleryState extends State<FormsGallery> {
                 ),
               ),
               const SizedBox(height: 24),
-              const Text('22 COMPONENTS · WEB FIRST / BLAZOR + FLUTTER'),
+              const Text('47 COMPONENTS · WEB FIRST / BLAZOR + FLUTTER'),
               const SizedBox(height: 24),
             ],
           ),

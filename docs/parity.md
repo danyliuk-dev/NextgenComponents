@@ -11,7 +11,7 @@ A component can be marked complete only after every reference feature is recorde
 ## Current work order
 
 1. Chip/ChipList remaining gaps stay tracked below; do not mark full parity or silently accept them. Work is delivered in component blocks, not one release per parameter.
-2. ToggleButton/ButtonGroup and Menu/Drawer implementation blocks are delivered with explicit remaining gaps below. Stepper/Wizard is also delivered below; next work moves to existing forms and input components. No block is a full-parity verdict.
+2. ToggleButton/ButtonGroup and Menu/Drawer implementation blocks are delivered with explicit remaining gaps below. Stepper/Wizard is also delivered below; TextBox/TextArea/Form is delivered in 0.29; next work moves to existing selection inputs (AutoComplete, ComboBox, MultiSelect). No block is a full-parity verdict.
 3. Continue through existing editors/forms, data management, visualization and complex editors. Add new component names only after closing the active group or recording a user-approved exception.
 
 ## Chip and ChipList feature matrix
@@ -165,8 +165,8 @@ The inventory includes chart modes as separate entries. “Not assessed” means
 | [Rating](https://www.telerik.com/blazor-ui/rating) | Not implemented | Not implemented | Not assessed |
 | [Rich Text Editor](https://www.telerik.com/blazor-ui/editor) | Implemented subset: NgEditor | Implemented subset: NgEditor | Not assessed |
 | [Signature](https://www.telerik.com/blazor-ui/signature) | Not implemented | Not implemented | Not assessed |
-| [TextArea](https://www.telerik.com/blazor-ui/textarea) | Implemented subset: NgTextArea | Implemented subset: NgTextArea | Not assessed |
-| [TextBox](https://www.telerik.com/blazor-ui/textbox) | Implemented subset: NgTextBox | Implemented subset: NgTextBox | Not assessed |
+| [TextArea](https://www.telerik.com/blazor-ui/textarea) | Implemented subset: NgTextArea | Implemented subset: NgTextArea | Partial — text/form matrix below |
+| [TextBox](https://www.telerik.com/blazor-ui/textbox) | Implemented subset: NgTextBox | Implemented subset: NgTextBox | Partial — text/form matrix below |
 | [TimePicker](https://www.telerik.com/blazor-ui/timepicker) | Implemented subset: NgTimePicker | Implemented subset: NgTimePicker | Not assessed |
 | [Calendar](https://www.telerik.com/blazor-ui/calendar) | Implemented subset: NgCalendar | Implemented subset: NgCalendar | Not assessed |
 | [Gantt](https://www.telerik.com/blazor-ui/gantt) | Not implemented | Not implemented | Not assessed |
@@ -177,7 +177,7 @@ The inventory includes chart modes as separate entries. “Not assessed” means
 | [Carousel](https://www.telerik.com/blazor-ui/carousel) | Not implemented | Not implemented | Not assessed |
 | [DockManager](https://www.telerik.com/blazor-ui/dockmanager) | Not implemented | Not implemented | Not assessed |
 | [Expansion Panel](https://www.telerik.com/blazor-ui/expansion-panel) | Not implemented | Not implemented | Not assessed |
-| [Form](https://www.telerik.com/blazor-ui/form) | Implemented subset: NgForm | Implemented subset: NgForm | Not assessed |
+| [Form](https://www.telerik.com/blazor-ui/form) | Implemented subset: NgForm | Implemented subset: NgForm | Partial — text/form matrix below |
 | [GridLayout](https://www.telerik.com/blazor-ui/gridlayout) | Not implemented | Not implemented | Not assessed |
 | [MediaQuery](https://www.telerik.com/blazor-ui/mediaquery) | Not implemented | Not implemented | Not assessed |
 | [PanelBar](https://www.telerik.com/blazor-ui/panelbar) | Not implemented | Not implemented | Not assessed |
@@ -246,3 +246,20 @@ Sources: [Stepper overview](https://www.telerik.com/blazor-ui/documentation/comp
 | Content and forms | Active-step content; application-owned models and validators | No retained inactive panels or automatic form wiring |
 | Accessibility/localization | Native Tab and Enter/Space; state names preserved in templates | Arrow navigation, focus transfer, full localization and screen-reader certification remain open |
 | Animation/native platforms | Not implemented / deferred | Web-first validation only |
+
+
+## TextBox, TextArea and Form audit (0.29)
+
+Sources: [TextBox API](https://www.telerik.com/blazor-ui/documentation/api/telerik.blazor.components.teleriktextbox), [TextArea overview](https://www.telerik.com/blazor-ui/documentation/components/textarea/overview), [input adornments](https://www.telerik.com/blazor-ui/documentation/common-features/input-adornments), [Form overview](https://www.telerik.com/blazor-ui/documentation/components/form/overview).
+
+| Capability | Blazor and Flutter Web | Remaining difference |
+|---|---|---|
+| Editing and validation | Live values, model validators, read-only and disabled modes | Native event/validation contracts; no API compatibility |
+| Guidance and decoration | Placeholder, helper text, prefix/suffix slots | Short decorative content; not full template replacement |
+| Length and multiline | Positive limits; TextArea 1–30 rows | Browser UTF-16 versus Flutter grapheme limits; Flutter native counter; no auto-resize |
+| Focus and commit | Blazor FocusAsync / native change; Flutter FocusNode / submit action | Blur and multiline Enter timing differ |
+| Async form submission | Validation, invalid callback, busy guard, localized status/error, retry | Server idempotency, cancellation and external side effects belong to app |
+| Reset | Replace model/key to reset drafts and validation | No automatic draft persistence or schema generation |
+| Appearance and advanced text APIs | Shared original theme | Size/fill variants, clear/password modes and debounce remain open |
+| Form layout/schema | Explicit children | Automatic model fields, conditional schema, templates and column API remain open |
+| Certification | Web scenario checks | Native/mobile and full screen-reader audit deferred |

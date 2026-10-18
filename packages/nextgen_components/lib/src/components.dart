@@ -29,8 +29,13 @@ class NgTextBox extends StatelessWidget {
   final String? initialValue;
   final ValueChanged<String>? onChanged;
   final FormFieldValidator<String>? validator;
-  final bool enabled;
+  final bool enabled, readOnly;
+  final FocusNode? focusNode;
+  final String? helperText;
+  final Widget? prefix, suffix;
+  final ValueChanged<String>? onSubmitted;
   final String? placeholder;
+  final int? maxLength;
   const NgTextBox({
     super.key,
     required this.label,
@@ -39,18 +44,41 @@ class NgTextBox extends StatelessWidget {
     this.onChanged,
     this.validator,
     this.enabled = true,
+    this.readOnly = false,
+    this.focusNode,
+    this.helperText,
+    this.prefix,
+    this.suffix,
+    this.onSubmitted,
     this.placeholder,
+    this.maxLength,
   });
   @override
-  Widget build(BuildContext context) => TextFormField(
-    controller: controller,
-    initialValue: initialValue,
-    onChanged: onChanged,
-    validator: validator,
-    enabled: enabled,
-    autovalidateMode: AutovalidateMode.onUserInteraction,
-    decoration: InputDecoration(labelText: label, hintText: placeholder),
-  );
+  Widget build(BuildContext context) {
+    if (maxLength != null && maxLength! <= 0)
+      throw ArgumentError('maxLength must be positive.');
+    if (controller != null && initialValue != null)
+      throw ArgumentError('Use controller or initialValue, not both.');
+    return TextFormField(
+      controller: controller,
+      initialValue: initialValue,
+      onChanged: onChanged,
+      validator: validator,
+      maxLength: maxLength,
+      enabled: enabled,
+      readOnly: readOnly,
+      focusNode: focusNode,
+      onFieldSubmitted: onSubmitted,
+      autovalidateMode: AutovalidateMode.onUserInteraction,
+      decoration: InputDecoration(
+        labelText: label,
+        hintText: placeholder,
+        helperText: helperText,
+        prefixIcon: prefix,
+        suffixIcon: suffix,
+      ),
+    );
+  }
 }
 
 /// Controlled nullable number. Invalid drafts are retained until corrected;
