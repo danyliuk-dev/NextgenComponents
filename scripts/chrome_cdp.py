@@ -4,7 +4,7 @@ from urllib.parse import urlsplit
 class CDP:
  def __init__(self):
   tabs=json.load(urllib.request.urlopen('http://127.0.0.1:9341/json/list'))
-  t=next(t for t in tabs if t['type']=='page' and (t['url'].startswith('http://127.0.0.1:518') or t['url'].startswith('chrome-error:')))
+  t=next(t for t in tabs if t['type']=='page' and (t['url'].startswith(('http://127.0.0.1:518','http://127.0.0.1:529','https://components.softwarenextgen.com','https://reports.softwarenextgen.com')) or t['url'].startswith('chrome-error:')))
   u=urlsplit(t['webSocketDebuggerUrl']);self.s=socket.create_connection((u.hostname,u.port));self.s.settimeout(25);self.i=0
   key=base64.b64encode(os.urandom(16)).decode()
   self.s.sendall(f'GET {u.path} HTTP/1.1\r\nHost: {u.netloc}\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Key: {key}\r\nSec-WebSocket-Version: 13\r\n\r\n'.encode())

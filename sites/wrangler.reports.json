@@ -1,0 +1,41 @@
+{
+  "name": "nextgen-reports",
+  "main": "shared/worker.js",
+  "compatibility_date": "2026-10-19",
+  "account_id": "9d33d2f50dc6fba7352e59f4f33558dc",
+  "workers_dev": false,
+  "preview_urls": false,
+  "assets": {
+    "directory": "dist/reports",
+    "binding": "ASSETS",
+    "run_worker_first": true
+  },
+  "routes": [
+    {
+      "pattern": "reports.softwarenextgen.com",
+      "custom_domain": true
+    }
+  ],
+  "vars": {
+    "PRODUCT": "Reports",
+    "SITE_ORIGIN": "https://reports.softwarenextgen.com",
+    "SENDER": "preorders@softwarenextgen.com"
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "nextgen-preorder-requests",
+      "database_id": "80f95259-bb64-4930-a757-291d2eb24601"
+    }
+  ],
+  "send_email": [
+    {
+      "name": "EMAIL"
+    }
+  ],
+  "triggers": {
+    "crons": [
+      "*/15 * * * *"
+    ]
+  }
+}
