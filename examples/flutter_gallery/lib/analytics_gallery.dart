@@ -18,6 +18,7 @@ class AnalyticsGallery extends StatefulWidget {
 }
 
 class _AnalyticsGalleryState extends State<AnalyticsGallery> {
+  bool chartReadOnly = false, legendReadOnly = false;
   NgChartKind kind = NgChartKind.column;
   bool empty = false;
   String? selected, message;
@@ -245,7 +246,21 @@ class _AnalyticsGalleryState extends State<AnalyticsGallery> {
                       ],
                     ),
                     const SizedBox(height: 24),
+                    NgCheckBox(
+                      label: 'Selection read-only',
+                      value: chartReadOnly,
+                      onChanged: (v) => setState(() => chartReadOnly = v),
+                    ),
+                    NgCheckBox(
+                      label: 'Legend read-only',
+                      value: legendReadOnly,
+                      onChanged: (v) => setState(() => legendReadOnly = v),
+                    ),
                     NgChart(
+                      selectionReadOnly: chartReadOnly,
+                      legendReadOnly: legendReadOnly,
+                      pointLabel: (p) =>
+                          '${p.series} / ${p.category}: ${p.value.toStringAsFixed(0)} deliveries',
                       title: 'Delivery overview',
                       kind: kind,
                       categories: empty ? [] : categories,

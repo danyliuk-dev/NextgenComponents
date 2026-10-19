@@ -1,11 +1,11 @@
 <section class="ng-chart" aria-label="@Title">
 <h3>@Title</h3>
-<div class="ng-chart-legend">@for(var i=0;i<Series.Count;i++){var index=i;<NgButton aria-pressed="@(!hidden.Contains(i)?"true":"false")" OnClick="()=>Toggle(index)"><span class="ng-chart-swatch" style="background:@NgChartMath.Colors[index%6]"></span>@Series[index].Name</NgButton>}</div>
-@if(error is not null){<p role="alert" class="ng-field-error">@error</p>}else if(scene.Marks.Count==0){<p class="ng-empty">No chart data.</p>}else{
+<div class="ng-chart-legend">@for(var i=0;i<Series.Count;i++){var index=i;<NgButton Disabled="@(LegendReadOnly || (HiddenSeries is not null && !HiddenSeriesChanged.HasDelegate))" aria-pressed="@(!EffectiveHidden.Contains(i)?"true":"false")" OnClick="()=>Toggle(index)"><span class="ng-chart-swatch" style="background:@NgChartMath.Colors[index%6]"></span>@Series[index].Name</NgButton>}</div>
+@if(error is not null){<p role="alert" class="ng-field-error">@error</p>}else if(scene.Marks.Count==0){<p class="ng-empty">@EmptyText</p>}else{
 <svg viewBox="0 0 640 310" class="ng-chart-svg" aria-label="@Title">
 @foreach(var mark in scene.Marks){var p=mark.Coordinates;var color=mark.Color=="grid"?"var(--ng-border)":mark.Color;
-<g role="@(mark.Point is null?null:"button")" tabindex="@(mark.Point is null?null:"0")" aria-label="@mark.Point?.Label" @onclick="()=>Select(mark.Point)" @onkeydown="e=>Key(e,mark.Point)">
-@if(mark.Point is not null){<title>@mark.Point.Label</title>}
+<g role="@(mark.Point is null?null:"button")" tabindex="@(mark.Point is null || SelectionReadOnly?null:"0")" aria-disabled="@(mark.Point is not null && SelectionReadOnly?"true":null)" aria-label="@(mark.Point is null?null:PointText(mark.Point))" @onclick="()=>Select(mark.Point)" @onkeydown="e=>Key(e,mark.Point)">
+@if(mark.Point is not null){<title>@PointText(mark.Point)</title>}
 @if(mark.Kind=="rect"){<rect x="@NgChartMath.F(p[0])" y="@NgChartMath.F(p[1])" width="@NgChartMath.F(p[2])" height="@NgChartMath.F(p[3])" fill="@color"/>}
 else if(mark.Kind=="dot"){<circle cx="@NgChartMath.F(p[0])" cy="@NgChartMath.F(p[1])" r="5" fill="@color"/>}
 else if(mark.Kind=="line"){<polyline points="@NgChartMath.Points(p)" fill="none" stroke="@color" stroke-width="@(mark.Color=="grid"?1:2)"/>}
@@ -14,20 +14,28 @@ else{<polygon points="@NgChartMath.Points(p)" fill="@color" fill-opacity="@(mark
 @foreach(var label in scene.Labels){<g><text x="@NgChartMath.F(label.X)" y="@NgChartMath.F(label.Y)" text-anchor="middle" fill="currentColor" font-size="12">@label.Text</text></g>}
 </svg>
 @if(Kind is NgChartKind.Pie or NgChartKind.Donut){<div class="ng-chart-legend">@for(var i=0;i<Categories.Count;i++){<span><span class="ng-chart-swatch" style="display:inline-block;background:@NgChartMath.Colors[i%6]"></span> @Categories[i]</span>}</div>}
-<details><summary>Chart data</summary><div class="ng-chart-data">@foreach(var point in scene.Marks.Where(m=>m.Point is not null).Select(m=>m.Point!)){<NgButton OnClick="()=>Select(point)">@point.Label</NgButton>}</div></details>
+<details><summary>Chart data</summary><div class="ng-chart-data">@foreach(var point in scene.Marks.Where(m=>m.Point is not null).Select(m=>m.Point!)){<NgButton Disabled="SelectionReadOnly" OnClick="()=>Select(point)">@PointText(point)</NgButton>}</div></details>
 }
-@if(selected is not null){<p role="status" class="ng-chart-selection">@selected.Label</p>}
+@if(selected is not null){<p role="status" class="ng-chart-selection">@PointText(selected)</p>}
 </section>
 @code {
+ [Parameter] public HashSet<int>? HiddenSeries{get;set;}
+ [Parameter] public EventCallback<HashSet<int>> HiddenSeriesChanged{get;set;}
+ [Parameter] public bool LegendReadOnly{get;set;}
+ [Parameter] public bool SelectionReadOnly{get;set;}
+ [Parameter] public Func<NgChartSelection,string>? PointLabel{get;set;}
+ [Parameter] public string EmptyText{get;set;}="No chart data.";
  [Parameter] public string Title{get;set;}="Chart";
  [Parameter] public NgChartKind Kind{get;set;}=NgChartKind.Column;
  [Parameter] public IReadOnlyList<string> Categories{get;set;}=[];
  [Parameter] public IReadOnlyList<NgChartSeries> Series{get;set;}=[];
  [Parameter] public EventCallback<NgChartSelection> OnPointSelected{get;set;}
+ private ISet<int> EffectiveHidden=>HiddenSeries??hidden;
+ private string PointText(NgChartSelection p)=>PointLabel?.Invoke(p)??p.Label;
  private HashSet<int> hidden=[];private NgChartScene scene=new([],[]);private string? error;private NgChartSelection? selected;
  protected override void OnParametersSet(){hidden.RemoveWhere(i=>i>=Series.Count);Build();}
- private void Build(){try{scene=NgChartMath.Build(Kind,Categories,Series,hidden);error=null;if(selected is not null)selected=scene.Marks.Select(m=>m.Point).FirstOrDefault(p=>p?.Series==selected.Series&&p.Category==selected.Category);}catch(ArgumentException ex){scene=new([],[]);error=ex.Message;}}
- private void Toggle(int index){if(!hidden.Add(index))hidden.Remove(index);selected=null;Build();}
- private async Task Select(NgChartSelection? point){if(point is null)return;selected=point;await OnPointSelected.InvokeAsync(point);}
+ private void Build(){try{scene=NgChartMath.Build(Kind,Categories,Series,EffectiveHidden);error=null;if(selected is not null)selected=scene.Marks.Select(m=>m.Point).FirstOrDefault(p=>p==selected);}catch(ArgumentException ex){scene=new([],[]);error=ex.Message;selected=null;}}
+ private async Task Toggle(int index){if(LegendReadOnly || index<0 || index>=Series.Count || (HiddenSeries is not null && !HiddenSeriesChanged.HasDelegate))return;var next=new HashSet<int>(EffectiveHidden);if(!next.Add(index))next.Remove(index);if(HiddenSeries is null){hidden=new(next);Build();}await HiddenSeriesChanged.InvokeAsync(next);}
+ private async Task Select(NgChartSelection? point){if(point is null || SelectionReadOnly)return;Build();if(!scene.Marks.Any(m=>m.Point==point))return;selected=point;await OnPointSelected.InvokeAsync(point);}
  private Task Key(KeyboardEventArgs e,NgChartSelection? p)=>e.Key is "Enter" or " "?Select(p):Task.CompletedTask;
 }

@@ -1,4 +1,13 @@
 @* Generated from scripts/manual_content.py *@
-<NgChart Title="Sales" Kind="NgChartKind.Line" Categories="categories" Series="series" OnPointSelected="p=>selected=p.Label"/>
-<p>@selected</p>
-@code { private string? selected; private string[] categories=["Mon","Tue","Wed"]; private NgChartSeries[] series=[new("Orders",[10,null,25])]; }
+<div class="row"><NgCheckBox Label="Selection read-only" @bind-Value="readOnly"/><NgCheckBox Label="Legend read-only" @bind-Value="legendReadOnly"/><NgCheckBox Label="Accept legend changes" @bind-Value="accept"/></div>
+<NgButton OnClick="()=>hidden=[]">Show all series</NgButton><NgButton OnClick="()=>revised=!revised">Update values</NgButton><NgButton OnClick="()=>invalid=!invalid">Toggle invalid data</NgButton>
+<NgChart Title="Weekly orders" Kind="NgChartKind.Column" Categories="categories" Series="Series" HiddenSeries="hidden" HiddenSeriesChanged="ChangeHidden" SelectionReadOnly="readOnly" LegendReadOnly="legendReadOnly" PointLabel="Label" EmptyText="All series hidden." OnPointSelected="p=>last=Label(p)"/>
+<p>Last callback: @last</p>
+@code {
+ private bool readOnly,legendReadOnly,revised,invalid; private bool accept=true;
+ private HashSet<int> hidden=[]; private string last="none";
+ private string[] categories=["Mon","Tue","Wed"];
+ private NgChartSeries[] Series=>invalid?[new("Orders",[1])]:[new("Orders",[revised?40:10,20,25]),new("Target",[15,25,30])];
+ private void ChangeHidden(HashSet<int> value){if(accept)hidden=value;}
+ private static string Label(NgChartSelection p)=>$"{p.Series} / {p.Category}: {p.Value:0} orders";
+}

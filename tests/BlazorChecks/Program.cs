@@ -105,6 +105,8 @@ Rule(NgScheduleRules.ForDay([overnight with {End=new(2027,1,1)}],new(2027,1,1)).
 Rule(NgScheduleRules.WeekStart(new(2027,1,3))==new DateTime(2026,12,28),"week crosses year boundary");
 Rule(NgScheduleRules.Validate(overnight with {End=overnight.Start})!=null,"zero duration rejected");
 await Check<NgChart>(new(){["Categories"]=new[]{"A","B","C"},["Series"]=signed},"<svg", "Values", "Chart data", "role=\"button\"");
+await Check<NgChart>(new(){["Categories"]=new[]{"A","B","C"},["Series"]=signed,["HiddenSeries"]=new HashSet<int>{0,99},["EmptyText"]="Nothing visible"},"Nothing visible", "disabled");
+await Check<NgChart>(new(){["Categories"]=new[]{"A","B","C"},["Series"]=signed,["SelectionReadOnly"]=true,["PointLabel"]=(Func<NgChartSelection,string>)(p=>$"Amount {p.Value} units")},"Amount -10 units", "aria-disabled=\"true\"", "disabled");
 await Check<NgLinearGauge>(new(){["Value"]=150d},"role=\"meter\"", "aria-valuenow=\"100\"");
 await Check<NgArcGauge>(new(){["Value"]=84d},"84", "<svg");
 await Check<NgScheduler>(new(){["Date"]=new DateTime(2026,12,31),["Items"]=new[]{overnight}},"Overnight", "2027-01-01", "Previous week");

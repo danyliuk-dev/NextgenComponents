@@ -3,8 +3,8 @@
 <div class="ng-scope gallery" data-ng-theme="@(dark?"dark":"light")" data-ng-density="@(compact?"compact":"normal")"><main>
 <nav><a href="/code-examples">Code examples</a><strong><span class="brand-icon">N</span> NEXTGEN COMPONENTS</strong><div class="row"><a href="/">Foundation</a><a href="/data">Data workspace</a><NgSwitch Label="Dark theme" @bind-Value="dark"/><NgCheckBox Label="Compact" @bind-Value="compact"/></div></nav>
 <section class="hero"><p class="eyebrow">BLAZOR / ANALYTICS AND SCHEDULE 0.4</p><h1>See the trend.<br/>Plan what comes next.</h1><p>Compare delivery results, inspect individual values and manage the team's weekly schedule.</p></section>
-<section class="panel"><div class="fields"><NgDropDownList Label="Chart type" Items="kinds" @bind-Value="kind"/><NgCheckBox Label="Show empty data" @bind-Value="empty"/></div>
-<NgChart Title="Delivery overview" Kind="Kind" Categories="(empty?[]:categories)" Series="ChartSeries" OnPointSelected="p=>selection=p.Label"/>
+<section class="panel"><div class="fields"><NgDropDownList Label="Chart type" Items="kinds" @bind-Value="kind"/><NgCheckBox Label="Show empty data" @bind-Value="empty"/><NgCheckBox Label="Selection read-only" @bind-Value="chartReadOnly"/><NgCheckBox Label="Legend read-only" @bind-Value="legendReadOnly"/></div>
+<NgChart SelectionReadOnly="chartReadOnly" LegendReadOnly="legendReadOnly" PointLabel="PointText" Title="Delivery overview" Kind="Kind" Categories="(empty?[]:categories)" Series="ChartSeries" OnPointSelected="p=>selection=p.Label"/>
 <p role="status">Selected data: @(selection??"none")</p></section>
 <div class="fields"><section class="panel"><NgLinearGauge Label="Delivery target" Value="72"/></section><section class="panel"><NgArcGauge Label="Team capacity" Value="84"/></section></div>
 <section class="panel"><NgScheduler Label="Team schedule" @bind-Date="week" Items="events" OnCreate="Create" OnEdit="Edit"/><p role="status">@message</p></section>
@@ -12,7 +12,8 @@
 <footer class="page-footer">35 CONTROLS / 41 CATALOGUE ENTRIES <span>WEB FIRST</span></footer>
 </main></div>
 @code {
- private bool dark,compact,empty,editing;private string kind="Column";private string? selection,error,message;private DateTime week=new(2026,10,19);private Draft? draft;
+ private static string PointText(NgChartSelection p)=>$"{p.Series} / {p.Category}: {p.Value:0} deliveries";
+ private bool dark,compact,empty,editing,chartReadOnly,legendReadOnly;private string kind="Column";private string? selection,error,message;private DateTime week=new(2026,10,19);private Draft? draft;
  private readonly string[] categories=["Mon","Tue","Wed","Thu","Fri"];
  private readonly NgOption[] kinds=Enum.GetNames<NgChartKind>().Select(k=>new NgOption(k,k)).ToArray();
  private NgChartKind Kind=>Enum.Parse<NgChartKind>(kind);

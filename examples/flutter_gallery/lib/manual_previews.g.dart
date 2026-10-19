@@ -332,10 +332,25 @@ Widget build(BuildContext context) => Column(crossAxisAlignment: CrossAxisAlignm
 }
 class NgChartExample extends StatefulWidget { const NgChartExample({super.key}); @override State<NgChartExample> createState()=>_NgChartExampleState(); }
 class _NgChartExampleState extends State<NgChartExample> {
-String? selected;
-Widget build(BuildContext context) => NgChart(title: 'Sales', kind: NgChartKind.line,
-  categories: const ['Mon','Tue','Wed'], series: const [NgChartSeries('Orders',[10,null,25])],
-  onPointSelected: (p) => setState(() => selected = p.label));
+bool readOnly=false, legendReadOnly=false, revised=false, invalid=false, accept=true;
+Set<int> hidden={}; String last='none';
+String pointText(NgChartSelection p) => '${p.series} / ${p.category}: ${p.value.toStringAsFixed(0)} orders';
+Widget build(BuildContext context) => Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+  NgCheckBox(label: 'Selection read-only', value: readOnly, onChanged: (v)=>setState(()=>readOnly=v)),
+  NgCheckBox(label: 'Legend read-only', value: legendReadOnly, onChanged: (v)=>setState(()=>legendReadOnly=v)),
+  NgCheckBox(label: 'Accept legend changes', value: accept, onChanged: (v)=>setState(()=>accept=v)),
+  Wrap(spacing: 8, runSpacing: 8, children: [
+    NgButton(onPressed: ()=>setState(()=>hidden={}), child: const Text('Show all series')),
+    NgButton(onPressed: ()=>setState(()=>revised=!revised), child: const Text('Update values')),
+    NgButton(onPressed: ()=>setState(()=>invalid=!invalid), child: const Text('Toggle invalid data')),
+  ]),
+  NgChart(title: 'Weekly orders', categories: const ['Mon','Tue','Wed'],
+    series: invalid ? const [NgChartSeries('Orders',[1])] : [NgChartSeries('Orders',[revised?40:10,20,25]), const NgChartSeries('Target',[15,25,30])],
+    hiddenSeries: hidden, onHiddenSeriesChanged: (v){if(accept)setState(()=>hidden=v);},
+    selectionReadOnly: readOnly, legendReadOnly: legendReadOnly, pointLabel: pointText,
+    emptyText: 'All series hidden.', onPointSelected: (p)=>setState(()=>last=pointText(p))),
+  Text('Last callback: $last'),
+]);
 }
 class NgLinearGaugeExample extends StatefulWidget { const NgLinearGaugeExample({super.key}); @override State<NgLinearGaugeExample> createState()=>_NgLinearGaugeExampleState(); }
 class _NgLinearGaugeExampleState extends State<NgLinearGaugeExample> {

@@ -272,7 +272,11 @@ abstract final class NgChartMath {
 }
 
 class NgChart extends StatefulWidget {
-  final String title;
+  final String title, emptyText;
+  final Set<int>? hiddenSeries;
+  final ValueChanged<Set<int>>? onHiddenSeriesChanged;
+  final bool legendReadOnly, selectionReadOnly;
+  final String Function(NgChartSelection)? pointLabel;
   final NgChartKind kind;
   final List<String> categories;
   final List<NgChartSeries> series;
@@ -280,6 +284,12 @@ class NgChart extends StatefulWidget {
   const NgChart({
     super.key,
     this.title = 'Chart',
+    this.emptyText = 'No chart data.',
+    this.hiddenSeries,
+    this.onHiddenSeriesChanged,
+    this.legendReadOnly = false,
+    this.selectionReadOnly = false,
+    this.pointLabel,
     this.kind = NgChartKind.column,
     required this.categories,
     required this.series,
@@ -293,37 +303,75 @@ class _NgChartState extends State<NgChart> {
   final hidden = <int>{};
   NgChartSelection? selected, hover;
   bool showData = false;
-  @override
-  void didUpdateWidget(covariant NgChart old) {
-    super.didUpdateWidget(old);
-    hidden.removeWhere((i) => i >= widget.series.length);
-    if (old.kind != widget.kind ||
-        old.series != widget.series ||
-        old.categories != widget.categories) {
-      selected = null;
-      hover = null;
-    }
+  Set<int> get effectiveHidden => widget.hiddenSeries ?? hidden;
+  String pointText(NgChartSelection p) => widget.pointLabel?.call(p) ?? p.label;
+  bool same(NgChartSelection? a, NgChartSelection b) =>
+      a != null &&
+      a.seriesIndex == b.seriesIndex &&
+      a.categoryIndex == b.categoryIndex &&
+      a.series == b.series &&
+      a.category == b.category &&
+      a.value == b.value;
+  NgChartScene currentScene() => NgChartMath.build(
+    widget.kind,
+    widget.categories,
+    widget.series,
+    hidden: effectiveHidden,
+  );
+  bool contains(NgChartScene scene, NgChartSelection? point) =>
+      point != null &&
+      scene.marks.any((m) => m.point != null && same(m.point, point));
+  void toggle(int index) {
+    if (!mounted ||
+        widget.legendReadOnly ||
+        index < 0 ||
+        index >= widget.series.length ||
+        (widget.hiddenSeries != null && widget.onHiddenSeriesChanged == null))
+      return;
+    final next = {...effectiveHidden};
+    if (!next.add(index)) next.remove(index);
+    if (widget.hiddenSeries == null)
+      setState(() {
+        hidden
+          ..clear()
+          ..addAll(next);
+      });
+    widget.onHiddenSeriesChanged?.call(next);
   }
 
   void select(NgChartSelection p) {
+    if (!mounted || widget.selectionReadOnly) return;
+    try {
+      if (!contains(currentScene(), p)) return;
+    } on ArgumentError {
+      return;
+    }
     setState(() => selected = p);
     widget.onPointSelected?.call(p);
   }
 
   @override
   Widget build(BuildContext context) {
+    hidden.removeWhere((i) => i < 0 || i >= widget.series.length);
     NgChartScene scene;
     try {
       scene = NgChartMath.build(
         widget.kind,
         widget.categories,
         widget.series,
-        hidden: hidden,
+        hidden: effectiveHidden,
       );
+      if (!contains(scene, selected)) selected = null;
+      if (!contains(scene, hover)) hover = null;
     } on ArgumentError catch (e) {
-      return Text(
-        e.message.toString(),
-        style: TextStyle(color: Theme.of(context).colorScheme.error),
+      selected = null;
+      hover = null;
+      return Semantics(
+        liveRegion: true,
+        child: Text(
+          e.message.toString(),
+          style: TextStyle(color: Theme.of(context).colorScheme.error),
+        ),
       );
     }
     return Column(
@@ -345,16 +393,13 @@ class _NgChartState extends State<NgChart> {
                   backgroundColor: NgChartMath.colors[i % 6],
                   radius: 5,
                 ),
-                selected: !hidden.contains(i),
-                onSelected: (v) => setState(() {
-                  if (v) {
-                    hidden.remove(i);
-                  } else {
-                    hidden.add(i);
-                  }
-                  selected = null;
-                  hover = null;
-                }),
+                selected: !effectiveHidden.contains(i),
+                onSelected:
+                    widget.legendReadOnly ||
+                        (widget.hiddenSeries != null &&
+                            widget.onHiddenSeriesChanged == null)
+                    ? null
+                    : (_) => toggle(i),
               ),
           ],
         ),
@@ -379,9 +424,9 @@ class _NgChartState extends State<NgChart> {
             ],
           ),
         if (scene.marks.isEmpty)
-          const Padding(
-            padding: EdgeInsets.all(30),
-            child: Text('No chart data.'),
+          Padding(
+            padding: const EdgeInsets.all(30),
+            child: Text(widget.emptyText),
           )
         else ...[
           LayoutBuilder(
@@ -426,7 +471,7 @@ class _NgChartState extends State<NgChart> {
                                 color: Theme.of(context).colorScheme.surface,
                                 padding: const EdgeInsets.all(6),
                                 child: Text(
-                                  hover!.label,
+                                  pointText(hover!),
                                   style: const TextStyle(fontSize: 12),
                                 ),
                               ),
@@ -452,7 +497,12 @@ class _NgChartState extends State<NgChart> {
                     in scene.marks
                         .where((m) => m.point != null)
                         .map((m) => m.point!))
-                  NgButton(onPressed: () => select(p), child: Text(p.label)),
+                  NgButton(
+                    onPressed: widget.selectionReadOnly
+                        ? null
+                        : () => select(p),
+                    child: Text(pointText(p)),
+                  ),
               ],
             ),
         ],
@@ -460,7 +510,7 @@ class _NgChartState extends State<NgChart> {
           Semantics(
             liveRegion: true,
             child: Text(
-              selected!.label,
+              pointText(selected!),
               style: TextStyle(color: Theme.of(context).colorScheme.primary),
             ),
           ),

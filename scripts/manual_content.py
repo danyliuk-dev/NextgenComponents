@@ -508,24 +508,83 @@ D = {'NgButton': {'title': 'Button',
           'unique nonempty keys and at least one entry. TreeList has table/button keyboard '
           'semantics, not a treegrid keyboard model.'},
  'NgChart': {'title': 'Chart',
-             'use': 'Visualize local series as column, bar, line, area, pie or donut charts.',
-             'blazor': '<NgChart Title="Sales" Kind="NgChartKind.Line" Categories="categories" '
-                       'Series="series" OnPointSelected="p=>selected=p.Label"/>\n'
-                       '<p>@selected</p>\n'
-                       '@code { private string? selected; private string[] categories=["Mon","Tue","Wed"]; '
-                       'private NgChartSeries[] series=[new("Orders",[10,null,25])]; }',
-             'dart': 'String? selected;\n'
-                     "Widget build(BuildContext context) => NgChart(title: 'Sales', kind: NgChartKind.line,\n"
-                     "  categories: const ['Mon','Tue','Wed'], series: const "
-                     "[NgChartSeries('Orders',[10,null,25])],\n"
-                     '  onPointSelected: (p) => setState(() => selected = p.label));',
-             'notes': 'Categories define the shared domain; every series must have the same number of '
-                      'nullable numeric values. Null breaks a line instead of becoming zero. Point selection '
-                      'returns NgChartSelection with zero-based series/point indices, their names, the '
-                      'number and a ready-to-use label. The application chooses what to do with a point. '
-                      'Keep units explicit. See [analytics and scheduling](../analytics-and-schedule.md) for '
-                      'mode-specific constraints; advanced axes, export, remote aggregation and broad '
-                      'chart-type parity are not implemented.'},
+ 'use': 'Visualize local series as column, bar, line, area, pie or donut charts.',
+ 'blazor': '<div class="row"><NgCheckBox Label="Selection read-only" '
+           '@bind-Value="readOnly"/><NgCheckBox Label="Legend read-only" '
+           '@bind-Value="legendReadOnly"/><NgCheckBox Label="Accept legend changes" '
+           '@bind-Value="accept"/></div>\n'
+           '<NgButton OnClick="()=>hidden=[]">Show all series</NgButton><NgButton '
+           'OnClick="()=>revised=!revised">Update values</NgButton><NgButton '
+           'OnClick="()=>invalid=!invalid">Toggle invalid data</NgButton>\n'
+           '<NgChart Title="Weekly orders" Kind="NgChartKind.Column" Categories="categories" '
+           'Series="Series" HiddenSeries="hidden" HiddenSeriesChanged="ChangeHidden" '
+           'SelectionReadOnly="readOnly" LegendReadOnly="legendReadOnly" PointLabel="Label" '
+           'EmptyText="All series hidden." OnPointSelected="p=>last=Label(p)"/>\n'
+           '<p>Last callback: @last</p>\n'
+           '@code {\n'
+           ' private bool readOnly,legendReadOnly,revised,invalid; private bool accept=true;\n'
+           ' private HashSet<int> hidden=[]; private string last="none";\n'
+           ' private string[] categories=["Mon","Tue","Wed"];\n'
+           ' private NgChartSeries[] '
+           'Series=>invalid?[new("Orders",[1])]:[new("Orders",[revised?40:10,20,25]),new("Target",[15,25,30])];\n'
+           ' private void ChangeHidden(HashSet<int> value){if(accept)hidden=value;}\n'
+           ' private static string Label(NgChartSelection p)=>$"{p.Series} / {p.Category}: '
+           '{p.Value:0} orders";\n'
+           '}',
+ 'dart': 'bool readOnly=false, legendReadOnly=false, revised=false, invalid=false, accept=true;\n'
+         "Set<int> hidden={}; String last='none';\n"
+         "String pointText(NgChartSelection p) => '${p.series} / ${p.category}: "
+         "${p.value.toStringAsFixed(0)} orders';\n"
+         'Widget build(BuildContext context) => Column(crossAxisAlignment: '
+         'CrossAxisAlignment.stretch, children: [\n'
+         "  NgCheckBox(label: 'Selection read-only', value: readOnly, onChanged: "
+         '(v)=>setState(()=>readOnly=v)),\n'
+         "  NgCheckBox(label: 'Legend read-only', value: legendReadOnly, onChanged: "
+         '(v)=>setState(()=>legendReadOnly=v)),\n'
+         "  NgCheckBox(label: 'Accept legend changes', value: accept, onChanged: "
+         '(v)=>setState(()=>accept=v)),\n'
+         '  Wrap(spacing: 8, runSpacing: 8, children: [\n'
+         "    NgButton(onPressed: ()=>setState(()=>hidden={}), child: const Text('Show all "
+         "series')),\n"
+         "    NgButton(onPressed: ()=>setState(()=>revised=!revised), child: const Text('Update "
+         "values')),\n"
+         "    NgButton(onPressed: ()=>setState(()=>invalid=!invalid), child: const Text('Toggle "
+         "invalid data')),\n"
+         '  ]),\n'
+         "  NgChart(title: 'Weekly orders', categories: const ['Mon','Tue','Wed'],\n"
+         "    series: invalid ? const [NgChartSeries('Orders',[1])] : "
+         "[NgChartSeries('Orders',[revised?40:10,20,25]), const "
+         "NgChartSeries('Target',[15,25,30])],\n"
+         '    hiddenSeries: hidden, onHiddenSeriesChanged: '
+         '(v){if(accept)setState(()=>hidden=v);},\n'
+         '    selectionReadOnly: readOnly, legendReadOnly: legendReadOnly, pointLabel: pointText,\n'
+         "    emptyText: 'All series hidden.', onPointSelected: "
+         '(p)=>setState(()=>last=pointText(p))),\n'
+         "  Text('Last callback: $last'),\n"
+         ']);',
+ 'notes': 'Categories define the shared domain; every series must have the same number of nullable '
+          'numeric values. Null breaks a line instead of becoming zero. Point selection returns '
+          'NgChartSelection with zero-based series/point indices, their names, the number and a '
+          'ready-to-use label. The application chooses what to do with a point. Keep units '
+          'explicit. See [analytics and scheduling](../analytics-and-schedule.md) for '
+          'mode-specific constraints; advanced axes, export, remote aggregation and broad '
+          'chart-type parity are not implemented. HiddenSeries/hiddenSeries is optional: null '
+          'keeps internal legend state, a set enables controlled visibility. '
+          'HiddenSeriesChanged/onHiddenSeriesChanged proposes a fresh set; the parent must accept '
+          'it. A controlled set without a callback is noninteractive. Unknown indices are ignored '
+          'by drawing and retained in controlled proposals; the parent owns pruning and '
+          'reordering. Series identity is its zero-based index. Keep the same ownership mode for '
+          'the lifetime of a chart; returning to internal mode resumes its prior internal state. '
+          'LegendReadOnly/legendReadOnly freezes user legend changes, while '
+          'SelectionReadOnly/selectionReadOnly blocks point actions without hiding their data or '
+          'tooltips. Programmatic visibility updates still work. PointLabel/pointLabel returns '
+          'plain text for tooltips, point actions, accessible names and selected-point status; it '
+          'does not change numeric values or axes. EmptyText/emptyText customizes the empty chart '
+          'message. Selection survives equivalent data replacement, but clears when the selected '
+          'point is hidden, removed, renamed or changes value, or when data becomes invalid. '
+          'Invalid data recovery does not restore stale selection. Captured point callbacks are '
+          'rejected if they no longer match a visible current point. This is chart-owned '
+          'selection, not a controlled selection API.'},
  'NgLinearGauge': {'title': 'Linear gauge',
                    'use': 'Display a value within a numeric range.',
                    'blazor': '<NgLinearGauge Label="Load" Value="72" Min="0" Max="100" Unit="%"/>',
