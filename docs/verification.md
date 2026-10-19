@@ -862,3 +862,11 @@ Counter formatting receives counts rather than password text and must remain pur
 - Visible Chrome on local Linux/iMac: Blazor and Flutter branch checks, keyboard Space, protected children, lazy nested loading, partial states, rejected proposals and filtering/collapse retention checked. No row selection was triggered by checkbox actions. Blazor native indeterminate indicators were visually inspected.
 - Current Flutter Web SDK's legacy checkbox role maps internal CheckedState.mixed to aria-checked=false. The visual dash and internal semantics are correct; partialCheckText adds a localized accessible value. Exact Web ARIA mixed-state parity and physical screen-reader output remain unverified; the SDK was not modified.
 - Public Cloudflare sites remain deleted. Local demos/documentation only; check-all, full-remote cascades, upward normalization, virtualization and drag/drop remain open.
+
+## Bulk loaded-tree checking — 0.63 (2026-10-19, Linux on iMac)
+
+- Optional localized check-loaded/clear-loaded actions in TreeView and TreeList on both Web platforms. Full loaded-forest scope is explicit and independent of search, collapse and per-node cascade mode; disabled/protected subtrees and unknown IDs are preserved. No implicit loading or row-selection change.
+- 433 .NET rendering/data checks and gallery build without warnings/errors. 264 Flutter tests passed; analysis clean. New tests cover atomic proposed sets and rejection, protected subtrees, hidden/unknown IDs, lazy child arrival, filtered scope, disabled/no-op actions and stale callbacks after locking, hiding, source replacement and disposal.
+- All 94 manual examples compiled/analyzed and 94 highlighting checks passed. Flutter Web build passed with the existing unused CupertinoIcons font warning.
+- Visible Chrome checks exercised both platforms and both tree controls: parent rejection/acceptance, keyboard actions, lazy-load availability, filtering/collapse-independent scope, checking locks and preservation of an already checked protected node when clearing. Updated local desktop documentation includes the new API and live examples.
+- Full-remote checking, upward normalization, virtualization, drag/drop and physical screen-reader/native validation remain open. The Flutter Web mixed-state ARIA limitation from 0.62 is unchanged. Cloudflare sites remain deleted.

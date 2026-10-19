@@ -14,6 +14,10 @@ async Task Check<T>(Dictionary<string, object?> parameters, params string[] expe
  foreach (var text in expected) if (!html.Contains(text)) throw new Exception($"{typeof(T).Name}: missing {text} in {html}");
  Console.WriteLine($"PASS {typeof(T).Name}"); count++;
 }
+foreach(var locked in new[]{false,true}){
+ await Check<NgTreeView<string>>(new(){["Items"]=new[]{new NgTreeNode<string>("a","Alpha")},["Text"]=(Func<string,string>)(s=>s),["Checkboxes"]=true,["ShowCheckActions"]=true,["CheckingReadOnly"]=locked,["CheckLoadedText"]="<Check loaded>",["ClearLoadedText"]="Clear loaded"},"&lt;Check loaded&gt;","Clear loaded","disabled");
+ await Check<NgTreeList<string>>(new(){["Items"]=Array.Empty<NgTreeNode<string>>(),["Columns"]=new[]{new NgDataColumn<string>("name","Name",s=>s)},["Checkboxes"]=true,["ShowCheckActions"]=true,["CheckingReadOnly"]=locked},"Check loaded nodes","Clear loaded checks","disabled");
+}
 var cascadeRoot=new NgTreeNode<string>("root","Root",[
  new("a","Alpha"),new("group","Group",[new("b","Beta")]),
  new("locked","Locked",[new("locked-child","Hidden locked child")],Disabled:true),

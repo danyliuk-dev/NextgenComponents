@@ -7,7 +7,7 @@
 <NgCheckBox Label="Reject check changes" @bind-Value="rejectChecks"/>
 <NgCheckBox Label="Cascade loaded children" @bind-Value="cascade"/>
 <NgButton OnClick="Reset">Reset tree</NgButton>
-<NgTreeList TItem="string" Items="nodes" Columns="columns" LoadChildren="Load" Checkboxes="true" CheckChildren="cascade" CheckedIds="checkedIds" CheckedIdsChanged="AcceptChecks" CheckingReadOnly="checkingReadOnly" CanCheck="CanCheckNode" DataVersion="version" @bind-ExpandedIds="expanded" @bind-SelectedId="selected" SelectionReadOnly="selectionReadOnly" ExpansionReadOnly="expansionReadOnly" EmptyText="No teams found."/>
+<NgTreeList TItem="string" Items="nodes" Columns="columns" LoadChildren="Load" Checkboxes="true" ShowCheckActions="true" CheckChildren="cascade" CheckedIds="checkedIds" CheckedIdsChanged="AcceptChecks" CheckingReadOnly="checkingReadOnly" CanCheck="CanCheckNode" DataVersion="version" @bind-ExpandedIds="expanded" @bind-SelectedId="selected" SelectionReadOnly="selectionReadOnly" ExpansionReadOnly="expansionReadOnly" EmptyText="No teams found."/>
 <p>Checked IDs: @string.Join(", ",checkedIds.Order())</p>
 <p>Selected team: @(selected??"none") · Child requests: @requests</p>
 @code {

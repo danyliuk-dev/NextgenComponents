@@ -3537,3 +3537,10 @@ for _tree in ('NgTreeView', 'NgTreeList'):
 
 for _tree in ('NgTreeView', 'NgTreeList'):
     D[_tree]['notes'] += ' Flutter partialCheckText supplies a localized spoken value for a mixed checkbox (default Partially checked). The current Flutter Web SDK renders a mixed checkbox visually and reports CheckedState.mixed internally, but its legacy DOM checkbox role maps aria-checked to false. The explicit spoken value preserves the partial-state information; exact Web ARIA mixed-state parity and physical screen-reader verification remain open. Blazor uses native indeterminate plus aria-checked=mixed.'
+# 0.63: explicit actions over the complete eligible loaded forest.
+for _tree in ('NgTreeView','NgTreeList'):
+    _d=D[_tree]
+    _d['blazor']=_d['blazor'].replace('Checkboxes="true"','Checkboxes="true" ShowCheckActions="true"')
+    _d['dart']=_d['dart'].replace('checkboxes:true,','checkboxes:true,showCheckActions:true,')
+    _d['notes'] += ' ShowCheckActions/showCheckActions (default false) displays Check loaded nodes and Clear loaded checks. These actions always cover the complete eligible loaded forest, independently of search, collapse and CheckChildren/checkChildren. They never load new children. Protected/disabled roots and subtrees are excluded; unknown IDs and existing protected checks are preserved. One fresh set is proposed per action; the parent can accept or reject it. Empty/no-op actions, CheckingReadOnly and absent checking callbacks disable the buttons. Stale actions recheck current data, permissions and visibility settings. CheckLoadedText/checkLoadedText and ClearLoadedText/clearLoadedText localize the two button labels. Loading new children updates action availability without changing checked IDs.'
+    _d['notes']=_d['notes'].replace('Check-all, upward ID normalization, automatic pruning and fetching unseen descendants remain application policy.','Full-remote checking, upward ID normalization, automatic pruning and fetching unseen descendants remain application policy.')

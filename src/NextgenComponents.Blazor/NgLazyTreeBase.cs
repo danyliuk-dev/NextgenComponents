@@ -12,6 +12,17 @@ public abstract class NgLazyTreeBase<T> : ComponentBase, IDisposable
     [Parameter] public string ErrorText { get; set; }="Unable to load children. Expand to retry.";
     [Inject] private IJSRuntime TreeJS { get; set; }=default!;
     protected ElementReference CheckRoot;
+    [Parameter] public bool ShowCheckActions { get; set; }
+    [Parameter] public string CheckLoadedText { get; set; }="Check loaded nodes";
+    [Parameter] public string ClearLoadedText { get; set; }="Clear loaded checks";
+    private IReadOnlyList<string> CheckTargets=>ResolvedItems.Where(n=>!n.Disabled && (CanCheck?.Invoke(n)??true)).SelectMany(n=>NgDataOperations.TreeCheckTargets(n,true,CanCheck)).ToArray();
+    protected bool CanCheckLoaded(bool value)=>!disposed && Checkboxes && ShowCheckActions && !CheckingReadOnly && CheckedIdsChanged.HasDelegate && CheckTargets.Any(id=>CheckedIds.Contains(id)!=value);
+    protected async Task CheckLoaded(bool value){
+        if(!CanCheckLoaded(value))return;
+        var next=new HashSet<string>(CheckedIds);
+        foreach(var id in CheckTargets){if(value)next.Add(id);else next.Remove(id);}
+        await CheckedIdsChanged.InvokeAsync(next);
+    }
     [Parameter] public bool CheckChildren { get; set; }
     protected bool? CheckState(NgTreeNode<T> node)=>NgDataOperations.TreeCheckState(node,CheckedIds,CheckChildren,CanCheck);
     protected string CheckAria(NgTreeNode<T> node)=>CheckState(node) switch {true=>"true",false=>"false",_=>"mixed"};

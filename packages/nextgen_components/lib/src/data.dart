@@ -836,6 +836,8 @@ class NgTreeView<T> extends StatefulWidget {
   final bool selectionReadOnly, expansionReadOnly;
   final bool checkboxes, checkingReadOnly, checkChildren;
   final String partialCheckText;
+  final bool showCheckActions;
+  final String checkLoadedText, clearLoadedText;
   final Set<String> checkedIds;
   final ValueChanged<Set<String>>? onCheckedChanged;
   final bool Function(NgTreeNode<T>)? canCheck;
@@ -858,6 +860,9 @@ class NgTreeView<T> extends StatefulWidget {
     this.onSelected,
     this.selectedId,
     this.label = 'Folders',
+    this.showCheckActions = false,
+    this.checkLoadedText = 'Check loaded nodes',
+    this.clearLoadedText = 'Clear loaded checks',
     this.partialCheckText = 'Partially checked',
     this.checkChildren = false,
     this.checkboxes = false,
@@ -909,6 +914,29 @@ class _NgTreeViewState<T> extends State<NgTreeView<T>> {
     final node = currentNode(id);
     if (node == null || node.disabled) return;
     widget.onSelected?.call(id);
+  }
+
+  List<String> get checkTargets => lazy
+      .resolve(widget.items)
+      .where((n) => !n.disabled && (widget.canCheck?.call(n) ?? true))
+      .expand((n) => _treeCheckTargets(n, true, widget.canCheck))
+      .toList();
+  bool canCheckLoaded(bool value) =>
+      mounted &&
+      widget.checkboxes &&
+      widget.showCheckActions &&
+      !widget.checkingReadOnly &&
+      widget.onCheckedChanged != null &&
+      checkTargets.any((id) => widget.checkedIds.contains(id) != value);
+  void checkLoaded(bool value) {
+    if (!canCheckLoaded(value)) return;
+    final next = {...widget.checkedIds};
+    if (value) {
+      next.addAll(checkTargets);
+    } else {
+      next.removeAll(checkTargets);
+    }
+    widget.onCheckedChanged!(next);
   }
 
   bool canToggleCheck(NgTreeNode<T> node) =>
@@ -975,6 +1003,25 @@ class _NgTreeViewState<T> extends State<NgTreeView<T>> {
           decoration: InputDecoration(labelText: 'Search ${widget.label}'),
           onChanged: (v) => setState(() => search = v),
         ),
+        if (widget.checkboxes && widget.showCheckActions)
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              TextButton(
+                onPressed: canCheckLoaded(true)
+                    ? () => checkLoaded(true)
+                    : null,
+                child: Text(widget.checkLoadedText),
+              ),
+              TextButton(
+                onPressed: canCheckLoaded(false)
+                    ? () => checkLoaded(false)
+                    : null,
+                child: Text(widget.clearLoadedText),
+              ),
+            ],
+          ),
         const SizedBox(height: 12),
         for (final row in visible)
           Focus(
@@ -1176,6 +1223,8 @@ class NgTreeList<T> extends StatefulWidget {
   final bool selectionReadOnly, expansionReadOnly;
   final bool checkboxes, checkingReadOnly, checkChildren;
   final String partialCheckText;
+  final bool showCheckActions;
+  final String checkLoadedText, clearLoadedText;
   final Set<String> checkedIds;
   final ValueChanged<Set<String>>? onCheckedChanged;
   final bool Function(NgTreeNode<T>)? canCheck;
@@ -1194,6 +1243,9 @@ class NgTreeList<T> extends StatefulWidget {
     this.onSelected,
     this.selectedId,
     this.label = 'Hierarchy',
+    this.showCheckActions = false,
+    this.checkLoadedText = 'Check loaded nodes',
+    this.clearLoadedText = 'Clear loaded checks',
     this.partialCheckText = 'Partially checked',
     this.checkChildren = false,
     this.checkboxes = false,
@@ -1239,6 +1291,29 @@ class _NgTreeListState<T> extends State<NgTreeList<T>> {
     final node = currentNode(id);
     if (node == null || node.disabled) return;
     widget.onSelected?.call(id);
+  }
+
+  List<String> get checkTargets => lazy
+      .resolve(widget.items)
+      .where((n) => !n.disabled && (widget.canCheck?.call(n) ?? true))
+      .expand((n) => _treeCheckTargets(n, true, widget.canCheck))
+      .toList();
+  bool canCheckLoaded(bool value) =>
+      mounted &&
+      widget.checkboxes &&
+      widget.showCheckActions &&
+      !widget.checkingReadOnly &&
+      widget.onCheckedChanged != null &&
+      checkTargets.any((id) => widget.checkedIds.contains(id) != value);
+  void checkLoaded(bool value) {
+    if (!canCheckLoaded(value)) return;
+    final next = {...widget.checkedIds};
+    if (value) {
+      next.addAll(checkTargets);
+    } else {
+      next.removeAll(checkTargets);
+    }
+    widget.onCheckedChanged!(next);
   }
 
   bool canToggleCheck(NgTreeNode<T> node) =>
@@ -1328,6 +1403,25 @@ class _NgTreeListState<T> extends State<NgTreeList<T>> {
           decoration: InputDecoration(labelText: 'Search ${widget.label}'),
           onChanged: (v) => setState(() => search = v),
         ),
+        if (widget.checkboxes && widget.showCheckActions)
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              TextButton(
+                onPressed: canCheckLoaded(true)
+                    ? () => checkLoaded(true)
+                    : null,
+                child: Text(widget.checkLoadedText),
+              ),
+              TextButton(
+                onPressed: canCheckLoaded(false)
+                    ? () => checkLoaded(false)
+                    : null,
+                child: Text(widget.clearLoadedText),
+              ),
+            ],
+          ),
         const SizedBox(height: 16),
         LayoutBuilder(
           builder: (context, c) => SingleChildScrollView(

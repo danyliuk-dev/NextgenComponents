@@ -1,6 +1,7 @@
 @typeparam TItem
 @inherits NgLazyTreeBase<TItem>
 <div class="ng-tree-list" @ref="CheckRoot"><label class="ng-field">Search @Label<input class="ng-input" aria-label="@($"Search {Label}")" @bind="search" @bind:event="oninput" /></label>
+@if(Checkboxes && ShowCheckActions){<div class="ng-tree-check-actions" style="display:flex;flex-wrap:wrap;gap:8px;margin:8px 0"><NgButton Disabled="@(!CanCheckLoaded(true))" OnClick="()=>CheckLoaded(true)">@CheckLoadedText</NgButton><NgButton Disabled="@(!CanCheckLoaded(false))" OnClick="()=>CheckLoaded(false)">@ClearLoadedText</NgButton></div>}
 <div class="ng-table-scroll" tabindex="0" aria-label="@($"{Label} table scroll area")"><table class="ng-data-table"><caption class="ng-sr-only">@Label</caption><thead><tr>
 @foreach(var column in Columns){<th scope="col" aria-sort="@(sortKey==column.Key?(descending?"descending":"ascending"):"none")"><button type="button" disabled="@(!column.Sortable)" @onclick="()=>Sort(column.Key)">@column.Title @(sortKey==column.Key?(descending?"↓":"↑"):"↕")</button></th>}
 </tr></thead><tbody>

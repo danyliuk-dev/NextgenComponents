@@ -68,3 +68,9 @@ Opt-in CheckChildren/checkChildren applies a single proposed checked-ID set to t
 Lazy loading never inherits checks or emits a checking callback. Newly loaded descendants can make the parent mixed. The parent record participates in aggregation; independently checking all children does not insert its ID. Mode/predicate/data changes recompute display without normalizing application state. Full-remote cascade, upward ID normalization, check-all, virtualization, drag/drop and native/accessibility certification remain open.
 
 Current Flutter Web SDK maps its internal mixed checkbox state to aria-checked=false in the legacy DOM role; a localized partialCheckText spoken value supplies partial-state information. Native Flutter semantics tests see CheckedState.mixed. Exact Web ARIA parity and physical screen-reader behavior remain unverified.
+
+## Bulk loaded-tree checking (0.63)
+
+TreeView and TreeList expose opt-in check-loaded and clear-loaded actions. Their scope is the entire eligible loaded forest, independent of filtering, expansion and per-node cascade mode. Protected/disabled roots and subtrees are skipped; unknown/protected IDs are preserved. One fresh set is proposed per action, with parent acceptance/rejection. No-op, empty, read-only and missing-callback actions are disabled. Current data and permissions are rechecked when invoked. Lazy loads update availability without inheriting checks. Labels are localizable.
+
+Full-remote checking, upward ID normalization, virtualization, drag/drop and native/accessibility certification remain open. The Flutter mixed-state ARIA limitation documented in 0.62 is unchanged.
