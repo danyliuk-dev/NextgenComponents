@@ -4,6 +4,7 @@
 <div class="ng-text-editor">
 @if(PrefixTemplate is not null){<span class="ng-input-adornment">@PrefixTemplate</span>}
 <textarea @ref="element" @attributes="AdditionalAttributes" id="@Id" class="ng-input @CssClass" rows="@Rows" maxlength="@MaxLength" readonly="@ReadOnly" aria-describedby="@DescriptionIds" value="@CurrentValueAsString" @oninput="Input" @onchange="Commit" disabled="@Disabled" placeholder="@Placeholder"></textarea>
+@if(ShowClearButton){<button type="button" class="ng-button" aria-label="@($"Clear {Label}")" disabled="@(Disabled||ReadOnly||string.IsNullOrEmpty(CurrentValue))" @onclick="Clear">Clear</button>}
 @if(SuffixTemplate is not null){<span class="ng-input-adornment">@SuffixTemplate</span>}
 </div>
 @if(!string.IsNullOrEmpty(HelperText)){<small id="@(Id+"-help")">@HelperText</small>}
@@ -14,6 +15,7 @@
  [Parameter] public string? Placeholder {get;set;}
  [Parameter] public bool Disabled {get;set;}
  [Parameter] public bool ReadOnly {get;set;}
+ [Parameter] public bool ShowClearButton {get;set;}
  [Parameter] public int? MaxLength {get;set;}
  [Parameter] public string? HelperText {get;set;}
  [Parameter] public RenderFragment? PrefixTemplate {get;set;}
@@ -25,6 +27,7 @@
  private string? DescriptionIds=>string.Join(" ",new[]{AdditionalAttributes?.GetValueOrDefault("aria-describedby")?.ToString(),string.IsNullOrEmpty(HelperText)?null:Id+"-help"}.Where(s=>!string.IsNullOrWhiteSpace(s)));
  public ValueTask FocusAsync()=>element.FocusAsync();
  protected override void OnParametersSet(){base.OnParametersSet();if(MaxLength is <=0)throw new ArgumentOutOfRangeException(nameof(MaxLength));if(Rows is <1 or >30)throw new ArgumentOutOfRangeException(nameof(Rows));}
+ private async Task Clear(){if(Disabled||ReadOnly||string.IsNullOrEmpty(CurrentValue))return;CurrentValueAsString="";await element.FocusAsync();}
  private void Input(ChangeEventArgs e){if(!Disabled&&!ReadOnly)CurrentValueAsString=e.Value?.ToString();}
  private Task Commit(ChangeEventArgs e)=>Disabled||ReadOnly?Task.CompletedTask:OnCommit.InvokeAsync(e.Value?.ToString());
  protected override bool TryParseValueFromString(string? value,out string? result,[System.Diagnostics.CodeAnalysis.NotNullWhen(false)] out string? validationErrorMessage){result=value;validationErrorMessage=null;return true;}

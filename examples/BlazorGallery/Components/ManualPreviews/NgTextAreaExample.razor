@@ -1,6 +1,6 @@
 @* Generated from scripts/manual_content.py *@
 <NgCheckBox Label="Read only" @bind-Value="locked"/>
-<NgTextArea @ref="editor" Label="Delivery notes" @bind-Value="text" ReadOnly="locked" MaxLength="80" HelperText="Use a short, descriptive note." OnCommit="v=>committed=v">
+<NgTextArea @ref="editor" Label="Delivery notes" @bind-Value="text" ReadOnly="locked" ShowClearButton="true" MaxLength="80" HelperText="Use a short, descriptive note." OnCommit="v=>committed=v">
 <PrefixTemplate><span aria-hidden="true">✎</span></PrefixTemplate>
 </NgTextArea>
 <NgButton OnClick="()=>editor!.FocusAsync().AsTask()">Focus editor</NgButton>

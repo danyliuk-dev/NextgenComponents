@@ -68,17 +68,18 @@ Widget build(BuildContext context) => NgButton(primary: true,
 }
 class NgTextBoxExample extends StatefulWidget { const NgTextBoxExample({super.key}); @override State<NgTextBoxExample> createState()=>_NgTextBoxExampleState(); }
 class _NgTextBoxExampleState extends State<NgTextBoxExample> {
-bool locked = false; String submitted = '';
+bool locked = false, password = true; String submitted = '';
 final editor = TextEditingController(text:'Design review');
 final focus = FocusNode();
 @override void dispose(){editor.dispose();focus.dispose();super.dispose();}
 Widget build(BuildContext context)=>Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
+NgButton(onPressed:()=>setState(()=>password=!password),child:const Text('Toggle password mode')),
 NgCheckBox(label:'Read only',value:locked,onChanged:(v)=>setState(()=>locked=v)),
-NgTextBox(label:'Project name',controller:editor,focusNode:focus,readOnly:locked,maxLength:80,
+NgTextBox(label:'Project name',controller:editor,focusNode:focus,readOnly:locked,showClearButton:true,password:password,showPasswordToggle:true,maxLength:80,
 helperText:'Use a short, descriptive name.',prefix:const Icon(Icons.edit_outlined),
 onChanged:(_)=>setState((){}),onSubmitted:(v)=>setState(()=>submitted=v)),
 NgButton(onPressed:()=>focus.requestFocus(),child:const Text('Focus editor')),
-Text('Current: ${editor.text}'),Text('Submitted: $submitted')]);
+Text('Length: ${editor.text.length}')]);
 
 }
 class NgTextAreaExample extends StatefulWidget { const NgTextAreaExample({super.key}); @override State<NgTextAreaExample> createState()=>_NgTextAreaExampleState(); }
@@ -89,7 +90,7 @@ final focus = FocusNode();
 @override void dispose(){editor.dispose();focus.dispose();super.dispose();}
 Widget build(BuildContext context)=>Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
 NgCheckBox(label:'Read only',value:locked,onChanged:(v)=>setState(()=>locked=v)),
-NgTextArea(label:'Delivery notes',controller:editor,focusNode:focus,readOnly:locked,maxLength:80,
+NgTextArea(label:'Delivery notes',controller:editor,focusNode:focus,readOnly:locked,showClearButton:true,maxLength:80,
 helperText:'Use a short, descriptive note.',prefix:const Icon(Icons.edit_outlined),
 onChanged:(_)=>setState((){}),onSubmitted:(v)=>setState(()=>submitted=v)),
 NgButton(onPressed:()=>focus.requestFocus(),child:const Text('Focus editor')),

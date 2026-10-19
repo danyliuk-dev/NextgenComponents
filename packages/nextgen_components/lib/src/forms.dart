@@ -1,3 +1,4 @@
+import 'text_editor.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'components.dart';
@@ -11,7 +12,7 @@ class NgTextArea extends StatelessWidget {
   final int rows;
   final String? placeholder;
   final int? maxLength;
-  final bool enabled, readOnly;
+  final bool enabled, readOnly, showClearButton;
   final FocusNode? focusNode;
   final String? helperText;
   final Widget? prefix, suffix;
@@ -28,6 +29,7 @@ class NgTextArea extends StatelessWidget {
     this.maxLength,
     this.enabled = true,
     this.readOnly = false,
+    this.showClearButton = false,
     this.focusNode,
     this.helperText,
     this.prefix,
@@ -41,27 +43,24 @@ class NgTextArea extends StatelessWidget {
     if (controller != null && initialValue != null)
       throw ArgumentError('Use controller or initialValue, not both.');
     if (rows < 1 || rows > 30) throw ArgumentError('Use 1–30 rows.');
-    return TextFormField(
+    return NextgenTextEditor(
+      label: label,
       controller: controller,
       initialValue: initialValue,
       onChanged: onChanged,
       validator: validator,
-      minLines: rows,
-      maxLines: rows,
       maxLength: maxLength,
       enabled: enabled,
       readOnly: readOnly,
       focusNode: focusNode,
-      onFieldSubmitted: onSubmitted,
-      autovalidateMode: AutovalidateMode.onUserInteraction,
-      decoration: InputDecoration(
-        labelText: label,
-        hintText: placeholder,
-        helperText: helperText,
-        prefixIcon: prefix,
-        suffixIcon: suffix,
-        alignLabelWithHint: true,
-      ),
+      onSubmitted: onSubmitted,
+      placeholder: placeholder,
+      helperText: helperText,
+      prefix: prefix,
+      suffix: suffix,
+      showClearButton: showClearButton,
+      rows: rows,
+      multiline: true,
     );
   }
 }

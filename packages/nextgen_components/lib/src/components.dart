@@ -1,3 +1,4 @@
+import 'text_editor.dart';
 import 'package:flutter/material.dart';
 
 class NgOption {
@@ -29,7 +30,7 @@ class NgTextBox extends StatelessWidget {
   final String? initialValue;
   final ValueChanged<String>? onChanged;
   final FormFieldValidator<String>? validator;
-  final bool enabled, readOnly;
+  final bool enabled, readOnly, showClearButton, password, showPasswordToggle;
   final FocusNode? focusNode;
   final String? helperText;
   final Widget? prefix, suffix;
@@ -45,6 +46,9 @@ class NgTextBox extends StatelessWidget {
     this.validator,
     this.enabled = true,
     this.readOnly = false,
+    this.showClearButton = false,
+    this.password = false,
+    this.showPasswordToggle = false,
     this.focusNode,
     this.helperText,
     this.prefix,
@@ -59,7 +63,8 @@ class NgTextBox extends StatelessWidget {
       throw ArgumentError('maxLength must be positive.');
     if (controller != null && initialValue != null)
       throw ArgumentError('Use controller or initialValue, not both.');
-    return TextFormField(
+    return NextgenTextEditor(
+      label: label,
       controller: controller,
       initialValue: initialValue,
       onChanged: onChanged,
@@ -68,15 +73,14 @@ class NgTextBox extends StatelessWidget {
       enabled: enabled,
       readOnly: readOnly,
       focusNode: focusNode,
-      onFieldSubmitted: onSubmitted,
-      autovalidateMode: AutovalidateMode.onUserInteraction,
-      decoration: InputDecoration(
-        labelText: label,
-        hintText: placeholder,
-        helperText: helperText,
-        prefixIcon: prefix,
-        suffixIcon: suffix,
-      ),
+      onSubmitted: onSubmitted,
+      placeholder: placeholder,
+      helperText: helperText,
+      prefix: prefix,
+      suffix: suffix,
+      showClearButton: showClearButton,
+      password: password,
+      showPasswordToggle: showPasswordToggle,
     );
   }
 }

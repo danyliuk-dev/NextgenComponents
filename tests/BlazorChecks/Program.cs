@@ -21,6 +21,8 @@ bool enabled = true;
 string team = "a";
 NgOption[] options = [new("a", "Alpha"), new("b", "Beta", true)];
 await Check<NgButton>(new() { ["Disabled"] = true, ["Primary"] = true, ["ChildContent"] = Text("Save") }, "disabled", "ng-primary", "type=\"button\"");
+await Check<NgTextBox>(new(){["Label"]="Password",["Value"]="sample",["ValueExpression"]=(Expression<Func<string?>>)(()=>name),["Password"]=true,["ShowPasswordToggle"]=true,["ShowClearButton"]=true},"type=\"password\"","Show password","Clear Password");
+await Check<NgTextArea>(new(){["Label"]="Notes",["Value"]="",["ValueExpression"]=(Expression<Func<string?>>)(()=>name),["ShowClearButton"]=true},"Clear Notes","disabled");
 await Check<NgTextBox>(new() { ["Label"] = "Name", ["Value"] = name, ["ValueExpression"] = (Expression<Func<string?>>)(() => name), ["Id"] = "name" }, "for=\"name\"", "&lt;script&gt;", "id=\"name\"");
 await Check<NgTextBox>(new(){["Label"]="Project",["Value"]=name,["ValueExpression"]=(Expression<Func<string?>>)(()=>name),["Id"]="project",["ReadOnly"]=true,["MaxLength"]=80,["HelperText"]="Guidance",["PrefixTemplate"]=Text("Prefix"),["AdditionalAttributes"]=new Dictionary<string,object>{{"aria-describedby","external-help"}}},"readonly","maxlength=\"80\"","external-help project-help","Prefix","Guidance");
 await Check<NgTextArea>(new(){["Value"]=name,["ValueExpression"]=(Expression<Func<string?>>)(()=>name),["Rows"]=3,["ReadOnly"]=true,["HelperText"]="Notes guidance",["SuffixTemplate"]=Text("Suffix")},"readonly","rows=\"3\"","Notes guidance","Suffix");

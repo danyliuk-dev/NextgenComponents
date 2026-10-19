@@ -1,8 +1,9 @@
 @* Generated from scripts/manual_content.py *@
+<NgButton OnClick="()=>password=!password">Toggle password mode</NgButton>
 <NgCheckBox Label="Read only" @bind-Value="locked"/>
-<NgTextBox @ref="editor" Label="Project name" @bind-Value="text" ReadOnly="locked" MaxLength="80" HelperText="Use a short, descriptive name." OnCommit="v=>committed=v">
+<NgTextBox @ref="editor" Label="Project name" @bind-Value="text" ReadOnly="locked" ShowClearButton="true" Password="password" ShowPasswordToggle="true" MaxLength="80" HelperText="Use a short, descriptive name." OnCommit="v=>committed=v">
 <PrefixTemplate><span aria-hidden="true">@@</span></PrefixTemplate>
 </NgTextBox>
 <NgButton OnClick="()=>editor!.FocusAsync().AsTask()">Focus editor</NgButton>
-<p>Current: @text</p><p>Committed: @committed</p>
-@code { private NgTextBox? editor; private bool locked; private string? text="Design review",committed; }
+<p>Length: @(text?.Length??0)</p>
+@code { private NgTextBox? editor; private bool locked,password=true; private string? text="Design review",committed; }

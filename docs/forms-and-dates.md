@@ -63,3 +63,11 @@ Updated manual examples demonstrate October 2026 bounds, unavailable Sundays and
 ## RadioGroup and DropDownList (0.33)
 
 Both controls now provide read-only behavior and helper text. RadioGroup supports horizontal/vertical layout and decorative item templates that preserve the option label as the accessible name. DropDownList validates missing selected IDs without silently choosing a replacement; a missing key stays visible as an unavailable selection and blocks form submission. Flutter guards stale popup callbacks before updating form state. Read-only uses disabled native interaction. Required rules remain application-owned; RadioGroup's Flutter implementation is not a FormField.
+
+## Text clear actions and password presentation (0.46)
+
+TextBox and TextArea support `ShowClearButton` / `showClearButton` (default false). Clear produces the empty string, updates form state, emits one value-change callback and restores editor focus. The action is disabled for empty, read-only or disabled fields. It does not explicitly submit or commit; ordinary Blazor blur/change events can still commit the preceding typed value. Validators remain application-owned.
+
+TextBox adds `Password` / `password` and `ShowPasswordToggle` / `showPasswordToggle`, both default false. Password masks the value; opt-in reveal only changes presentation. Read-only/disabled states suppress reveal and hide the value; clear and leaving the reveal control hide it. Flutter controller replacement also hides it. TextArea remains multiline plain text. This is presentation, not encryption or password-manager integration.
+
+Existing adornments and clear/reveal controls coexist. Flutter keeps controller ownership with the caller, preserves initial-value form reset, and rejects retained clear/reveal handlers after parameter/controller replacement or disposal. Detailed manuals and live previews demonstrate both controls. Existing platform length-count and commit-timing differences remain.

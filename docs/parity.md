@@ -11,7 +11,7 @@ A component can be marked complete only after every reference feature is recorde
 ## Current work order
 
 1. Chip/ChipList remaining gaps stay tracked below; do not mark full parity or silently accept them. Work is delivered in component blocks, not one release per parameter.
-2. ToggleButton/ButtonGroup and Menu/Drawer implementation blocks are delivered with explicit remaining gaps below. Stepper/Wizard is also delivered below; TextBox/TextArea/Form is delivered in 0.29; AutoComplete/ComboBox/MultiSelect is delivered in 0.30; numeric/time editing is delivered in 0.31; Calendar, DateInput, DatePicker and DateRangePicker are delivered in 0.32; RadioGroup and DropDownList are delivered in 0.33; Grid protected/read-only selection is delivered in 0.34; TreeView/TreeList controlled state and templates are delivered in 0.35; Chart interaction and presentation are delivered in 0.36; gauge ranges and presentation are delivered in 0.37; Scheduler day/week navigation and guarded actions are delivered in 0.38; Spreadsheet controlled edits and cell protection are delivered in 0.39; PivotGrid presentation and guarded drilldown are delivered in 0.40; Editor controlled changes and history are delivered in 0.41; Diagram guarded interaction and presentation are delivered in 0.42; Map controlled state and interaction locks are delivered in 0.43; PDF lazy thumbnails and synchronized navigation are delivered in 0.44; AI Prompt independent permissions and PromptBox length recovery are delivered in 0.45; next work returns to the remaining editor/form gaps. No block is a full-parity verdict.
+2. ToggleButton/ButtonGroup and Menu/Drawer implementation blocks are delivered with explicit remaining gaps below. Stepper/Wizard is also delivered below; TextBox/TextArea/Form is delivered in 0.29; AutoComplete/ComboBox/MultiSelect is delivered in 0.30; numeric/time editing is delivered in 0.31; Calendar, DateInput, DatePicker and DateRangePicker are delivered in 0.32; RadioGroup and DropDownList are delivered in 0.33; Grid protected/read-only selection is delivered in 0.34; TreeView/TreeList controlled state and templates are delivered in 0.35; Chart interaction and presentation are delivered in 0.36; gauge ranges and presentation are delivered in 0.37; Scheduler day/week navigation and guarded actions are delivered in 0.38; Spreadsheet controlled edits and cell protection are delivered in 0.39; PivotGrid presentation and guarded drilldown are delivered in 0.40; Editor controlled changes and history are delivered in 0.41; Diagram guarded interaction and presentation are delivered in 0.42; Map controlled state and interaction locks are delivered in 0.43; PDF lazy thumbnails and synchronized navigation are delivered in 0.44; AI Prompt independent permissions and PromptBox length recovery are delivered in 0.45; text-field clear actions and password presentation are delivered in 0.46; next work continues with remaining editor/form gaps. No block is a full-parity verdict.
 3. Continue through existing editors/forms, data management, visualization and complex editors. Add new component names only after closing the active group or recording a user-approved exception.
 
 ## Chip and ChipList feature matrix
@@ -260,7 +260,7 @@ Sources: [TextBox API](https://www.telerik.com/blazor-ui/documentation/api/teler
 | Focus and commit | Blazor FocusAsync / native change; Flutter FocusNode / submit action | Blur and multiline Enter timing differ |
 | Async form submission | Validation, invalid callback, busy guard, localized status/error, retry | Server idempotency, cancellation and external side effects belong to app |
 | Reset | Replace model/key to reset drafts and validation | No automatic draft persistence or schema generation |
-| Appearance and advanced text APIs | Shared original theme | Size/fill variants, clear/password modes and debounce remain open |
+| Appearance and advanced text APIs | Shared original theme | Size/fill variants and debounce remain open; clear/password modes delivered in 0.46 |
 | Form layout/schema | Explicit children | Automatic model fields, conditional schema, templates and column API remain open |
 | Certification | Web scenario checks | Native/mobile and full screen-reader audit deferred |
 
@@ -415,3 +415,9 @@ Passwords, print, annotations/forms/signatures, links, OCR, parent page/load cal
 Independent generation, history-clear and feedback locks with global read-only support, missing-handler disabling and action-time guards. Generation locks cancel pending work without removing previous responses. PromptBox preserves oversized drafts after limit reductions, disables Send and permits incremental correction.
 
 Streaming, rich output, attachments, speech, command templates, model selection, durable conversations, built-in provider integration and native verification remain open. See [AI contracts](ai-interface.md).
+
+## Text clear actions and password presentation (0.46)
+
+TextBox and TextArea provide opt-in clear actions, form updates and restored editor focus. TextBox additionally supports masked single-line input and optional reveal. Empty, locked or disabled fields cannot clear; locked/disabled password fields cannot reveal. Flutter guards retained callbacks after controller replacement and preserves initialValue form reset.
+
+Automatic resize, debounce, full appearance variants, password-manager integration and native certification remain open. See [text and form capabilities](forms-and-dates.md).

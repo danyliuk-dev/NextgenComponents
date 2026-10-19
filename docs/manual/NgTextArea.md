@@ -26,13 +26,17 @@ MaxLength must be positive when supplied. It limits user entry, not application 
 OnCommit is the Blazor native change event (normally blur, or Enter for a single-line input); ValueChanged still fires while typing. Flutter onSubmitted is the platform submission action, not a blur event; multiline Enter normally inserts a newline. These are deliberately documented platform contracts, not identical event timing.
 
 ### Current scope
-No debounce, automatic resize, password mode, automatic clear button, full appearance variants or certified screen-reader parity. Native/mobile verification remains deferred. Application supplies localized labels, guidance and validation errors.
+No debounce, automatic resize, full appearance variants or certified screen-reader parity. Native/mobile verification remains deferred. Application supplies localized labels, guidance and validation errors.
+
+### Clear action (0.46)
+ShowClearButton/showClearButton adds a labelled Clear action. It is disabled for empty, read-only or disabled fields. Clear sets the value to the empty string, not null, updates the form field and emits one value-change callback. It restores input focus and does not explicitly invoke OnCommit/onSubmitted; Blazor native blur/change can still commit the preceding typed value when focus moves to the button. Required validators can therefore reject the empty field. Flutter preserves controller ownership and initialValue form reset; retained actions cannot clear a replacement controller or bypass locks. The clear action and supplied suffix can coexist.
+
 
 ## Blazor example
 
 ```razor
 <NgCheckBox Label="Read only" @bind-Value="locked"/>
-<NgTextArea @ref="editor" Label="Delivery notes" @bind-Value="text" ReadOnly="locked" MaxLength="80" HelperText="Use a short, descriptive note." OnCommit="v=>committed=v">
+<NgTextArea @ref="editor" Label="Delivery notes" @bind-Value="text" ReadOnly="locked" ShowClearButton="true" MaxLength="80" HelperText="Use a short, descriptive note." OnCommit="v=>committed=v">
 <PrefixTemplate><span aria-hidden="true">✎</span></PrefixTemplate>
 </NgTextArea>
 <NgButton OnClick="()=>editor!.FocusAsync().AsTask()">Focus editor</NgButton>
@@ -50,7 +54,7 @@ final focus = FocusNode();
 @override void dispose(){editor.dispose();focus.dispose();super.dispose();}
 Widget build(BuildContext context)=>Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
 NgCheckBox(label:'Read only',value:locked,onChanged:(v)=>setState(()=>locked=v)),
-NgTextArea(label:'Delivery notes',controller:editor,focusNode:focus,readOnly:locked,maxLength:80,
+NgTextArea(label:'Delivery notes',controller:editor,focusNode:focus,readOnly:locked,showClearButton:true,maxLength:80,
 helperText:'Use a short, descriptive note.',prefix:const Icon(Icons.edit_outlined),
 onChanged:(_)=>setState((){}),onSubmitted:(v)=>setState(()=>submitted=v)),
 NgButton(onPressed:()=>focus.requestFocus(),child:const Text('Focus editor')),
@@ -69,6 +73,7 @@ Names are case-sensitive. `?` permits null. `EditorRequired` parameters are mark
 | `Placeholder` | `string?` | not set | Hint displayed for empty input. |
 | `Disabled` | `bool` | false | Disable user interaction. |
 | `ReadOnly` | `bool` | false | Prevent changes while retaining supported viewing actions. |
+| `ShowClearButton` | `bool` | false | See the behavior rules and model contract above. |
 | `MaxLength` | `int?` | not set | See the behavior rules and model contract above. |
 | `HelperText` | `string?` | not set | See the behavior rules and model contract above. |
 | `PrefixTemplate` | `RenderFragment?` | not set | See the behavior rules and model contract above. |
@@ -96,6 +101,7 @@ Names are case-sensitive. `?` permits null. `EditorRequired` parameters are mark
 | `maxLength` | `int?` | See the behavior rules and model contract above. |
 | `enabled` | `bool` | See the behavior rules and model contract above. |
 | `readOnly` | `bool` | Prevent changes while retaining supported viewing actions. |
+| `showClearButton` | `bool` | See the behavior rules and model contract above. |
 | `focusNode` | `FocusNode?` | See the behavior rules and model contract above. |
 | `helperText` | `String?` | See the behavior rules and model contract above. |
 | `prefix` | `Widget?` | See the behavior rules and model contract above. |
@@ -115,6 +121,7 @@ const NgTextArea({
     this.maxLength,
     this.enabled = true,
     this.readOnly = false,
+    this.showClearButton = false,
     this.focusNode,
     this.helperText,
     this.prefix,
