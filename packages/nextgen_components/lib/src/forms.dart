@@ -5,6 +5,7 @@ import 'components.dart';
 
 class NgTextArea extends StatelessWidget {
   final String label;
+  final String size, fillMode;
   final TextEditingController? controller;
   final String? initialValue;
   final ValueChanged<String>? onChanged;
@@ -21,6 +22,8 @@ class NgTextArea extends StatelessWidget {
   const NgTextArea({
     super.key,
     this.label = 'Notes',
+    this.size = 'medium',
+    this.fillMode = 'theme',
     this.controller,
     this.initialValue,
     this.onChanged,
@@ -52,6 +55,8 @@ class NgTextArea extends StatelessWidget {
       );
     return NextgenTextEditor(
       label: label,
+      size: size,
+      fillMode: fillMode,
       controller: controller,
       initialValue: initialValue,
       onChanged: onChanged,

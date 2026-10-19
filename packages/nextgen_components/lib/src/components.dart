@@ -26,6 +26,7 @@ class NgButton extends StatelessWidget {
 
 class NgTextBox extends StatelessWidget {
   final String label;
+  final String size, fillMode;
   final TextEditingController? controller;
   final String? initialValue;
   final ValueChanged<String>? onChanged;
@@ -40,6 +41,8 @@ class NgTextBox extends StatelessWidget {
   const NgTextBox({
     super.key,
     required this.label,
+    this.size = 'medium',
+    this.fillMode = 'theme',
     this.controller,
     this.initialValue,
     this.onChanged,
@@ -65,6 +68,8 @@ class NgTextBox extends StatelessWidget {
       throw ArgumentError('Use controller or initialValue, not both.');
     return NextgenTextEditor(
       label: label,
+      size: size,
+      fillMode: fillMode,
       controller: controller,
       initialValue: initialValue,
       onChanged: onChanged,

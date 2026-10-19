@@ -35,31 +35,45 @@ ShowClearButton/showClearButton adds a labelled Clear action. It is disabled for
 Password/password masks the single-line value; default false. ShowPasswordToggle/showPasswordToggle is opt-in and only appears in password mode. Reveal changes presentation, never the bound value or change callbacks. Read-only/disabled fields cannot reveal; entering these states hides the value. Clear and focus leaving the reveal control hide it too. Flutter controller replacement resets reveal. Password mode does not encrypt values or provide a credential manager; application storage and submission remain application responsibilities. Flutter disables suggestions/autocorrection in password mode. TextArea has no password mode.
 
 
+### Size and fill (0.48)
+Size/size accepts small, medium (default), or large. FillMode/fillMode accepts theme (default), outline, or filled. Invalid values throw. Medium and theme inherit the existing application density/decoration. Small and large adjust text size and padding; they do not impose a fixed TextArea height. Outline removes background fill; filled uses a theme-aware surface. Borders, focus and validation indicators remain controlled by the platform/theme. Flutter custom themes should supply an outline border if that shape is required; fill selection does not replace theme borders.
+
+Changing appearance preserves the value, selection and form state and emits no change callback. Automatic TextArea height recalculates with the new metrics. Read-only/disabled permissions and clear/password behavior remain unchanged. Flutter keeps native action hit targets; compact fields containing actions can therefore remain taller than fields without actions. Prefix/suffix templates keep their own sizing. The two platforms do not promise equal pixel heights. Debounced notifications and further radius/border customization remain open.
+
+
 ## Blazor example
 
 ```razor
+<div class="ng-prompt-actions"><NgButton OnClick="CycleSize">Change size</NgButton><NgButton OnClick="CycleFill">Change fill</NgButton></div>
+<p>Size: @size · Fill: @fill</p>
 <NgButton OnClick="()=>password=!password">Toggle password mode</NgButton>
 <NgCheckBox Label="Read only" @bind-Value="locked"/>
-<NgTextBox @ref="editor" Label="Project name" @bind-Value="text" ReadOnly="locked" ShowClearButton="true" Password="password" ShowPasswordToggle="true" MaxLength="80" HelperText="Use a short, descriptive name." OnCommit="v=>committed=v">
+<NgTextBox Size="@size" FillMode="@fill" @ref="editor" Label="Project name" @bind-Value="text" ReadOnly="locked" ShowClearButton="true" Password="password" ShowPasswordToggle="true" MaxLength="80" HelperText="Use a short, descriptive name." OnCommit="v=>committed=v">
 <PrefixTemplate><span aria-hidden="true">@@</span></PrefixTemplate>
 </NgTextBox>
 <NgButton OnClick="()=>editor!.FocusAsync().AsTask()">Focus editor</NgButton>
 <p>Length: @(text?.Length??0)</p>
-@code { private NgTextBox? editor; private bool locked,password=true; private string? text="Design review",committed; }
+@code {
+ private string size="medium",fill="theme";
+ private void CycleSize()=>size=size=="medium"?"large":size=="large"?"small":"medium";
+ private void CycleFill()=>fill=fill=="theme"?"filled":fill=="filled"?"outline":"theme"; private NgTextBox? editor; private bool locked,password=true; private string? text="Design review",committed; }
 
 ```
 
 ## Flutter example
 
 ```dart
+String size='medium',fill='theme';
 bool locked = false, password = true; String submitted = '';
 final editor = TextEditingController(text:'Design review');
 final focus = FocusNode();
 @override void dispose(){editor.dispose();focus.dispose();super.dispose();}
 Widget build(BuildContext context)=>Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
+Wrap(spacing:8,children:[NgButton(onPressed:()=>setState(()=>size=size=='medium'?'large':size=='large'?'small':'medium'),child:const Text('Change size')),NgButton(onPressed:()=>setState(()=>fill=fill=='theme'?'filled':fill=='filled'?'outline':'theme'),child:const Text('Change fill'))]),
+Text('Size: $size · Fill: $fill'),
 NgButton(onPressed:()=>setState(()=>password=!password),child:const Text('Toggle password mode')),
 NgCheckBox(label:'Read only',value:locked,onChanged:(v)=>setState(()=>locked=v)),
-NgTextBox(label:'Project name',controller:editor,focusNode:focus,readOnly:locked,showClearButton:true,password:password,showPasswordToggle:true,maxLength:80,
+NgTextBox(size:size,fillMode:fill,label:'Project name',controller:editor,focusNode:focus,readOnly:locked,showClearButton:true,password:password,showPasswordToggle:true,maxLength:80,
 helperText:'Use a short, descriptive name.',prefix:const Icon(Icons.edit_outlined),
 onChanged:(_)=>setState((){}),onSubmitted:(v)=>setState(()=>submitted=v)),
 NgButton(onPressed:()=>focus.requestFocus(),child:const Text('Focus editor')),
@@ -75,6 +89,8 @@ Names are case-sensitive. `?` permits null. `EditorRequired` parameters are mark
 |---|---|---|---|
 | `Id` | `string` | "ng-"+Guid.NewGuid().ToString("N") | See the behavior rules and model contract above. |
 | `Label` | `string` | "" | Visible label or accessible name. |
+| `Size` | `string` | "medium" | See the behavior rules and model contract above. |
+| `FillMode` | `string` | "theme" | Chip fill: solid or outline; see the documented defaults. |
 | `Placeholder` | `string?` | not set | Hint displayed for empty input. |
 | `Disabled` | `bool` | false | Disable user interaction. |
 | `ReadOnly` | `bool` | false | Prevent changes while retaining supported viewing actions. |
@@ -98,6 +114,8 @@ Names are case-sensitive. `?` permits null. `EditorRequired` parameters are mark
 | Argument | Type | Purpose |
 |---|---|---|
 | `label` | `String` | Visible label or accessible name. |
+| `size` | `String` | See the behavior rules and model contract above. |
+| `fillMode` | `String` | Chip fill: solid or outline; see the documented defaults. |
 | `controller` | `TextEditingController?` | Text controller; do not combine with initialValue. Dispose in its owner. |
 | `initialValue` | `String?` | Starting field value, not continuous controlled state. |
 | `onChanged` | `ValueChanged<String>?` | Store the new value using setState or your state manager. |
@@ -119,6 +137,8 @@ Names are case-sensitive. `?` permits null. `EditorRequired` parameters are mark
 const NgTextBox({
     super.key,
     required this.label,
+    this.size = 'medium',
+    this.fillMode = 'theme',
     this.controller,
     this.initialValue,
     this.onChanged,

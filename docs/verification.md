@@ -630,3 +630,21 @@ Evidence: [Blazor missing selection](screenshots/choices033-blazor-missing.png),
 - `scripts/textarea-size-check.py blazor` and `flutter`: **20 Blazor and 18 Flutter checks** in foreground Chrome on Linux iMac. Verified long/short external data, typing within bounds, cap stability, clear, 390 px wrapping and widening, read-only replacement, mode switching with preserved text and stable final layout. Blazor additionally verified actual DOM scroll overflow and observer cleanup/restored style after DOM removal. Text entry used native CDP mouse/keyboard input; buttons used DOM/semantics clicks. Flutter semantic input values were read after restoring focus.
 - Visually reviewed [Blazor capped](screenshots/text047-blazor-capped.png), [Blazor narrow](screenshots/text047-blazor-narrow.png), [Flutter narrow](screenshots/text047-flutter-narrow.png) and [desktop documentation](screenshots/text047-desktop.png). The desktop shell displays the new API and embedded live example. Unrelated Chrome sessions were preserved.
 - Limits: platform font metrics and decorations differ; equal rows do not promise equal pixels. Application CSS must not override automatic height/box sizing. Native platforms, screen-reader certification and custom-font loading races were not verified. Debounce and remaining editor/form gaps stay open.
+
+
+## Text editor appearance — 0.48 (2026-10-19, Linux on iMac)
+
+TextBox and TextArea now provide small/medium/large sizing and theme/outline/filled backgrounds. Defaults inherit the existing theme and density. Chrome exposed the legacy 80 px TextArea minimum overriding automatic row bounds; automatic mode now lets measured row bounds determine the height, while fixed small/large fields retain explicit minima.
+
+Validation completed:
+
+- 350 Blazor rendering/data checks and a zero-warning gallery build.
+- 208 Flutter tests; the new interaction checks preserve selected text, form errors and callbacks through appearance changes, and reject invalid configuration. Dart analysis: no issues.
+- 47 Razor and 47 Dart manual examples compiled/analyzed; 94 lossless highlighting checks. Flutter release Web build passed (existing CupertinoIcons font warning remains).
+- Foreground local Chrome: 24 Blazor and 22 Flutter appearance checks via `scripts/text-appearance-check.py`. Both editors retain values, restore medium metrics, clear after appearance changes and fit a 390 px viewport; automatic TextArea metrics adjust to large size.
+- 20 additional Blazor autosize regression checks via `scripts/textarea-size-check.py`, covering wrapping, cap/overflow, shrink, read-only external data, mode switching and removal cleanup.
+- Desktop documentation shell opened the updated TextArea manual with category navigation and a live example. Screenshots were inspected directly.
+
+Evidence: [Blazor narrow editor](screenshots/text048-blazor-NgTextArea-narrow.png), [Flutter filled password editor](screenshots/text048-flutter-NgTextBox-large.png), [Flutter narrow editor](screenshots/text048-flutter-NgTextArea-narrow.png), [desktop manual](screenshots/text048-desktop-manual.png).
+
+Flutter retains theme-defined borders and native action hit targets. Pixel parity, native platforms and a full screen-reader audit are not claimed. Debounced notifications, further border/radius options and generated form schemas remain open.

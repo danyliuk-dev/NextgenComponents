@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 // Internal shared implementation; TextBox and TextArea retain their public APIs.
 class NextgenTextEditor extends StatefulWidget {
   final String label;
+  final String size, fillMode;
   final TextEditingController? controller;
   final String? initialValue, placeholder, helperText;
   final ValueChanged<String>? onChanged, onSubmitted;
@@ -17,6 +18,8 @@ class NextgenTextEditor extends StatefulWidget {
   const NextgenTextEditor({
     super.key,
     required this.label,
+    this.size = 'medium',
+    this.fillMode = 'theme',
     this.controller,
     this.initialValue,
     this.placeholder,
@@ -103,6 +106,12 @@ class _NextgenTextEditorState extends State<NextgenTextEditor> {
 
   @override
   Widget build(BuildContext context) {
+    if (!['small', 'medium', 'large'].contains(widget.size)) {
+      throw ArgumentError('Use small, medium or large.');
+    }
+    if (!['theme', 'outline', 'filled'].contains(widget.fillMode)) {
+      throw ArgumentError('Use theme, outline or filled.');
+    }
     final current = revision;
     final actions = <Widget>[
       if (widget.password && widget.showPasswordToggle)
@@ -139,6 +148,9 @@ class _NextgenTextEditorState extends State<NextgenTextEditor> {
       },
       child: TextFormField(
         key: field,
+        style: widget.size == 'medium'
+            ? null
+            : TextStyle(fontSize: widget.size == 'small' ? 13 : 18),
         controller: widget.controller,
         initialValue: widget.initialValue,
         focusNode: inputFocus,
@@ -171,6 +183,18 @@ class _NextgenTextEditorState extends State<NextgenTextEditor> {
         autocorrect: !widget.password,
         autovalidateMode: AutovalidateMode.onUserInteraction,
         decoration: InputDecoration(
+          filled: widget.fillMode == 'theme'
+              ? null
+              : widget.fillMode == 'filled',
+          fillColor: widget.fillMode == 'filled'
+              ? Theme.of(context).colorScheme.surfaceContainerHighest
+              : null,
+          contentPadding: widget.size == 'medium'
+              ? null
+              : EdgeInsets.symmetric(
+                  horizontal: widget.size == 'small' ? 8 : 16,
+                  vertical: widget.size == 'small' ? 8 : 20,
+                ),
           labelText: widget.label,
           hintText: widget.placeholder,
           helperText: widget.helperText,

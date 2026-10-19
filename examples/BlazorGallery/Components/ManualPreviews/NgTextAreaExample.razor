@@ -1,14 +1,19 @@
 @* Generated from scripts/manual_content.py *@
+<div class="ng-prompt-actions"><NgButton OnClick="CycleSize">Change size</NgButton><NgButton OnClick="CycleFill">Change fill</NgButton></div>
+<p>Size: @size · Fill: @fill</p>
 <div class="ng-prompt-actions">
  <NgButton OnClick="()=>automatic=!automatic">Toggle automatic height</NgButton>
  <NgButton OnClick="LoadLong">Load long text</NgButton>
  <NgButton OnClick="LoadShort">Load short text</NgButton>
 </div>
 <NgCheckBox Label="Read only" @bind-Value="locked"/>
-<NgTextArea Label="Delivery notes" @bind-Value="text" Rows="2" MaxRows="6" AutoSize="automatic"
+<NgTextArea Size="@size" FillMode="@fill" Label="Delivery notes" @bind-Value="text" Rows="2" MaxRows="6" AutoSize="automatic"
  ReadOnly="locked" ShowClearButton="true" HelperText="Grows from 2 to 6 rows; longer notes scroll."/>
 <p>Automatic height: @automatic · Length: @(text?.Length??0)</p>
 @code {
+ private string size="medium",fill="theme";
+ private void CycleSize()=>size=size=="medium"?"large":size=="large"?"small":"medium";
+ private void CycleFill()=>fill=fill=="theme"?"filled":fill=="filled"?"outline":"theme";
  private bool automatic=true,locked; private string? text="Short note";
  private void LoadShort()=>text="Short note";
  private void LoadLong()=>text=string.Join("\n",Enumerable.Range(1,14).Select(i=>$"Line {i}: a detailed delivery note."));

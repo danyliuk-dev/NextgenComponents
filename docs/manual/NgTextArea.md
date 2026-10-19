@@ -38,19 +38,30 @@ AutoSize/autoSize defaults to false. When enabled, Rows/rows is the minimum visi
 Blazor uses a packaged JS module after interactive rendering; static SSR falls back to Rows. Automatic mode owns height and disables native manual resizing. Turning it off restores the previous inline height/overflow and normal fixed-mode behavior. Flutter uses native minLines/maxLines layout. The platforms retain their own font metrics and decorations, so equal row counts do not promise equal pixel heights. Avoid application CSS that overrides automatic height, line height or box sizing.
 
 
+### Size and fill (0.48)
+Size/size accepts small, medium (default), or large. FillMode/fillMode accepts theme (default), outline, or filled. Invalid values throw. Medium and theme inherit the existing application density/decoration. Small and large adjust text size and padding; they do not impose a fixed TextArea height. Outline removes background fill; filled uses a theme-aware surface. Borders, focus and validation indicators remain controlled by the platform/theme. Flutter custom themes should supply an outline border if that shape is required; fill selection does not replace theme borders.
+
+Changing appearance preserves the value, selection and form state and emits no change callback. Automatic TextArea height recalculates with the new metrics. Read-only/disabled permissions and clear/password behavior remain unchanged. Flutter keeps native action hit targets; compact fields containing actions can therefore remain taller than fields without actions. Prefix/suffix templates keep their own sizing. The two platforms do not promise equal pixel heights. Debounced notifications and further radius/border customization remain open.
+
+
 ## Blazor example
 
 ```razor
+<div class="ng-prompt-actions"><NgButton OnClick="CycleSize">Change size</NgButton><NgButton OnClick="CycleFill">Change fill</NgButton></div>
+<p>Size: @size · Fill: @fill</p>
 <div class="ng-prompt-actions">
  <NgButton OnClick="()=>automatic=!automatic">Toggle automatic height</NgButton>
  <NgButton OnClick="LoadLong">Load long text</NgButton>
  <NgButton OnClick="LoadShort">Load short text</NgButton>
 </div>
 <NgCheckBox Label="Read only" @bind-Value="locked"/>
-<NgTextArea Label="Delivery notes" @bind-Value="text" Rows="2" MaxRows="6" AutoSize="automatic"
+<NgTextArea Size="@size" FillMode="@fill" Label="Delivery notes" @bind-Value="text" Rows="2" MaxRows="6" AutoSize="automatic"
  ReadOnly="locked" ShowClearButton="true" HelperText="Grows from 2 to 6 rows; longer notes scroll."/>
 <p>Automatic height: @automatic · Length: @(text?.Length??0)</p>
 @code {
+ private string size="medium",fill="theme";
+ private void CycleSize()=>size=size=="medium"?"large":size=="large"?"small":"medium";
+ private void CycleFill()=>fill=fill=="theme"?"filled":fill=="filled"?"outline":"theme";
  private bool automatic=true,locked; private string? text="Short note";
  private void LoadShort()=>text="Short note";
  private void LoadLong()=>text=string.Join("\n",Enumerable.Range(1,14).Select(i=>$"Line {i}: a detailed delivery note."));
@@ -61,17 +72,20 @@ Blazor uses a packaged JS module after interactive rendering; static SSR falls b
 ## Flutter example
 
 ```dart
+String size='medium',fill='theme';
 bool automatic = true, locked = false;
 final editor = TextEditingController(text:'Short note');
 @override void dispose(){editor.dispose();super.dispose();}
 Widget build(BuildContext context)=>Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
+Wrap(spacing:8,children:[NgButton(onPressed:()=>setState(()=>size=size=='medium'?'large':size=='large'?'small':'medium'),child:const Text('Change size')),NgButton(onPressed:()=>setState(()=>fill=fill=='theme'?'filled':fill=='filled'?'outline':'theme'),child:const Text('Change fill'))]),
+Text('Size: $size · Fill: $fill'),
  Wrap(spacing:8,runSpacing:8,children:[
   NgButton(onPressed:()=>setState(()=>automatic=!automatic),child:const Text('Toggle automatic height')),
   NgButton(onPressed:()=>setState(()=>editor.text=List.generate(14,(i)=>'Line ${i+1}: a detailed delivery note.').join('\n')),child:const Text('Load long text')),
   NgButton(onPressed:()=>setState(()=>editor.text='Short note'),child:const Text('Load short text')),
  ]),
  NgCheckBox(label:'Read only',value:locked,onChanged:(v)=>setState(()=>locked=v)),
- NgTextArea(label:'Delivery notes',controller:editor,rows:2,maxRows:6,autoSize:automatic,
+ NgTextArea(size:size,fillMode:fill,label:'Delivery notes',controller:editor,rows:2,maxRows:6,autoSize:automatic,
   readOnly:locked,showClearButton:true,helperText:'Grows from 2 to 6 rows; longer notes scroll.',onChanged:(_)=>setState((){})),
  Text('Automatic height: $automatic · Length: ${editor.text.length}'),
 ]);
@@ -86,6 +100,8 @@ Names are case-sensitive. `?` permits null. `EditorRequired` parameters are mark
 |---|---|---|---|
 | `Id` | `string` | "ng-"+Guid.NewGuid().ToString("N") | See the behavior rules and model contract above. |
 | `Label` | `string` | "Notes" | Visible label or accessible name. |
+| `Size` | `string` | "medium" | See the behavior rules and model contract above. |
+| `FillMode` | `string` | "theme" | Chip fill: solid or outline; see the documented defaults. |
 | `Placeholder` | `string?` | not set | Hint displayed for empty input. |
 | `Disabled` | `bool` | false | Disable user interaction. |
 | `ReadOnly` | `bool` | false | Prevent changes while retaining supported viewing actions. |
@@ -110,6 +126,8 @@ Names are case-sensitive. `?` permits null. `EditorRequired` parameters are mark
 | Argument | Type | Purpose |
 |---|---|---|
 | `label` | `String` | Visible label or accessible name. |
+| `size` | `String` | See the behavior rules and model contract above. |
+| `fillMode` | `String` | Chip fill: solid or outline; see the documented defaults. |
 | `controller` | `TextEditingController?` | Text controller; do not combine with initialValue. Dispose in its owner. |
 | `initialValue` | `String?` | Starting field value, not continuous controlled state. |
 | `onChanged` | `ValueChanged<String>?` | Store the new value using setState or your state manager. |
@@ -132,6 +150,8 @@ Names are case-sensitive. `?` permits null. `EditorRequired` parameters are mark
 const NgTextArea({
     super.key,
     this.label = 'Notes',
+    this.size = 'medium',
+    this.fillMode = 'theme',
     this.controller,
     this.initialValue,
     this.onChanged,

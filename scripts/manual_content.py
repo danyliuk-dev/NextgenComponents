@@ -3040,3 +3040,15 @@ Widget build(BuildContext context)=>Column(crossAxisAlignment:CrossAxisAlignment
  Text('Automatic height: $automatic · Length: ${editor.text.length}'),
 ]);
 '''
+
+# Text appearance variants, 0.48.
+for _editor in ('NgTextBox','NgTextArea'):
+    D[_editor]['blazor'] = '<div class="ng-prompt-actions"><NgButton OnClick="CycleSize">Change size</NgButton><NgButton OnClick="CycleFill">Change fill</NgButton></div>\n<p>Size: @size · Fill: @fill</p>\n' + D[_editor]['blazor'].replace('<'+_editor+' ', '<'+_editor+' Size="@size" FillMode="@fill" ',1).replace('@code {', '@code {\n private string size="medium",fill="theme";\n private void CycleSize()=>size=size=="medium"?"large":size=="large"?"small":"medium";\n private void CycleFill()=>fill=fill=="theme"?"filled":fill=="filled"?"outline":"theme";')
+    D[_editor]['dart'] = "String size='medium',fill='theme';\n" + D[_editor]['dart'].replace('children:[', "children:[\nWrap(spacing:8,children:[NgButton(onPressed:()=>setState(()=>size=size=='medium'?'large':size=='large'?'small':'medium'),child:const Text('Change size')),NgButton(onPressed:()=>setState(()=>fill=fill=='theme'?'filled':fill=='filled'?'outline':'theme'),child:const Text('Change fill'))]),\nText('Size: $size · Fill: $fill'),",1).replace(_editor+'(',_editor+"(size:size,fillMode:fill,",1)
+    D[_editor]['notes'] += """
+
+### Size and fill (0.48)
+Size/size accepts small, medium (default), or large. FillMode/fillMode accepts theme (default), outline, or filled. Invalid values throw. Medium and theme inherit the existing application density/decoration. Small and large adjust text size and padding; they do not impose a fixed TextArea height. Outline removes background fill; filled uses a theme-aware surface. Borders, focus and validation indicators remain controlled by the platform/theme. Flutter custom themes should supply an outline border if that shape is required; fill selection does not replace theme borders.
+
+Changing appearance preserves the value, selection and form state and emits no change callback. Automatic TextArea height recalculates with the new metrics. Read-only/disabled permissions and clear/password behavior remain unchanged. Flutter keeps native action hit targets; compact fields containing actions can therefore remain taller than fields without actions. Prefix/suffix templates keep their own sizing. The two platforms do not promise equal pixel heights. Debounced notifications and further radius/border customization remain open.
+"""

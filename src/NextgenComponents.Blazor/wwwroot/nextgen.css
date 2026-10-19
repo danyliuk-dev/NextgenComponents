@@ -178,3 +178,14 @@ textarea.ng-input { resize:vertical; min-height:80px; }
 
 /* Automatic TextArea sizing owns height; fixed mode retains native resizing. */
 textarea.ng-textarea-auto{box-sizing:border-box;line-height:1.5;resize:none}
+
+/* Text appearance: medium/theme inherit the established density and theme. */
+.ng-text-size-small>.ng-input{font-size:13px;min-height:30px;padding:4px 8px}
+.ng-text-size-large>.ng-input{font-size:18px;min-height:48px;padding:10px 16px}
+.ng-text-size-small>.ng-button{font-size:13px;min-height:30px;padding:4px 8px}
+.ng-text-size-large>.ng-button{font-size:18px;min-height:48px;padding:10px 16px}
+.ng-text-fill-outline>.ng-input{background:transparent}
+.ng-text-fill-filled>.ng-input{background:var(--ng-subtle)}
+.ng-text-size-small>textarea.ng-input:not(.ng-textarea-auto){min-height:60px}
+.ng-text-size-large>textarea.ng-input:not(.ng-textarea-auto){min-height:104px}
+.ng-text-editor>textarea.ng-textarea-auto{min-height:0}

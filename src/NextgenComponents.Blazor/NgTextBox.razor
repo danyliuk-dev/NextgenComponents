@@ -1,7 +1,7 @@
 @inherits InputBase<string?>
 <div class="ng-field ng-text-field">
 <label for="@Id">@Label</label>
-<div class="ng-text-editor">
+<div class="ng-text-editor ng-text-size-@Size ng-text-fill-@FillMode">
 @if(PrefixTemplate is not null){<span class="ng-input-adornment">@PrefixTemplate</span>}
 <input type="@(Password&&!revealed?"password":"text")" @onblur="HidePassword" @ref="element" @attributes="AdditionalAttributes" id="@Id" class="ng-input @CssClass"  maxlength="@MaxLength" readonly="@ReadOnly" aria-describedby="@DescriptionIds" value="@CurrentValueAsString" @oninput="Input" @onchange="Commit" disabled="@Disabled" placeholder="@Placeholder" />
 @if(Password&&ShowPasswordToggle){<button type="button" class="ng-button" aria-label="@(revealed?"Hide password":"Show password")" aria-pressed="@(revealed?"true":"false")" disabled="@(Disabled||ReadOnly)" @onmousedown:preventDefault @onblur="HidePassword" @onclick="TogglePassword">@(revealed?"Hide":"Show")</button>}
@@ -13,6 +13,8 @@
 @code {
  [Parameter] public string Id {get;set;}="ng-"+Guid.NewGuid().ToString("N");
  [Parameter] public string Label {get;set;}="";
+ [Parameter] public string Size {get;set;}="medium";
+ [Parameter] public string FillMode {get;set;}="theme";
  [Parameter] public string? Placeholder {get;set;}
  [Parameter] public bool Disabled {get;set;}
  [Parameter] public bool ReadOnly {get;set;}
@@ -31,7 +33,7 @@
  private ElementReference element;
  private string? DescriptionIds=>string.Join(" ",new[]{AdditionalAttributes?.GetValueOrDefault("aria-describedby")?.ToString(),string.IsNullOrEmpty(HelperText)?null:Id+"-help"}.Where(s=>!string.IsNullOrWhiteSpace(s)));
  public ValueTask FocusAsync()=>element.FocusAsync();
- protected override void OnParametersSet(){base.OnParametersSet();if(!Password||!ShowPasswordToggle||Disabled||ReadOnly)revealed=false;if(MaxLength is <=0)throw new ArgumentOutOfRangeException(nameof(MaxLength));}
+ protected override void OnParametersSet(){base.OnParametersSet();if(Size is not ("small" or "medium" or "large"))throw new ArgumentException("Use small, medium or large.",nameof(Size));if(FillMode is not ("theme" or "outline" or "filled"))throw new ArgumentException("Use theme, outline or filled.",nameof(FillMode));if(!Password||!ShowPasswordToggle||Disabled||ReadOnly)revealed=false;if(MaxLength is <=0)throw new ArgumentOutOfRangeException(nameof(MaxLength));}
  private async Task Clear(){if(Disabled||ReadOnly||string.IsNullOrEmpty(CurrentValue))return;revealed=false;CurrentValueAsString="";await element.FocusAsync();}
  private void Input(ChangeEventArgs e){if(!Disabled&&!ReadOnly)CurrentValueAsString=e.Value?.ToString();}
  private Task Commit(ChangeEventArgs e)=>Disabled||ReadOnly?Task.CompletedTask:OnCommit.InvokeAsync(e.Value?.ToString());
