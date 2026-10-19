@@ -1,4 +1,22 @@
 @* Generated from scripts/manual_content.py *@
-<NgPivotGrid Items="records" RowField="Team" ColumnField="Quarter" Aggregate="NgAggregate.Average" OnCellSelected="p=>count=p.Records.Count"/>
-<p>Source records: @count</p>
-@code { private int count; private NgPivotRecord[] records=[new("a",new Dictionary<string,string>{{"Team","Design"},{"Quarter","Q1"}},100),new("b",new Dictionary<string,string>{{"Team","Design"},{"Quarter","Q1"}},200)]; }
+<div class="toolbar">
+<NgButton OnClick="()=>rowTotals=!rowTotals">Toggle row totals</NgButton>
+<NgButton OnClick="()=>columnTotals=!columnTotals">Toggle column totals</NgButton>
+<NgButton OnClick="()=>locked=!locked">Toggle selection lock</NgButton>
+<NgButton OnClick="()=>average=!average">Toggle average</NgButton>
+<NgButton OnClick="()=>empty=!empty">Toggle empty data</NgButton>
+<NgButton OnClick="()=>records=Data(2)">Update values</NgButton>
+</div>
+<p>Row totals @(rowTotals?"shown":"hidden") · Column totals @(columnTotals?"shown":"hidden") · Selection @(locked?"locked":"enabled")</p>
+<NgPivotGrid Items="@(empty?[]:records)" Aggregate="@(average?NgAggregate.Average:NgAggregate.Sum)" ShowRowTotals="rowTotals" ShowColumnTotals="columnTotals" SelectionReadOnly="locked" ValueFormatter="Format" RowLabel="RowText" ColumnLabel="ColumnText" TotalText="All" EmptyText="No matching deliveries" OnCellSelected="Selected"/>
+<p role="status">Last drilldown: @message</p>
+@code {
+ private bool rowTotals=true,columnTotals=true,locked,average,empty;
+ private string message="none";
+ private NgPivotRecord[] records=Data(1);
+ private string Format(double? v)=>v.HasValue?v.Value.ToString("F1",System.Globalization.CultureInfo.InvariantCulture)+" credits":"No value";
+ private string RowText(string v)=>v==""?"Unassigned":"Team "+v;
+ private string ColumnText(string v)=>"Period "+v;
+ private void Selected(NgPivotSelection p)=>message=$"{p.Row??"(total)"} / {p.Column??"(total)"} · {p.Records.Count} records · IDs: {string.Join(",",p.Records.Select(r=>r.Id))}";
+ private static NgPivotRecord[] Data(int factor)=>[new("a",new Dictionary<string,string>{{"Team","A"},{"Quarter","Q1"}},10*factor),new("b",new Dictionary<string,string>{{"Team","A"},{"Quarter","Q1"}},30*factor),new("c",new Dictionary<string,string>{{"Team","B"},{"Quarter","Q2"}},90*factor),new("d",new Dictionary<string,string>{{"Team",""},{"Quarter","Q1"}},null)];
+}

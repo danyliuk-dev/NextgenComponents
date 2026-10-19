@@ -377,6 +377,14 @@ Reject(()=>protectedSheet.ChangedCells(new NgSheet()),"changed cells validates d
 Rule(protectedSheet.ChangedCells(protectedSheet.Set("A1","2")).Count==0,"no-op changes excluded");
 await Check<NgSpreadsheet>(new(){["Value"]=protectedSheet,["CanEdit"]=(Func<string,bool>)(a=>a!="A1"),["ValueChanged"]=EventCallback.Factory.Create<NgSheet>(new object(),(NgSheet _) => {})},"Protected","readonly","Paste cells");
 await Check<NgSpreadsheet>(new(){["Value"]=protectedSheet},"readonly","disabled");
+Reject(()=>NgPivotMath.Validate([new(" ",new Dictionary<string,string>(),1)]),"pivot rejects blank ID");
+await Check<NgPivotGrid>(new(){["Items"]=pivot,["ShowRowTotals"]=false,["ShowColumnTotals"]=false,["ValueFormatter"]=(Func<double?,string>)(v=>v.HasValue?$"{v.Value:0} credits":"No value"),["RowLabel"]=(Func<string,string>)(v=>v==""?"Unassigned":"Team "+v),["ColumnLabel"]=(Func<string,string>)(v=>"Period "+v),["SelectionReadOnly"]=true},"Team A / Period Q1: 30 credits","Unassigned","disabled");
+await Check<NgPivotGrid>(new(){["Items"]=pivot,["TotalText"]="All"},"All / All: 120");
+await Check<NgPivotGrid>(new(){["EmptyText"]="No matching records"},"No matching records");
+foreach(var (rowTotals,colTotals,expectedCells) in new[]{(true,true,12),(true,false,9),(false,true,8),(false,false,6)}){
+ var pivotHtml=await renderer.Dispatcher.InvokeAsync(async ()=>(await renderer.RenderComponentAsync<NgPivotGrid>(ParameterView.FromDictionary(new Dictionary<string,object?>{{"Items",pivot},{"ShowRowTotals",rowTotals},{"ShowColumnTotals",colTotals}}))).ToHtmlString());
+ Rule(System.Text.RegularExpressions.Regex.Matches(pivotHtml,"class=\"ng-pivot-cell\"").Count==expectedCells,$"pivot total shape {rowTotals}/{colTotals}");
+}
 Console.WriteLine($"{count} rendering and data/date-rule checks passed. Browser interaction requires the separate visual run.");
 sealed class NoBrowserJS : IJSRuntime {
  public ValueTask<TValue> InvokeAsync<TValue>(string identifier, object?[]? args) => throw new InvalidOperationException("JS must not execute in SSR");

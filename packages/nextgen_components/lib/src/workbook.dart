@@ -303,9 +303,11 @@ class NgPivotSelection {
 abstract final class NgPivotMath {
   static void validate(List<NgPivotRecord> items) {
     if (items.map((x) => x.id).toSet().length != items.length ||
-        items.any((x) => x.value != null && !x.value!.isFinite))
+        items.any(
+          (x) => x.id.trim().isEmpty || x.value != null && !x.value!.isFinite,
+        ))
       throw ArgumentError(
-        'Pivot records require unique IDs and finite numeric values or null.',
+        'Pivot records require unique nonblank IDs and finite numeric values or null.',
       );
   }
 
@@ -682,10 +684,14 @@ class _NgSpreadsheetState extends State<NgSpreadsheet> {
   }
 }
 
-class NgPivotGrid extends StatelessWidget {
+class NgPivotGrid extends StatefulWidget {
   final String label, rowField, columnField;
   final List<NgPivotRecord> items;
   final NgAggregate aggregate;
+  final bool showRowTotals, showColumnTotals, selectionReadOnly;
+  final String totalText, emptyText;
+  final String Function(double?)? valueFormatter;
+  final String Function(String)? rowLabel, columnLabel;
   final ValueChanged<NgPivotSelection>? onCellSelected;
   const NgPivotGrid({
     super.key,
@@ -695,10 +701,53 @@ class NgPivotGrid extends StatelessWidget {
     this.columnField = 'Quarter',
     this.aggregate = NgAggregate.sum,
     this.onCellSelected,
+    this.showRowTotals = true,
+    this.showColumnTotals = true,
+    this.selectionReadOnly = false,
+    this.totalText = 'Total',
+    this.emptyText = 'No pivot data.',
+    this.valueFormatter,
+    this.rowLabel,
+    this.columnLabel,
   });
   @override
+  State<NgPivotGrid> createState() => _NgPivotGridState();
+}
+
+class _NgPivotGridState extends State<NgPivotGrid> {
+  int revision = 0;
+  @override
+  void didUpdateWidget(covariant NgPivotGrid old) {
+    super.didUpdateWidget(old);
+    revision++;
+  }
+
+  bool get canSelect =>
+      !widget.selectionReadOnly && widget.onCellSelected != null;
+  void select(
+    String? row,
+    String? col,
+    List<NgPivotRecord> records,
+    int expected,
+  ) {
+    if (!mounted ||
+        revision != expected ||
+        !canSelect ||
+        row == null && !widget.showColumnTotals ||
+        col == null && !widget.showRowTotals)
+      return;
+    widget.onCellSelected?.call(NgPivotSelection(row, col, records));
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final items = widget.items,
+        rowField = widget.rowField,
+        columnField = widget.columnField,
+        aggregate = widget.aggregate;
     NgPivotMath.validate(items);
+    if (rowField.trim().isEmpty || columnField.trim().isEmpty)
+      throw ArgumentError('Pivot requires nonblank dimension fields.');
     final rows =
             items
                 .map((x) => NgPivotMath.dimension(x, rowField))
@@ -711,29 +760,35 @@ class NgPivotGrid extends StatelessWidget {
                 .toSet()
                 .toList()
               ..sort();
-    String display(String? s) => s == null
-        ? 'Total'
-        : s.isEmpty
-        ? '(blank)'
-        : s;
+    String rowText(String? value) => value == null
+        ? widget.totalText
+        : widget.rowLabel?.call(value) ?? (value.isEmpty ? '(blank)' : value);
+    String columnText(String? value) => value == null
+        ? widget.totalText
+        : widget.columnLabel?.call(value) ??
+              (value.isEmpty ? '(blank)' : value);
     Widget cell(String? row, String? col) {
-      final records = NgPivotMath.filter(
-            items,
-            rowField,
-            columnField,
-            row,
-            col,
+      final records = List<NgPivotRecord>.unmodifiable(
+            NgPivotMath.filter(items, rowField, columnField, row, col),
           ),
           value = NgPivotMath.aggregate(records, aggregate);
-      final text = value == null ? '—' : NgSheet.format(value);
+      final text =
+          widget.valueFormatter?.call(value) ??
+          (value == null ? '—' : NgSheet.format(value));
+      final expected = revision;
       return Semantics(
-        label: '${display(row)} / ${display(col)}: $text',
+        label: '${rowText(row)} / ${columnText(col)}: $text',
         button: true,
+        enabled: canSelect,
         excludeSemantics: true,
-        onTap: () => onCellSelected?.call(NgPivotSelection(row, col, records)),
+        onTap: canSelect ? () => select(row, col, records, expected) : null,
         child: TextButton(
-          onPressed: () =>
-              onCellSelected?.call(NgPivotSelection(row, col, records)),
+          style: TextButton.styleFrom(
+            disabledForegroundColor: Theme.of(context).colorScheme.onSurface,
+          ),
+          onPressed: canSelect
+              ? () => select(row, col, records, expected)
+              : null,
           child: Text(
             text,
             style: TextStyle(
@@ -754,18 +809,19 @@ class NgPivotGrid extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(
-          label,
+          widget.label,
           style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
         ),
         Text('${aggregate.name} · $rowField × $columnField'),
         const SizedBox(height: 16),
         if (items.isEmpty)
-          const Text('No pivot data.')
+          Text(widget.emptyText)
         else
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: SizedBox(
-              width: (columns.length + 2) * 150.0,
+              width:
+                  (columns.length + 1 + (widget.showRowTotals ? 1 : 0)) * 150.0,
               child: Table(
                 border: TableBorder.all(
                   color: Theme.of(context).colorScheme.outline,
@@ -774,25 +830,26 @@ class NgPivotGrid extends StatelessWidget {
                   TableRow(
                     children: [
                       header('$rowField / $columnField'),
-                      for (final col in columns) header(display(col)),
-                      header('Total'),
+                      for (final col in columns) header(columnText(col)),
+                      if (widget.showRowTotals) header(widget.totalText),
                     ],
                   ),
                   for (final row in rows)
                     TableRow(
                       children: [
-                        header(display(row)),
+                        header(rowText(row)),
                         for (final col in columns) cell(row, col),
-                        cell(row, null),
+                        if (widget.showRowTotals) cell(row, null),
                       ],
                     ),
-                  TableRow(
-                    children: [
-                      header('Total'),
-                      for (final col in columns) cell(null, col),
-                      cell(null, null),
-                    ],
-                  ),
+                  if (widget.showColumnTotals)
+                    TableRow(
+                      children: [
+                        header(widget.totalText),
+                        for (final col in columns) cell(null, col),
+                        if (widget.showRowTotals) cell(null, null),
+                      ],
+                    ),
                 ],
               ),
             ),

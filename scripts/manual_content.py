@@ -891,27 +891,115 @@ D = {'NgButton': {'title': 'Button',
                             'multi-cell selection, clipboard integration or multi-sheet workbook.'},
  'NgPivotGrid': {'title': 'Pivot grid',
                  'use': 'Aggregate records by row and column dimensions.',
-                 'blazor': '<NgPivotGrid Items="records" RowField="Team" ColumnField="Quarter" '
-                           'Aggregate="NgAggregate.Average" OnCellSelected="p=>count=p.Records.Count"/>\n'
-                           '<p>Source records: @count</p>\n'
-                           '@code { private int count; private NgPivotRecord[] records=[new("a",new '
-                           'Dictionary<string,string>{{"Team","Design"},{"Quarter","Q1"}},100),new("b",new '
-                           'Dictionary<string,string>{{"Team","Design"},{"Quarter","Q1"}},200)]; }',
-                 'dart': 'int count = 0;\n'
-                         "Widget build(BuildContext context) => NgPivotGrid(rowField: 'Team', columnField: "
-                         "'Quarter',\n"
-                         '  aggregate: NgAggregate.average, items: [\n'
-                         "    NgPivotRecord('a', {'Team':'Design','Quarter':'Q1'},100),\n"
-                         "    NgPivotRecord('b', {'Team':'Design','Quarter':'Q1'},200)],\n"
-                         '  onCellSelected: (p) => setState(() => count = p.records.length));',
-                 'notes': 'NgPivotRecord contains a unique ID, string dimensions and one nullable numeric '
-                          'value. Dimensions sort by string keys; a missing key appears as (blank). '
-                          'Sum/Average/Min/Max use numeric values; Count includes source records with null '
-                          'values. Totals are recalculated from source records, so an average is not an '
-                          'average of averages. Cell/total callbacks return the original records; null '
-                          'Row/Column denotes a total, while an empty string denotes a blank dimension. '
-                          'Filter Items/items before passing them in. Multiple grouping levels, measures, '
-                          'OLAP and a drag/drop configurator are not implemented.'},
+                 'blazor': '<div class="toolbar">\n'
+                           '<NgButton OnClick="()=>rowTotals=!rowTotals">Toggle row '
+                           'totals</NgButton>\n'
+                           '<NgButton OnClick="()=>columnTotals=!columnTotals">Toggle column '
+                           'totals</NgButton>\n'
+                           '<NgButton OnClick="()=>locked=!locked">Toggle selection '
+                           'lock</NgButton>\n'
+                           '<NgButton OnClick="()=>average=!average">Toggle average</NgButton>\n'
+                           '<NgButton OnClick="()=>empty=!empty">Toggle empty data</NgButton>\n'
+                           '<NgButton OnClick="()=>records=Data(2)">Update values</NgButton>\n'
+                           '</div>\n'
+                           '<p>Row totals @(rowTotals?"shown":"hidden") · Column totals '
+                           '@(columnTotals?"shown":"hidden") · Selection '
+                           '@(locked?"locked":"enabled")</p>\n'
+                           '<NgPivotGrid Items="@(empty?[]:records)" '
+                           'Aggregate="@(average?NgAggregate.Average:NgAggregate.Sum)" '
+                           'ShowRowTotals="rowTotals" ShowColumnTotals="columnTotals" '
+                           'SelectionReadOnly="locked" ValueFormatter="Format" RowLabel="RowText" '
+                           'ColumnLabel="ColumnText" TotalText="All" EmptyText="No matching '
+                           'deliveries" OnCellSelected="Selected"/>\n'
+                           '<p role="status">Last drilldown: @message</p>\n'
+                           '@code {\n'
+                           ' private bool rowTotals=true,columnTotals=true,locked,average,empty;\n'
+                           ' private string message="none";\n'
+                           ' private NgPivotRecord[] records=Data(1);\n'
+                           ' private string Format(double? '
+                           'v)=>v.HasValue?v.Value.ToString("F1",System.Globalization.CultureInfo.InvariantCulture)+" '
+                           'credits":"No value";\n'
+                           ' private string RowText(string v)=>v==""?"Unassigned":"Team "+v;\n'
+                           ' private string ColumnText(string v)=>"Period "+v;\n'
+                           ' private void Selected(NgPivotSelection '
+                           'p)=>message=$"{p.Row??"(total)"} / {p.Column??"(total)"} · '
+                           '{p.Records.Count} records · IDs: '
+                           '{string.Join(",",p.Records.Select(r=>r.Id))}";\n'
+                           ' private static NgPivotRecord[] Data(int factor)=>[new("a",new '
+                           'Dictionary<string,string>{{"Team","A"},{"Quarter","Q1"}},10*factor),new("b",new '
+                           'Dictionary<string,string>{{"Team","A"},{"Quarter","Q1"}},30*factor),new("c",new '
+                           'Dictionary<string,string>{{"Team","B"},{"Quarter","Q2"}},90*factor),new("d",new '
+                           'Dictionary<string,string>{{"Team",""},{"Quarter","Q1"}},null)];\n'
+                           '}',
+                 'dart': 'bool '
+                         'rowTotals=true,columnTotals=true,locked=false,average=false,empty=false;\n'
+                         "String message='none';\n"
+                         'List<NgPivotRecord> records=data(1);\n'
+                         'static List<NgPivotRecord> data(int '
+                         "factor)=>[NgPivotRecord('a',{'Team':'A','Quarter':'Q1'},10.0*factor),NgPivotRecord('b',{'Team':'A','Quarter':'Q1'},30.0*factor),NgPivotRecord('c',{'Team':'B','Quarter':'Q2'},90.0*factor),NgPivotRecord('d',{'Team':'','Quarter':'Q1'},null)];\n"
+                         'Widget build(BuildContext '
+                         'context)=>Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[\n'
+                         ' Wrap(spacing:8,runSpacing:8,children:[\n'
+                         '  NgButton(onPressed:()=>setState(()=>rowTotals=!rowTotals),child:const '
+                         "Text('Toggle row totals')),\n"
+                         '  '
+                         'NgButton(onPressed:()=>setState(()=>columnTotals=!columnTotals),child:const '
+                         "Text('Toggle column totals')),\n"
+                         '  NgButton(onPressed:()=>setState(()=>locked=!locked),child:const '
+                         "Text('Toggle selection lock')),\n"
+                         '  NgButton(onPressed:()=>setState(()=>average=!average),child:const '
+                         "Text('Toggle average')),\n"
+                         '  NgButton(onPressed:()=>setState(()=>empty=!empty),child:const '
+                         "Text('Toggle empty data')),\n"
+                         '  NgButton(onPressed:()=>setState(()=>records=data(2)),child:const '
+                         "Text('Update values')),\n"
+                         ' ]),\n'
+                         ' Text(\'Row totals ${rowTotals?"shown":"hidden"} · Column totals '
+                         '${columnTotals?"shown":"hidden"} · Selection '
+                         '${locked?"locked":"enabled"}\'),\n'
+                         ' NgPivotGrid(items:empty?const '
+                         '[]:records,aggregate:average?NgAggregate.average:NgAggregate.sum,showRowTotals:rowTotals,showColumnTotals:columnTotals,selectionReadOnly:locked,\n'
+                         "  valueFormatter:(v)=>v==null?'No value':'${v.toStringAsFixed(1)} "
+                         "credits',rowLabel:(v)=>v.isEmpty?'Unassigned':'Team "
+                         "$v',columnLabel:(v)=>'Period $v',totalText:'All',emptyText:'No matching "
+                         "deliveries',\n"
+                         '  onCellSelected:(p)=>setState(()=>message=\'${p.row??"(total)"} / '
+                         '${p.column??"(total)"} · ${p.records.length} records · IDs: '
+                         '${p.records.map((r)=>r.id).join(",")}\')),\n'
+                         " Text('Last drilldown: $message'),\n"
+                         ']);',
+                 'notes': 'NgPivotRecord contains a unique nonblank ID, string dimensions and one '
+                          'nullable finite numeric value. RowField/ColumnField must be nonblank. '
+                          'Raw dimension keys sort lexically; a missing key is the blank string. '
+                          'Sum/Average/Min/Max use numeric values; Count includes records with '
+                          'null values. Totals always aggregate original records, so an average is '
+                          'not an average of averages.\n'
+                          '\n'
+                          'ShowRowTotals/showRowTotals controls the last column of per-row totals. '
+                          'ShowColumnTotals/showColumnTotals controls the bottom row of per-column '
+                          'totals. Both default true; the grand total is visible only when both '
+                          'are true. Visibility changes presentation, not aggregation. '
+                          'ValueFormatter/valueFormatter receives the nullable aggregate and '
+                          'returns plain text for visible and accessible values; null means no '
+                          'numeric result or overflow. RowLabel/rowLabel and '
+                          'ColumnLabel/columnLabel format raw keys, including the blank string, '
+                          'without changing sorting or callback keys. TotalText/totalText labels '
+                          'totals independently of ordinary keys; EmptyText/emptyText replaces the '
+                          'no-data message. These are plain-text formatters, not arbitrary '
+                          'widget/HTML templates.\n'
+                          '\n'
+                          'SelectionReadOnly/selectionReadOnly blocks cell and total actions while '
+                          'keeping values readable. Missing callbacks also disable these actions. '
+                          'Input updates still work while locked. Stale callbacks after parent '
+                          'updates or disposal cannot emit old data. Cell callbacks contain '
+                          'original records in a read-only collection; null Row/Column denotes a '
+                          'total, while an empty string denotes a blank dimension. Replace input '
+                          'lists and dimension dictionaries instead of mutating them. This '
+                          'component emits drilldown requests and does not own current selection; '
+                          'the example retains Last drilldown as application history after data '
+                          'changes. Filter Items/items before passing them in. Multiple grouping '
+                          'levels, measures, OLAP, export, virtualization and a drag/drop '
+                          'configurator remain unimplemented.'},
  'NgEditor': {'title': 'Structured document editor',
               'use': 'Edit a small document as typed blocks with a separate preview.',
               'blazor': '<NgEditor Label="Project description" @bind-Value="document"/>\n'

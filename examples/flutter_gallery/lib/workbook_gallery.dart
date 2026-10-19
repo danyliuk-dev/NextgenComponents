@@ -146,7 +146,7 @@ class _WorkbookGalleryState extends State<WorkbookGallery> {
                 ),
                 const SizedBox(height: 48),
                 Text(
-                  'FLUTTER / WORKBOOK 0.39',
+                  'FLUTTER / WORKBOOK 0.40',
                   style: TextStyle(color: colors.primary),
                 ),
                 const SizedBox(height: 20),
@@ -221,6 +221,9 @@ class _WorkbookGalleryState extends State<WorkbookGallery> {
                       ),
                       NgPivotGrid(
                         label: 'Delivery costs',
+                        valueFormatter: (v) => v == null
+                            ? 'No value'
+                            : '${v.toStringAsFixed(2)} ${aggregation == NgAggregate.count ? "records" : "credits"}',
                         items: records
                             .where(
                               (r) => r.dimensions['Team']!

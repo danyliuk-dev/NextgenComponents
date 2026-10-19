@@ -27,8 +27,8 @@ C# properties generally use PascalCase; Dart uses lowerCamelCase. Replace input 
 | NgScheduleEvent | Unique Id, nonempty Title, Start and End with End > Start. |
 | NgSheet | Immutable single-sheet dimensions and address-to-raw-text dictionary. |
 | NgCellValue | Text, nullable Number and nullable Error code. |
-| NgPivotRecord | Unique ID, string dimensions and one nullable numeric measure. |
-| NgPivotSelection | Row/column dimensions and source records; null identifies a total, empty string a blank dimension. |
+| NgPivotRecord | Unique nonblank ID, string dimensions and one nullable numeric measure. |
+| NgPivotSelection | Raw row/column keys and original records in a read-only callback collection; null identifies a total, empty string a blank dimension. |
 
 ## NgSheet
 

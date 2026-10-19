@@ -430,12 +430,25 @@ Widget build(BuildContext context)=>Column(crossAxisAlignment:CrossAxisAlignment
 }
 class NgPivotGridExample extends StatefulWidget { const NgPivotGridExample({super.key}); @override State<NgPivotGridExample> createState()=>_NgPivotGridExampleState(); }
 class _NgPivotGridExampleState extends State<NgPivotGridExample> {
-int count = 0;
-Widget build(BuildContext context) => NgPivotGrid(rowField: 'Team', columnField: 'Quarter',
-  aggregate: NgAggregate.average, items: [
-    NgPivotRecord('a', {'Team':'Design','Quarter':'Q1'},100),
-    NgPivotRecord('b', {'Team':'Design','Quarter':'Q1'},200)],
-  onCellSelected: (p) => setState(() => count = p.records.length));
+bool rowTotals=true,columnTotals=true,locked=false,average=false,empty=false;
+String message='none';
+List<NgPivotRecord> records=data(1);
+static List<NgPivotRecord> data(int factor)=>[NgPivotRecord('a',{'Team':'A','Quarter':'Q1'},10.0*factor),NgPivotRecord('b',{'Team':'A','Quarter':'Q1'},30.0*factor),NgPivotRecord('c',{'Team':'B','Quarter':'Q2'},90.0*factor),NgPivotRecord('d',{'Team':'','Quarter':'Q1'},null)];
+Widget build(BuildContext context)=>Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
+ Wrap(spacing:8,runSpacing:8,children:[
+  NgButton(onPressed:()=>setState(()=>rowTotals=!rowTotals),child:const Text('Toggle row totals')),
+  NgButton(onPressed:()=>setState(()=>columnTotals=!columnTotals),child:const Text('Toggle column totals')),
+  NgButton(onPressed:()=>setState(()=>locked=!locked),child:const Text('Toggle selection lock')),
+  NgButton(onPressed:()=>setState(()=>average=!average),child:const Text('Toggle average')),
+  NgButton(onPressed:()=>setState(()=>empty=!empty),child:const Text('Toggle empty data')),
+  NgButton(onPressed:()=>setState(()=>records=data(2)),child:const Text('Update values')),
+ ]),
+ Text('Row totals ${rowTotals?"shown":"hidden"} · Column totals ${columnTotals?"shown":"hidden"} · Selection ${locked?"locked":"enabled"}'),
+ NgPivotGrid(items:empty?const []:records,aggregate:average?NgAggregate.average:NgAggregate.sum,showRowTotals:rowTotals,showColumnTotals:columnTotals,selectionReadOnly:locked,
+  valueFormatter:(v)=>v==null?'No value':'${v.toStringAsFixed(1)} credits',rowLabel:(v)=>v.isEmpty?'Unassigned':'Team $v',columnLabel:(v)=>'Period $v',totalText:'All',emptyText:'No matching deliveries',
+  onCellSelected:(p)=>setState(()=>message='${p.row??"(total)"} / ${p.column??"(total)"} · ${p.records.length} records · IDs: ${p.records.map((r)=>r.id).join(",")}')),
+ Text('Last drilldown: $message'),
+]);
 }
 class NgEditorExample extends StatefulWidget { const NgEditorExample({super.key}); @override State<NgEditorExample> createState()=>_NgEditorExampleState(); }
 class _NgEditorExampleState extends State<NgEditorExample> {

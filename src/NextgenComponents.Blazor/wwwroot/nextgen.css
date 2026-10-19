@@ -172,3 +172,5 @@ textarea.ng-input { resize:vertical; min-height:80px; }
 
 .ng-schedule-event:disabled{cursor:default;color:inherit;opacity:.75}.ng-schedule-single{display:grid;grid-template-columns:1fr}.ng-schedule-event strong{overflow-wrap:anywhere}
 .ng-sheet-protected{display:block;font-size:10px;opacity:.8}.ng-sheet-cell{min-height:40px}
+
+.ng-pivot-cell:disabled{color:inherit;cursor:default;opacity:1}

@@ -1,17 +1,47 @@
+@implements IDisposable
 <section aria-label="@Label"><h3>@Label</h3><p>@Aggregate · @RowField × @ColumnField</p>
-@if(Items.Count==0){<p class="ng-empty">No pivot data.</p>}else{<div class="ng-table-scroll"><table class="ng-workbook-table ng-pivot-table"><caption class="ng-sr-only">@Label</caption><thead><tr><th scope="col">@RowField / @ColumnField</th>@foreach(var col in columns){<th scope="col">@Display(col)</th>}<th scope="col">Total</th></tr></thead><tbody>
-@foreach(var row in rows){<tr><th scope="row">@Display(row)</th>@foreach(var col in columns){<td>@Cell(row,col)</td>}<td class="ng-pivot-total">@Cell(row,null)</td></tr>}
-<tr class="ng-pivot-total"><th scope="row">Total</th>@foreach(var col in columns){<td>@Cell(null,col)</td>}<td>@Cell(null,null)</td></tr>
-</tbody></table></div>}</section>
+@if(Items.Count==0){<p class="ng-empty">@EmptyText</p>}else{
+ <div class="ng-table-scroll"><table class="ng-workbook-table ng-pivot-table"><caption class="ng-sr-only">@Label</caption>
+ <thead><tr><th scope="col">@RowField / @ColumnField</th>@foreach(var col in columns){<th scope="col">@ColumnText(col)</th>}@if(ShowRowTotals){<th scope="col">@TotalText</th>}</tr></thead>
+ <tbody>
+ @foreach(var row in rows){<tr><th scope="row">@RowText(row)</th>@foreach(var col in columns){<td>@Cell(row,col)</td>}@if(ShowRowTotals){<td class="ng-pivot-total">@Cell(row,null)</td>}</tr>}
+ @if(ShowColumnTotals){<tr class="ng-pivot-total"><th scope="row">@TotalText</th>@foreach(var col in columns){<td>@Cell(null,col)</td>}@if(ShowRowTotals){<td>@Cell(null,null)</td>}</tr>}
+ </tbody></table></div>
+}</section>
 @code {
  [Parameter] public string Label{get;set;}="Pivot table";
  [Parameter] public IReadOnlyList<NgPivotRecord> Items{get;set;}=[];
  [Parameter] public string RowField{get;set;}="Team";
  [Parameter] public string ColumnField{get;set;}="Quarter";
  [Parameter] public NgAggregate Aggregate{get;set;}=NgAggregate.Sum;
+ [Parameter] public bool ShowRowTotals{get;set;}=true;
+ [Parameter] public bool ShowColumnTotals{get;set;}=true;
+ [Parameter] public bool SelectionReadOnly{get;set;}
+ [Parameter] public Func<double?,string>? ValueFormatter{get;set;}
+ [Parameter] public Func<string,string>? RowLabel{get;set;}
+ [Parameter] public Func<string,string>? ColumnLabel{get;set;}
+ [Parameter] public string TotalText{get;set;}="Total";
+ [Parameter] public string EmptyText{get;set;}="No pivot data.";
  [Parameter] public EventCallback<NgPivotSelection> OnCellSelected{get;set;}
  private string[] rows=[],columns=[];
- protected override void OnParametersSet(){NgPivotMath.Validate(Items);rows=Items.Select(x=>NgPivotMath.Dimension(x,RowField)).Distinct().Order(StringComparer.Ordinal).ToArray();columns=Items.Select(x=>NgPivotMath.Dimension(x,ColumnField)).Distinct().Order(StringComparer.Ordinal).ToArray();}
- private static string Display(string? value)=>value is null?"Total":value==""?"(blank)":value;
- private RenderFragment Cell(string? row,string? col)=>b=>{var records=NgPivotMath.Filter(Items,RowField,ColumnField,row,col);var value=NgPivotMath.Aggregate(records,Aggregate);b.OpenElement(0,"button");b.AddAttribute(1,"type","button");b.AddAttribute(2,"class","ng-pivot-cell");b.AddAttribute(3,"aria-label",$"{Display(row)} / {Display(col)}: {(value.HasValue?NgSheet.Format(value.Value):"—")}");b.AddAttribute(4,"onclick",EventCallback.Factory.Create(this,()=>OnCellSelected.InvokeAsync(new(row,col,records))));b.AddContent(5,value.HasValue?NgSheet.Format(value.Value):"—");b.CloseElement();};
+ private long revision;
+ private bool disposed;
+ public void Dispose()=>disposed=true;
+ protected override void OnParametersSet(){
+  revision++;NgPivotMath.Validate(Items);
+  if(string.IsNullOrWhiteSpace(RowField)||string.IsNullOrWhiteSpace(ColumnField)||!Enum.IsDefined(Aggregate))throw new ArgumentException("Pivot requires nonblank dimension fields and a valid aggregate.");
+  rows=Items.Select(x=>NgPivotMath.Dimension(x,RowField)).Distinct().Order(StringComparer.Ordinal).ToArray();
+  columns=Items.Select(x=>NgPivotMath.Dimension(x,ColumnField)).Distinct().Order(StringComparer.Ordinal).ToArray();
+ }
+ private string RowText(string? value)=>value is null?TotalText:RowLabel?.Invoke(value)??(value==""?"(blank)":value);
+ private string ColumnText(string? value)=>value is null?TotalText:ColumnLabel?.Invoke(value)??(value==""?"(blank)":value);
+ private bool CanSelect=>!SelectionReadOnly&&OnCellSelected.HasDelegate;
+ private Task Select(string? row,string? col,IReadOnlyList<NgPivotRecord> records,long expected)=>!disposed&&revision==expected&&CanSelect&&(row is not null||ShowColumnTotals)&&(col is not null||ShowRowTotals)?OnCellSelected.InvokeAsync(new(row,col,records)):Task.CompletedTask;
+ private RenderFragment Cell(string? row,string? col)=>b=>{
+  var records=Array.AsReadOnly(NgPivotMath.Filter(Items,RowField,ColumnField,row,col).ToArray());
+  var value=NgPivotMath.Aggregate(records,Aggregate);
+  var text=ValueFormatter?.Invoke(value)??(value.HasValue?NgSheet.Format(value.Value):"—");var expected=revision;
+  b.OpenElement(0,"button");b.AddAttribute(1,"type","button");b.AddAttribute(2,"class","ng-pivot-cell");b.AddAttribute(3,"aria-label",$"{RowText(row)} / {ColumnText(col)}: {text}");
+  b.AddAttribute(4,"disabled",!CanSelect);b.AddAttribute(5,"onclick",EventCallback.Factory.Create(this,()=>Select(row,col,records,expected)));b.AddContent(6,text);b.CloseElement();
+ };
 }
