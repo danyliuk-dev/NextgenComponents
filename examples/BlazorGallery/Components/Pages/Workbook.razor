@@ -2,13 +2,14 @@
 <PageTitle>Nextgen • Workbook</PageTitle>
 <div class="ng-scope gallery" data-ng-theme="@(dark?"dark":"light")" data-ng-density="@(compact?"compact":"normal")"><main>
 <nav><a href="/code-examples">Code examples</a><strong><span class="brand-icon">N</span> NEXTGEN COMPONENTS</strong><div class="row"><a href="/">Foundation</a><a href="/analytics">Analytics</a><NgSwitch Label="Dark theme" @bind-Value="dark"/><NgCheckBox Label="Compact" @bind-Value="compact"/></div></nav>
-<section class="hero"><p class="eyebrow">BLAZOR / WORKBOOK 0.5</p><h1>Edit the numbers.<br/>Explore the result.</h1><p>Change hours or rates, calculate delivery costs and inspect the records behind each summary.</p></section>
-<section class="panel"><NgSpreadsheet Label="Delivery workbook" Value="sheet" ValueChanged="SheetChanged"/><p>Rows 2–6 feed the pivot below. Select a cell, edit its value or formula, then Apply cell. Arrow keys move the selection.</p></section>
+<section class="hero"><p class="eyebrow">BLAZOR / WORKBOOK 0.39</p><h1>Edit the numbers.<br/>Explore the result.</h1><p>Change hours or rates, calculate delivery costs and inspect the records behind each summary.</p></section>
+<section class="panel"><NgSpreadsheet Label="Delivery workbook" Value="sheet" ValueChanged="SheetChanged" CanEdit="Editable"/><p>Headers and calculated costs are protected. Rows 2–6 feed the pivot below. Select a cell, edit its value or formula, then Apply cell. Arrow keys move the selection.</p></section>
 <section class="panel"><div class="fields"><NgDropDownList Label="Rows" Items="dimensions" Value="@rowField" ValueExpression="()=>rowField" ValueChanged="v=>Configure(v,columnField,aggregation)"/><NgDropDownList Label="Columns" Items="dimensions" Value="@columnField" ValueExpression="()=>columnField" ValueChanged="v=>Configure(rowField,v,aggregation)"/><NgDropDownList Label="Aggregate" Items="aggregates" Value="@aggregation" ValueExpression="()=>aggregation" ValueChanged="v=>Configure(rowField,columnField,v)"/></div><NgTextBox Label="Filter team" Value="@filter" ValueChanged="Filter" ValueExpression="()=>filter"/><p role="status">@records.Count source rows · @excluded invalid cost rows excluded</p><NgPivotGrid Label="Delivery costs" Items="Filtered" RowField="@rowField" ColumnField="@columnField" Aggregate="Enum.Parse<NgAggregate>(aggregation)" OnCellSelected="p=>selection=p"/></section>
 <section class="panel"><h3>Source records</h3>@if(selection is null){<p>Select any pivot value or total to inspect its records.</p>}else{<p role="status">@(selection.Row??"Total") / @(selection.Column??"Total") · @selection.Records.Count records</p><NgDataGrid TItem="NgPivotRecord" Items="selection.Records" Columns="recordColumns" RowId="r=>r.Id"/>}</section>
-<footer class="page-footer">35 CONTROLS / 41 CATALOGUE ENTRIES <span>WEB FIRST</span></footer>
+<footer class="page-footer">47 CONTROLS / 53 CATALOGUE ENTRIES <span>WEB FIRST</span></footer>
 </main></div>
 @code {
+ private bool Editable(string a){var (r,c)=sheet.Position(a);return r>=1&&r<=5&&c<4;}
  private bool dark,compact;private string rowField="Team",columnField="Quarter",aggregation="Sum";private string? filter="";private NgPivotSelection? selection;private int excluded;
  private NgSheet sheet=Initial();private List<NgPivotRecord> records=[];
  private static readonly NgOption[] dimensions=[new("Team","Team"),new("Quarter","Quarter")];private static readonly NgOption[] aggregates=Enum.GetNames<NgAggregate>().Select(x=>new NgOption(x,x)).ToArray();

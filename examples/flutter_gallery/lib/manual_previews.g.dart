@@ -409,9 +409,24 @@ Widget build(BuildContext context)=>Column(crossAxisAlignment:CrossAxisAlignment
 }
 class NgSpreadsheetExample extends StatefulWidget { const NgSpreadsheetExample({super.key}); @override State<NgSpreadsheetExample> createState()=>_NgSpreadsheetExampleState(); }
 class _NgSpreadsheetExampleState extends State<NgSpreadsheetExample> {
-NgSheet sheet = NgSheet(rows: 8, columns: 5, cells: {'A1':'10','B1':'20','C1':'=SUM(A1:B1)'});
-Widget build(BuildContext context) => NgSpreadsheet(value: sheet,
-  onChanged: (v) => setState(() => sheet = v));
+NgSheet sheet=initial();
+bool protect=true,lockA1=false,readOnly=false,accept=true;
+int proposals=0;
+static NgSheet initial()=>NgSheet(rows:4,columns:4,cells:{'A1':'10','B1':'20','C1':'=SUM(A1:B1)'});
+bool editable(String a)=>(!protect||!a.startsWith('C'))&&(!lockA1||a!='A1');
+Widget build(BuildContext context)=>Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
+ Wrap(spacing:8,runSpacing:8,children:[
+  NgButton(onPressed:()=>setState(()=>protect=!protect),child:const Text('Toggle protection')),
+  NgButton(onPressed:()=>setState(()=>lockA1=!lockA1),child:const Text('Toggle A1 lock')),
+  NgButton(onPressed:()=>setState(()=>accept=!accept),child:const Text('Toggle acceptance')),
+  NgButton(onPressed:()=>setState(()=>readOnly=!readOnly),child:const Text('Toggle read-only')),
+  NgButton(onPressed:()=>setState(()=>sheet=initial()),child:const Text('Reset sheet')),
+  NgButton(onPressed:()=>setState(()=>sheet=NgSheet(rows:1,columns:1)),child:const Text('Shrink sheet')),
+ ]),
+ Text('Protection ${protect?"enabled":"disabled"} · A1 ${lockA1?"locked":"editable"} · Changes ${accept?"accepted":"rejected"}'),
+ NgSpreadsheet(value:sheet,canEdit:editable,readOnly:readOnly,onChanged:(v)=>setState((){proposals++;if(accept)sheet=v;})),
+ Text('Accepted A1: ${sheet.raw("A1")} · Proposals: $proposals'),
+]);
 }
 class NgPivotGridExample extends StatefulWidget { const NgPivotGridExample({super.key}); @override State<NgPivotGridExample> createState()=>_NgPivotGridExampleState(); }
 class _NgPivotGridExampleState extends State<NgPivotGridExample> {

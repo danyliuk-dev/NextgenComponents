@@ -1,10 +1,12 @@
+@implements IDisposable
+@{var renderedRevision=revision;}
 <section class="ng-sheet" aria-label="@Label">
 <h3>@Label</h3>
-<div class="ng-sheet-toolbar"><strong aria-live="polite">@address</strong><label class="ng-field ng-formula">Cell value or formula<input class="ng-input" aria-label="Cell value or formula" @bind="draft" @bind:event="oninput" @onkeydown="EditKey" disabled="@ReadOnly" /></label><NgButton Primary OnClick="Apply" Disabled="@ReadOnly">Apply cell</NgButton><NgButton OnClick="()=>History(false)" Disabled="@(ReadOnly||undo.Count==0)">Undo</NgButton><NgButton OnClick="()=>History(true)" Disabled="@(ReadOnly||redo.Count==0)">Redo</NgButton></div>
+<div class="ng-sheet-toolbar"><strong aria-live="polite">@address</strong><label class="ng-field ng-formula">Cell value or formula<input class="ng-input" aria-label="Cell value or formula" @bind="draft" @bind:event="oninput" @onkeydown="e=>EditKey(e,renderedRevision)" readonly="@(!Editable(address))" /></label><NgButton Primary OnClick="()=>Apply(renderedRevision)" Disabled="@(!Editable(address))">Apply cell</NgButton><NgButton OnClick="()=>History(false,renderedRevision)" Disabled="@(!CanHistory(false))">Undo</NgButton><NgButton OnClick="()=>History(true,renderedRevision)" Disabled="@(!CanHistory(true))">Redo</NgButton></div>
 <div class="ng-table-scroll"><table class="ng-workbook-table" aria-label="@Label"><thead><tr><th scope="col">Cell</th>@for(var c=0;c<current.Columns;c++){<th scope="col">@((char)('A'+c))</th>}</tr></thead><tbody>
-@for(var r=0;r<current.Rows;r++){var row=r;<tr><th scope="row">@(r+1)</th>@for(var c=0;c<current.Columns;c++){var col=c;var a=NgSheet.Address(row,col);var v=current.Evaluate(a);<td class="@(a==address?"ng-cell-selected":"")"><button type="button" @ref="cellRefs[a]" class="ng-sheet-cell @(v.Error!=null?"ng-cell-error":"")" aria-label="@($"{a}: {v.Text}")" aria-pressed="@(a==address?"true":"false")" title="@current.Raw(a)" @onclick="()=>Select(row,col)" @onkeydown="e=>Navigate(e,row,col)">@v.Text<span class="ng-sr-only">@(v.Text==""?"Empty":"")</span></button></td>}</tr>}
+@for(var r=0;r<current.Rows;r++){var row=r;<tr><th scope="row">@(r+1)</th>@for(var c=0;c<current.Columns;c++){var col=c;var a=NgSheet.Address(row,col);var v=current.Evaluate(a);<td class="@(a==address?"ng-cell-selected":"")"><button type="button" @ref="cellRefs[a]" class="ng-sheet-cell @(v.Error!=null?"ng-cell-error":"")" aria-label="@($"{a}: {v.Text}{(Protected(a)?" · Protected":"")}")" aria-pressed="@(a==address?"true":"false")" title="@current.Raw(a)" @onclick="()=>Select(row,col,renderedRevision)" @onkeydown="e=>Navigate(e,row,col,renderedRevision)">@v.Text@if(Protected(a)){<small class="ng-sheet-protected">Protected</small>}<span class="ng-sr-only">@(v.Text==""?"Empty":"")</span></button></td>}</tr>}
 </tbody></table></div>
-@if(!ReadOnly){<details><summary>Paste cells</summary><label class="ng-field">Tab-separated values<textarea class="ng-input" aria-label="Tab-separated values" rows="3" @bind="paste" @bind:event="oninput"></textarea></label><NgButton OnClick="Paste">Paste at @address</NgButton><small>Tabs separate columns; new lines separate rows. Formulas are kept as entered.</small></details>}
+@if(Writable){<details><summary>Paste cells</summary><label class="ng-field">Tab-separated values<textarea class="ng-input" aria-label="Tab-separated values" rows="3" @bind="paste" @bind:event="oninput"></textarea></label><NgButton OnClick="()=>Paste(renderedRevision)" Disabled="@(!Editable(address))">Paste at @address</NgButton><small>Tabs separate columns; new lines separate rows. Formulas are kept as entered.</small></details>}
 <p role="status">@message</p>
 </section>
 @code {
@@ -12,14 +14,45 @@
  [Parameter,EditorRequired] public NgSheet Value{get;set;}=new();
  [Parameter] public EventCallback<NgSheet> ValueChanged{get;set;}
  [Parameter] public bool ReadOnly{get;set;}
+ [Parameter] public Func<string,bool>? CanEdit{get;set;}
  private NgSheet current=new();private string address="A1",draft="",paste="",message="";private readonly List<NgSheet> undo=[],redo=[];
- protected override void OnParametersSet(){if(!ReferenceEquals(current,Value)){current=Value;undo.Clear();redo.Clear();try{current.Position(address);}catch(ArgumentException){address="A1";}draft=current.Raw(address);}}
- private void Select(int r,int c){address=NgSheet.Address(Math.Clamp(r,0,current.Rows-1),Math.Clamp(c,0,current.Columns-1));draft=current.Raw(address);message="";}
+ private (NgSheet Next,int Action)? pending;
+ private long revision;
+ private bool disposed,initialized;
+ public void Dispose()=>disposed=true;
+ private bool Writable=>!ReadOnly&&ValueChanged.HasDelegate;
+ private bool Protected(string cell)=>CanEdit is not null&&!CanEdit(cell);
+ private bool Editable(string cell)=>Writable&&!Protected(cell);
+ private bool Active(long expected)=>!disposed&&expected==revision;
+ private bool CanChange(NgSheet next)=>Writable&&current.ChangedCells(next).All(a=>!Protected(a));
+ private bool CanHistory(bool forward){var stack=forward?redo:undo;return stack.Count>0&&CanChange(stack[^1]);}
+ protected override void OnParametersSet(){
+  revision++;
+  if(!ReferenceEquals(current,Value)){
+   var accepted=pending is {} proposal&&ReferenceEquals(proposal.Next,Value);
+   if(accepted){
+    var action=pending!.Value.Action;
+    if(action==0){undo.Add(current);if(undo.Count>50)undo.RemoveAt(0);redo.Clear();}
+    else {var from=action==1?undo:redo;var to=action==1?redo:undo;to.Add(current);from.RemoveAt(from.Count-1);}
+    message=action==0?$"Updated {address}":action==1?"Undone":"Redone";
+   }else{undo.Clear();redo.Clear();message=initialized?"Sheet replaced":"";}
+   current=Value;
+   try{current.Position(address);}catch(ArgumentException){address="A1";}
+   draft=current.Raw(address);
+  }else if(pending is not null)message="Change not applied.";
+  pending=null;initialized=true;
+ }
+ private void Select(int r,int c,long expected){if(!Active(expected))return;revision++;address=NgSheet.Address(Math.Clamp(r,0,current.Rows-1),Math.Clamp(c,0,current.Columns-1));draft=current.Raw(address);message="";}
  private readonly Dictionary<string,ElementReference> cellRefs=[];
- private async Task Navigate(KeyboardEventArgs e,int r,int c){switch(e.Key){case "ArrowLeft":Select(r,c-1);break;case "ArrowRight":Select(r,c+1);break;case "ArrowUp":Select(r-1,c);break;case "ArrowDown":Select(r+1,c);break;default:return;}await cellRefs[address].FocusAsync();}
- private Task EditKey(KeyboardEventArgs e)=>e.Key=="Enter"?Apply():Task.CompletedTask;
- private async Task Commit(NgSheet next){undo.Add(current);if(undo.Count>50)undo.RemoveAt(0);redo.Clear();current=next;draft=current.Raw(address);message=$"Updated {address}";await ValueChanged.InvokeAsync(current);}
- private async Task Apply(){if(ReadOnly)return;try{await Commit(current.Set(address,draft));}catch(ArgumentException e){message=e.Message;}}
- private async Task Paste(){if(ReadOnly)return;try{await Commit(current.Paste(address,paste));}catch(ArgumentException e){message=e.Message;}}
- private async Task History(bool forward){if(ReadOnly)return;var from=forward?redo:undo;var to=forward?undo:redo;if(from.Count==0)return;to.Add(current);current=from[^1];from.RemoveAt(from.Count-1);draft=current.Raw(address);message=forward?"Redone":"Undone";await ValueChanged.InvokeAsync(current);}
+ private async Task Navigate(KeyboardEventArgs e,int r,int c,long expected){if(!Active(expected))return;switch(e.Key){case "ArrowLeft":Select(r,c-1,expected);break;case "ArrowRight":Select(r,c+1,expected);break;case "ArrowUp":Select(r-1,c,expected);break;case "ArrowDown":Select(r+1,c,expected);break;default:return;}await cellRefs[address].FocusAsync();}
+ private Task EditKey(KeyboardEventArgs e,long expected)=>e.Key=="Enter"?Apply(expected):Task.CompletedTask;
+ private async Task Commit(NgSheet next,int action=0){
+  if(!CanChange(next))return;
+  if(current.ChangedCells(next).Count==0){message="No changes.";return;}
+  pending=(next,action);message="Change requested.";
+  await ValueChanged.InvokeAsync(next);
+ }
+ private async Task Apply(long expected){if(!Active(expected)||!Editable(address))return;try{await Commit(current.Set(address,draft));}catch(ArgumentException e){message=e.Message;}}
+ private async Task Paste(long expected){if(!Active(expected)||!Editable(address))return;try{await Commit(current.Paste(address,paste,a=>!Protected(a)));}catch(ArgumentException e){message=e.Message;}}
+ private Task History(bool forward,long expected)=>Active(expected)&&CanHistory(forward)?Commit((forward?redo:undo)[^1],forward?2:1):Task.CompletedTask;
 }

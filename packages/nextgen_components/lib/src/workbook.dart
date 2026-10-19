@@ -48,7 +48,7 @@ class NgSheet {
     );
   }
 
-  NgSheet paste(String origin, String text) {
+  NgSheet paste(String origin, String text, {bool Function(String)? canEdit}) {
     final (r, c) = position(origin);
     final matrix = text
         .replaceAll('\r\n', '\n')
@@ -62,10 +62,25 @@ class NgSheet {
     final copy = {...cells};
     for (var y = 0; y < matrix.length; y++) {
       for (var x = 0; x < matrix[y].length; x++) {
-        copy[address(r + y, c + x)] = matrix[y][x];
+        final target = address(r + y, c + x);
+        if (canEdit != null && !canEdit(target))
+          throw ArgumentError(
+            'Cell $target is protected. Paste was not applied.',
+          );
+        copy[target] = matrix[y][x];
       }
     }
     return NgSheet(rows: rows, columns: columns, cells: copy);
+  }
+
+  List<String> changedCells(NgSheet other) {
+    if (rows != other.rows || columns != other.columns)
+      throw ArgumentError('Sheet dimensions must match.');
+    return List.unmodifiable([
+      for (var r = 0; r < rows; r++)
+        for (var c = 0; c < columns; c++)
+          if (raw(address(r, c)) != other.raw(address(r, c))) address(r, c),
+    ]);
   }
 
   static String format(double n) {
@@ -333,12 +348,14 @@ class NgSpreadsheet extends StatefulWidget {
   final NgSheet value;
   final ValueChanged<NgSheet>? onChanged;
   final bool readOnly;
+  final bool Function(String)? canEdit;
   const NgSpreadsheet({
     super.key,
     this.label = 'Spreadsheet',
     required this.value,
     this.onChanged,
     this.readOnly = false,
+    this.canEdit,
   });
   @override
   State<NgSpreadsheet> createState() => _NgSpreadsheetState();
@@ -346,6 +363,21 @@ class NgSpreadsheet extends StatefulWidget {
 
 class _NgSpreadsheetState extends State<NgSpreadsheet> {
   late NgSheet current;
+  NgSheet? pending;
+  int pendingAction = 0;
+  bool get writable => !widget.readOnly && widget.onChanged != null;
+  bool protected(String cell) =>
+      widget.canEdit != null && !widget.canEdit!(cell);
+  bool editable(String cell) => writable && !protected(cell);
+  bool valid(NgSheet source, String selected) =>
+      mounted && identical(current, source) && address == selected;
+  bool canChange(NgSheet next) =>
+      writable && current.changedCells(next).every((a) => !protected(a));
+  bool canHistory(bool forward) {
+    final stack = forward ? redo : undo;
+    return stack.isNotEmpty && canChange(stack.last);
+  }
+
   final undo = <NgSheet>[], redo = <NgSheet>[];
   final formula = TextEditingController(), paste = TextEditingController();
   final nodes = <String, FocusNode>{};
@@ -362,16 +394,38 @@ class _NgSpreadsheetState extends State<NgSpreadsheet> {
   void didUpdateWidget(covariant NgSpreadsheet old) {
     super.didUpdateWidget(old);
     if (!identical(current, widget.value)) {
+      if (identical(pending, widget.value)) {
+        if (pendingAction == 0) {
+          undo.add(current);
+          if (undo.length > 50) undo.removeAt(0);
+          redo.clear();
+        } else {
+          final from = pendingAction == 1 ? undo : redo,
+              to = pendingAction == 1 ? redo : undo;
+          to.add(current);
+          from.removeLast();
+        }
+        message = pendingAction == 0
+            ? 'Updated $address'
+            : pendingAction == 1
+            ? 'Undone'
+            : 'Redone';
+      } else {
+        undo.clear();
+        redo.clear();
+        message = 'Sheet replaced';
+      }
       current = widget.value;
-      undo.clear();
-      redo.clear();
       try {
         current.position(address);
       } on ArgumentError {
         address = 'A1';
       }
       formula.text = current.raw(address);
+    } else if (pending != null) {
+      message = 'Change not applied.';
     }
+    pending = null;
   }
 
   @override
@@ -396,24 +450,26 @@ class _NgSpreadsheetState extends State<NgSpreadsheet> {
     nodes[address]?.requestFocus();
   }
 
-  void commit(NgSheet next) {
+  void commit(NgSheet next, {int action = 0}) {
+    if (!mounted || !canChange(next)) return;
+    if (current.changedCells(next).isEmpty) {
+      setState(() => message = 'No changes.');
+      return;
+    }
     setState(() {
-      undo.add(current);
-      if (undo.length > 50) undo.removeAt(0);
-      redo.clear();
-      current = next;
-      formula.text = current.raw(address);
-      message = 'Updated $address';
+      pending = next;
+      pendingAction = action;
+      message = 'Change requested.';
     });
-    widget.onChanged?.call(current);
+    widget.onChanged?.call(next);
   }
 
-  void apply({bool block = false}) {
-    if (widget.readOnly) return;
+  void apply(NgSheet source, String selected, {bool block = false}) {
+    if (!valid(source, selected) || !editable(address)) return;
     try {
       commit(
         block
-            ? current.paste(address, paste.text)
+            ? current.paste(address, paste.text, canEdit: (a) => !protected(a))
             : current.set(address, formula.text),
       );
     } on ArgumentError catch (e) {
@@ -421,28 +477,22 @@ class _NgSpreadsheetState extends State<NgSpreadsheet> {
     }
   }
 
-  void history(bool forward) {
-    if (widget.readOnly) return;
-    final from = forward ? redo : undo, to = forward ? undo : redo;
-    if (from.isEmpty) return;
-    setState(() {
-      to.add(current);
-      current = from.removeLast();
-      formula.text = current.raw(address);
-      message = forward ? 'Redone' : 'Undone';
-    });
-    widget.onChanged?.call(current);
+  void history(bool forward, NgSheet source, String selected) {
+    if (!valid(source, selected) || !canHistory(forward)) return;
+    commit((forward ? redo : undo).last, action: forward ? 2 : 1);
   }
 
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
+    final source = current, selected = address;
     Widget cell(int r, int c) {
       final a = NgSheet.address(r, c), v = current.evaluate(a);
       final node = nodes.putIfAbsent(a, () => FocusNode());
       return Focus(
         onKeyEvent: (_, e) {
-          if (e is! KeyDownEvent) return KeyEventResult.ignored;
+          if (e is! KeyDownEvent || !valid(source, selected))
+            return KeyEventResult.ignored;
           final (rr, cc) = current.position(address);
           final k = e.logicalKey;
           if (k == LogicalKeyboardKey.arrowLeft) {
@@ -461,10 +511,13 @@ class _NgSpreadsheetState extends State<NgSpreadsheet> {
         },
         child: Semantics(
           selected: address == a,
-          label: '$a: ${v.text.isEmpty ? 'Empty' : v.text}',
+          label:
+              '$a: ${v.text.isEmpty ? 'Empty' : v.text}${protected(a) ? ' · Protected' : ''}',
           excludeSemantics: true,
           button: true,
-          onTap: () => select(r, c),
+          onTap: () {
+            if (mounted && identical(source, current)) select(r, c);
+          },
           child: Container(
             decoration: BoxDecoration(
               color: address == a ? colors.primary.withValues(alpha: .1) : null,
@@ -474,7 +527,9 @@ class _NgSpreadsheetState extends State<NgSpreadsheet> {
             ),
             child: TextButton(
               focusNode: node,
-              onPressed: () => select(r, c),
+              onPressed: () {
+                if (mounted && identical(source, current)) select(r, c);
+              },
               style: TextButton.styleFrom(
                 alignment: Alignment.centerLeft,
                 foregroundColor: v.error != null
@@ -483,10 +538,17 @@ class _NgSpreadsheetState extends State<NgSpreadsheet> {
                 shape: const RoundedRectangleBorder(),
                 padding: const EdgeInsets.all(10),
               ),
-              child: Text(
-                v.text.isEmpty ? ' ' : v.text,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    v.text.isEmpty ? ' ' : v.text,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  if (protected(a))
+                    const Text('Protected', style: TextStyle(fontSize: 10)),
+                ],
               ),
             ),
           ),
@@ -514,30 +576,47 @@ class _NgSpreadsheetState extends State<NgSpreadsheet> {
             Text(address),
             SizedBox(
               width: 260,
-              child: TextField(
-                controller: formula,
-                enabled: !widget.readOnly,
-                decoration: const InputDecoration(
-                  labelText: 'Cell value or formula',
-                ),
-                onSubmitted: (_) => apply(),
-              ),
+              child: editable(address)
+                  ? TextField(
+                      key: ValueKey((current, address)),
+                      controller: formula,
+                      decoration: const InputDecoration(
+                        labelText: 'Cell value or formula',
+                      ),
+                      onSubmitted: (_) => apply(source, selected),
+                    )
+                  : InputDecorator(
+                      decoration: const InputDecoration(
+                        labelText: 'Cell value or formula',
+                        helperText: 'Read-only',
+                      ),
+                      child: Semantics(
+                        label: 'Cell value or formula, read-only',
+                        value: formula.text,
+                        excludeSemantics: true,
+                        child: Text(
+                          formula.text.isEmpty ? 'Empty' : formula.text,
+                        ),
+                      ),
+                    ),
             ),
             NgButton(
               primary: true,
-              onPressed: widget.readOnly ? null : () => apply(),
+              onPressed: !editable(address)
+                  ? null
+                  : () => apply(source, selected),
               child: const Text('Apply cell'),
             ),
             NgButton(
-              onPressed: widget.readOnly || undo.isEmpty
+              onPressed: !canHistory(false)
                   ? null
-                  : () => history(false),
+                  : () => history(false, source, selected),
               child: const Text('Undo'),
             ),
             NgButton(
-              onPressed: widget.readOnly || redo.isEmpty
+              onPressed: !canHistory(true)
                   ? null
-                  : () => history(true),
+                  : () => history(true, source, selected),
               child: const Text('Redo'),
             ),
           ],
@@ -572,7 +651,7 @@ class _NgSpreadsheetState extends State<NgSpreadsheet> {
             ),
           ),
         ),
-        if (!widget.readOnly) ...[
+        if (writable) ...[
           TextButton(
             onPressed: () => setState(() => showPaste = !showPaste),
             child: Text(showPaste ? 'Hide paste cells' : 'Paste cells'),
@@ -587,7 +666,9 @@ class _NgSpreadsheetState extends State<NgSpreadsheet> {
             ),
             const SizedBox(height: 8),
             NgButton(
-              onPressed: () => apply(block: true),
+              onPressed: !editable(address)
+                  ? null
+                  : () => apply(source, selected, block: true),
               child: Text('Paste at $address'),
             ),
             const Text(

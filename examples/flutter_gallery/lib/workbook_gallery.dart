@@ -146,7 +146,7 @@ class _WorkbookGalleryState extends State<WorkbookGallery> {
                 ),
                 const SizedBox(height: 48),
                 Text(
-                  'FLUTTER / WORKBOOK 0.5',
+                  'FLUTTER / WORKBOOK 0.39',
                   style: TextStyle(color: colors.primary),
                 ),
                 const SizedBox(height: 20),
@@ -165,6 +165,10 @@ class _WorkbookGalleryState extends State<WorkbookGallery> {
                     children: [
                       NgSpreadsheet(
                         label: 'Delivery workbook',
+                        canEdit: (a) {
+                          final (r, c) = sheet.position(a);
+                          return r >= 1 && r <= 5 && c < 4;
+                        },
                         value: sheet,
                         onChanged: (v) => setState(() {
                           sheet = v;
@@ -172,7 +176,7 @@ class _WorkbookGalleryState extends State<WorkbookGallery> {
                         }),
                       ),
                       const Text(
-                        'Rows 2–6 feed the pivot below. Select a cell, edit its value or formula, then Apply cell. Arrow keys move the selection.',
+                        'Headers and calculated costs are protected. Rows 2–6 feed the pivot below. Select a cell, edit its value or formula, then Apply cell. Arrow keys move the selection.',
                       ),
                     ],
                   ),
@@ -273,7 +277,7 @@ class _WorkbookGalleryState extends State<WorkbookGallery> {
                     ],
                   ),
                 ),
-                const Text('35 CONTROLS / 41 CATALOGUE ENTRIES · WEB FIRST'),
+                const Text('47 CONTROLS / 53 CATALOGUE ENTRIES · WEB FIRST'),
               ],
             ),
           ),

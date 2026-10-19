@@ -148,3 +148,7 @@ Drawer continues to use `NgOption`. `IsVisible/isVisible` and `IsSeparator/isSep
 `NgFilterRules` supplies the shared local filtering contract in both libraries. `Validate/validate(mode, minLength)` accepts `contains`, `startsWith` or `endsWith` and a nonnegative minimum query length. `Matches/matches(label, query, mode, minLength)` applies that validated configuration without trimming the query. Matching is case-insensitive and follows platform string rules, not locale-specific collation.
 
 `ValidateItems/validateItems` requires unique nonblank `NgOption.Value/value` IDs and nonblank labels for ComboBox and MultiSelect. Values are IDs, not display labels; renaming a record must retain its ID. Disabled selected MultiSelect records are locked during user removal/clear. The parent may replace controlled selections explicitly and is responsible for reconciling removed records and externally supplied values that exceed a configured user-selection limit.
+
+### Spreadsheet change and protection helpers (0.39)
+
+`NgSheet.Paste(origin, text, canEdit)` in C# / `paste(origin, text, canEdit: ...)` in Dart validates every supplied destination before returning a new sheet. The optional predicate receives uppercase addresses. A protected destination rejects the whole operation, even if the supplied value is unchanged. `ChangedCells(other)` / `changedCells(other)` returns changed raw-value addresses in row order and requires equal dimensions. Formula result changes alone do not count as raw edits.

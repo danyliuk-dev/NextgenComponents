@@ -11,7 +11,7 @@ A component can be marked complete only after every reference feature is recorde
 ## Current work order
 
 1. Chip/ChipList remaining gaps stay tracked below; do not mark full parity or silently accept them. Work is delivered in component blocks, not one release per parameter.
-2. ToggleButton/ButtonGroup and Menu/Drawer implementation blocks are delivered with explicit remaining gaps below. Stepper/Wizard is also delivered below; TextBox/TextArea/Form is delivered in 0.29; AutoComplete/ComboBox/MultiSelect is delivered in 0.30; numeric/time editing is delivered in 0.31; Calendar, DateInput, DatePicker and DateRangePicker are delivered in 0.32; RadioGroup and DropDownList are delivered in 0.33; Grid protected/read-only selection is delivered in 0.34; TreeView/TreeList controlled state and templates are delivered in 0.35; Chart interaction and presentation are delivered in 0.36; gauge ranges and presentation are delivered in 0.37; Scheduler day/week navigation and guarded actions are delivered in 0.38; next work continues with Spreadsheet. No block is a full-parity verdict.
+2. ToggleButton/ButtonGroup and Menu/Drawer implementation blocks are delivered with explicit remaining gaps below. Stepper/Wizard is also delivered below; TextBox/TextArea/Form is delivered in 0.29; AutoComplete/ComboBox/MultiSelect is delivered in 0.30; numeric/time editing is delivered in 0.31; Calendar, DateInput, DatePicker and DateRangePicker are delivered in 0.32; RadioGroup and DropDownList are delivered in 0.33; Grid protected/read-only selection is delivered in 0.34; TreeView/TreeList controlled state and templates are delivered in 0.35; Chart interaction and presentation are delivered in 0.36; gauge ranges and presentation are delivered in 0.37; Scheduler day/week navigation and guarded actions are delivered in 0.38; Spreadsheet controlled edits and cell protection are delivered in 0.39; next work continues with PivotGrid. No block is a full-parity verdict.
 3. Continue through existing editors/forms, data management, visualization and complex editors. Add new component names only after closing the active group or recording a user-approved exception.
 
 ## Chip and ChipList feature matrix
@@ -373,3 +373,9 @@ Reference: [Telerik Linear Gauge ranges](https://www.telerik.com/blazor-ui/docum
 Day and week agendas with controlled date/view proposals, ISO first weekday, independent editing/navigation locks, disabled missing callbacks, stale-action guards, plain-text event labels and custom empty-day text. Full displayed dates stay in years 2–9998. Month/year/time-slot views, recurrence, resources, drag/drop, resize, timezone conversion, persistence and full parity remain open.
 
 Reference: [Telerik Scheduler navigation](https://www.telerik.com/blazor-ui/documentation/components/scheduler/navigation). Nextgen uses its own agenda and callback contracts; see [scheduler documentation](manual/NgScheduler.md).
+
+## Spreadsheet ownership and protection (0.39)
+
+Controlled immutable proposals with accepted-only history, rejected draft retention, external replacement reconciliation and no-op suppression. CanEdit protects raw cell values while preserving formula inspection and recalculation. Paste validates every supplied destination atomically; undo/redo recheck changed cells against current protection. Missing callbacks and ReadOnly disable editing. Stale callbacks cannot edit a replacement sheet or bypass locks.
+
+Multi-cell selection, clipboard integration, formatting, merged cells, XLSX/CSV, multiple sheets and full Excel/Telerik parity remain open. See [Spreadsheet contracts](manual/NgSpreadsheet.md). Reference: [Telerik Spreadsheet overview](https://www.telerik.com/blazor-ui/documentation/components/spreadsheet/overview).

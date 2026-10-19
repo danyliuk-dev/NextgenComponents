@@ -1,3 +1,20 @@
 @* Generated from scripts/manual_content.py *@
-<NgSpreadsheet @bind-Value="sheet"/>
-@code { private NgSheet sheet=new(8,5,new Dictionary<string,string>{{"A1","10"},{"B1","20"},{"C1","=SUM(A1:B1)"}}); }
+<div class="toolbar">
+<NgButton OnClick="()=>protect=!protect">Toggle protection</NgButton>
+<NgButton OnClick="()=>lockA1=!lockA1">Toggle A1 lock</NgButton>
+<NgButton OnClick="()=>accept=!accept">Toggle acceptance</NgButton>
+<NgButton OnClick="()=>readOnly=!readOnly">Toggle read-only</NgButton>
+<NgButton OnClick="()=>sheet=Initial()">Reset sheet</NgButton>
+<NgButton OnClick="()=>sheet=new(1,1)">Shrink sheet</NgButton>
+</div>
+<p>Protection @(protect?"enabled":"disabled") · A1 @(lockA1?"locked":"editable") · Changes @(accept?"accepted":"rejected")</p>
+<NgSpreadsheet Value="sheet" ValueChanged="Changed" CanEdit="Editable" ReadOnly="readOnly"/>
+<p>Accepted A1: @sheet.Raw("A1") · Proposals: @proposals</p>
+@code {
+ private NgSheet sheet=Initial();
+ private bool protect=true,lockA1,readOnly,accept=true;
+ private int proposals;
+ private bool Editable(string a)=>(!protect||!a.StartsWith("C"))&&(!lockA1||a!="A1");
+ private void Changed(NgSheet next){proposals++;if(accept)sheet=next;}
+ private static NgSheet Initial()=>new(4,4,new Dictionary<string,string>{{"A1","10"},{"B1","20"},{"C1","=SUM(A1:B1)"}});
+}

@@ -125,7 +125,7 @@ NgPivotRecord[] pivot=[new("1",new Dictionary<string,string>{{"Team","A"},{"Quar
 Rule(NgPivotMath.Aggregate(pivot,NgAggregate.Average)==40&&NgPivotMath.Aggregate(pivot,NgAggregate.Count)==4&&NgPivotMath.Aggregate(pivot,NgAggregate.Sum)==120,"pivot totals aggregate source records, not displayed means");
 Rule(NgPivotMath.Filter(pivot,"Team","Quarter","",null).Count==1&&NgPivotMath.Filter(pivot,"Team","Quarter",null,null).Count==4,"blank pivot dimension differs from total");
 Reject(()=>NgPivotMath.Validate([pivot[0],pivot[0]]),"duplicate pivot IDs rejected");
-await Check<NgSpreadsheet>(new(){["Value"]=sheet},"Apply cell", "A1: 10", "B1: 50", "Undo", "Paste cells");
+await Check<NgSpreadsheet>(new(){["Value"]=sheet,["ValueChanged"]=EventCallback.Factory.Create<NgSheet>(new object(),(NgSheet _) => {})},"Apply cell", "A1: 10", "B1: 50", "Undo", "Paste cells");
 await Check<NgPivotGrid>(new(){["Items"]=pivot},"A / Q1: 30", "Total / Total: 120", "(blank)");
 var doc = new NgDocument([new("Title",NgBlockKind.Heading1),new("<script>alert('x')</script>\n&",NgBlockKind.Bullet,Bold:true),new("Second",NgBlockKind.Bullet),new("Last",NgBlockKind.Numbered)]);
 Rule(NgDocument.FromJson(doc.ToJson()).ToJson()==doc.ToJson(),"document JSON roundtrip");
@@ -368,6 +368,15 @@ Rule(NgScheduleRules.Validate(new(" ","Title",new(2026,10,19),new(2026,10,20)))!
 await Check<NgScheduler>(new(){["Date"]=new DateTime(2026,10,19),["View"]=NgScheduleView.Day,["EmptyText"]="No shifts"},"ng-schedule-single","Next day","No shifts","disabled");
 await Check<NgScheduler>(new(){["Date"]=new DateTime(2026,10,19),["FirstDayOfWeek"]=7},"2026-10-18","2026-10-24");
 await Check<NgScheduler>(new(){["Date"]=new DateTime(2026,10,19),["ReadOnly"]=true,["Items"]=new NgScheduleEvent[]{new("shift","Night",new(2026,10,18,23,0,0),new(2026,10,19,1,0,0))},["EventLabel"]=(Func<NgScheduleEvent,string>)(e=>"Shift: "+e.Title)},"Shift: Night","disabled");
+var protectedSheet=new NgSheet(2,3,new Dictionary<string,string>{{"A1","2"},{"B1","locked"},{"C1","=A1*3"}});
+Reject(()=>protectedSheet.Paste("A1","9\tlocked",a=>a!="B1"),"protected paste rejects unchanged protected target");
+Rule(protectedSheet.Raw("A1")=="2","protected paste leaves source intact");
+var editableSheet=protectedSheet.Paste("a1","9",a=>a=="A1");
+Rule(editableSheet.Evaluate("C1").Number==27&&protectedSheet.ChangedCells(editableSheet).SequenceEqual(new[]{"A1"}),"protected formula recalculates without changing raw formula");
+Reject(()=>protectedSheet.ChangedCells(new NgSheet()),"changed cells validates dimensions");
+Rule(protectedSheet.ChangedCells(protectedSheet.Set("A1","2")).Count==0,"no-op changes excluded");
+await Check<NgSpreadsheet>(new(){["Value"]=protectedSheet,["CanEdit"]=(Func<string,bool>)(a=>a!="A1"),["ValueChanged"]=EventCallback.Factory.Create<NgSheet>(new object(),(NgSheet _) => {})},"Protected","readonly","Paste cells");
+await Check<NgSpreadsheet>(new(){["Value"]=protectedSheet},"readonly","disabled");
 Console.WriteLine($"{count} rendering and data/date-rule checks passed. Browser interaction requires the separate visual run.");
 sealed class NoBrowserJS : IJSRuntime {
  public ValueTask<TValue> InvokeAsync<TValue>(string identifier, object?[]? args) => throw new InvalidOperationException("JS must not execute in SSR");
