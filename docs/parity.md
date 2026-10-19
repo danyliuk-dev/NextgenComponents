@@ -11,7 +11,7 @@ A component can be marked complete only after every reference feature is recorde
 ## Current work order
 
 1. Chip/ChipList remaining gaps stay tracked below; do not mark full parity or silently accept them. Work is delivered in component blocks, not one release per parameter.
-2. ToggleButton/ButtonGroup and Menu/Drawer implementation blocks are delivered with explicit remaining gaps below. Stepper/Wizard is also delivered below; TextBox/TextArea/Form is delivered in 0.29; AutoComplete/ComboBox/MultiSelect is delivered in 0.30; numeric/time editing is delivered in 0.31; Calendar, DateInput, DatePicker and DateRangePicker are delivered in 0.32; RadioGroup and DropDownList are delivered in 0.33; Grid protected/read-only selection is delivered in 0.34; TreeView/TreeList controlled state and templates are delivered in 0.35; Chart interaction and presentation are delivered in 0.36; gauge ranges and presentation are delivered in 0.37; Scheduler day/week navigation and guarded actions are delivered in 0.38; Spreadsheet controlled edits and cell protection are delivered in 0.39; PivotGrid presentation and guarded drilldown are delivered in 0.40; Editor controlled changes and history are delivered in 0.41; Diagram guarded interaction and presentation are delivered in 0.42; Map controlled state and interaction locks are delivered in 0.43; PDF lazy thumbnails and synchronized navigation are delivered in 0.44; AI Prompt independent permissions and PromptBox length recovery are delivered in 0.45; text-field clear actions and password presentation are delivered in 0.46; bounded TextArea autosizing is delivered in 0.47; 0.48 text editor appearance and 0.49 debounced notifications delivered; responsive form fields/actions are delivered in 0.50; live customizable validation summaries are delivered in 0.51; responsive field spans are delivered in 0.52; next work continues with remaining editor/form gaps. No block is a full-parity verdict.
+2. ToggleButton/ButtonGroup and Menu/Drawer implementation blocks are delivered with explicit remaining gaps below. Stepper/Wizard is also delivered below; TextBox/TextArea/Form is delivered in 0.29; AutoComplete/ComboBox/MultiSelect is delivered in 0.30; numeric/time editing is delivered in 0.31; Calendar, DateInput, DatePicker and DateRangePicker are delivered in 0.32; RadioGroup and DropDownList are delivered in 0.33; Grid protected/read-only selection is delivered in 0.34; TreeView/TreeList controlled state and templates are delivered in 0.35; Chart interaction and presentation are delivered in 0.36; gauge ranges and presentation are delivered in 0.37; Scheduler day/week navigation and guarded actions are delivered in 0.38; Spreadsheet controlled edits and cell protection are delivered in 0.39; PivotGrid presentation and guarded drilldown are delivered in 0.40; Editor controlled changes and history are delivered in 0.41; Diagram guarded interaction and presentation are delivered in 0.42; Map controlled state and interaction locks are delivered in 0.43; PDF lazy thumbnails and synchronized navigation are delivered in 0.44; AI Prompt independent permissions and PromptBox length recovery are delivered in 0.45; text-field clear actions and password presentation are delivered in 0.46; bounded TextArea autosizing is delivered in 0.47; 0.48 text editor appearance and 0.49 debounced notifications delivered; responsive form fields/actions are delivered in 0.50; live customizable validation summaries are delivered in 0.51; responsive field spans are delivered in 0.52; rounded editors and flat fill are delivered in 0.53; next work continues with remaining editor/form gaps. No block is a full-parity verdict.
 3. Continue through existing editors/forms, data management, visualization and complex editors. Add new component names only after closing the active group or recording a user-approved exception.
 
 ## Chip and ChipList feature matrix
@@ -260,7 +260,7 @@ Sources: [TextBox API](https://www.telerik.com/blazor-ui/documentation/api/teler
 | Focus and commit | Blazor FocusAsync / native change; Flutter FocusNode / submit action | Blur and multiline Enter timing differ |
 | Async form submission | Validation, invalid callback, busy guard, localized status/error, retry | Server idempotency, cancellation and external side effects belong to app |
 | Reset | Replace model/key to reset drafts and validation | No automatic draft persistence or schema generation |
-| Appearance and advanced text APIs | Shared original theme | Size/fill variants delivered in 0.48 and debounced notifications in 0.49; further border/radius customization remains open |
+| Appearance and advanced text APIs | Shared original theme | Size/fill variants delivered in 0.48 and debounced notifications in 0.49; rounded presets/flat fill delivered in 0.53; arbitrary border styling remains application-owned |
 | Form layout/schema | Explicit children | Responsive explicit field columns/actions delivered in 0.50; automatic model fields and conditional schemas remain open; spans delivered in 0.52 |
 | Certification | Web scenario checks | Native/mobile and full screen-reader audit deferred |
 
@@ -426,19 +426,19 @@ Automatic resize, appearance variants and debounced notifications were added in 
 
 Opt-in AutoSize with Rows as minimum and MaxRows as maximum (1–30); growth for line breaks and wrapping, internal scrolling at the cap, shrinking on clear/external replacement, width changes and read-only content. Fixed mode retains its previous layout. Blazor packages its measurement module; Flutter uses native minLines/maxLines. Resizing emits no value callback.
 
-Equal row counts do not imply identical pixel metrics. Further border/radius customization and accessibility/native certification remain open. See [TextArea manual](manual/NgTextArea.md).
+Equal row counts do not imply identical pixel metrics. Rounded presets/flat fill arrived in 0.53; accessibility/native certification remains open. See [TextArea manual](manual/NgTextArea.md).
 
 ## Text editor appearance (0.48)
 
 TextBox and TextArea expose small/medium/large sizes and theme/outline/filled backgrounds. Defaults inherit existing density and decoration. Appearance changes preserve editor/form state and automatic TextArea sizing; platform focus/error borders and native action hit targets remain intact.
 
-Debounced notifications were added in 0.49. Further radius/border customization, generated form schemas and accessibility/native certification remain open. See [text and form capabilities](forms-and-dates.md).
+Debounced notifications were added in 0.49. Arbitrary border styling, generated form schemas and accessibility/native certification remain open. See [text and form capabilities](forms-and-dates.md).
 
 ## Debounced text notifications (0.49)
 
 Optional delayed notifications for TextBox and TextArea preserve immediate binding and validation. Bursts coalesce; locks, changed delay, external replacement, handler removal and disposal cancel pending work. Commit/submit remains independent. Examples expose notification counts without echoing password values.
 
-IME-specific suppression, application request cancellation, further border/radius customization and generated form schemas remain open. See [text and form capabilities](forms-and-dates.md).
+IME-specific suppression, application request cancellation, arbitrary border styling and generated form schemas remain open. See [text and form capabilities](forms-and-dates.md).
 
 ## Responsive form fields and actions (0.50)
 
@@ -457,3 +457,9 @@ Automatic editor generation, conditional schemas, nested groups, error-to-field 
 Explicit per-field spans (1–4) and full-row fields (0), clamped to available columns. Fields flow in source order without dense reordering, retain state across span changes and collapse safely on narrow screens. Blazor uses container queries with a one-column fallback; Flutter uses Wrap.
 
 Automatic model/schema generation, conditional schemas, nested groups, vertical spans and native/accessibility certification remain open. See [Form manual](manual/NgForm.md).
+
+## Rounded text editors and flat fill (0.53)
+
+Both text editors provide theme/none/small/medium/large/full corners and an opt-in flat fill. Idle borders disappear without changing dimensions; focus and error indicators remain in the supplied theme. Appearance updates retain text, selection, focus and validation. Flutter retains explicit theme border sides and outline/underline kinds. Original values and platform-specific borders are not pixel/API parity.
+
+Reference: [TextBox appearance](https://www.telerik.com/blazor-ui/documentation/components/textbox/appearance). Arbitrary border styling, IME-specific debounce handling and full accessibility/native certification remain open.

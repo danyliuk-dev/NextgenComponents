@@ -6,7 +6,7 @@ class NextgenTextEditor extends StatefulWidget {
   final String label;
   final int debounceDelay;
   final ValueChanged<String>? onDebouncedChange;
-  final String size, fillMode;
+  final String size, fillMode, rounded;
   final TextEditingController? controller;
   final String? initialValue, placeholder, helperText;
   final ValueChanged<String>? onChanged, onSubmitted;
@@ -23,6 +23,7 @@ class NextgenTextEditor extends StatefulWidget {
     required this.label,
     this.size = 'medium',
     this.fillMode = 'theme',
+    this.rounded = 'theme',
     this.debounceDelay = 300,
     this.onDebouncedChange,
     this.controller,
@@ -149,11 +150,43 @@ class _NextgenTextEditorState extends State<NextgenTextEditor> {
     if (!['small', 'medium', 'large'].contains(widget.size)) {
       throw ArgumentError('Use small, medium or large.');
     }
-    if (!['theme', 'outline', 'filled'].contains(widget.fillMode)) {
-      throw ArgumentError('Use theme, outline or filled.');
+    if (!['theme', 'outline', 'filled', 'flat'].contains(widget.fillMode)) {
+      throw ArgumentError('Use theme, outline, filled or flat.');
     }
     if (widget.debounceDelay < 0 || widget.debounceDelay > 60000)
       throw ArgumentError('Use a debounce delay of 0–60000 milliseconds.');
+    if (![
+      'theme',
+      'none',
+      'small',
+      'medium',
+      'large',
+      'full',
+    ].contains(widget.rounded)) {
+      throw ArgumentError('Use theme, none, small, medium, large or full.');
+    }
+    final decorationTheme = Theme.of(context).inputDecorationTheme;
+    final radius = BorderRadius.circular(switch (widget.rounded) {
+      'none' => 0,
+      'small' => 4,
+      'medium' => 8,
+      'large' => 16,
+      'full' => 9999,
+      _ => 0,
+    });
+    InputBorder? shaped(InputBorder? border) {
+      if (widget.rounded == 'theme') return border;
+      if (border is UnderlineInputBorder)
+        return border.copyWith(borderRadius: radius);
+      if (border == InputBorder.none) return border;
+      return (border is OutlineInputBorder
+              ? border
+              : const OutlineInputBorder())
+          .copyWith(borderRadius: radius);
+    }
+
+    final flat = widget.fillMode == 'flat';
+    final baseBorder = shaped(decorationTheme.border);
     final current = revision;
     final actions = <Widget>[
       if (widget.password && widget.showPasswordToggle)
@@ -226,10 +259,40 @@ class _NextgenTextEditorState extends State<NextgenTextEditor> {
         autocorrect: !widget.password,
         autovalidateMode: AutovalidateMode.onUserInteraction,
         decoration: InputDecoration(
+          border: baseBorder,
+          enabledBorder: flat
+              ? (shaped(
+                          decorationTheme.enabledBorder ??
+                              decorationTheme.border,
+                        ) ??
+                        const UnderlineInputBorder())
+                    .copyWith(borderSide: BorderSide.none)
+              : decorationTheme.enabledBorder == null
+              ? null
+              : shaped(decorationTheme.enabledBorder),
+          disabledBorder: flat
+              ? (shaped(
+                          decorationTheme.disabledBorder ??
+                              decorationTheme.border,
+                        ) ??
+                        const UnderlineInputBorder())
+                    .copyWith(borderSide: BorderSide.none)
+              : decorationTheme.disabledBorder == null
+              ? null
+              : shaped(decorationTheme.disabledBorder),
+          focusedBorder: decorationTheme.focusedBorder == null
+              ? null
+              : shaped(decorationTheme.focusedBorder),
+          errorBorder: decorationTheme.errorBorder == null
+              ? null
+              : shaped(decorationTheme.errorBorder),
+          focusedErrorBorder: decorationTheme.focusedErrorBorder == null
+              ? null
+              : shaped(decorationTheme.focusedErrorBorder),
           filled: widget.fillMode == 'theme'
               ? null
-              : widget.fillMode == 'filled',
-          fillColor: widget.fillMode == 'filled'
+              : (widget.fillMode == 'filled' || flat),
+          fillColor: (widget.fillMode == 'filled' || flat)
               ? Theme.of(context).colorScheme.surfaceContainerHighest
               : null,
           contentPadding: widget.size == 'medium'

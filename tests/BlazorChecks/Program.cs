@@ -22,6 +22,12 @@ string team = "a";
 NgOption[] options = [new("a", "Alpha"), new("b", "Beta", true)];
 await Check<NgButton>(new() { ["Disabled"] = true, ["Primary"] = true, ["ChildContent"] = Text("Save") }, "disabled", "ng-primary", "type=\"button\"");
 await Check<NgTextBox>(new(){["Label"]="Password",["Value"]="sample",["ValueExpression"]=(Expression<Func<string?>>)(()=>name),["Password"]=true,["ShowPasswordToggle"]=true,["ShowClearButton"]=true},"type=\"password\"","Show password","Clear Password");
+foreach(var rounded in new[]{"theme","none","small","medium","large","full"}){
+ await Check<NgTextBox>(new(){["ValueExpression"]=(Expression<Func<string?>>)(()=>name),["Rounded"]=rounded,["FillMode"]="flat"},"ng-text-rounded-"+rounded,"ng-text-fill-flat");
+ await Check<NgTextArea>(new(){["ValueExpression"]=(Expression<Func<string?>>)(()=>name),["Rounded"]=rounded,["FillMode"]="flat"},"ng-text-rounded-"+rounded,"ng-text-fill-flat");
+}
+try{await Check<NgTextBox>(new(){["ValueExpression"]=(Expression<Func<string?>>)(()=>name),["Rounded"]="bad"});throw new Exception("Invalid corners accepted");}catch(ArgumentException){count++;}
+try{await Check<NgTextArea>(new(){["ValueExpression"]=(Expression<Func<string?>>)(()=>name),["Rounded"]="bad"});throw new Exception("Invalid corners accepted");}catch(ArgumentException){count++;}
 await Check<NgTextBox>(new(){["ValueExpression"]=(Expression<Func<string?>>)(()=>name),["Size"]="large",["FillMode"]="filled"},"ng-text-size-large","ng-text-fill-filled");
 try{await Check<NgTextBox>(new(){["ValueExpression"]=(Expression<Func<string?>>)(()=>name),["DebounceDelay"]=-1});throw new Exception("Negative delay accepted");}catch(ArgumentOutOfRangeException){count++;}
 try{await Check<NgTextArea>(new(){["ValueExpression"]=(Expression<Func<string?>>)(()=>name),["DebounceDelay"]=60001});throw new Exception("Excessive delay accepted");}catch(ArgumentOutOfRangeException){count++;}

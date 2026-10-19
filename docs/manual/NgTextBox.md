@@ -36,9 +36,9 @@ Password/password masks the single-line value; default false. ShowPasswordToggle
 
 
 ### Size and fill (0.48)
-Size/size accepts small, medium (default), or large. FillMode/fillMode accepts theme (default), outline, or filled. Invalid values throw. Medium and theme inherit the existing application density/decoration. Small and large adjust text size and padding; they do not impose a fixed TextArea height. Outline removes background fill; filled uses a theme-aware surface. Borders, focus and validation indicators remain controlled by the platform/theme. Flutter custom themes should supply an outline border if that shape is required; fill selection does not replace theme borders.
+Size/size accepts small, medium (default), or large. FillMode/fillMode accepts theme (default), outline, filled, or flat. Invalid values throw. Medium and theme inherit the existing application density/decoration. Small and large adjust text size and padding; they do not impose a fixed TextArea height. Outline removes background fill; filled uses a theme-aware surface. Borders, focus and validation indicators remain controlled by the platform/theme. Flutter custom themes should supply an outline border if that shape is required; fill selection does not replace theme borders.
 
-Changing appearance preserves the value, selection and form state and emits no change callback. Automatic TextArea height recalculates with the new metrics. Read-only/disabled permissions and clear/password behavior remain unchanged. Flutter keeps native action hit targets; compact fields containing actions can therefore remain taller than fields without actions. Prefix/suffix templates keep their own sizing. The two platforms do not promise equal pixel heights. Further radius/border customization remains open.
+Changing appearance preserves the value, selection and form state and emits no change callback. Automatic TextArea height recalculates with the new metrics. Read-only/disabled permissions and clear/password behavior remain unchanged. Flutter keeps native action hit targets; compact fields containing actions can therefore remain taller than fields without actions. Prefix/suffix templates keep their own sizing. The two platforms do not promise equal pixel heights. Rounded presets and flat borders are available from 0.53; arbitrary border styling remains application-owned.
 
 
 ### Debounced notifications (0.49)
@@ -49,21 +49,34 @@ A different externally supplied value, a changed delay, read-only/disabled state
 OnCommit/onSubmitted stays independent: blur/submit neither flushes nor cancels the delayed callback. Debouncing does not make submission wait or perform validation/network requests. Once a callback starts, cancelling later input cannot undo its effects: applications must protect asynchronous search results with their own request/version checks. IME composition follows native input events; composition-aware suppression is not supplied. Blazor cannot distinguish an external assignment of the same string from the normal binding echo; use a replacement key to reset the editor unconditionally.
 
 
+### Rounded corners and flat fill (0.53)
+Rounded/rounded accepts theme (default), none, small, medium, large, or full. Presets request radii of 0, 4, 8, 16, or 9999 logical pixels; the platform clamps large radii to the field bounds. Theme preserves the existing CSS/Flutter decoration. Unknown values throw. The radius applies to the editor border, not to separate action buttons or adornment content. Full is most suitable for short single-line fields; prefer smaller radii for long multiline text.
+
+Flat uses the same theme-aware surface as filled and hides the idle/disabled border without changing field dimensions. Focus and validation error indicators remain visible in the provided theme. Custom Flutter border sides/colors are retained for focus and errors; InputBorder.none remains an explicit application choice. Outline and underline theme borders retain their type when rounded presets are applied. Arbitrary custom InputBorder subclasses are replaced with an outline for an explicit rounded preset; theme retains them.
+
+Changing these options retains text, selection, focus and validation and does not emit editing events. It also retains TextArea autosizing, read-only/disabled permissions and clear/password actions. Original design values are used; this is not Telerik API, theme or pixel compatibility.
+
+
 ## Blazor example
 
 ```razor
+<div class="ng-prompt-actions"><NgButton OnClick="CycleRounded">Change corners</NgButton><NgButton OnClick="ToggleFlat">Toggle flat fill</NgButton></div>
+<p>Corners: @rounded</p>
 <div class="ng-prompt-actions"><NgButton OnClick="ReplaceDraft">Replace draft</NgButton><NgButton OnClick="()=>delay=delay==600?0:600">Change delay</NgButton></div>
 <p>Delay: @delay ms · Notifications: @notifications · Notified length: @notifiedLength</p>
 <div class="ng-prompt-actions"><NgButton OnClick="CycleSize">Change size</NgButton><NgButton OnClick="CycleFill">Change fill</NgButton></div>
 <p>Size: @size · Fill: @fill</p>
 <NgButton OnClick="()=>password=!password">Toggle password mode</NgButton>
 <NgCheckBox Label="Read only" @bind-Value="locked"/>
-<NgTextBox DebounceDelay="delay" OnDebouncedChange="Debounced" Size="@size" FillMode="@fill" @ref="editor" Label="Project name" @bind-Value="text" ReadOnly="locked" ShowClearButton="true" Password="password" ShowPasswordToggle="true" MaxLength="80" HelperText="Use a short, descriptive name." OnCommit="v=>committed=v">
+<NgTextBox Rounded="@rounded" DebounceDelay="delay" OnDebouncedChange="Debounced" Size="@size" FillMode="@fill" @ref="editor" Label="Project name" @bind-Value="text" ReadOnly="locked" ShowClearButton="true" Password="password" ShowPasswordToggle="true" MaxLength="80" HelperText="Use a short, descriptive name." OnCommit="v=>committed=v">
 <PrefixTemplate><span aria-hidden="true">@@</span></PrefixTemplate>
 </NgTextBox>
 <NgButton OnClick="()=>editor!.FocusAsync().AsTask()">Focus editor</NgButton>
 <p>Length: @(text?.Length??0)</p>
 @code {
+ private void ToggleFlat()=>fill=fill=="flat"?"theme":"flat";
+ private string rounded="theme";
+ private void CycleRounded()=>rounded=rounded=="theme"?"large":rounded=="large"?"none":rounded=="none"?"small":rounded=="small"?"medium":rounded=="medium"?"full":"theme";
  private int delay=600,notifications,notifiedLength;
  private void Debounced(string? value){notifications++;notifiedLength=value?.Length??0;}
  private void ReplaceDraft()=>text="External replacement";
@@ -76,6 +89,7 @@ OnCommit/onSubmitted stays independent: blur/submit neither flushes nor cancels 
 ## Flutter example
 
 ```dart
+String rounded='theme';
 int delay=600,notifications=0,notifiedLength=0;
 String size='medium',fill='theme';
 bool locked = false, password = true; String submitted = '';
@@ -83,13 +97,15 @@ final editor = TextEditingController(text:'Design review');
 final focus = FocusNode();
 @override void dispose(){editor.dispose();focus.dispose();super.dispose();}
 Widget build(BuildContext context)=>Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
+Wrap(spacing:8,children:[NgButton(onPressed:()=>setState(()=>rounded=rounded=='theme'?'large':rounded=='large'?'none':rounded=='none'?'small':rounded=='small'?'medium':rounded=='medium'?'full':'theme'),child:const Text('Change corners')),NgButton(onPressed:()=>setState(()=>fill=fill=='flat'?'theme':'flat'),child:const Text('Toggle flat fill'))]),
+Text('Corners: $rounded'),
 Wrap(spacing:8,children:[NgButton(onPressed:()=>setState(()=>editor.text='External replacement'),child:const Text('Replace draft')),NgButton(onPressed:()=>setState(()=>delay=delay==600?0:600),child:const Text('Change delay'))]),
 Text('Delay: $delay ms · Notifications: $notifications · Notified length: $notifiedLength'),
 Wrap(spacing:8,children:[NgButton(onPressed:()=>setState(()=>size=size=='medium'?'large':size=='large'?'small':'medium'),child:const Text('Change size')),NgButton(onPressed:()=>setState(()=>fill=fill=='theme'?'filled':fill=='filled'?'outline':'theme'),child:const Text('Change fill'))]),
 Text('Size: $size · Fill: $fill'),
 NgButton(onPressed:()=>setState(()=>password=!password),child:const Text('Toggle password mode')),
 NgCheckBox(label:'Read only',value:locked,onChanged:(v)=>setState(()=>locked=v)),
-NgTextBox(debounceDelay:delay,onDebouncedChange:(v)=>setState((){notifications++;notifiedLength=v.length;}),size:size,fillMode:fill,label:'Project name',controller:editor,focusNode:focus,readOnly:locked,showClearButton:true,password:password,showPasswordToggle:true,maxLength:80,
+NgTextBox(rounded:rounded,debounceDelay:delay,onDebouncedChange:(v)=>setState((){notifications++;notifiedLength=v.length;}),size:size,fillMode:fill,label:'Project name',controller:editor,focusNode:focus,readOnly:locked,showClearButton:true,password:password,showPasswordToggle:true,maxLength:80,
 helperText:'Use a short, descriptive name.',prefix:const Icon(Icons.edit_outlined),
 onChanged:(_)=>setState((){}),onSubmitted:(v)=>setState(()=>submitted=v)),
 NgButton(onPressed:()=>focus.requestFocus(),child:const Text('Focus editor')),
@@ -106,6 +122,7 @@ Names are case-sensitive. `?` permits null. `EditorRequired` parameters are mark
 | `Id` | `string` | "ng-"+Guid.NewGuid().ToString("N") | See the behavior rules and model contract above. |
 | `Label` | `string` | "" | Visible label or accessible name. |
 | `Size` | `string` | "medium" | See the behavior rules and model contract above. |
+| `Rounded` | `string` | "theme" | Chip corners: sm, md, lg or full. |
 | `FillMode` | `string` | "theme" | Chip fill: solid or outline; see the documented defaults. |
 | `Placeholder` | `string?` | not set | Hint displayed for empty input. |
 | `Disabled` | `bool` | false | Disable user interaction. |
@@ -136,6 +153,7 @@ Names are case-sensitive. `?` permits null. `EditorRequired` parameters are mark
 | `onDebouncedChange` | `ValueChanged<String>?` | See the behavior rules and model contract above. |
 | `size` | `String` | See the behavior rules and model contract above. |
 | `fillMode` | `String` | Chip fill: solid or outline; see the documented defaults. |
+| `rounded` | `String` | Chip corners: sm, md, lg or full. |
 | `controller` | `TextEditingController?` | Text controller; do not combine with initialValue. Dispose in its owner. |
 | `initialValue` | `String?` | Starting field value, not continuous controlled state. |
 | `onChanged` | `ValueChanged<String>?` | Store the new value using setState or your state manager. |
@@ -159,6 +177,7 @@ const NgTextBox({
     required this.label,
     this.size = 'medium',
     this.fillMode = 'theme',
+    this.rounded = 'theme',
     this.debounceDelay = 300,
     this.onDebouncedChange,
     this.controller,

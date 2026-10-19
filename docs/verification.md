@@ -716,3 +716,19 @@ Validation completed:
 Evidence: [Blazor two-column field](screenshots/form052-blazor-two-columns.png), [Flutter narrow form](screenshots/form052-flutter-narrow.png), [desktop manual](screenshots/form052-desktop-manual.png).
 
 Nested groups, vertical spans, automatic/conditional schemas and native/full screen-reader certification remain open. Browser verification covers current local Chrome; fallback behavior on older browsers was not separately certified.
+
+## Rounded text editors and flat fill — 0.53 (2026-10-19, Linux on iMac)
+
+TextBox and TextArea add theme/none/small/medium/large/full rounded presets and flat fill. Default theme behavior is preserved. Flat suppresses idle/disabled borders without changing geometry; supplied-theme focus and validation indicators remain. Explicit Flutter focus/error border sides and outline/underline types are retained.
+
+Validation completed:
+
+- 377 Blazor checks, including all corner presets, flat fill and invalid values; gallery build passed with zero warnings/errors.
+- 228 Flutter tests and clean Dart analysis. New tests check text, selection, focus, validation, unchanged dimensions and callback counts across all presets; custom focus/error sides, restoration, underline and explicit InputBorder.none behavior are covered.
+- 47 Razor and 47 Dart manual examples compiled/analyzed; 94 lossless syntax-highlighting checks passed. Flutter Web release build passed with the existing CupertinoIcons font warning.
+- Foreground local Chrome: 37 Blazor and 21 Flutter assertions via `scripts/text-shape-check.py`. Both editors retain drafts through appearance switches, clear correctly and fit at 390 px; multiline autosizing retains all 14 lines. Blazor additionally checks actual CSS radii and idle/focus border transitions. Flutter border properties are covered by widget tests and visible screenshots, not inferred from its semantic DOM.
+- Desktop shell opened the updated TextArea manual with code, category navigation and working live preview. Screenshots were inspected directly.
+
+Evidence: [Blazor flat editor](screenshots/text053-blazor-flat.png), [Flutter narrow TextArea](screenshots/text053-flutter-narrow.png), [desktop manual](screenshots/text053-desktop-manual.png).
+
+Full corner rounding is best suited to short single-line editors. Custom InputBorder subclasses, arbitrary border styling, IME-specific debounce handling and full accessibility/native certification remain outside this stage. Pixel/API compatibility with Telerik is not claimed.

@@ -7,7 +7,7 @@ class NgTextArea extends StatelessWidget {
   final String label;
   final int debounceDelay;
   final ValueChanged<String>? onDebouncedChange;
-  final String size, fillMode;
+  final String size, fillMode, rounded;
   final TextEditingController? controller;
   final String? initialValue;
   final ValueChanged<String>? onChanged;
@@ -26,6 +26,7 @@ class NgTextArea extends StatelessWidget {
     this.label = 'Notes',
     this.size = 'medium',
     this.fillMode = 'theme',
+    this.rounded = 'theme',
     this.debounceDelay = 300,
     this.onDebouncedChange,
     this.controller,
@@ -63,6 +64,7 @@ class NgTextArea extends StatelessWidget {
       onDebouncedChange: onDebouncedChange,
       size: size,
       fillMode: fillMode,
+      rounded: rounded,
       controller: controller,
       initialValue: initialValue,
       onChanged: onChanged,

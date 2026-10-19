@@ -3149,3 +3149,20 @@ Blazor uses per-instance container-query rules with validated numeric widths and
 """
 D['NgForm']['blazor'] = '<div class="ng-prompt-actions"><NgButton OnClick="()=>notesSpan=notesSpan==0?2:notesSpan==2?1:0">Change notes span</NgButton><NgButton OnClick="()=>columns=3">Use three columns</NgButton></div>\n' + D['NgForm']['blazor'].replace('Fields="FormFields"', 'Fields="FormFields" FieldSpans="@(new[]{1,1,notesSpan,1})"',1).replace(' private bool customSummary=true,showSummary=true;', ' private int notesSpan;\n private bool customSummary=true,showSummary=true;')
 D['NgForm']['dart'] = "int notesSpan=0;\n" + D['NgForm']['dart'].replace('children:[', "children:[\n Wrap(spacing:8,children:[NgButton(onPressed:()=>setState(()=>notesSpan=notesSpan==0?2:notesSpan==2?1:0),child:const Text('Change notes span')),NgButton(onPressed:()=>setState(()=>columns=3),child:const Text('Use three columns'))]),",1).replace('NgForm(showSummary:', 'NgForm(fieldSpans:[1,1,notesSpan,1],showSummary:',1)
+
+# Rounded editors and flat fill, 0.53.
+for _editor in ('NgTextBox', 'NgTextArea'):
+    D[_editor]['blazor'] = '<div class="ng-prompt-actions"><NgButton OnClick="CycleRounded">Change corners</NgButton><NgButton OnClick="()=>fill=fill==\"flat\"?\"theme\":\"flat\"">Toggle flat fill</NgButton></div>\n<p>Corners: @rounded</p>\n' + D[_editor]['blazor'].replace('<'+_editor+' ', '<'+_editor+' Rounded="@rounded" ',1).replace('@code {','@code {\n private string rounded="theme";\n private void CycleRounded()=>rounded=rounded=="theme"?"large":rounded=="large"?"none":rounded=="none"?"small":rounded=="small"?"medium":rounded=="medium"?"full":"theme";')
+    # Use a method to avoid nested Razor attribute quotes.
+    D[_editor]['blazor'] = D[_editor]['blazor'].replace('OnClick="()=>fill=fill=="flat"?"theme":"flat""', 'OnClick="ToggleFlat"').replace('@code {', '@code {\n private void ToggleFlat()=>fill=fill=="flat"?"theme":"flat";')
+    D[_editor]['dart'] = "String rounded='theme';\n" + D[_editor]['dart'].replace('children:[', "children:[\nWrap(spacing:8,children:[NgButton(onPressed:()=>setState(()=>rounded=rounded=='theme'?'large':rounded=='large'?'none':rounded=='none'?'small':rounded=='small'?'medium':rounded=='medium'?'full':'theme'),child:const Text('Change corners')),NgButton(onPressed:()=>setState(()=>fill=fill=='flat'?'theme':'flat'),child:const Text('Toggle flat fill'))]),\nText('Corners: $rounded'),",1).replace(_editor+'(',_editor+'(rounded:rounded,',1)
+    D[_editor]['notes'] = D[_editor]['notes'].replace('accepts theme (default), outline, or filled.', 'accepts theme (default), outline, filled, or flat.').replace('Further radius/border customization remains open.', 'Rounded presets and flat borders are available from 0.53; arbitrary border styling remains application-owned.')
+    D[_editor]['notes'] += '''
+
+### Rounded corners and flat fill (0.53)
+Rounded/rounded accepts theme (default), none, small, medium, large, or full. Presets request radii of 0, 4, 8, 16, or 9999 logical pixels; the platform clamps large radii to the field bounds. Theme preserves the existing CSS/Flutter decoration. Unknown values throw. The radius applies to the editor border, not to separate action buttons or adornment content. Full is most suitable for short single-line fields; prefer smaller radii for long multiline text.
+
+Flat uses the same theme-aware surface as filled and hides the idle/disabled border without changing field dimensions. Focus and validation error indicators remain visible in the provided theme. Custom Flutter border sides/colors are retained for focus and errors; InputBorder.none remains an explicit application choice. Outline and underline theme borders retain their type when rounded presets are applied. Arbitrary custom InputBorder subclasses are replaced with an outline for an explicit rounded preset; theme retains them.
+
+Changing these options retains text, selection, focus and validation and does not emit editing events. It also retains TextArea autosizing, read-only/disabled permissions and clear/password actions. Original design values are used; this is not Telerik API, theme or pixel compatibility.
+'''
