@@ -96,3 +96,9 @@ A separate grouped request/response protocol carries ordered field keys, paged r
 Controlled collapse keeps record page ranges and never requests data. Bulk actions explicitly affect current page groups, preserving off-page IDs. Selection covers eligible rendered rows. Both Web galleries use a shared real HTTP fixture endpoint with delay, failure, malformed-response and smaller-dataset controls. Reference in-memory adapter helpers and JSON contracts are documented in the remote grouped-data manual.
 
 Database providers/query translation, lazy group paging, virtualization, CRUD/export and native/accessibility certification remain separate work. Server totals are checked for consistency, not independently recomputed by the client. The next data-management block should be scoped as a complete workflow rather than individual parameters.
+
+## Grid create, edit and delete workflows (0.67)
+
+Both platforms now provide an opt-in single-record inline editor with isolated string drafts, required/custom validation, asynchronous persistence, safe application errors and retry, cancellation, confirmed deletion and current-record permissions. Persistence remains application-owned. Repeated submissions are blocked; removed records, source changes and obsolete completions cannot apply stale UI results. Successful writes refresh local grouping or the current remote query and clamp shrinking pages. Selection remains caller-owned.
+
+The editable inventory demonstrates the whole workflow, protected rows, duplicate-name validation and delayed failures. See [Grid editing](manual/grid-editing.md). Custom editor templates, batch/cell editing, database providers, export, virtualization and native/accessibility certification remain open. The next substantial block is Grid export with query/column scope, formatting, escaping and runnable examples on both Web platforms.

@@ -41,6 +41,11 @@ GroupAggregates/groupAggregates supplies NgGroupAggregate descriptors: title, nu
 ReadGroupedData/readGroupedData uses NgGroupedDataRequest (page, pageSize, search, sorts, groupKeys) and NgGroupedDataResult<T> (items with full paths, filtered total and full-count/summary metadata for the page groups). RemoteGroupKeys/remoteGroupKeys contains one to eight distinct field identifiers. Changing keys resets paging and invalidates pending work. Local selectors/aggregates and ordinary ReadData cannot be combined with this mode. Counts and summaries come from the server; malformed envelopes fail atomically into ErrorText and Retry. Collapse is local and retains record paging. Bulk actions explicitly affect page groups only; off-page state is preserved. RemoteSummaryText/remoteSummaryText formats numeric server summaries as plain text. The HTTP example calls the read-only Blazor gallery fixture endpoint from both platforms; keep port 5180 running for Flutter. Put the extra Dart imports at file scope (the transport is Web-specific); the remaining snippet belongs in a State class. No database provider is bundled. See [Remote grouped data](remote-grouped-data.md) for JSON schemas, validation rules, cancellation, adapter helpers and failure/shrink exercises.
 
 
+### Create, edit and delete
+
+Editing/editing accepts NgGridEditing<T>: text-field descriptors, a draft factory, validation, asynchronous persistence and per-record permissions. The editable inventory demonstrates required and integer validation, duplicate-name server errors, protected records, delayed saves, generic failures, retry and cancellation. See [Grid editing](grid-editing.md) for lifecycle, remote refresh, concurrency and application responsibilities.
+
+
 ## Blazor example
 
 ```razor
@@ -54,6 +59,12 @@ ReadGroupedData/readGroupedData uses NgGroupedDataRequest (page, pageSize, searc
 <NgCheckBox Label="Lock group expansion" @bind-Value="groupLocked"/>
 <NgDataGrid TItem="Product" Label="Grouped inventory" Items="rows" Columns="columns" RowId="r=>r.Id" GroupSelectors="Grouping" DataVersion="@($"{grouped}/{nested}")" CollapsibleGroups="true" @bind-CollapsedGroups="collapsed" GroupExpansionReadOnly="groupLocked" GroupAggregates="@(totals?aggregates:[])" GroupText="GroupCaption" MultiSort="true" @bind-SelectedIds="localSelected" CanSelect="r=>r.Count<100"/>
 <p>Local selection: @string.Join(", ",localSelected.Order())</p>
+<h3>Editable inventory</h3>
+<p>Drafts are isolated. Quantities 100 and above are protected. Try a blank name, invalid quantity, a save failure and a retry.</p>
+<NgCheckBox Label="Lock editing" @bind-Value="editLocked"/>
+<NgCheckBox Label="Fail saves" @bind-Value="editFail"/>
+<NgDataGrid TItem="Product" Label="Editable inventory" Items="editableRows" Columns="columns" RowId="r=>r.Id" Editing="Editor" GroupBy="r=>r.Name" Selectable="false"/>
+<p>Successful writes: @writes</p>
 <h3>HTTP grouped inventory</h3>
 <p>Live requests to the local gallery API. Counts and summaries are computed before server paging.</p>
 <NgCheckBox Label="Remote nested groups" @bind-Value="remoteNested"/>
@@ -74,6 +85,30 @@ ReadGroupedData/readGroupedData uses NgGroupedDataRequest (page, pageSize, searc
  private HashSet<string> collapsed=[];
  private IReadOnlyList<Func<Product,string>> Grouping=>!grouped?[]:nested?[ProductGroup,r=>r.Count<100?"Available":"Protected"]:[ProductGroup];
  private static readonly NgGroupAggregate<Product>[] aggregates=[new("Total quantity",r=>r.Count),new("Average",r=>r.Count,"average",v=>v?.ToString("0.0")??"—")]; private HashSet<string> localSelected=[]; private string ProductGroup(Product row)=>row.Name; private string GroupCaption(string key,int count)=>$"{key}: {count} matching records";
+ private List<Product> editableRows=[new("e1","Chair",12),new("e2","Desk",24),new("e3","Protected",100)];
+ private bool editLocked,editFail;private int writes,nextEditId=4;
+ private NgGridEditing<Product> Editor=>new(){
+   Fields=[new("name","Product name",true),new("quantity","Product quantity",true)],
+   Draft=r=>new Dictionary<string,string>{{"name",r?.Name??""},{"quantity",r?.Count.ToString()??"0"}},
+   ReadOnly=editLocked,CanUpdate=r=>r.Count<100,CanDelete=r=>r.Count<100,
+   Validate=v=>!int.TryParse(v["quantity"],out var n)||n<0?"Quantity must be a nonnegative integer.":null,
+   Commit=SaveProduct
+ };
+ private async Task<string?> SaveProduct(NgGridEditOperation operation,string? id,IReadOnlyDictionary<string,string> values,CancellationToken token){
+   await Task.Delay(600,token);
+   if(editFail)throw new InvalidOperationException("Private storage detail");
+   if(editLocked)return "Editing is locked.";
+   var existing=editableRows.FirstOrDefault(r=>r.Id==id);
+   if(operation!=NgGridEditOperation.Create && (existing is null || existing.Count>=100))return "Record is missing or protected.";
+   if(operation==NgGridEditOperation.Delete)editableRows.RemoveAll(r=>r.Id==id);
+   else{
+     var name=values["name"].Trim();var quantity=int.Parse(values["quantity"]);
+     if(editableRows.Any(r=>r.Id!=id && string.Equals(r.Name,name,StringComparison.OrdinalIgnoreCase)))return "Product name already exists.";
+     var next=new Product(id??$"e{nextEditId++}",name,quantity);
+     if(operation==NgGridEditOperation.Create)editableRows.Add(next);else editableRows[editableRows.FindIndex(r=>r.Id==id)]=next;
+   }
+   writes++;await InvokeAsync(StateHasChanged);return null;
+ }
  private bool remoteNested=true,groupFail,groupMalformed,groupSmall;private int groupVersion,groupRequests;private string groupQuery="";
  private HashSet<string> remoteCollapsed=[],remoteSelected=[];
  private async Task<NgGroupedDataResult<Product>> ReadGrouped(NgGroupedDataRequest request,CancellationToken token){
@@ -106,6 +141,30 @@ import 'dart:convert';
 import 'dart:js_interop';
 import 'package:web/web.dart' as web;
 
+final editableRows=<( {String id,String name,int count})>[(id:'e1',name:'Chair',count:12),(id:'e2',name:'Desk',count:24),(id:'e3',name:'Protected',count:100)];
+bool editLocked=false,editFail=false;
+int writes=0,nextEditId=4;
+NgGridEditing<({String id,String name,int count})> get editor=>NgGridEditing(
+  fields:[NgGridEditField('name','Product name',required:true),NgGridEditField('quantity','Product quantity',required:true)],
+  draft:(r)=>{'name':r?.name??'','quantity':'${r?.count??0}'},readOnly:editLocked,canUpdate:(r)=>r.count<100,canDelete:(r)=>r.count<100,
+  validate:(v)=>int.tryParse(v['quantity']??'')==null || int.parse(v['quantity']!)<0?'Quantity must be a nonnegative integer.':null,
+  commit:saveProduct);
+Future<String?> saveProduct(NgGridEditOperation operation,String? id,Map<String,String> values)async{
+  await Future<void>.delayed(const Duration(milliseconds:600));
+  if(!mounted)return 'Editor closed.';
+  if(editFail)throw StateError('Private storage detail');
+  if(editLocked)return 'Editing is locked.';
+  final index=editableRows.indexWhere((r)=>r.id==id);
+  if(operation!=NgGridEditOperation.create && (index<0 || editableRows[index].count>=100))return 'Record is missing or protected.';
+  if(operation==NgGridEditOperation.delete){setState(()=>editableRows.removeAt(index));}
+  else{
+    final name=values['name']!.trim(),quantity=int.parse(values['quantity']!);
+    if(editableRows.any((r)=>r.id!=id && r.name.toLowerCase()==name.toLowerCase()))return 'Product name already exists.';
+    final next=(id:id??'e${nextEditId++}',name:name,count:quantity);
+    setState((){if(operation==NgGridEditOperation.create){editableRows.add(next);}else{editableRows[index]=next;}});
+  }
+  setState(()=>writes++);return null;
+}
 bool remoteNested=true,groupFail=false,groupMalformed=false,groupSmall=false;
 int groupVersion=0,groupRequests=0;
 String groupQuery='';
@@ -145,6 +204,12 @@ Widget build(BuildContext context) => Column(crossAxisAlignment: CrossAxisAlignm
   NgCheckBox(label:'Lock group expansion',value:groupLocked,onChanged:(v)=>setState(()=>groupLocked=v)),
   NgDataGrid<({String id,String name,int count})>(label:'Grouped inventory',items:rows,columns:columns,rowId:(r)=>r.id,groupSelectors:!grouped?[]:nested?[(r)=>r.name,(r)=>r.count<100?'Available':'Protected']:[(r)=>r.name],dataVersion:'$grouped/$nested',collapsibleGroups:true,collapsedGroups:collapsed,onCollapsedGroupsChanged:(v)=>setState(()=>collapsed=v),groupExpansionReadOnly:groupLocked,groupAggregates:totals?aggregates:[],groupText:(key,count)=>'$key: $count matching records',multiSort:true,selectedIds:localSelected,onSelectionChanged:(v)=>setState(()=>localSelected=v),canSelect:(r)=>r.count<100),
   Text('Local selection: ${(localSelected.toList()..sort()).join(", ")}'),
+  const Text('Editable inventory'),
+  const Text('Drafts are isolated. Quantities 100 and above are protected. Try validation, failure and retry.'),
+  NgCheckBox(label:'Lock editing',value:editLocked,onChanged:(v)=>setState(()=>editLocked=v)),
+  NgCheckBox(label:'Fail saves',value:editFail,onChanged:(v)=>setState(()=>editFail=v)),
+  NgDataGrid<({String id,String name,int count})>(label:'Editable inventory',items:editableRows,columns:columns,rowId:(r)=>r.id,groupBy:(r)=>r.name,editing:editor),
+  Text('Successful writes: $writes'),
   const Text('HTTP grouped inventory'),
   const Text('Live requests to the local gallery API. Start the Blazor gallery on port 5180.'),
   NgCheckBox(label:'Remote nested groups',value:remoteNested,onChanged:(v)=>setState(()=>remoteNested=v)),
@@ -170,6 +235,7 @@ Names are case-sensitive. `?` permits null. `EditorRequired` parameters are mark
 
 | Parameter | Type | Default / requirement | Purpose |
 |---|---|---|---|
+| `Editing` | `NgGridEditing<TItem>?` | not set | Optional NgGridEditing configuration for isolated drafts, validation, async persistence and confirmed deletion. See Grid editing. |
 | `ReadData` | `Func<NgDataRequest,CancellationToken,Task<NgDataResult<TItem>>>?` | not set | Async page adapter; return requested rows and filtered total. See request/result contracts above. |
 | `ReadGroupedData` | `Func<NgGroupedDataRequest,CancellationToken,Task<NgGroupedDataResult<TItem>>>?` | not set | Async grouped page adapter; mutually exclusive with ReadData and local grouping/aggregates. |
 | `RemoteGroupKeys` | `IReadOnlyList<string>` | [] | Ordered application-defined field identifiers, one to eight distinct nonblank keys. Changes reload page 1. |
@@ -214,6 +280,7 @@ Names are case-sensitive. `?` permits null. `EditorRequired` parameters are mark
 
 | Argument | Type | Purpose |
 |---|---|---|
+| `editing` | `NgGridEditing<T>?` | Optional NgGridEditing configuration for isolated drafts, validation, async persistence and confirmed deletion. See Grid editing. |
 | `items` | `List<T>` | Input collection. Replace it when changing records or configuration. |
 | `readData` | `Future<NgDataResult<T>> Function(NgDataRequest)?` | Async page adapter; return requested rows and filtered total. See request/result contracts above. |
 | `readGroupedData` | `Future<NgGroupedDataResult<T>> Function(NgGroupedDataRequest)?` | Async grouped page adapter; mutually exclusive with ReadData and local grouping/aggregates. |
@@ -255,6 +322,7 @@ Names are case-sensitive. `?` permits null. `EditorRequired` parameters are mark
 const NgDataGrid({
     super.key,
     this.items = const [],
+    this.editing,
     this.readData,
     this.readGroupedData,
     this.remoteGroupKeys = const [],

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'components.dart';
 part 'grouped_data.dart';
+part 'grid_editing.dart';
 
 class NgDataColumn<T> {
   final String key, title;
@@ -533,6 +534,7 @@ class NgBreadcrumb extends StatelessWidget {
 }
 
 class NgDataGrid<T> extends StatefulWidget {
+  final NgGridEditing<T>? editing;
   final List<T> items;
   final Future<NgDataResult<T>> Function(NgDataRequest)? readData;
   final Future<NgGroupedDataResult<T>> Function(NgGroupedDataRequest)?
@@ -566,6 +568,7 @@ class NgDataGrid<T> extends StatefulWidget {
   const NgDataGrid({
     super.key,
     this.items = const [],
+    this.editing,
     this.readData,
     this.readGroupedData,
     this.remoteGroupKeys = const [],
@@ -607,6 +610,215 @@ class NgDataGrid<T> extends StatefulWidget {
 }
 
 class _NgDataGridState<T> extends State<NgDataGrid<T>> {
+  NgGridEditOperation? editOperation;
+  String? editId, editError;
+  Map<String, String> draft = {};
+  bool saving = false;
+  int editRevision = 0;
+  bool get hasActions => widget.rowActions != null || widget.editing != null;
+  bool get canCreate =>
+      mounted &&
+      !loading &&
+      !error &&
+      editOperation == null &&
+      widget.editing != null &&
+      !widget.editing!.readOnly &&
+      widget.editing!.allowCreate;
+  bool allowed(T row, bool delete) =>
+      widget.editing != null &&
+      !widget.editing!.readOnly &&
+      ((delete ? widget.editing!.canDelete : widget.editing!.canUpdate)?.call(
+            row,
+          ) ??
+          true);
+  bool canEditRow(T row, bool delete) =>
+      mounted &&
+      !loading &&
+      !error &&
+      editOperation == null &&
+      displayRows.any(
+        (r) => widget.rowId(r) == widget.rowId(row) && allowed(r, delete),
+      );
+  List<T> get editRows => (isRemote ? remote : widget.items)
+      .where((r) => widget.rowId(r) == editId)
+      .toList();
+  bool get canCommit =>
+      mounted &&
+      !saving &&
+      !loading &&
+      !error &&
+      widget.editing != null &&
+      !widget.editing!.readOnly &&
+      (editOperation == NgGridEditOperation.create
+          ? widget.editing!.allowCreate
+          : editOperation != null &&
+                editRows.length == 1 &&
+                allowed(
+                  editRows.single,
+                  editOperation == NgGridEditOperation.delete,
+                ));
+  void closeEdit() {
+    if (saving) return;
+    editOperation = null;
+    editId = null;
+    editError = null;
+    draft = {};
+  }
+
+  void invalidateEdit() {
+    editRevision++;
+    saving = false;
+    closeEdit();
+  }
+
+  void beginEdit(NgGridEditOperation operation, T? row) {
+    if (operation == NgGridEditOperation.create
+        ? !canCreate
+        : row == null ||
+              !canEditRow(row, operation == NgGridEditOperation.delete))
+      return;
+    if (operation != NgGridEditOperation.create)
+      row = displayRows.firstWhere(
+        (r) => widget.rowId(r) == widget.rowId(row as T),
+      );
+    setState(() {
+      editError = null;
+      try {
+        draft = operation == NgGridEditOperation.delete
+            ? {}
+            : Map.of(widget.editing!.draft(row));
+        editId = operation == NgGridEditOperation.create
+            ? null
+            : widget.rowId(row as T);
+        editOperation = operation;
+      } catch (_) {
+        editError = widget.editing!.errorText;
+      }
+    });
+  }
+
+  Future<void> commitEdit() async {
+    if (!canCommit) return;
+    final config = widget.editing!, operation = editOperation!;
+    final values = Map<String, String>.unmodifiable(draft);
+    try {
+      editError = operation == NgGridEditOperation.delete
+          ? null
+          : config.fields.any(
+              (f) => f.required && (values[f.key] ?? '').trim().isEmpty,
+            )
+          ? config.requiredText
+          : config.validate?.call(values);
+    } catch (_) {
+      editError = config.errorText;
+    }
+    if (editError != null) {
+      setState(() {});
+      return;
+    }
+    final ticket = ++editRevision;
+    setState(() => saving = true);
+    try {
+      final message = await config.commit(operation, editId, values);
+      if (!mounted || ticket != editRevision) return;
+      setState(() {
+        saving = false;
+        editError = message;
+        if (message == null) closeEdit();
+      });
+      if (message == null) {
+        await reload();
+        if (mounted) setState(() {});
+      }
+    } catch (_) {
+      if (mounted && ticket == editRevision)
+        setState(() {
+          saving = false;
+          editError = config.errorText;
+        });
+    }
+  }
+
+  Widget editorPanel() {
+    final config = widget.editing!, operation = editOperation!;
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Semantics(
+        container: true,
+        label: operation == NgGridEditOperation.create
+            ? config.createText
+            : operation == NgGridEditOperation.delete
+            ? config.deleteText
+            : config.updateText,
+        child: Container(
+          constraints: const BoxConstraints(maxWidth: 640),
+          margin: const EdgeInsets.symmetric(vertical: 16),
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surface,
+            border: Border.all(
+              color: Theme.of(context).colorScheme.outlineVariant,
+            ),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Column(
+            spacing: 12,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                '${operation == NgGridEditOperation.create
+                    ? config.createText
+                    : operation == NgGridEditOperation.delete
+                    ? config.confirmDeleteText
+                    : config.updateText} ${editId ?? ""}',
+              ),
+              if (editError != null)
+                Semantics(
+                  liveRegion: true,
+                  child: Text(
+                    editError!,
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.error,
+                    ),
+                  ),
+                ),
+              if (saving)
+                Semantics(liveRegion: true, child: Text(config.savingText)),
+              if (operation != NgGridEditOperation.delete)
+                for (final field in config.fields)
+                  TextFormField(
+                    key: ValueKey((editRevision, field.key)),
+                    initialValue: draft[field.key] ?? '',
+                    decoration: InputDecoration(
+                      labelText: field.label,
+                      helperText: field.required ? '*' : null,
+                    ),
+                    enabled: !saving && !config.readOnly,
+                    onChanged: (v) => draft[field.key] = v,
+                  ),
+              Wrap(
+                children: [
+                  TextButton(
+                    onPressed: canCommit ? commitEdit : null,
+                    child: Text(
+                      operation == NgGridEditOperation.delete
+                          ? config.deleteText
+                          : config.saveText,
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: saving ? null : () => setState(closeEdit),
+                    child: Text(config.cancelText),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   String search = '';
   final sorts = <NgSortDescriptor>[];
   String? get sortKey => sorts.firstOrNull?.key;
@@ -834,6 +1046,11 @@ class _NgDataGridState<T> extends State<NgDataGrid<T>> {
   @override
   void didUpdateWidget(covariant NgDataGrid<T> oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (oldWidget.dataVersion != widget.dataVersion ||
+        oldWidget.readData != widget.readData ||
+        oldWidget.readGroupedData != widget.readGroupedData ||
+        (oldWidget.editing != null && widget.editing == null))
+      invalidateEdit();
     validateGrouping();
     final before = sorts.length;
     sorts.removeWhere(
@@ -893,6 +1110,7 @@ class _NgDataGridState<T> extends State<NgDataGrid<T>> {
   }
 
   void validateGrouping() {
+    widget.editing?.check();
     if (widget.groupBy != null && widget.groupSelectors.isNotEmpty)
       throw ArgumentError('Use groupBy or groupSelectors, not both.');
     if (selectors.length > 8)
@@ -989,6 +1207,13 @@ class _NgDataGridState<T> extends State<NgDataGrid<T>> {
               ),
           ],
         ),
+        if (widget.editing case final config?)
+          TextButton(
+            onPressed: canCreate
+                ? () => beginEdit(NgGridEditOperation.create, null)
+                : null,
+            child: Text(config.createText),
+          ),
         const SizedBox(height: 16),
         if (widget.collapsibleGroups && isGrouped)
           Wrap(
@@ -1090,8 +1315,7 @@ class _NgDataGridState<T> extends State<NgDataGrid<T>> {
                           ? (i, ascending) => sort(column.key)
                           : null,
                     ),
-                  if (widget.rowActions != null)
-                    const DataColumn(label: Text('Actions')),
+                  if (hasActions) const DataColumn(label: Text('Actions')),
                 ],
                 rows: [
                   for (final section in displaySections) ...[
@@ -1110,8 +1334,7 @@ class _NgDataGridState<T> extends State<NgDataGrid<T>> {
                                   ? groupHeader(group)
                                   : const SizedBox.shrink(),
                             ),
-                          if (widget.rowActions != null)
-                            const DataCell(SizedBox.shrink()),
+                          if (hasActions) const DataCell(SizedBox.shrink()),
                         ],
                       ),
                     for (final row in section.$2)
@@ -1143,8 +1366,46 @@ class _NgDataGridState<T> extends State<NgDataGrid<T>> {
                               column.cellBuilder?.call(context, row) ??
                                   Text(column.text(row)),
                             ),
-                          if (widget.rowActions != null)
-                            DataCell(widget.rowActions!(context, row)),
+                          if (hasActions)
+                            DataCell(
+                              Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  if (widget.rowActions != null)
+                                    widget.rowActions!(context, row),
+                                  if (widget.editing case final config?) ...[
+                                    TextButton(
+                                      onPressed: canEditRow(row, false)
+                                          ? () => beginEdit(
+                                              NgGridEditOperation.update,
+                                              row,
+                                            )
+                                          : null,
+                                      child: Semantics(
+                                        label:
+                                            '${config.updateText} ${widget.rowId(row)}',
+                                        excludeSemantics: true,
+                                        child: Text(config.updateText),
+                                      ),
+                                    ),
+                                    TextButton(
+                                      onPressed: canEditRow(row, true)
+                                          ? () => beginEdit(
+                                              NgGridEditOperation.delete,
+                                              row,
+                                            )
+                                          : null,
+                                      child: Semantics(
+                                        label:
+                                            '${config.deleteText} ${widget.rowId(row)}',
+                                        excludeSemantics: true,
+                                        child: Text(config.deleteText),
+                                      ),
+                                    ),
+                                  ],
+                                ],
+                              ),
+                            ),
                         ],
                       ),
                   ],
@@ -1158,6 +1419,9 @@ class _NgDataGridState<T> extends State<NgDataGrid<T>> {
             padding: const EdgeInsets.all(24),
             child: widget.emptyBuilder ?? Text(widget.emptyText),
           ),
+        if (editOperation == null && editError != null)
+          Semantics(liveRegion: true, child: Text(editError!)),
+        if (editOperation != null && widget.editing != null) editorPanel(),
         NgPager(
           total: count,
           page: page,

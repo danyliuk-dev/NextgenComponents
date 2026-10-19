@@ -14,6 +14,38 @@ async Task Check<T>(Dictionary<string, object?> parameters, params string[] expe
  foreach (var text in expected) if (!html.Contains(text)) throw new Exception($"{typeof(T).Name}: missing {text} in {html}");
  Console.WriteLine($"PASS {typeof(T).Name}"); count++;
 }
+// Exercise editing state and persistence without a browser renderer.
+var editRows=new List<string>{"Alpha"};var editWrites=new List<NgGridEditOperation>();var draftSource=new Dictionary<string,string>{{"name",""}};
+NgGridEditing<string> EditConfig(bool locked=false,Func<NgGridEditOperation,string?,IReadOnlyDictionary<string,string>,CancellationToken,Task<string?>>? commit=null)=>new(){
+ Fields=[new("name","Record name",true)],Draft=r=>r is null?draftSource:new Dictionary<string,string>{{"name",r}},ReadOnly=locked,
+ Validate=v=>v["name"]=="bad"?"Invalid name":null,
+ Commit=commit??((op,id,v,token)=>{editWrites.Add(op);if(op!=NgGridEditOperation.Create)editRows.Remove(id!);if(op!=NgGridEditOperation.Delete)editRows.Add(v["name"]);return Task.FromResult<string?>(null);})
+};
+#pragma warning disable BL0005
+var editingGrid=new NgDataGrid<string>{Items=editRows,RowId=r=>r,Columns=[new("n","Name",r=>r)],Editing=EditConfig()};
+var editType=editingGrid.GetType();var privateFlags=System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic;
+object? EditCall(string method,params object?[] args)=>editType.GetMethod(method,privateFlags)!.Invoke(editingGrid,args);
+object? EditValue(string field)=>editType.GetField(field,privateFlags)!.GetValue(editingGrid);
+void EditAssert(bool condition,string message){if(!condition)throw new Exception(message);count++;}
+void DraftValue(string value)=>((Dictionary<string,string>)EditValue("draft")!)["name"]=value;
+EditCall("OnInitialized");EditCall("Refresh");
+EditCall("BeginEdit",NgGridEditOperation.Create,null);DraftValue("Discarded");EditCall("CloseEdit");EditAssert(editRows.SequenceEqual(["Alpha"]) && draftSource["name"]=="","Draft isolation");
+EditCall("BeginEdit",NgGridEditOperation.Create,null);await (Task)EditCall("CommitEdit")!;EditAssert((string?)EditValue("editError")=="Complete all required fields." && editWrites.Count==0,"Required validation");
+DraftValue("bad");await (Task)EditCall("CommitEdit")!;EditAssert((string?)EditValue("editError")=="Invalid name","Custom validation");
+DraftValue("Beta");await (Task)EditCall("CommitEdit")!;EditAssert(editRows.SequenceEqual(["Alpha","Beta"]),"Create");
+EditCall("BeginEdit",NgGridEditOperation.Update,"Alpha");DraftValue("Updated");await (Task)EditCall("CommitEdit")!;EditAssert(editRows.SequenceEqual(["Beta","Updated"]),"Update");
+EditCall("BeginEdit",NgGridEditOperation.Delete,"Beta");EditAssert(editRows.Count==2,"Delete requires confirmation");EditCall("CloseEdit");EditAssert(editRows.Count==2,"Delete cancel");
+EditCall("BeginEdit",NgGridEditOperation.Delete,"Beta");await (Task)EditCall("CommitEdit")!;EditAssert(editRows.SequenceEqual(["Updated"]),"Delete confirmed");
+var pendingEdit=new TaskCompletionSource<string?>();var persistenceCalls=0;
+editingGrid.Editing=EditConfig(commit:(op,id,v,t)=>{persistenceCalls++;return pendingEdit.Task;});
+EditCall("BeginEdit",NgGridEditOperation.Create,null);DraftValue("Retained");var savingEdit=(Task)EditCall("CommitEdit")!;await (Task)EditCall("CommitEdit")!;EditCall("CloseEdit");EditAssert(persistenceCalls==1 && EditValue("editOperation") is not null,"Single flight and cancel guard");
+pendingEdit.SetException(new Exception("PRIVATE"));await savingEdit;EditAssert((string?)EditValue("editError")=="Unable to save changes. Please retry." && ((Dictionary<string,string>)EditValue("draft")!)["name"]=="Retained","Failure retains draft and hides exception");
+pendingEdit=new();savingEdit=(Task)EditCall("CommitEdit")!;pendingEdit.SetResult("Conflict");await savingEdit;EditAssert((string?)EditValue("editError")=="Conflict","Server validation");
+editingGrid.Editing=EditConfig(true);await (Task)EditCall("CommitEdit")!;EditAssert(persistenceCalls==2,"Current permissions");
+editingGrid.Editing=EditConfig(commit:(op,id,v,t)=>{persistenceCalls++;return pendingEdit.Task;});pendingEdit=new();savingEdit=(Task)EditCall("CommitEdit")!;EditCall("InvalidateEdit");pendingEdit.SetResult("Obsolete");await savingEdit;EditAssert(EditValue("editOperation") is null && EditValue("editError") is null,"Obsolete completion ignored");
+EditCall("BeginEdit",NgGridEditOperation.Update,"Updated");editRows.Clear();await (Task)EditCall("CommitEdit")!;EditAssert(persistenceCalls==3,"Removed row guard");editingGrid.Dispose();
+#pragma warning restore BL0005
+await Check<NgDataGrid<string>>(new(){["Items"]=new[]{"Alpha"},["Columns"]=new[]{new NgDataColumn<string>("n","Name",r=>r)},["RowId"]=(Func<string,string>)(r=>r),["Editing"]=EditConfig()},"Create record","Edit Alpha","Delete Alpha");
 foreach(var locked in new[]{false,true}){
  await Check<NgTreeView<string>>(new(){["Items"]=new[]{new NgTreeNode<string>("a","Alpha")},["Text"]=(Func<string,string>)(s=>s),["Checkboxes"]=true,["ShowCheckActions"]=true,["CheckingReadOnly"]=locked,["CheckLoadedText"]="<Check loaded>",["ClearLoadedText"]="Clear loaded"},"&lt;Check loaded&gt;","Clear loaded","disabled");
  await Check<NgTreeList<string>>(new(){["Items"]=Array.Empty<NgTreeNode<string>>(),["Columns"]=new[]{new NgDataColumn<string>("name","Name",s=>s)},["Checkboxes"]=true,["ShowCheckActions"]=true,["CheckingReadOnly"]=locked},"Check loaded nodes","Clear loaded checks","disabled");

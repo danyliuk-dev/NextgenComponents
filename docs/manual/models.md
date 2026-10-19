@@ -165,3 +165,7 @@ Use `GroupBy`/`groupBy` for a single string selector or `GroupSelectors`/`groupS
 ## Remote grouped records
 
 `NgGroupedDataRequest` adds ordered `GroupKeys`/`groupKeys` to page, page size, search and sorts. `NgGroupedItem<T>` pairs one record with its full path. `NgRemoteGroup` contains a group path, full filtered count and `NgGroupSummary` values (title and nullable double). `NgGroupedDataResult<T>` returns page items, the full filtered total and exactly the metadata needed for that page. Validated display groups expose `Count`/`count` separately from `Items`/`items`: in remote mode Items contains only downloaded records, while Count and Summaries are supplied by the server. See [Remote grouped data](remote-grouped-data.md) for complete JSON and behavior contracts.
+
+## Grid editing
+
+`NgGridEditing<T>`, `NgGridEditField` and `NgGridEditOperation` define drafts and application-owned asynchronous persistence. See [Grid editing](grid-editing.md) for validation, cancellation, concurrency and source refresh.

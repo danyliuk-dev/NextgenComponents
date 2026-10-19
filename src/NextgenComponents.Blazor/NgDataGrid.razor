@@ -3,18 +3,18 @@
 <div class="ng-data-grid" aria-busy="@(loading?"true":"false")">
 @if(loading){<p role="status">@LoadingText</p>}
 @if(error){<p role="alert">@ErrorText <button type="button" @onclick="ReloadAsync">@RetryText</button></p>}
-<div class="ng-data-toolbar"><label class="ng-field">Search @Label<input class="ng-input" aria-label="@($"Search {Label}")" value="@search" @oninput="Search" /></label><span role="status">@SelectedIds.Count selected</span>@Toolbar @if(MultiSort){<button type="button" disabled="@(sorts.Count==0)" @onclick="ClearSort">Clear sorting</button>}</div>
+<div class="ng-data-toolbar"><label class="ng-field">Search @Label<input class="ng-input" aria-label="@($"Search {Label}")" value="@search" @oninput="Search" /></label><span role="status">@SelectedIds.Count selected</span>@Toolbar @if(Editing is {} editor){<button type="button" class="ng-button ng-primary" disabled="@(!CanCreate)" @onclick="()=>BeginEdit(NgGridEditOperation.Create,default)">@editor.CreateText</button>} @if(MultiSort){<button type="button" disabled="@(sorts.Count==0)" @onclick="ClearSort">Clear sorting</button>}</div>
 @if(CollapsibleGroups && IsGrouped){<div class="ng-data-toolbar"><button type="button" disabled="@(!CanBulk(false))" @onclick="()=>BulkGroups(false)">@(ReadGroupedData is null?ExpandGroupsText:ExpandPageGroupsText)</button><button type="button" disabled="@(!CanBulk(true))" @onclick="()=>BulkGroups(true)">@(ReadGroupedData is null?CollapseGroupsText:CollapsePageGroupsText)</button></div>}
 <div class="ng-table-scroll" tabindex="0" aria-label="@($"{Label} table scroll area")">
 <table class="ng-data-table"><caption class="ng-sr-only">@Label</caption><thead><tr>
 @if(Selectable){<th scope="col"><input type="checkbox" aria-label="Select page" checked="@(Eligible.Count>0 && Eligible.All(x=>SelectedIds.Contains(RowId(x))))" disabled="@(Eligible.Count==0 || SelectionReadOnly || !SelectedIdsChanged.HasDelegate)" aria-checked="@(Eligible.Any(x=>SelectedIds.Contains(RowId(x))) && !Eligible.All(x=>SelectedIds.Contains(RowId(x)))?"mixed":null)" @onchange="SelectPage" /></th>}
 @foreach(var column in Columns){var sort=sorts.FirstOrDefault(x=>x.Key==column.Key);<th scope="col" aria-sort="@(sort is not null?(sort.Descending?"descending":"ascending"):"none")">@if(column.Sortable){<button type="button" @onclick="()=>Sort(column.Key)">@column.Title @(sort is not null?$"{(sort.Descending?"↓":"↑")}{(MultiSort?sorts.IndexOf(sort)+1:"")}":"↕")</button>}else{@column.Title}</th>}
-@if(RowActions is not null){<th scope="col">Actions</th>}
+@if(HasActions){<th scope="col">Actions</th>}
 </tr></thead>
-@if(!loading && !error && Visible.Count==0){<tbody><tr><td colspan="@(Columns.Count+(Selectable?1:0)+(RowActions is null?0:1))" class="ng-empty">@if(EmptyTemplate is not null){@EmptyTemplate}else{@EmptyText}</td></tr></tbody>}
+@if(!loading && !error && Visible.Count==0){<tbody><tr><td colspan="@(Columns.Count+(Selectable?1:0)+(HasActions?1:0))" class="ng-empty">@if(EmptyTemplate is not null){@EmptyTemplate}else{@EmptyText}</td></tr></tbody>}
 @foreach(var section in DisplaySections){
 <tbody>
-@if(section.Group is {} group){<tr class="ng-grid-group"><th scope="rowgroup" colspan="@(Columns.Count+(Selectable?1:0)+(RowActions is null?0:1))" style="padding-inline-start:@(14+group.Depth*20)px">
+@if(section.Group is {} group){<tr class="ng-grid-group"><th scope="rowgroup" colspan="@(Columns.Count+(Selectable?1:0)+(HasActions?1:0))" style="padding-inline-start:@(14+group.Depth*20)px">
 @if(CollapsibleGroups){<button type="button" aria-expanded="@(!IsCollapsed(group.Id)?"true":"false")" aria-label="@ToggleLabel(group)" disabled="@(!CanToggleGroups)" @onclick="()=>ToggleGroup(group.Id)"><span aria-hidden="true">@(IsCollapsed(group.Id)?"▸":"▾")</span> @Caption(group)</button>}else{@Caption(group)}
 @foreach(var summary in group.Summaries??[]){<span class="ng-group-summary"> · @SummaryText(summary)</span>}
 @foreach(var aggregate in GroupAggregates){<span class="ng-group-summary"> · @aggregate.Text(group.Items)</span>}
@@ -23,13 +23,56 @@
 <tr @key="id" class="@(SelectedIds.Contains(id)?"ng-row-selected":"")">
 @if(Selectable){<td><input type="checkbox" aria-label="@($"Select {id}")" checked="@SelectedIds.Contains(id)" disabled="@(!CanChange(row))" @onchange="()=>Toggle(row)" /></td>}
 @foreach(var column in Columns){<td>@if(column.Template is not null){@column.Template(row)}else{@column.Text(row)}</td>}
-@if(RowActions is not null){<td>@RowActions(row)</td>}
+@if(HasActions){<td>@if(RowActions is not null){@RowActions(row)}@if(Editing is {} edit){<button type="button" class="ng-button" aria-label="@($"{edit.UpdateText} {id}")" disabled="@(!CanEditRow(row,false))" @onclick="()=>BeginEdit(NgGridEditOperation.Update,row)">@edit.UpdateText</button><button type="button" class="ng-button" aria-label="@($"{edit.DeleteText} {id}")" disabled="@(!CanEditRow(row,true))" @onclick="()=>BeginEdit(NgGridEditOperation.Delete,row)">@edit.DeleteText</button>}</td>}
 </tr>}
 </tbody>}
 </table></div>
+@if(editOperation is null && editError is not null){<p role="alert">@editError</p>}
+@if(editOperation is {} operation && Editing is {} config){
+<section class="ng-grid-editor" aria-label="@(operation==NgGridEditOperation.Create?config.CreateText:operation==NgGridEditOperation.Delete?config.DeleteText:config.UpdateText)" aria-busy="@(saving?"true":"false")">
+<h3>@(operation==NgGridEditOperation.Create?config.CreateText:operation==NgGridEditOperation.Delete?config.ConfirmDeleteText:config.UpdateText) @editId</h3>
+@if(editError is not null){<p role="alert">@editError</p>}
+@if(saving){<p role="status">@config.SavingText</p>}
+@if(operation!=NgGridEditOperation.Delete){foreach(var field in config.Fields){<label class="ng-field">@field.Label<input class="ng-input" aria-label="@field.Label" aria-required="@(field.Required?"true":"false")" value="@draft.GetValueOrDefault(field.Key,"")" disabled="@(saving || config.ReadOnly)" @oninput="e=>draft[field.Key]=e.Value?.ToString()??string.Empty" /></label>}}
+<div class="ng-data-toolbar"><button type="button" class="ng-button ng-primary" disabled="@(!CanCommit)" @onclick="CommitEdit">@(operation==NgGridEditOperation.Delete?config.DeleteText:config.SaveText)</button>
+<button type="button" class="ng-button" disabled="@saving" @onclick="CloseEdit">@config.CancelText</button></div>
+</section>}
 <NgPager Total="Total" Page="page" PageChanged="ChangePage" PageSize="size" PageSizeChanged="Resize" Sizes="PageSizes" />
 </div>
 @code {
+ [Parameter] public NgGridEditing<TItem>? Editing{get;set;}
+ private bool HasActions=>RowActions is not null || Editing is not null;
+ private NgGridEditOperation? editOperation;
+ private string? editId,editError;
+ private Dictionary<string,string> draft=[];
+ private bool saving;
+ private long editRevision;
+ private CancellationTokenSource? editPending;
+ private bool CanCreate=>!disposed && !loading && !error && editOperation is null && Editing is {ReadOnly:false,AllowCreate:true};
+ private TItem[] CurrentEditRows=> (IsRemote?filtered:Items).Where(r=>RowId(r)==editId).ToArray();
+ private bool Allowed(TItem row,bool delete)=>Editing is {ReadOnly:false} c && (delete?c.CanDelete?.Invoke(row)??true:c.CanUpdate?.Invoke(row)??true);
+ private bool CanEditRow(TItem row,bool delete)=>!disposed && !loading && !error && editOperation is null && DisplayRows.Any(r=>RowId(r)==RowId(row) && Allowed(r,delete));
+ private bool CanCommit=>!disposed && !saving && !loading && !error && Editing is {ReadOnly:false} && (editOperation==NgGridEditOperation.Create?Editing.AllowCreate:editOperation is not null && CurrentEditRows.Length==1 && Allowed(CurrentEditRows[0],editOperation==NgGridEditOperation.Delete));
+ private void BeginEdit(NgGridEditOperation operation,TItem? row){
+   if(operation==NgGridEditOperation.Create?!CanCreate:row is null || !CanEditRow(row,operation==NgGridEditOperation.Delete))return;
+   if(operation!=NgGridEditOperation.Create)row=DisplayRows.First(r=>RowId(r)==RowId(row!));
+   editError=null;
+   try{draft=operation==NgGridEditOperation.Delete?[]:new(Editing!.Draft(row));editId=operation==NgGridEditOperation.Create?null:RowId(row!);editOperation=operation;}
+   catch{editError=Editing!.ErrorText;}
+ }
+ private void CloseEdit(){if(saving)return;editOperation=null;editId=null;editError=null;draft=[];}
+ private async Task CommitEdit(){
+   if(!CanCommit)return;
+   var config=Editing!;var operation=editOperation!.Value;
+   var values=new System.Collections.ObjectModel.ReadOnlyDictionary<string,string>(new Dictionary<string,string>(draft));
+   try{editError=operation==NgGridEditOperation.Delete?null:config.Fields.Any(f=>f.Required && string.IsNullOrWhiteSpace(values.GetValueOrDefault(f.Key)))?config.RequiredText:config.Validate?.Invoke(values);}catch{editError=config.ErrorText;}
+   if(editError is not null)return;
+   saving=true;var ticket=++editRevision;using var operationPending=new CancellationTokenSource();editPending=operationPending;var token=operationPending.Token;
+   try{var message=await config.Commit(operation,editId,values,token);if(disposed || ticket!=editRevision)return;editError=message;saving=false;if(message is null){CloseEdit();await ReloadAsync();}}
+   catch{if(!disposed && ticket==editRevision)editError=config.ErrorText;}
+   finally{if(!disposed && ticket==editRevision)saving=false;if(ReferenceEquals(editPending,operationPending))editPending=null;}
+ }
+ private void InvalidateEdit(){++editRevision;editPending?.Cancel();saving=false;CloseEdit();}
  [Parameter] public Func<NgDataRequest,CancellationToken,Task<NgDataResult<TItem>>>? ReadData{get;set;}
  [Parameter] public Func<NgGroupedDataRequest,CancellationToken,Task<NgGroupedDataResult<TItem>>>? ReadGroupedData{get;set;}
  [Parameter] public IReadOnlyList<string> RemoteGroupKeys{get;set;}=[];
@@ -106,6 +149,8 @@
  private IReadOnlyList<TItem> Visible=>!IsRemote?filtered.Skip((page-1)*size).Take(size).ToArray():filtered;
  protected override void OnInitialized()=>size=Math.Max(1,InitialPageSize);
  protected override async Task OnParametersSetAsync(){
+   Editing?.Check();
+   if(!Equals(previousVersion,DataVersion) || previousReader!=((Delegate?)ReadGroupedData??ReadData) || Editing is null)InvalidateEdit();
    if(GroupBy is not null && GroupSelectors.Count>0)throw new ArgumentException("Use GroupBy or GroupSelectors, not both.");
    if(Selectors.Count>8)throw new ArgumentException("At most eight group levels are supported.");
    foreach(var aggregate in GroupAggregates)aggregate.Calculate(Array.Empty<TItem>());
@@ -165,7 +210,7 @@
  private async Task ClearSort(){sorts.Clear();page=1;await ReloadAsync();}
  private async Task ChangePage(int value){if(value==page)return;page=value;await ReloadAsync();}
  private async Task Resize(int value){size=value;page=1;await ReloadAsync();}
- public void Dispose(){disposed=true;++revision;pending?.Cancel();pending?.Dispose();}
+ public void Dispose(){InvalidateEdit();disposed=true;++revision;pending?.Cancel();pending?.Dispose();}
  private async Task Toggle(TItem row){var matches=(!IsRemote?Items:filtered).Where(x=>RowId(x)==RowId(row)).ToArray();if(matches.Length==0 || !DisplayRows.Any(r=>RowId(r)==RowId(row)) || !CanChange(matches[0]))return;var id=RowId(row);var next=new HashSet<string>(SelectedIds);if(!next.Add(id))next.Remove(id);await SelectedIdsChanged.InvokeAsync(next);}
  private async Task SelectPage(){if(loading || error || !Selectable || SelectionReadOnly || !SelectedIdsChanged.HasDelegate || Eligible.Count==0)return;var next=new HashSet<string>(SelectedIds);var remove=Eligible.All(x=>next.Contains(RowId(x)));foreach(var row in Eligible){if(remove)next.Remove(RowId(row));else next.Add(RowId(row));}await SelectedIdsChanged.InvokeAsync(next);}
 }

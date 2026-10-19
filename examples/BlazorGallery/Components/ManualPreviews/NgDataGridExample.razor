@@ -9,6 +9,12 @@
 <NgCheckBox Label="Lock group expansion" @bind-Value="groupLocked"/>
 <NgDataGrid TItem="Product" Label="Grouped inventory" Items="rows" Columns="columns" RowId="r=>r.Id" GroupSelectors="Grouping" DataVersion="@($"{grouped}/{nested}")" CollapsibleGroups="true" @bind-CollapsedGroups="collapsed" GroupExpansionReadOnly="groupLocked" GroupAggregates="@(totals?aggregates:[])" GroupText="GroupCaption" MultiSort="true" @bind-SelectedIds="localSelected" CanSelect="r=>r.Count<100"/>
 <p>Local selection: @string.Join(", ",localSelected.Order())</p>
+<h3>Editable inventory</h3>
+<p>Drafts are isolated. Quantities 100 and above are protected. Try a blank name, invalid quantity, a save failure and a retry.</p>
+<NgCheckBox Label="Lock editing" @bind-Value="editLocked"/>
+<NgCheckBox Label="Fail saves" @bind-Value="editFail"/>
+<NgDataGrid TItem="Product" Label="Editable inventory" Items="editableRows" Columns="columns" RowId="r=>r.Id" Editing="Editor" GroupBy="r=>r.Name" Selectable="false"/>
+<p>Successful writes: @writes</p>
 <h3>HTTP grouped inventory</h3>
 <p>Live requests to the local gallery API. Counts and summaries are computed before server paging.</p>
 <NgCheckBox Label="Remote nested groups" @bind-Value="remoteNested"/>
@@ -29,6 +35,30 @@
  private HashSet<string> collapsed=[];
  private IReadOnlyList<Func<Product,string>> Grouping=>!grouped?[]:nested?[ProductGroup,r=>r.Count<100?"Available":"Protected"]:[ProductGroup];
  private static readonly NgGroupAggregate<Product>[] aggregates=[new("Total quantity",r=>r.Count),new("Average",r=>r.Count,"average",v=>v?.ToString("0.0")??"—")]; private HashSet<string> localSelected=[]; private string ProductGroup(Product row)=>row.Name; private string GroupCaption(string key,int count)=>$"{key}: {count} matching records";
+ private List<Product> editableRows=[new("e1","Chair",12),new("e2","Desk",24),new("e3","Protected",100)];
+ private bool editLocked,editFail;private int writes,nextEditId=4;
+ private NgGridEditing<Product> Editor=>new(){
+   Fields=[new("name","Product name",true),new("quantity","Product quantity",true)],
+   Draft=r=>new Dictionary<string,string>{{"name",r?.Name??""},{"quantity",r?.Count.ToString()??"0"}},
+   ReadOnly=editLocked,CanUpdate=r=>r.Count<100,CanDelete=r=>r.Count<100,
+   Validate=v=>!int.TryParse(v["quantity"],out var n)||n<0?"Quantity must be a nonnegative integer.":null,
+   Commit=SaveProduct
+ };
+ private async Task<string?> SaveProduct(NgGridEditOperation operation,string? id,IReadOnlyDictionary<string,string> values,CancellationToken token){
+   await Task.Delay(600,token);
+   if(editFail)throw new InvalidOperationException("Private storage detail");
+   if(editLocked)return "Editing is locked.";
+   var existing=editableRows.FirstOrDefault(r=>r.Id==id);
+   if(operation!=NgGridEditOperation.Create && (existing is null || existing.Count>=100))return "Record is missing or protected.";
+   if(operation==NgGridEditOperation.Delete)editableRows.RemoveAll(r=>r.Id==id);
+   else{
+     var name=values["name"].Trim();var quantity=int.Parse(values["quantity"]);
+     if(editableRows.Any(r=>r.Id!=id && string.Equals(r.Name,name,StringComparison.OrdinalIgnoreCase)))return "Product name already exists.";
+     var next=new Product(id??$"e{nextEditId++}",name,quantity);
+     if(operation==NgGridEditOperation.Create)editableRows.Add(next);else editableRows[editableRows.FindIndex(r=>r.Id==id)]=next;
+   }
+   writes++;await InvokeAsync(StateHasChanged);return null;
+ }
  private bool remoteNested=true,groupFail,groupMalformed,groupSmall;private int groupVersion,groupRequests;private string groupQuery="";
  private HashSet<string> remoteCollapsed=[],remoteSelected=[];
  private async Task<NgGroupedDataResult<Product>> ReadGrouped(NgGroupedDataRequest request,CancellationToken token){

@@ -331,6 +331,30 @@ Widget build(BuildContext context) => NgBreadcrumb(
 }
 class NgDataGridExample extends StatefulWidget { const NgDataGridExample({super.key}); @override State<NgDataGridExample> createState()=>_NgDataGridExampleState(); }
 class _NgDataGridExampleState extends State<NgDataGridExample> {
+final editableRows=<( {String id,String name,int count})>[(id:'e1',name:'Chair',count:12),(id:'e2',name:'Desk',count:24),(id:'e3',name:'Protected',count:100)];
+bool editLocked=false,editFail=false;
+int writes=0,nextEditId=4;
+NgGridEditing<({String id,String name,int count})> get editor=>NgGridEditing(
+  fields:[NgGridEditField('name','Product name',required:true),NgGridEditField('quantity','Product quantity',required:true)],
+  draft:(r)=>{'name':r?.name??'','quantity':'${r?.count??0}'},readOnly:editLocked,canUpdate:(r)=>r.count<100,canDelete:(r)=>r.count<100,
+  validate:(v)=>int.tryParse(v['quantity']??'')==null || int.parse(v['quantity']!)<0?'Quantity must be a nonnegative integer.':null,
+  commit:saveProduct);
+Future<String?> saveProduct(NgGridEditOperation operation,String? id,Map<String,String> values)async{
+  await Future<void>.delayed(const Duration(milliseconds:600));
+  if(!mounted)return 'Editor closed.';
+  if(editFail)throw StateError('Private storage detail');
+  if(editLocked)return 'Editing is locked.';
+  final index=editableRows.indexWhere((r)=>r.id==id);
+  if(operation!=NgGridEditOperation.create && (index<0 || editableRows[index].count>=100))return 'Record is missing or protected.';
+  if(operation==NgGridEditOperation.delete){setState(()=>editableRows.removeAt(index));}
+  else{
+    final name=values['name']!.trim(),quantity=int.parse(values['quantity']!);
+    if(editableRows.any((r)=>r.id!=id && r.name.toLowerCase()==name.toLowerCase()))return 'Product name already exists.';
+    final next=(id:id??'e${nextEditId++}',name:name,count:quantity);
+    setState((){if(operation==NgGridEditOperation.create){editableRows.add(next);}else{editableRows[index]=next;}});
+  }
+  setState(()=>writes++);return null;
+}
 bool remoteNested=true,groupFail=false,groupMalformed=false,groupSmall=false;
 int groupVersion=0,groupRequests=0;
 String groupQuery='';
@@ -370,6 +394,12 @@ Widget build(BuildContext context) => Column(crossAxisAlignment: CrossAxisAlignm
   NgCheckBox(label:'Lock group expansion',value:groupLocked,onChanged:(v)=>setState(()=>groupLocked=v)),
   NgDataGrid<({String id,String name,int count})>(label:'Grouped inventory',items:rows,columns:columns,rowId:(r)=>r.id,groupSelectors:!grouped?[]:nested?[(r)=>r.name,(r)=>r.count<100?'Available':'Protected']:[(r)=>r.name],dataVersion:'$grouped/$nested',collapsibleGroups:true,collapsedGroups:collapsed,onCollapsedGroupsChanged:(v)=>setState(()=>collapsed=v),groupExpansionReadOnly:groupLocked,groupAggregates:totals?aggregates:[],groupText:(key,count)=>'$key: $count matching records',multiSort:true,selectedIds:localSelected,onSelectionChanged:(v)=>setState(()=>localSelected=v),canSelect:(r)=>r.count<100),
   Text('Local selection: ${(localSelected.toList()..sort()).join(", ")}'),
+  const Text('Editable inventory'),
+  const Text('Drafts are isolated. Quantities 100 and above are protected. Try validation, failure and retry.'),
+  NgCheckBox(label:'Lock editing',value:editLocked,onChanged:(v)=>setState(()=>editLocked=v)),
+  NgCheckBox(label:'Fail saves',value:editFail,onChanged:(v)=>setState(()=>editFail=v)),
+  NgDataGrid<({String id,String name,int count})>(label:'Editable inventory',items:editableRows,columns:columns,rowId:(r)=>r.id,groupBy:(r)=>r.name,editing:editor),
+  Text('Successful writes: $writes'),
   const Text('HTTP grouped inventory'),
   const Text('Live requests to the local gallery API. Start the Blazor gallery on port 5180.'),
   NgCheckBox(label:'Remote nested groups',value:remoteNested,onChanged:(v)=>setState(()=>remoteNested=v)),

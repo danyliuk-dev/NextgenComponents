@@ -5,6 +5,7 @@ from manual_content import D
 root=Path(__file__).resolve().parents[1]
 out=root/'docs/manual';out.mkdir(exist_ok=True)
 help={
+'editing':'Optional NgGridEditing configuration for isolated drafts, validation, async persistence and confirmed deletion. See Grid editing.',
 'gap':'ChipList spacing preset: sm=4, md=8 (default), lg=12; applies to columns and wrapped rows.',
 'tabindex':'0 keeps normal Tab participation; -1 skips forward/reverse Tab while preserving pointer/application focus. Other values are rejected.',
 'arialabelledby':'Space-separated existing DOM IDs for the accessible name; takes precedence over Label.',
@@ -96,7 +97,7 @@ for p in (root/'packages/nextgen_components/lib/src').glob('*.dart'):
  for m in re.finditer(r'class (Ng\w+)(?:<[^\n]+>)? extends (?:StatefulWidget|StatelessWidget)',s):
   end=s.find('@override',m.end());flutter[m[1]]=(p,s[m.end():end])
 def md(s):return s.replace('|','\\|').replace('\n',' ')
-index=['# Nextgen Components manual','','Version 0.66.0. Detailed guidance for every public Blazor and Flutter Web component. This documents the implemented API, not full Telerik feature parity.','','Start with [Getting started](getting-started.md) and [Code examples](code-examples.md). See [data models and formulas](models.md) for shared model contracts and [verification](../verification.md) for tested behavior.','','Each page includes a live appearance preview with Blazor / Flutter Web switching, followed by the exact source examples, API tables and integration rules. Start both demos through the desktop launcher to use the embedded previews. Flutter snippets belong inside a State class with the Material and Nextgen imports; the getting-started page supplies the full application shell.','','| Component | Purpose |','|---|---|']
+index=['# Nextgen Components manual','','Version 0.67.0. Detailed guidance for every public Blazor and Flutter Web component. This documents the implemented API, not full Telerik feature parity.','','Start with [Getting started](getting-started.md) and [Code examples](code-examples.md). See [data models and formulas](models.md) for shared model contracts and [verification](../verification.md) for tested behavior.','','Each page includes a live appearance preview with Blazor / Flutter Web switching, followed by the exact source examples, API tables and integration rules. Start both demos through the desktop launcher to use the embedded previews. Flutter snippets belong inside a State class with the Material and Nextgen imports; the getting-started page supplies the full application shell.','','| Component | Purpose |','|---|---|']
 for p in sorted((root/'src/NextgenComponents.Blazor').glob('Ng*.razor')):
  n=p.stem;d=D[n];source=p.read_text();fp,fs=flutter[n]
  if n in ('NgTreeView','NgTreeList'):source += (root/'src/NextgenComponents.Blazor/NgLazyTreeBase.cs').read_text()
