@@ -212,3 +212,5 @@ textarea.ng-textarea-auto{box-sizing:border-box;line-height:1.5;resize:none}
 .ng-form-section-description{margin:0 0 16px;color:var(--ng-muted)}
 
 .ng-form-section .ng-form-section{padding:12px}
+
+.ng-section-toggle{font-weight:700;padding:4px 8px;gap:8px}

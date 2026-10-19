@@ -13,10 +13,11 @@
 <NgButton OnClick="Reset">Reset application</NgButton>
 <p role="status">@status</p>
 @code {
+ private bool workspaceExpanded=true,identityExpanded=true,deliveryExpanded=true;
  private bool nested,sectioned,reverseSections;
  private void ToggleNesting(){nested=!nested;sectioned=true;}
  private IReadOnlyList<NgFormSection> FormSections {
-  get {var sections=new[]{new NgFormSection("identity","Application details",new[]{NameField,OwnerField},Description:"Name and owner are required.",Columns:columns,Gap:gap),new NgFormSection("delivery","Delivery instructions",new[]{NotesField,ReferenceField},Description:"Add notes and a reference for the team.",Columns:columns,Gap:gap,FieldSpans:new[]{notesSpan,1})};var ordered=reverseSections?sections.Reverse().ToArray():sections;return nested?new[]{new NgFormSection("workspace","Application workspace",Description:"One form validates every nested section.",Sections:ordered)}:ordered;}
+  get {var sections=new[]{new NgFormSection("identity","Application details",new[]{NameField,OwnerField},Description:"Name and owner are required.",Expanded:identityExpanded,OnExpandedChanged:EventCallback.Factory.Create<bool>(this,(bool value)=>identityExpanded=value),Columns:columns,Gap:gap),new NgFormSection("delivery","Delivery instructions",new[]{NotesField,ReferenceField},Description:"Add notes and a reference for the team.",Expanded:deliveryExpanded,OnExpandedChanged:EventCallback.Factory.Create<bool>(this,(bool value)=>deliveryExpanded=value),Columns:columns,Gap:gap,FieldSpans:new[]{notesSpan,1})};var ordered=reverseSections?sections.Reverse().ToArray():sections;return nested?new[]{new NgFormSection("workspace","Application workspace",Description:"One form validates every nested section.",Sections:ordered,Expanded:workspaceExpanded,OnExpandedChanged:EventCallback.Factory.Create<bool>(this,(bool value)=>workspaceExpanded=value))}:ordered;}
  }
 
  private int notesSpan;

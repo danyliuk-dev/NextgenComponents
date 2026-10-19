@@ -250,6 +250,7 @@ Widget build(BuildContext context) => NgDateRangePicker(label: 'Period', value: 
 }
 class NgFormExample extends StatefulWidget { const NgFormExample({super.key}); @override State<NgFormExample> createState()=>_NgFormExampleState(); }
 class _NgFormExampleState extends State<NgFormExample> {
+bool workspaceExpanded=true,identityExpanded=true,deliveryExpanded=true;
 bool nested=false,sectioned=false,reverseSections=false;
 int notesSpan=0;
 bool customSummary=true,showSummary=true;
@@ -277,7 +278,7 @@ List<Widget> formFields()=>[
   NgTextArea(label:'Notes',initialValue:notes,rows:2,onChanged:(v)=>notes=v),
   NgTextBox(label:'Reference',initialValue:reference,onChanged:(v)=>reference=v),
  ];
-List<NgFormSection> formSections(){final fields=formFields();final sections=[NgFormSection(id:'identity',title:'Application details',description:'Name and owner are required.',fields:fields.sublist(0,2),columns:columns,gap:gap),NgFormSection(id:'delivery',title:'Delivery instructions',description:'Add notes and a reference for the team.',fields:fields.sublist(2),columns:columns,gap:gap,fieldSpans:[notesSpan,1])];final ordered=reverseSections?sections.reversed.toList():sections;return nested?[NgFormSection(id:'workspace',title:'Application workspace',description:'One form validates every nested section.',sections:ordered)]:ordered;}
+List<NgFormSection> formSections(){final fields=formFields();final sections=[NgFormSection(id:'identity',title:'Application details',description:'Name and owner are required.',expanded:identityExpanded,onExpandedChanged:(value)=>setState(()=>identityExpanded=value),fields:fields.sublist(0,2),columns:columns,gap:gap),NgFormSection(id:'delivery',title:'Delivery instructions',description:'Add notes and a reference for the team.',expanded:deliveryExpanded,onExpandedChanged:(value)=>setState(()=>deliveryExpanded=value),fields:fields.sublist(2),columns:columns,gap:gap,fieldSpans:[notesSpan,1])];final ordered=reverseSections?sections.reversed.toList():sections;return nested?[NgFormSection(id:'workspace',title:'Application workspace',description:'One form validates every nested section.',sections:ordered,expanded:workspaceExpanded,onExpandedChanged:(value)=>setState(()=>workspaceExpanded=value))]:ordered;}
 
 }
 class NgTabsExample extends StatefulWidget { const NgTabsExample({super.key}); @override State<NgTabsExample> createState()=>_NgTabsExampleState(); }

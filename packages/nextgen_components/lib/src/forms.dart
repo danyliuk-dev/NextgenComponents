@@ -761,7 +761,10 @@ class _NgFormState extends State<NgForm> {
             child: ExcludeFocus(
               excluding: busy || !widget.enabled,
               child: widget.sections != null
-                  ? _FormSections(sections: widget.sections!)
+                  ? _FormSections(
+                      sections: widget.sections!,
+                      enabled: !busy && widget.enabled,
+                    )
                   : widget.fields == null
                   ? widget.child!
                   : _FormFields(
@@ -812,6 +815,8 @@ class _NgFormState extends State<NgForm> {
 /// Explicit section data; all sections share the containing NgForm.
 class NgFormSection {
   final String id, title;
+  final bool expanded;
+  final ValueChanged<bool>? onExpandedChanged;
   final String? description;
   final List<Widget>? fields;
   final List<NgFormSection>? sections;
@@ -822,6 +827,8 @@ class NgFormSection {
     required this.title,
     this.fields,
     this.sections,
+    this.expanded = true,
+    this.onExpandedChanged,
     this.description,
     this.fieldSpans,
     this.columns = 1,
@@ -922,7 +929,21 @@ class _FormFields extends StatelessWidget {
 class _FormSections extends StatelessWidget {
   final List<NgFormSection> sections;
   final int depth;
-  const _FormSections({required this.sections, this.depth = 1});
+  final bool enabled;
+  const _FormSections({
+    required this.sections,
+    this.depth = 1,
+    this.enabled = true,
+  });
+  void toggle(BuildContext context, NgFormSection section) {
+    if (!context.mounted) return;
+    final current = context.widget as _FormSections;
+    if (!current.enabled ||
+        !current.sections.any((candidate) => identical(candidate, section)))
+      return;
+    section.onExpandedChanged?.call(!section.expanded);
+  }
+
   @override
   Widget build(BuildContext context) => Column(
     crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -942,27 +963,65 @@ class _FormSections extends StatelessWidget {
               children: [
                 Semantics(
                   header: true,
-                  child: Text(
-                    section.title,
-                    style: Theme.of(context).textTheme.titleMedium,
+                  expanded: section.onExpandedChanged == null
+                      ? null
+                      : section.expanded,
+                  child: section.onExpandedChanged == null
+                      ? Text(
+                          section.title,
+                          style: Theme.of(context).textTheme.titleMedium,
+                        )
+                      : TextButton(
+                          onPressed: enabled
+                              ? () => toggle(context, section)
+                              : null,
+                          child: Row(
+                            children: [
+                              Icon(
+                                section.expanded
+                                    ? Icons.expand_more
+                                    : Icons.chevron_right,
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(child: Text(section.title)),
+                            ],
+                          ),
+                        ),
+                ),
+                Offstage(
+                  offstage: !section.expanded,
+                  child: ExcludeFocus(
+                    excluding: !section.expanded,
+                    child: TickerMode(
+                      enabled: section.expanded,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          if (section.description?.trim().isNotEmpty ?? false)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 8),
+                              child: Text(section.description!),
+                            ),
+                          const SizedBox(height: 16),
+                          if (section.fields != null)
+                            _FormFields(
+                              fields: section.fields!,
+                              fieldSpans: section.fieldSpans,
+                              columns: section.columns,
+                              minColumnWidth: section.minColumnWidth,
+                              gap: section.gap,
+                            )
+                          else
+                            _FormSections(
+                              sections: section.sections!,
+                              depth: depth + 1,
+                              enabled: enabled && section.expanded,
+                            ),
+                        ],
+                      ),
+                    ),
                   ),
                 ),
-                if (section.description?.trim().isNotEmpty ?? false)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 8),
-                    child: Text(section.description!),
-                  ),
-                const SizedBox(height: 16),
-                if (section.fields != null)
-                  _FormFields(
-                    fields: section.fields!,
-                    fieldSpans: section.fieldSpans,
-                    columns: section.columns,
-                    minColumnWidth: section.minColumnWidth,
-                    gap: section.gap,
-                  )
-                else
-                  _FormSections(sections: section.sections!, depth: depth + 1),
               ],
             ),
           ),

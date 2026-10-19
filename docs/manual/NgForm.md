@@ -57,7 +57,7 @@ Sections share one form, model, validation summary and guarded submit action. An
 
 Reordering whole sections with stable IDs preserves field state, focus and validation. Changing headings or section layout also retains fields. Keep field order stable inside each section or apply the earlier keyed-field rules. Removing a section unmounts its editors; persistence is the application's responsibility. Blazor model validation may still report required properties of removed sections; Flutter validates currently mounted fields. Changing between legacy, flat and section modes rebuilds editors and can reset local editor/validation state, so choose a mode when constructing the form. The demo retains values in its model while switching modes.
 
-Named sections support recursive groups from 0.55. Collapse/expand behavior, automatic model fields and conditional schemas remain open. Sections are a form data contract, not additional catalog components.
+Named sections support recursive groups from 0.55. Controlled expansion is available from 0.56; automatic model fields and conditional schemas remain open. Sections are a form data contract, not additional catalog components.
 
 
 ### Nested sections (0.55)
@@ -67,7 +67,17 @@ The complete tree is validated before rendering. The maximum depth is eight sect
 
 Every descendant participates in the same form, validation summary, busy/disabled guard and submit callback. Parent sections add semantic structure, not another form or validation context. Reordering siblings under the same parent with stable IDs retains editor state, focus and errors, including descendants. Moving a section to a different parent, wrapping/unwrapping it, or changing a node between fields and child sections changes its identity path and can recreate editor state. Keep application data outside the tree when restructuring; use a new form key/model when a pristine reset is required. The Nest sections demo action deliberately restructures the tree and retains values in its model.
 
-Collapsing groups, automatic schemas, conditional visibility and screen-reader certification remain separate work.
+Controlled expansion is available from 0.56; automatic schemas, conditional visibility and screen-reader certification remain separate work.
+
+
+### Controlled expansion (0.56)
+Expanded/expanded defaults to true. OnExpandedChanged/onExpandedChanged adds a disclosure button to the section heading; its boolean argument requests the next expanded state. The application must update the descriptor to accept the request. Ignoring it leaves the state unchanged. Without a callback the title is plain text; Expanded/expanded can still be controlled externally. Existing constructors retain expanded, noninteractive headings by default.
+
+Collapsing hides the description and descendants while keeping all editors mounted and registered with the same form. Values, selection and validation state survive collapse/reopen; collapsed required fields still block saving and contribute to the shared summary. Validation does not automatically expand sections. Keep the summary visible and provide a way to reopen invalid sections; do not use expansion as conditional validation or authorization. Blazor uses hidden content with aria-expanded/aria-controls on its button; Flutter uses Offstage, ExcludeFocus and TickerMode. Hidden content does not participate in keyboard traversal or pointer interaction, and Flutter tickers are paused.
+
+Disabled/busy forms cannot toggle sections. Descendant toggle requests are also blocked while an ancestor is collapsed. Retained callbacks from replaced sections, removed handlers or disposed layouts are ignored. Reordering keyed sections preserves controlled expansion and editor state. Application state must keep expansion flags separate for different identity paths.
+
+Native buttons support keyboard activation. A collapse removes descendant focus; opening does not automatically focus an editor. Applications that collapse a section externally must choose any required focus destination. Screen-reader certification remains open. This is retained presentation state, not conditional schemas or removal of fields.
 
 
 ## Blazor example
@@ -87,10 +97,11 @@ Collapsing groups, automatic schemas, conditional visibility and screen-reader c
 <NgButton OnClick="Reset">Reset application</NgButton>
 <p role="status">@status</p>
 @code {
+ private bool workspaceExpanded=true,identityExpanded=true,deliveryExpanded=true;
  private bool nested,sectioned,reverseSections;
  private void ToggleNesting(){nested=!nested;sectioned=true;}
  private IReadOnlyList<NgFormSection> FormSections {
-  get {var sections=new[]{new NgFormSection("identity","Application details",new[]{NameField,OwnerField},Description:"Name and owner are required.",Columns:columns,Gap:gap),new NgFormSection("delivery","Delivery instructions",new[]{NotesField,ReferenceField},Description:"Add notes and a reference for the team.",Columns:columns,Gap:gap,FieldSpans:new[]{notesSpan,1})};var ordered=reverseSections?sections.Reverse().ToArray():sections;return nested?new[]{new NgFormSection("workspace","Application workspace",Description:"One form validates every nested section.",Sections:ordered)}:ordered;}
+  get {var sections=new[]{new NgFormSection("identity","Application details",new[]{NameField,OwnerField},Description:"Name and owner are required.",Expanded:identityExpanded,OnExpandedChanged:EventCallback.Factory.Create<bool>(this,(bool value)=>identityExpanded=value),Columns:columns,Gap:gap),new NgFormSection("delivery","Delivery instructions",new[]{NotesField,ReferenceField},Description:"Add notes and a reference for the team.",Expanded:deliveryExpanded,OnExpandedChanged:EventCallback.Factory.Create<bool>(this,(bool value)=>deliveryExpanded=value),Columns:columns,Gap:gap,FieldSpans:new[]{notesSpan,1})};var ordered=reverseSections?sections.Reverse().ToArray():sections;return nested?new[]{new NgFormSection("workspace","Application workspace",Description:"One form validates every nested section.",Sections:ordered,Expanded:workspaceExpanded,OnExpandedChanged:EventCallback.Factory.Create<bool>(this,(bool value)=>workspaceExpanded=value))}:ordered;}
  }
 
  private int notesSpan;
@@ -112,6 +123,7 @@ Collapsing groups, automatic schemas, conditional visibility and screen-reader c
 ## Flutter example
 
 ```dart
+bool workspaceExpanded=true,identityExpanded=true,deliveryExpanded=true;
 bool nested=false,sectioned=false,reverseSections=false;
 int notesSpan=0;
 bool customSummary=true,showSummary=true;
@@ -139,7 +151,7 @@ List<Widget> formFields()=>[
   NgTextArea(label:'Notes',initialValue:notes,rows:2,onChanged:(v)=>notes=v),
   NgTextBox(label:'Reference',initialValue:reference,onChanged:(v)=>reference=v),
  ];
-List<NgFormSection> formSections(){final fields=formFields();final sections=[NgFormSection(id:'identity',title:'Application details',description:'Name and owner are required.',fields:fields.sublist(0,2),columns:columns,gap:gap),NgFormSection(id:'delivery',title:'Delivery instructions',description:'Add notes and a reference for the team.',fields:fields.sublist(2),columns:columns,gap:gap,fieldSpans:[notesSpan,1])];final ordered=reverseSections?sections.reversed.toList():sections;return nested?[NgFormSection(id:'workspace',title:'Application workspace',description:'One form validates every nested section.',sections:ordered)]:ordered;}
+List<NgFormSection> formSections(){final fields=formFields();final sections=[NgFormSection(id:'identity',title:'Application details',description:'Name and owner are required.',expanded:identityExpanded,onExpandedChanged:(value)=>setState(()=>identityExpanded=value),fields:fields.sublist(0,2),columns:columns,gap:gap),NgFormSection(id:'delivery',title:'Delivery instructions',description:'Add notes and a reference for the team.',expanded:deliveryExpanded,onExpandedChanged:(value)=>setState(()=>deliveryExpanded=value),fields:fields.sublist(2),columns:columns,gap:gap,fieldSpans:[notesSpan,1])];final ordered=reverseSections?sections.reversed.toList():sections;return nested?[NgFormSection(id:'workspace',title:'Application workspace',description:'One form validates every nested section.',sections:ordered,expanded:workspaceExpanded,onExpandedChanged:(value)=>setState(()=>workspaceExpanded=value))]:ordered;}
 
 ```
 

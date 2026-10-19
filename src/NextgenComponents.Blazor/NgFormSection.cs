@@ -4,7 +4,7 @@ namespace NextgenComponents.Blazor;
 /// <summary>An explicit, keyed section within a single NgForm validation context.</summary>
 public sealed record NgFormSection(string Id, string Title, IReadOnlyList<RenderFragment>? Fields = null,
  string? Description = null, int Columns = 1, int MinColumnWidth = 240, int Gap = 16,
- IReadOnlyList<int>? FieldSpans = null, IReadOnlyList<NgFormSection>? Sections = null)
+ IReadOnlyList<int>? FieldSpans = null, IReadOnlyList<NgFormSection>? Sections = null, bool Expanded = true, EventCallback<bool> OnExpandedChanged = default)
 {
  internal void Validate(int depth = 1)
  {

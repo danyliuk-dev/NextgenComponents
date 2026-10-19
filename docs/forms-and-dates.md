@@ -116,4 +116,9 @@ Sections/sections is an alternative to flat fields or legacy content. NgFormSect
 
 ## Nested form sections (0.55)
 
-NgFormSection now accepts either leaf Fields/fields or child Sections/sections. Each node requires exactly one list. The entire tree is checked for invalid descriptors, duplicate sibling IDs and excessive/cyclic nesting before rendering (maximum eight levels). Descendants share one form and summary; sibling reordering preserves state. Moving nodes across parents or wrapping/unwrapping changes identity paths and can recreate editor state. Collapse/expand and generated/conditional schemas remain open.
+NgFormSection now accepts either leaf Fields/fields or child Sections/sections. Each node requires exactly one list. The entire tree is checked for invalid descriptors, duplicate sibling IDs and excessive/cyclic nesting before rendering (maximum eight levels). Descendants share one form and summary; sibling reordering preserves state. Moving nodes across parents or wrapping/unwrapping changes identity paths and can recreate editor state. Controlled expansion arrived in 0.56; generated/conditional schemas remain open.
+
+
+## Controlled section expansion (0.56)
+
+Expanded/expanded and OnExpandedChanged/onExpandedChanged provide controlled disclosure headings on NgFormSection. Collapsed editors stay mounted, retain their state and still participate in validation. Form busy/disabled state and collapsed ancestors guard toggles. Invalid groups are not automatically expanded; keep the summary visible and provide a way to reopen them. See the Form manual for focus and lifecycle rules.

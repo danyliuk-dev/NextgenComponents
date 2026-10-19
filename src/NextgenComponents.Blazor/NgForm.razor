@@ -11,7 +11,7 @@
 @if(Fields is not null){
  <FormFieldsLayout Fields="Fields" FieldSpans="FieldSpans" Columns="Columns" MinColumnWidth="MinColumnWidth" Gap="Gap" />
 }else if(Sections is not null){
- <FormSectionsLayout Sections="Sections" />
+ <FormSectionsLayout Sections="Sections" Disabled="@(Disabled||busy)" />
 }else{@ChildContent}
 @if(Actions is not null){<div class="ng-form-actions">@Actions</div>}
 </fieldset>

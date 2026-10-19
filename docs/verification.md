@@ -766,3 +766,20 @@ Validation completed:
 Evidence: [Blazor nested groups](screenshots/form055-blazor-nested.png), [Flutter narrow groups](screenshots/form055-flutter-narrow.png), [desktop manual](screenshots/form055-desktop-manual.png).
 
 Moving nodes between parents or wrapping/unwrapping changes identity paths and may recreate editor state; persistence remains application-owned. Deep trees require enough width for custom field content. Collapse/expand, generated/conditional schemas and full native/screen-reader certification remain open. Full Telerik API/pixel parity is not claimed.
+
+## Controlled form section expansion — 0.56 (2026-10-19, Linux on iMac)
+
+NgFormSection adds Expanded/expanded (default true) and OnExpandedChanged/onExpandedChanged. A supplied callback creates a disclosure heading and requests the next state; the application decides whether to accept. Collapsed descendants remain mounted and registered for validation. Disabled/busy forms and collapsed ancestors guard toggles, including retained callbacks from replaced or disposed layouts.
+
+Validation completed:
+
+- 400 Blazor checks, including disclosure state/control attributes, retained hidden field content and disabled headings. Gallery build passed with zero warnings/errors.
+- 237 Flutter tests and clean Dart analysis. New tests verify retained values/selection/errors, hidden required-field validation, removal of descendant focus, controlled rejection and guards for disabled/busy forms, collapsed ancestors, removed handlers and disposal.
+- 47 Razor and 47 Dart manual examples compiled/analyzed; 94 lossless highlighting checks. Flutter Web build passed with the existing CupertinoIcons font warning.
+- Foreground local Chrome: 27 Blazor and 23 Flutter expansion assertions. Independent leaf/parent collapse, retained child state/drafts/errors, hidden-field validation, save with collapsed valid fields, busy/disabled guards, reorder and 390 px layout all passed. Blazor also verifies mounted hidden inputs, aria-expanded/controls and Space activation.
+- Nested-section regression scenarios passed: 22 Blazor and 18 Flutter assertions. Total browser assertions: 90. The test focus helpers wait for scrolling to settle before native clicks, preventing input into a different Flutter field during viewport movement.
+- Desktop shell opened the updated Form manual and collapsed a child section in its nested live example. Screenshots were inspected directly.
+
+Evidence: [Blazor collapsed errors](screenshots/form056-blazor-collapsed.png), [Flutter narrow disclosure](screenshots/form056-flutter-narrow.png), [desktop manual](screenshots/form056-desktop-manual.png).
+
+Validation does not automatically expand invalid groups. Applications must keep hidden errors discoverable and manage focus when collapsing externally. Expansion is not conditional validation or authorization. Generated/conditional schemas and full native/screen-reader certification remain open; full Telerik API/pixel parity is not claimed.

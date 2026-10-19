@@ -1,14 +1,24 @@
+@implements IDisposable
  <div class="ng-form-sections">
  @foreach(var group in Sections){
   <fieldset @key="group.Id" class="ng-form-section">
-   <legend>@group.Title</legend>
+   <legend>@if(group.OnExpandedChanged.HasDelegate){<button type="button" class="ng-button ng-section-toggle" disabled="@Disabled" aria-expanded="@(group.Expanded?"true":"false")" aria-controls="@ContentId(group)" @onclick="()=>Toggle(group)"><span aria-hidden="true">@(group.Expanded?"▾":"▸")</span> @group.Title</button>}else{@group.Title}</legend>
+   <div id="@ContentId(group)" hidden="@(!group.Expanded)">
    @if(!string.IsNullOrWhiteSpace(group.Description)){<p class="ng-form-section-description">@group.Description</p>}
    @if(group.Fields is not null){
    <div class="ng-form-container"><FormFieldsLayout Fields="group.Fields" FieldSpans="group.FieldSpans" Columns="group.Columns" MinColumnWidth="group.MinColumnWidth" Gap="group.Gap" /></div>
-   }else{<FormSectionsLayout Sections="group.Sections!" />}
+   }else{<FormSectionsLayout Sections="group.Sections!" Disabled="@(Disabled||!group.Expanded)" />}
+   </div>
   </fieldset>
  }
  </div>
 @code {
+ private readonly string prefix="ng-section-"+Guid.NewGuid().ToString("N");
+ private bool disposed;
+ private string ContentId(NgFormSection section)=>prefix+"-"+Uri.EscapeDataString(section.Id);
+ private Task Toggle(NgFormSection section)=>disposed||Disabled||!Sections.Any(current=>ReferenceEquals(current,section))?Task.CompletedTask:section.OnExpandedChanged.InvokeAsync(!section.Expanded);
+ public void Dispose()=>disposed=true;
+ [Parameter] public bool Disabled {get;set;}
+
  [Parameter,EditorRequired] public IReadOnlyList<NgFormSection> Sections {get;set;}=Array.Empty<NgFormSection>();
 }

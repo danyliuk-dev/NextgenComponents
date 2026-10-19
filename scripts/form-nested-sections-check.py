@@ -13,7 +13,7 @@ def click(label):
  c.eval(f"[...document.querySelectorAll('button,[role=button]')].find(e=>e.textContent.trim()==={label!r}||e.getAttribute('aria-label')==={label!r}).click()");time.sleep(.35)
 def content():return c.eval("document.body.innerText+' '+[...document.querySelectorAll('[aria-label]')].map(e=>e.getAttribute('aria-label')).join(' ')")
 def focus(i):
- c.eval(f"{fields()}[{i}].scrollIntoView({{block:'center'}})");r=rect(i)
+ c.eval(f"{fields()}[{i}].scrollIntoView({{block:'center'}})");time.sleep(.3);r=rect(i)
  for kind in ['mousePressed','mouseReleased']:c.call('Input.dispatchMouseEvent',dict(type=kind,button='left',clickCount=1,x=r['x']+25,y=r['y']+15))
  time.sleep(.15)
 def enter(i,text):
