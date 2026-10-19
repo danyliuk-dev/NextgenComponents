@@ -11,7 +11,7 @@ A component can be marked complete only after every reference feature is recorde
 ## Current work order
 
 1. Chip/ChipList remaining gaps stay tracked below; do not mark full parity or silently accept them. Work is delivered in component blocks, not one release per parameter.
-2. ToggleButton/ButtonGroup and Menu/Drawer implementation blocks are delivered with explicit remaining gaps below. Stepper/Wizard is also delivered below; TextBox/TextArea/Form is delivered in 0.29; AutoComplete/ComboBox/MultiSelect is delivered in 0.30; numeric/time editing is delivered in 0.31; Calendar, DateInput, DatePicker and DateRangePicker are delivered in 0.32; continue through remaining editors/forms and data management. No block is a full-parity verdict.
+2. ToggleButton/ButtonGroup and Menu/Drawer implementation blocks are delivered with explicit remaining gaps below. Stepper/Wizard is also delivered below; TextBox/TextArea/Form is delivered in 0.29; AutoComplete/ComboBox/MultiSelect is delivered in 0.30; numeric/time editing is delivered in 0.31; Calendar, DateInput, DatePicker and DateRangePicker are delivered in 0.32; RadioGroup and DropDownList are delivered in 0.33; next work moves to data management. No block is a full-parity verdict.
 3. Continue through existing editors/forms, data management, visualization and complex editors. Add new component names only after closing the active group or recording a user-approved exception.
 
 ## Chip and ChipList feature matrix
@@ -153,7 +153,7 @@ The inventory includes chart modes as separate entries. “Not assessed” means
 | [DatePicker](https://www.telerik.com/blazor-ui/datepicker) | Implemented subset: NgDatePicker | Implemented subset: NgDatePicker | Not assessed |
 | [DateRange Picker](https://www.telerik.com/blazor-ui/daterange-picker) | Implemented subset: NgDateRangePicker | Implemented subset: NgDateRangePicker | Not assessed |
 | [DateTimePicker](https://www.telerik.com/blazor-ui/datetimepicker) | Implemented subset: NgDateTimePicker | Implemented subset: NgDateTimePicker | Not assessed |
-| [DropDownList](https://www.telerik.com/blazor-ui/dropdownlist) | Implemented subset: NgDropDownList | Implemented subset: NgDropDownList | Not assessed |
+| [DropDownList](https://www.telerik.com/blazor-ui/dropdownlist) | Implemented subset: NgDropDownList | Implemented subset: NgDropDownList | Partial — choice editor matrix below |
 | [DropDownTree](https://www.telerik.com/blazor-ui/dropdowntree) | Not implemented | Not implemented | Not assessed |
 | [FlatColorPicker](https://www.telerik.com/blazor-ui/flatcolorpicker) | Not implemented | Not implemented | Not assessed |
 | [ListBox](https://www.telerik.com/blazor-ui/listbox) | Not implemented | Not implemented | Not assessed |
@@ -161,7 +161,7 @@ The inventory includes chart modes as separate entries. “Not assessed” means
 | [MultiColumn ComboBox](https://www.telerik.com/blazor-ui/multicolumncombobox) | Not implemented | Not implemented | Not assessed |
 | [MultiSelect](https://www.telerik.com/blazor-ui/multiselect) | Implemented subset: NgMultiSelect | Implemented subset: NgMultiSelect | Partial — selection input matrix below |
 | [Numeric TextBox](https://www.telerik.com/blazor-ui/numeric-textbox) | Implemented subset: NgNumericTextBox | Implemented subset: NgNumericTextBox | Not assessed |
-| [RadioGroup](https://www.telerik.com/blazor-ui/radiogroup) | Implemented subset: NgRadioGroup | Implemented subset: NgRadioGroup | Not assessed |
+| [RadioGroup](https://www.telerik.com/blazor-ui/radiogroup) | Implemented subset: NgRadioGroup | Implemented subset: NgRadioGroup | Partial — choice editor matrix below |
 | [Rating](https://www.telerik.com/blazor-ui/rating) | Not implemented | Not implemented | Not assessed |
 | [Rich Text Editor](https://www.telerik.com/blazor-ui/editor) | Implemented subset: NgEditor | Implemented subset: NgEditor | Not assessed |
 | [Signature](https://www.telerik.com/blazor-ui/signature) | Not implemented | Not implemented | Not assessed |
@@ -308,3 +308,18 @@ Sources: [Calendar API](https://www.telerik.com/blazor-ui/documentation/api/tele
 | Popup and accessibility | Existing Escape/dismissal behavior, guarded Flutter results | Full popup event API, keyboard parity, screen-reader and native/mobile certification remain open |
 
 This block is not a full-parity verdict. See verification history for automated and foreground Chrome evidence.
+
+
+## RadioGroup and DropDownList (0.33)
+
+Sources: [DropDownList overview](https://www.telerik.com/blazor-ui/documentation/components/dropdownlist/overview), [RadioGroup layout](https://www.telerik.com/blazor-ui/documentation/components/radiogroup/layout), [RadioGroup API](https://www.telerik.com/blazor-ui/documentation/api/telerik.blazor.components.telerikradiogroup-2).
+
+| Capability | Both Web implementations | Remaining difference |
+|---|---|---|
+| User selection | Read-only/disabled, item disabled state, nonempty unique IDs | Read-only uses disabled interaction; focus behavior differs from text editors |
+| Radio layout and content | Horizontal/vertical, decorative templates with model accessible names, helper text | Horizontal default retained; label-position and full appearance API remain open |
+| Dynamic dropdown items | Unknown selected key stays visible and fails form validation; replacement recovers | No implicit fallback selection; parent owns clearing |
+| Flutter popup races | Reject callbacks after rebuild/disposal before mutating field/model | Dialog dismissal and cancellation API remain open |
+| Empty selection | Blazor empty placeholder option; Flutter null hint | Flutter has no clear command; required rules belong to application |
+| Data and advanced presentation | Local NgOption collections | Remote data, filtering, virtualization, grouping and popup templates remain open |
+| Certification | Automated tests and visible Chrome evidence | No full Telerik parity, screen-reader or native/mobile certification |

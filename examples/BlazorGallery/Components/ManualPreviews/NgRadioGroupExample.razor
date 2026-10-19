@@ -1,3 +1,13 @@
 @* Generated from scripts/manual_content.py *@
-<NgRadioGroup Label="Team" Items="options" @bind-Value="team"/>
-@code { private string team="design"; private NgOption[] options=[new("design","Design"),new("dev","Engineering"),new("locked","Unavailable",true)]; }
+<NgRadioGroup Label="Team" Items="items" @bind-Value="team" ReadOnly="readOnly" Orientation="@orientation" HelperText="Choose one available team.">
+ <ItemTemplate Context="item"><strong>Team · @item.Label</strong></ItemTemplate>
+</NgRadioGroup>
+<NgButton OnClick="Toggle">Read only</NgButton>
+<NgButton OnClick="Layout">Change layout</NgButton>
+<p>Selected team: @team</p>
+@code {
+ private string team="design",orientation="vertical"; private bool readOnly;
+ private NgOption[] items=[new("design","Design"),new("dev","Engineering"),new("locked","Unavailable",true)];
+ private void Toggle()=>readOnly=!readOnly;
+ private void Layout()=>orientation=orientation=="vertical"?"horizontal":"vertical";
+}

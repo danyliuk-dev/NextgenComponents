@@ -9,10 +9,10 @@
 <section class="panel"><div class="panel-heading"><h2>Workspace settings</h2><span class="tag">INTERACTIVE DEMO</span></div>
 <EditForm Model="model" OnValidSubmit="Save"><DataAnnotationsValidator />
 <div class="fields"><div><NgTextBox Label="Display name" @bind-Value="model.Name" /><ValidationMessage For="() => model.Name" /></div>
-<NgDropDownList Label="Team" Items="teams" @bind-Value="model.Team" />
+<NgDropDownList HelperText="Choose the team that owns this workspace." Label="Team" Items="teams" @bind-Value="model.Team" />
 <div><NgNumericTextBox Label="Seats (1–100)" @bind-Value="model.Seats" Min="1" Max="100" /><ValidationMessage For="() => model.Seats" /></div>
 <NgTextBox Label="Workspace ID" @bind-Value="workspaceId" Disabled /></div>
-<NgRadioGroup Label="Access level" Items="roles" @bind-Value="model.Access" />
+<NgRadioGroup Label="Access level" Items="roles" @bind-Value="model.Access" Orientation="vertical" HelperText="Choose one access level."><ItemTemplate Context="role"><strong>@role.Label</strong></ItemTemplate></NgRadioGroup>
 <div class="row preferences"><NgCheckBox Label="Email updates" @bind-Value="model.Updates" /><NgSwitch Label="Workspace active" @bind-Value="model.Active" /></div>
 <div class="row actions"><NgButton Primary Type="submit">Save settings</NgButton><NgButton OnClick="() => dialog = true">Open dialog</NgButton><NgButton Disabled>Disabled</NgButton><NgTooltip Text="Changes apply to this demo only"><span class="info">ⓘ</span></NgTooltip></div>
 </EditForm></section>

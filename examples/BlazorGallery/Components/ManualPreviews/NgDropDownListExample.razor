@@ -1,3 +1,16 @@
 @* Generated from scripts/manual_content.py *@
-<NgDropDownList Label="Team" Items="options" @bind-Value="team"/>
-@code { private string team="design"; private NgOption[] options=[new("design","Design"),new("dev","Engineering"),new("locked","Unavailable",true)]; }
+<NgForm Model="model" OnValidSubmit="Save">
+ <NgDropDownList Label="Team" @bind-Value="model.Team" Items="items" ReadOnly="readOnly" Placeholder="Choose a team" HelperText="Unavailable selections must be replaced." />
+ <NgButton Type="submit">Save team</NgButton>
+</NgForm>
+<NgButton OnClick="Remove">Remove selected option</NgButton>
+<NgButton OnClick="Toggle">Read only</NgButton>
+<p>Selected team: @model.Team</p><p>@status</p>
+@code {
+ private Draft model=new(); private bool readOnly; private string status="";
+ private NgOption[] items=[new("design","Design"),new("dev","Engineering"),new("locked","Unavailable",true)];
+ private void Remove()=>items=items.Where(o=>o.Value!=model.Team).ToArray();
+ private void Toggle()=>readOnly=!readOnly;
+ private void Save()=>status="Saved team: "+model.Team;
+ private sealed class Draft { public string Team {get;set;}="design"; }
+}

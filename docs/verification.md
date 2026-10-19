@@ -497,3 +497,15 @@ Calendar, DateInput, DatePicker and DateRangePicker now support read-only on bot
 - Installed updated desktop/menu shortcuts; `desktop-file-validate` passed. Services remain on-demand and loopback-only. This is a Linux shell around Web demos, not a native Flutter Desktop component claim.
 
 Evidence: [desktop documentation](screenshots/desktop032-manual.png), [Flutter demo](screenshots/desktop032-flutter.png), [narrow workspace](screenshots/desktop032-narrow.png), [Flutter unavailable date](screenshots/dates032-flutter-invalid.png). More captures and logs are under ignored `artifacts/`. Full Telerik parity, native/mobile and screen-reader certification remain open.
+
+## RadioGroup and DropDownList (0.33, 2026-10-19)
+
+Expanded the remaining choice editors on both Web frameworks: read-only/disabled guards, helper text, nonempty unique option IDs, horizontal/vertical radio layout and decorative item templates with model-based accessible names. Dropdowns retain missing selected keys as unavailable entries and reject form submission; Flutter rejects stale popup callbacks before changing local field state.
+
+- **275 Blazor checks** and **143 Flutter tests** passed. New widget tests cover removed-option validation and recovery, stale callback after read-only rebuild, radio templates/disabled selection and duplicate keys. Existing external dropdown value replacement still passes.
+- Blazor gallery builds passed without warnings/errors. Flutter Web build and Dart analysis passed; the existing CupertinoIcons warning remains. **47 Blazor + 47 Flutter manual examples** compile/analyze and **94 highlighting checks** pass.
+- Visible Chrome on local Linux/iMac, dedicated `/tmp/nextgen-components-review033` profile: `scripts/choice-editors-check.py blazor|flutter` passed missing-value save rejection, selection recovery/successful save, radio template selection/layout switch and 390 px layout. Read-only is checked through Blazor DOM state and Flutter widget tests; screenshots confirm its native disabled presentation.
+- Screenshot review caught the browser displaying the first available Blazor option after removal while the model retained the missing ID. Explicit selected-option markup fixes the mismatch; the regression now checks the actual DOM value and selected label before capturing evidence.
+- Updated foundation galleries, English manuals, highlighted snippets and executable previews. The RadioGroup live preview was inspected inside the desktop documentation shell, which reports version 0.33.
+
+Evidence: [Blazor missing selection](screenshots/choices033-blazor-missing.png), [Flutter missing selection](screenshots/choices033-flutter-missing.png), [narrow radio layout](screenshots/choices033-flutter-narrow.png), [desktop manual preview](screenshots/choices033-desktop-manual.png). These are Web checks, not full Telerik parity or screen-reader/native certification. Next planned block: data management.

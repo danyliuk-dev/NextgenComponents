@@ -335,6 +335,8 @@ var dateProbe = new DateProbe();
 Rule(dateProbe.Parse("", out var emptyDate) && emptyDate is null,"date input clears optional value");
 Rule(!dateProbe.Parse("2026-02-29",out _),"date input rejects invalid leap day");
 Rule(dateProbe.Parse("2024-02-29",out _),"date input accepts leap day");
+await Check<NgDropDownList>(new(){["Value"]="missing",["ValueExpression"]=(Expression<Func<string>>)(()=>team),["Items"]=options,["HelperText"]="Choose your team",["ReadOnly"]=true},"Unavailable selection: missing","Choose an available option.","Choose your team","disabled");
+await Check<NgRadioGroup>(new(){["Value"]="a",["ValueExpression"]=(Expression<Func<string>>)(()=>team),["Items"]=options,["Orientation"]="vertical",["ItemTemplate"]=(RenderFragment<NgOption>)(o=>Text("Custom "+o.Label)),["ReadOnly"]=true},"flex-direction:column","Custom Alpha","aria-label=\"Alpha\"","disabled");
 Console.WriteLine($"{count} rendering and data/date-rule checks passed. Browser interaction requires the separate visual run.");
 sealed class NoBrowserJS : IJSRuntime {
  public ValueTask<TValue> InvokeAsync<TValue>(string identifier, object?[]? args) => throw new InvalidOperationException("JS must not execute in SSR");

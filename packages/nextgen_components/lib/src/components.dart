@@ -273,12 +273,26 @@ class NgSwitch extends StatelessWidget {
   );
 }
 
-class NgDropDownList extends StatelessWidget {
+void _validateChoiceItems(List<NgOption> items) {
+  final ids = <String>{};
+  for (final item in items) {
+    if (item.value.trim().isEmpty ||
+        item.label.trim().isEmpty ||
+        !ids.add(item.value)) {
+      throw ArgumentError(
+        'Options need unique nonempty values and nonempty labels.',
+      );
+    }
+  }
+}
+
+class NgDropDownList extends StatefulWidget {
   final String label;
-  final String? value;
+  final String? value, placeholder, helperText;
   final List<NgOption> items;
   final ValueChanged<String?>? onChanged;
   final FormFieldValidator<String>? validator;
+  final bool enabled, readOnly;
   const NgDropDownList({
     super.key,
     required this.label,
@@ -286,74 +300,165 @@ class NgDropDownList extends StatelessWidget {
     required this.items,
     this.onChanged,
     this.validator,
+    this.placeholder,
+    this.helperText,
+    this.enabled = true,
+    this.readOnly = false,
   });
   @override
-  Widget build(BuildContext context) => DropdownButtonFormField<String>(
-    key: ValueKey(value),
-    initialValue: value,
-    isExpanded: true,
-    decoration: InputDecoration(labelText: label),
-    validator: validator,
-    items: items
-        .map(
-          (item) => DropdownMenuItem(
-            value: item.value,
-            enabled: !item.disabled,
-            child: Text(item.label),
+  State<NgDropDownList> createState() => _NgDropDownListState();
+}
+
+class _NgDropDownListState extends State<NgDropDownList> {
+  int revision = 0;
+  @override
+  void didUpdateWidget(covariant NgDropDownList oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    revision++;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    _validateChoiceItems(widget.items);
+    final generation = revision;
+    return FormField<String>(
+      key: ValueKey(widget.value),
+      initialValue: widget.value,
+      validator: (v) => v != null && !widget.items.any((o) => o.value == v)
+          ? 'Choose an available option.'
+          : widget.validator?.call(v),
+      autovalidateMode: AutovalidateMode.onUserInteraction,
+      builder: (field) {
+        final missing =
+            field.value != null &&
+            !widget.items.any((o) => o.value == field.value);
+        return InputDecorator(
+          decoration: InputDecoration(
+            labelText: widget.label,
+            helperText: widget.helperText,
+            errorText: field.errorText,
+            enabled: widget.enabled && !widget.readOnly,
           ),
-        )
-        .toList(),
-    onChanged: onChanged,
-  );
+          isEmpty: field.value == null,
+          child: DropdownButtonHideUnderline(
+            child: DropdownButton<String>(
+              value: field.value,
+              isExpanded: true,
+              isDense: true,
+              hint: widget.placeholder == null
+                  ? null
+                  : Text(widget.placeholder!),
+              items: [
+                if (missing)
+                  DropdownMenuItem(
+                    value: field.value,
+                    enabled: false,
+                    child: Text('Unavailable selection: ${field.value}'),
+                  ),
+                ...widget.items.map(
+                  (o) => DropdownMenuItem(
+                    value: o.value,
+                    enabled: !o.disabled,
+                    child: Text(o.label),
+                  ),
+                ),
+              ],
+              onChanged:
+                  !widget.enabled || widget.readOnly || widget.onChanged == null
+                  ? null
+                  : (v) {
+                      if (!mounted ||
+                          generation != revision ||
+                          !widget.enabled ||
+                          widget.readOnly ||
+                          !widget.items.any((o) => o.value == v && !o.disabled))
+                        return;
+                      field.didChange(v);
+                      widget.onChanged?.call(v);
+                    },
+            ),
+          ),
+        );
+      },
+    );
+  }
 }
 
 class NgRadioGroup extends StatelessWidget {
-  final String label;
-  final String? value;
+  final String label, orientation;
+  final String? value, helperText;
   final List<NgOption> items;
   final ValueChanged<String?>? onChanged;
+  final Widget Function(BuildContext, NgOption)? itemBuilder;
+  final bool enabled, readOnly;
   const NgRadioGroup({
     super.key,
     required this.label,
     required this.value,
     required this.items,
     this.onChanged,
+    this.helperText,
+    this.itemBuilder,
+    this.orientation = 'horizontal',
+    this.enabled = true,
+    this.readOnly = false,
   });
   @override
-  Widget build(BuildContext context) => Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Text(label),
-      RadioGroup<String>(
-        groupValue: value,
-        onChanged: (v) => onChanged?.call(v),
-        child: Wrap(
-          spacing: 12,
-          children: items
-              .map(
-                (item) => MergeSemantics(
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Radio<String>(
-                        value: item.value,
-                        enabled: onChanged != null && !item.disabled,
-                      ),
-                      GestureDetector(
-                        onTap: onChanged == null || item.disabled
-                            ? null
-                            : () => onChanged!(item.value),
-                        child: Text(item.label),
-                      ),
-                    ],
+  Widget build(BuildContext context) {
+    _validateChoiceItems(items);
+    if (orientation != 'horizontal' && orientation != 'vertical')
+      throw ArgumentError('Orientation must be horizontal or vertical.');
+    final interactive = enabled && !readOnly && onChanged != null;
+    final children = items
+        .map(
+          (item) => MergeSemantics(
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Radio<String>(
+                  value: item.value,
+                  enabled: interactive && !item.disabled,
+                ),
+                Flexible(
+                  child: GestureDetector(
+                    onTap: !interactive || item.disabled
+                        ? null
+                        : () => onChanged!(item.value),
+                    child: Semantics(
+                      label: item.label,
+                      excludeSemantics: true,
+                      child:
+                          itemBuilder?.call(context, item) ?? Text(item.label),
+                    ),
                   ),
                 ),
-              )
-              .toList(),
+              ],
+            ),
+          ),
+        )
+        .toList();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label),
+        RadioGroup<String>(
+          groupValue: value,
+          onChanged: (v) {
+            if (interactive && items.any((o) => o.value == v && !o.disabled))
+              onChanged!(v);
+          },
+          child: orientation == 'vertical'
+              ? Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: children,
+                )
+              : Wrap(spacing: 12, runSpacing: 8, children: children),
         ),
-      ),
-    ],
-  );
+        if (helperText != null)
+          Text(helperText!, style: Theme.of(context).textTheme.bodySmall),
+      ],
+    );
+  }
 }
 
 class NgTab {

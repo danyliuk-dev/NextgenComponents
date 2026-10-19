@@ -59,3 +59,7 @@ TimePicker and DateTimePicker add read-only and MinuteStep (positive divisors of
 Calendar, DateInput, DatePicker and DateRangePicker now expose read-only behavior on both Web frameworks. Date range restrictions apply to each endpoint, not the intervening dates. Invalid Min/Max configurations fail early. Optional Blazor date input can be cleared without a parsing error. Flutter range validation follows parent model replacement; unchanged-value draft resets still require a new key. Calendar disables pointer and keyboard interaction in read-only mode.
 
 Updated manual examples demonstrate October 2026 bounds, unavailable Sundays and a read-only toggle. See the parity matrix for the remaining reference features and verification history for current evidence.
+
+## RadioGroup and DropDownList (0.33)
+
+Both controls now provide read-only behavior and helper text. RadioGroup supports horizontal/vertical layout and decorative item templates that preserve the option label as the accessible name. DropDownList validates missing selected IDs without silently choosing a replacement; a missing key stays visible as an unavailable selection and blocks form submission. Flutter guards stale popup callbacks before updating form state. Read-only uses disabled native interaction. Required rules remain application-owned; RadioGroup's Flutter implementation is not a FormField.

@@ -402,6 +402,7 @@ class _GalleryPageState extends State<GalleryPage> {
                                     ? (constraints.maxWidth - 20) / 2
                                     : constraints.maxWidth,
                                 child: NgDropDownList(
+                                  helperText: 'Choose the team that owns this workspace.',
                                   label: 'Team',
                                   value: team,
                                   items: teams,
@@ -435,6 +436,9 @@ class _GalleryPageState extends State<GalleryPage> {
                         ),
                         const SizedBox(height: 24),
                         NgRadioGroup(
+                          orientation: 'vertical',
+                          helperText: 'Choose one access level.',
+                          itemBuilder: (_,o) => Text(o.label,style: const TextStyle(fontWeight: FontWeight.bold)),
                           label: 'Access level',
                           value: access,
                           items: roles,

@@ -122,19 +122,27 @@ Widget build(BuildContext context) => NgSwitch(label: 'Notifications',
 }
 class NgDropDownListExample extends StatefulWidget { const NgDropDownListExample({super.key}); @override State<NgDropDownListExample> createState()=>_NgDropDownListExampleState(); }
 class _NgDropDownListExampleState extends State<NgDropDownListExample> {
-String? team = 'design';
-Widget build(BuildContext context) => NgDropDownList(label: 'Team', value: team,
-  items: const [NgOption('design','Design'), NgOption('dev','Engineering'),
-    NgOption('locked','Unavailable', disabled: true)],
-  onChanged: (v) => setState(() => team = v));
+String? team='design'; bool readOnly=false; String status='';
+List<NgOption> items=[const NgOption('design','Design'),const NgOption('dev','Engineering'),const NgOption('locked','Unavailable',disabled:true)];
+Widget build(BuildContext context)=>Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
+ NgForm(submitLabel:'Save team',onValidSubmit:()=>setState(()=>status='Saved team: $team'),child:
+  NgDropDownList(label:'Team',value:team,items:items,readOnly:readOnly,placeholder:'Choose a team',helperText:'Unavailable selections must be replaced.',onChanged:(v)=>setState(()=>team=v))),
+ NgButton(onPressed:()=>setState(()=>items=items.where((o)=>o.value!=team).toList()),child:const Text('Remove selected option')),
+ NgButton(onPressed:()=>setState(()=>readOnly=!readOnly),child:const Text('Read only')),
+ Text('Selected team: $team'),Text(status),
+]);
 }
 class NgRadioGroupExample extends StatefulWidget { const NgRadioGroupExample({super.key}); @override State<NgRadioGroupExample> createState()=>_NgRadioGroupExampleState(); }
 class _NgRadioGroupExampleState extends State<NgRadioGroupExample> {
-String? team = 'design';
-Widget build(BuildContext context) => NgRadioGroup(label: 'Team', value: team,
-  items: const [NgOption('design','Design'), NgOption('dev','Engineering'),
-    NgOption('locked','Unavailable', disabled: true)],
-  onChanged: (v) => setState(() => team = v));
+String? team='design'; bool readOnly=false; String orientation='vertical';
+Widget build(BuildContext context)=>Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
+ NgRadioGroup(label:'Team',value:team,orientation:orientation,readOnly:readOnly,helperText:'Choose one available team.',
+  items:const[NgOption('design','Design'),NgOption('dev','Engineering'),NgOption('locked','Unavailable',disabled:true)],
+  itemBuilder:(_,o)=>Text('Team · ${o.label}',style:const TextStyle(fontWeight:FontWeight.bold)),onChanged:(v)=>setState(()=>team=v)),
+ NgButton(onPressed:()=>setState(()=>readOnly=!readOnly),child:const Text('Read only')),
+ NgButton(onPressed:()=>setState(()=>orientation=orientation=='vertical'?'horizontal':'vertical'),child:const Text('Change layout')),
+ Text('Selected team: $team'),
+]);
 }
 class NgComboBoxExample extends StatefulWidget { const NgComboBoxExample({super.key}); @override State<NgComboBoxExample> createState()=>_NgComboBoxExampleState(); }
 class _NgComboBoxExampleState extends State<NgComboBoxExample> {

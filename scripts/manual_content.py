@@ -2276,3 +2276,59 @@ Widget build(BuildContext context)=>Column(crossAxisAlignment:CrossAxisAlignment
  else:
   D[_name]['blazor']=D[_name]['blazor'].replace('Label="Period"', 'Label="Period" DisabledDate="d => d.DayOfWeek == DayOfWeek.Sunday"')
   D[_name]['dart']=D[_name]['dart'].replace('required: true,', 'disabledDate: (d) => d.weekday == DateTime.sunday, required: true,')
+
+D['NgDropDownList'].update(
+blazor='''<NgForm Model="model" OnValidSubmit="Save">
+ <NgDropDownList Label="Team" @bind-Value="model.Team" Items="items" ReadOnly="readOnly" Placeholder="Choose a team" HelperText="Unavailable selections must be replaced." />
+ <NgButton Type="submit">Save team</NgButton>
+</NgForm>
+<NgButton OnClick="Remove">Remove selected option</NgButton>
+<NgButton OnClick="Toggle">Read only</NgButton>
+<p>Selected team: @model.Team</p><p>@status</p>
+@code {
+ private Draft model=new(); private bool readOnly; private string status="";
+ private NgOption[] items=[new("design","Design"),new("dev","Engineering"),new("locked","Unavailable",true)];
+ private void Remove()=>items=items.Where(o=>o.Value!=model.Team).ToArray();
+ private void Toggle()=>readOnly=!readOnly;
+ private void Save()=>status="Saved team: "+model.Team;
+ private sealed class Draft { public string Team {get;set;}="design"; }
+}''',
+dart='''String? team='design'; bool readOnly=false; String status='';
+List<NgOption> items=[const NgOption('design','Design'),const NgOption('dev','Engineering'),const NgOption('locked','Unavailable',disabled:true)];
+Widget build(BuildContext context)=>Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
+ NgForm(submitLabel:'Save team',onValidSubmit:()=>setState(()=>status='Saved team: $team'),child:
+  NgDropDownList(label:'Team',value:team,items:items,readOnly:readOnly,placeholder:'Choose a team',helperText:'Unavailable selections must be replaced.',onChanged:(v)=>setState(()=>team=v))),
+ NgButton(onPressed:()=>setState(()=>items=items.where((o)=>o.value!=team).toList()),child:const Text('Remove selected option')),
+ NgButton(onPressed:()=>setState(()=>readOnly=!readOnly),child:const Text('Read only')),
+ Text('Selected team: $team'),Text(status),
+]);''')
+D['NgRadioGroup'].update(
+blazor='''<NgRadioGroup Label="Team" Items="items" @bind-Value="team" ReadOnly="readOnly" Orientation="@orientation" HelperText="Choose one available team.">
+ <ItemTemplate Context="item"><strong>Team · @item.Label</strong></ItemTemplate>
+</NgRadioGroup>
+<NgButton OnClick="Toggle">Read only</NgButton>
+<NgButton OnClick="Layout">Change layout</NgButton>
+<p>Selected team: @team</p>
+@code {
+ private string team="design",orientation="vertical"; private bool readOnly;
+ private NgOption[] items=[new("design","Design"),new("dev","Engineering"),new("locked","Unavailable",true)];
+ private void Toggle()=>readOnly=!readOnly;
+ private void Layout()=>orientation=orientation=="vertical"?"horizontal":"vertical";
+}''',
+dart='''String? team='design'; bool readOnly=false; String orientation='vertical';
+Widget build(BuildContext context)=>Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
+ NgRadioGroup(label:'Team',value:team,orientation:orientation,readOnly:readOnly,helperText:'Choose one available team.',
+  items:const[NgOption('design','Design'),NgOption('dev','Engineering'),NgOption('locked','Unavailable',disabled:true)],
+  itemBuilder:(_,o)=>Text('Team · ${o.label}',style:const TextStyle(fontWeight:FontWeight.bold)),onChanged:(v)=>setState(()=>team=v)),
+ NgButton(onPressed:()=>setState(()=>readOnly=!readOnly),child:const Text('Read only')),
+ NgButton(onPressed:()=>setState(()=>orientation=orientation=='vertical'?'horizontal':'vertical'),child:const Text('Change layout')),
+ Text('Selected team: $team'),
+]);''')
+for _name in ['NgRadioGroup','NgDropDownList']:
+ D[_name]['notes'] += """
+
+ReadOnly/readOnly and Disabled/enabled prevent user selection. These native choice controls use disabled interaction in read-only mode and do not promise focusable read-only text. HelperText/helperText adds visible guidance. IDs and labels must be nonempty and IDs unique; invalid option configuration throws. Selected disabled items can remain visible but cannot be chosen by user action. Removing a selected key never selects another option implicitly.
+
+RadioGroup Orientation/orientation accepts horizontal (existing default) or vertical. ItemTemplate/itemBuilder customizes decorative content; the option label remains the accessible name. Do not put interactive controls inside the item template. Flutter label taps and native radio selection obey the same disabled/read-only rules. RadioGroup external missing keys and required rules remain application-owned; it is not a standalone Flutter FormField.
+
+DropDownList preserves an unknown selected key as an unavailable entry and rejects form submission until it is replaced or cleared by the application. Blazor supports an empty placeholder option; Flutter placeholder is a hint for null and does not add a clear command. A stale Flutter popup result after a parent rebuild is ignored. Placeholder is not required validation: use model annotations on Blazor and validator on Flutter. Text filtering, remote loading, virtualization, grouping and custom popup templates remain open; use ComboBox for searchable input."""

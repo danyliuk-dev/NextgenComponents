@@ -16,21 +16,41 @@ The documentation launcher embeds these running examples here. Choose a framewor
 
 NgOption contains value, label and disabled. Keys must be unique; selection stores the key, not the displayed label. Disabled entries cannot be selected. Replace the items collection when it changes and clear an obsolete selected key in the parent. Blazor binding requires ValueExpression for InputBase-based fields; use @bind-Value. Flutter initialValue initializes form state; reset using the supported controller/key pattern. Use form validation for a required choice. Large datasets and remote loading are outside this implementation.
 
+ReadOnly/readOnly and Disabled/enabled prevent user selection. These native choice controls use disabled interaction in read-only mode and do not promise focusable read-only text. HelperText/helperText adds visible guidance. IDs and labels must be nonempty and IDs unique; invalid option configuration throws. Selected disabled items can remain visible but cannot be chosen by user action. Removing a selected key never selects another option implicitly.
+
+RadioGroup Orientation/orientation accepts horizontal (existing default) or vertical. ItemTemplate/itemBuilder customizes decorative content; the option label remains the accessible name. Do not put interactive controls inside the item template. Flutter label taps and native radio selection obey the same disabled/read-only rules. RadioGroup external missing keys and required rules remain application-owned; it is not a standalone Flutter FormField.
+
+DropDownList preserves an unknown selected key as an unavailable entry and rejects form submission until it is replaced or cleared by the application. Blazor supports an empty placeholder option; Flutter placeholder is a hint for null and does not add a clear command. A stale Flutter popup result after a parent rebuild is ignored. Placeholder is not required validation: use model annotations on Blazor and validator on Flutter. Text filtering, remote loading, virtualization, grouping and custom popup templates remain open; use ComboBox for searchable input.
+
 ## Blazor example
 
 ```razor
-<NgRadioGroup Label="Team" Items="options" @bind-Value="team"/>
-@code { private string team="design"; private NgOption[] options=[new("design","Design"),new("dev","Engineering"),new("locked","Unavailable",true)]; }
+<NgRadioGroup Label="Team" Items="items" @bind-Value="team" ReadOnly="readOnly" Orientation="@orientation" HelperText="Choose one available team.">
+ <ItemTemplate Context="item"><strong>Team · @item.Label</strong></ItemTemplate>
+</NgRadioGroup>
+<NgButton OnClick="Toggle">Read only</NgButton>
+<NgButton OnClick="Layout">Change layout</NgButton>
+<p>Selected team: @team</p>
+@code {
+ private string team="design",orientation="vertical"; private bool readOnly;
+ private NgOption[] items=[new("design","Design"),new("dev","Engineering"),new("locked","Unavailable",true)];
+ private void Toggle()=>readOnly=!readOnly;
+ private void Layout()=>orientation=orientation=="vertical"?"horizontal":"vertical";
+}
 ```
 
 ## Flutter example
 
 ```dart
-String? team = 'design';
-Widget build(BuildContext context) => NgRadioGroup(label: 'Team', value: team,
-  items: const [NgOption('design','Design'), NgOption('dev','Engineering'),
-    NgOption('locked','Unavailable', disabled: true)],
-  onChanged: (v) => setState(() => team = v));
+String? team='design'; bool readOnly=false; String orientation='vertical';
+Widget build(BuildContext context)=>Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
+ NgRadioGroup(label:'Team',value:team,orientation:orientation,readOnly:readOnly,helperText:'Choose one available team.',
+  items:const[NgOption('design','Design'),NgOption('dev','Engineering'),NgOption('locked','Unavailable',disabled:true)],
+  itemBuilder:(_,o)=>Text('Team · ${o.label}',style:const TextStyle(fontWeight:FontWeight.bold)),onChanged:(v)=>setState(()=>team=v)),
+ NgButton(onPressed:()=>setState(()=>readOnly=!readOnly),child:const Text('Read only')),
+ NgButton(onPressed:()=>setState(()=>orientation=orientation=='vertical'?'horizontal':'vertical'),child:const Text('Change layout')),
+ Text('Selected team: $team'),
+]);
 ```
 
 ## Blazor parameters and events
@@ -44,6 +64,10 @@ Names are case-sensitive. `?` permits null. `EditorRequired` parameters are mark
 | `Value` | `string` | "" | Current value; see state ownership and model rules above. |
 | `ValueChanged` | `EventCallback<string>` | not set | New value for the parent to store and pass back. |
 | `ValueExpression` | `System.Linq.Expressions.Expression<Func<string>>?` | not set | Expression identifying the model field; @bind-Value supplies it automatically. |
+| `Orientation` | `string` | "horizontal" | See the behavior rules and model contract above. |
+| `HelperText` | `string?` | not set | See the behavior rules and model contract above. |
+| `ItemTemplate` | `RenderFragment<NgOption>?` | not set | See the behavior rules and model contract above. |
+| `ReadOnly` | `bool` | false | Prevent changes while retaining supported viewing actions. |
 | `Disabled` | `bool` | false | Disable user interaction. |
 
 ## Flutter parameters and events
@@ -53,9 +77,14 @@ Names are case-sensitive. `?` permits null. `EditorRequired` parameters are mark
 | Argument | Type | Purpose |
 |---|---|---|
 | `label` | `String` | Visible label or accessible name. |
+| `orientation` | `String` | See the behavior rules and model contract above. |
 | `value` | `String?` | Current value; see state ownership and model rules above. |
+| `helperText` | `String?` | See the behavior rules and model contract above. |
 | `items` | `List<NgOption>` | Input collection. Replace it when changing records or configuration. |
 | `onChanged` | `ValueChanged<String?>?` | Store the new value using setState or your state manager. |
+| `itemBuilder` | `Widget Function(BuildContext, NgOption)?` | See the behavior rules and model contract above. |
+| `enabled` | `bool` | See the behavior rules and model contract above. |
+| `readOnly` | `bool` | Prevent changes while retaining supported viewing actions. |
 
 ```dart
 const NgRadioGroup({
@@ -64,6 +93,11 @@ const NgRadioGroup({
     required this.value,
     required this.items,
     this.onChanged,
+    this.helperText,
+    this.itemBuilder,
+    this.orientation = 'horizontal',
+    this.enabled = true,
+    this.readOnly = false,
   });
 ```
 

@@ -191,7 +191,7 @@ void main() {
         ),
       ),
     );
-    await tester.tap(find.byType(DropdownButtonFormField<String>));
+    await tester.tap(find.byType(DropdownButton<String>));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Beta').last);
     await tester.pumpAndSettle();
@@ -200,10 +200,10 @@ void main() {
     await tester.pumpAndSettle();
     expect(
       tester
-          .widget<DropdownButtonFormField<String>>(
-            find.byType(DropdownButtonFormField<String>),
+          .widget<DropdownButton<String>>(
+            find.byType(DropdownButton<String>),
           )
-          .initialValue,
+          .value,
       'a',
     );
   });
