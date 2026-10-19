@@ -1,5 +1,7 @@
 # Nextgen public websites
 
+**Publication status: unpublished at the owner's request.** Both custom-domain bindings were removed from Cloudflare. Workers.dev and preview URLs remain disabled. Workers, assets, server secrets and saved enquiries are preserved. Configuration contains no public routes; restoring publication requires explicitly adding the intended custom-domain routes again.
+
 Two Cloudflare Workers serve curated English documentation, landing pages and real application screenshots:
 
 - https://components.softwarenextgen.com (48 documentation pages)
