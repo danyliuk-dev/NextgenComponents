@@ -602,7 +602,10 @@ class _NgMultiSelectState extends State<NgMultiSelect> {
 }
 
 class NgForm extends StatefulWidget {
-  final Widget child;
+  final Widget? child;
+  final List<Widget>? fields;
+  final int columns, minColumnWidth, gap;
+  final Widget Function(BuildContext, VoidCallback?)? actionsBuilder;
   final FutureOr<void> Function() onValidSubmit;
   final VoidCallback? onInvalidSubmit;
   final bool enabled, showSummary;
@@ -611,7 +614,12 @@ class NgForm extends StatefulWidget {
   final GlobalKey<FormState>? formKey;
   const NgForm({
     super.key,
-    required this.child,
+    this.child,
+    this.fields,
+    this.columns = 1,
+    this.minColumnWidth = 240,
+    this.gap = 16,
+    this.actionsBuilder,
     required this.onValidSubmit,
     this.submitLabel = 'Save',
     this.onInvalidSubmit,
@@ -650,49 +658,108 @@ class _NgFormState extends State<NgForm> {
   }
 
   @override
-  Widget build(BuildContext context) => Form(
-    key: widget.formKey ?? internalKey,
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        if (invalid && widget.showSummary)
-          Padding(
-            padding: const EdgeInsets.only(bottom: 16),
-            child: Semantics(
+  Widget build(BuildContext context) {
+    if ((widget.child == null) == (widget.fields == null))
+      throw ArgumentError('Supply child or fields, not both.');
+    if (widget.columns < 1 || widget.columns > 4)
+      throw ArgumentError('Use 1–4 columns.');
+    if (widget.minColumnWidth < 120 || widget.minColumnWidth > 1200)
+      throw ArgumentError('Use a minimum column width of 120–1200.');
+    if (widget.gap < 0 || widget.gap > 64)
+      throw ArgumentError('Use a gap of 0–64.');
+    return Form(
+      key: widget.formKey ?? internalKey,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (invalid && widget.showSummary)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 16),
+              child: Semantics(
+                liveRegion: true,
+                child: Text(
+                  'Please correct the highlighted fields.',
+                  style: TextStyle(color: Theme.of(context).colorScheme.error),
+                ),
+              ),
+            ),
+          AbsorbPointer(
+            key: const ValueKey('ng-form-content'),
+            absorbing: busy || !widget.enabled,
+            child: ExcludeFocus(
+              excluding: busy || !widget.enabled,
+              child: widget.fields == null
+                  ? widget.child!
+                  : LayoutBuilder(
+                      builder: (context, constraints) {
+                        // Keep the same Wrap/SizedBox tree across column changes so fields retain state.
+                        final width = constraints.maxWidth;
+                        final count = !width.isFinite
+                            ? 1
+                            : ((width + widget.gap) /
+                                      (widget.minColumnWidth + widget.gap))
+                                  .floor()
+                                  .clamp(1, widget.columns)
+                                  .clamp(
+                                    1,
+                                    widget.fields!.isEmpty
+                                        ? 1
+                                        : widget.fields!.length,
+                                  );
+                        final cellWidth = width.isFinite
+                            ? ((width - (count - 1) * widget.gap) / count)
+                                  .clamp(0.0, double.infinity)
+                            : widget.minColumnWidth.toDouble();
+                        return Wrap(
+                          spacing: widget.gap.toDouble(),
+                          runSpacing: widget.gap.toDouble(),
+                          children: [
+                            for (final field in widget.fields!)
+                              SizedBox(
+                                key: field.key == null
+                                    ? null
+                                    : ValueKey(field.key),
+                                width: cellWidth,
+                                child: field,
+                              ),
+                          ],
+                        );
+                      },
+                    ),
+            ),
+          ),
+          if (busy) Semantics(liveRegion: true, child: Text(widget.busyText)),
+          if (error)
+            Semantics(
               liveRegion: true,
               child: Text(
-                'Please correct the highlighted fields.',
+                widget.errorText,
                 style: TextStyle(color: Theme.of(context).colorScheme.error),
               ),
             ),
-          ),
-        AbsorbPointer(
-          key: const ValueKey('ng-form-content'),
-          absorbing: busy || !widget.enabled,
-          child: ExcludeFocus(
-            excluding: busy || !widget.enabled,
-            child: widget.child,
-          ),
-        ),
-        if (busy) Semantics(liveRegion: true, child: Text(widget.busyText)),
-        if (error)
-          Semantics(
-            liveRegion: true,
-            child: Text(
-              widget.errorText,
-              style: TextStyle(color: Theme.of(context).colorScheme.error),
+          const SizedBox(height: 24),
+          if (widget.actionsBuilder != null)
+            AbsorbPointer(
+              absorbing: busy || !widget.enabled,
+              child: ExcludeFocus(
+                excluding: busy || !widget.enabled,
+                child: widget.actionsBuilder!(
+                  context,
+                  busy || !widget.enabled ? null : submit,
+                ),
+              ),
+            )
+          else
+            Align(
+              alignment: Alignment.centerLeft,
+              child: NgButton(
+                primary: true,
+                onPressed: busy || !widget.enabled ? null : submit,
+                child: Text(widget.submitLabel),
+              ),
             ),
-          ),
-        const SizedBox(height: 24),
-        Align(
-          alignment: Alignment.centerLeft,
-          child: NgButton(
-            primary: true,
-            onPressed: busy || !widget.enabled ? null : submit,
-            child: Text(widget.submitLabel),
-          ),
-        ),
-      ],
-    ),
-  );
+        ],
+      ),
+    );
+  }
 }

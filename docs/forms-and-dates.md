@@ -87,3 +87,8 @@ TextBox and TextArea support Size/size (small, medium, large) and FillMode/fillM
 ## Debounced notifications (0.49)
 
 TextBox/TextArea offer OnDebouncedChange/onDebouncedChange with DebounceDelay/debounceDelay (300 ms default, 0–60000). Binding and validation remain immediate; only the optional notification is delayed. Each new input replaces pending work; locks, changed delay, external replacement, handler removal and disposal cancel it. Commit/submit remains independent and does not flush. Already-started asynchronous application work needs its own stale-result protection. See each editor manual for controller/reset and IME limitations.
+
+
+## Responsive forms (0.50)
+
+NgForm accepts an explicit Fields/fields list instead of legacy content, with Columns/columns (1–4), MinColumnWidth/minColumnWidth (120–1200, default 240) and Gap/gap (0–64, default 16). Columns adapt to container width while preserving values and validation. Actions/actionsBuilder places save controls below the grid; Flutter supplies a guarded nullable submit callback. Legacy content and the default Flutter Save button remain supported. Automatic schema generation, spans and nested groups remain open. See [Form manual](manual/NgForm.md).

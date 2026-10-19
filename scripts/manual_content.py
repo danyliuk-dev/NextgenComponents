@@ -3067,3 +3067,57 @@ A different externally supplied value, a changed delay, read-only/disabled state
 
 OnCommit/onSubmitted stays independent: blur/submit neither flushes nor cancels the delayed callback. Debouncing does not make submission wait or perform validation/network requests. Once a callback starts, cancelling later input cannot undo its effects: applications must protect asynchronous search results with their own request/version checks. IME composition follows native input events; composition-aware suppression is not supplied. Blazor cannot distinguish an external assignment of the same string from the normal binding echo; use a replacement key to reset the editor unconditionally.
 """
+
+# Responsive form fields and actions, 0.50.
+D['NgForm']['notes'] = D['NgForm']['notes'].replace('place a Type="submit" button inside ChildContent.', 'place a Type="submit" button inside ChildContent or Actions.').replace('field grids and ', '')
+D['NgForm']['notes'] += """
+
+### Responsive fields and actions (0.50)
+Fields/fields is an explicit ordered list of field fragments/widgets. Supply it instead of ChildContent/child; combining them throws. An empty list is allowed. Legacy content keeps its existing layout. The library does not inspect the model or generate editors.
+
+Columns/columns is the maximum number of columns (1–4, default 1). MinColumnWidth/minColumnWidth is the preferred minimum width (120–1200 CSS/logical pixels, default 240); Gap/gap is spacing in both directions (0–64, default 16). Width comes from the form's container, not the screen. Columns reduce as space narrows; one column can shrink below the preferred minimum to fit. Flutter requires bounded horizontal constraints; use Expanded when placing the form in a Row. Custom field content must itself support shrinking. Each field occupies one cell; spans and nested groups are not supplied.
+
+Changing width, columns or gaps preserves the existing field widgets, values and validation. Keep the field list order stable for positional identity; use a replacement form key when replacing the entire schema. Flutter keyed fields support reordering; do not reuse keys. Tab/focus order follows source order. Flutter Wrap and CSS Grid use each row's tallest cell without forcing editors to equal heights.
+
+Actions is a Blazor fragment below all fields, inside the disabled fieldset; use Type="submit" for save buttons. Flutter actionsBuilder replaces the default Save button and receives (context, submit). The submit callback is null while disabled/busy; wire it directly to the button. Retained submit callbacks recheck current permissions. Pointer/focus interaction with custom Flutter actions is blocked while saving or disabled. Custom programmatic actions, overlays and side effects still require application guards. Actions remain outside the field grid and can wrap on narrow screens. Omitting actionsBuilder retains Flutter's existing submit button.
+"""
+D['NgForm']['blazor'] = '''<div class="ng-prompt-actions"><NgButton OnClick="()=>columns=columns==2?1:2">Change columns</NgButton><NgButton OnClick="()=>gap=gap==16?32:16">Change spacing</NgButton></div>
+<p>Maximum columns: @columns · Gap: @gap</p>
+<NgCheckBox Label="Simulate save failure" @bind-Value="fail"/>
+<NgCheckBox Label="Disable form" @bind-Value="disabled"/>
+<NgForm @key="model" Model="model" Fields="FormFields" Columns="columns" Gap="gap" Disabled="disabled" OnValidSubmit="Save">
+ <Actions><NgButton Type="submit" Primary>Save application</NgButton><span>All fields are validated before saving.</span></Actions>
+</NgForm>
+<NgButton OnClick="Reset">Reset application</NgButton>
+<p role="status">@status</p>
+@code {
+ private Draft model=new(); private bool fail,disabled; private int columns=2,gap=16; private string status="Not saved";
+ private IReadOnlyList<RenderFragment> FormFields=>new[]{NameField,OwnerField,NotesField,ReferenceField};
+ private RenderFragment NameField=>@<NgTextBox Label="Application name" @bind-Value="model.Name" MaxLength="80" HelperText="Required before saving."/>;
+ private RenderFragment OwnerField=>@<NgTextBox Label="Owner" @bind-Value="model.Owner"/>;
+ private RenderFragment NotesField=>@<NgTextArea Label="Notes" @bind-Value="model.Notes" Rows="2"/>;
+ private RenderFragment ReferenceField=>@<NgTextBox Label="Reference" @bind-Value="model.Reference"/>;
+ private void Reset(){model=new();status="Not saved";}
+ private async Task Save(){var draft=model;var denied=fail;var name=draft.Name;await Task.Delay(1000);if(denied)throw new InvalidOperationException();if(ReferenceEquals(model,draft))status=$"Saved: {name}";}
+ public class Draft{[System.ComponentModel.DataAnnotations.Required] public string? Name{get;set;} public string? Owner{get;set;} public string? Notes{get;set;} public string? Reference{get;set;}}
+}
+'''
+D['NgForm']['dart'] = '''int revision=0,columns=2,gap=16; bool fail=false,disabled=false; String name='',owner='',notes='',reference='',status='Not saved';
+Widget build(BuildContext context)=>Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
+ Wrap(spacing:8,children:[NgButton(onPressed:()=>setState(()=>columns=columns==2?1:2),child:const Text('Change columns')),NgButton(onPressed:()=>setState(()=>gap=gap==16?32:16),child:const Text('Change spacing'))]),
+ Text('Maximum columns: $columns · Gap: $gap'),
+ NgCheckBox(label:'Simulate save failure',value:fail,onChanged:(v)=>setState(()=>fail=v)),
+ NgCheckBox(label:'Disable form',value:disabled,onChanged:(v)=>setState(()=>disabled=v)),
+ NgForm(key:ValueKey(revision),columns:columns,gap:gap,enabled:!disabled,onValidSubmit:()async{
+  final version=revision,denied=fail;final snapshot=name;await Future<void>.delayed(const Duration(seconds:1));
+  if(denied)throw StateError('Demo failure');if(mounted&&version==revision)setState(()=>status='Saved: $snapshot');
+ },fields:[
+  NgTextBox(label:'Application name',initialValue:name,maxLength:80,helperText:'Required before saving.',onChanged:(v)=>name=v,validator:(v)=>v==null||v.trim().isEmpty?'Enter an application name.':null),
+  NgTextBox(label:'Owner',initialValue:owner,onChanged:(v)=>owner=v),
+  NgTextArea(label:'Notes',initialValue:notes,rows:2,onChanged:(v)=>notes=v),
+  NgTextBox(label:'Reference',initialValue:reference,onChanged:(v)=>reference=v),
+ ],actionsBuilder:(_,submit)=>Wrap(spacing:12,runSpacing:8,crossAxisAlignment:WrapCrossAlignment.center,children:[NgButton(primary:true,onPressed:submit,child:const Text('Save application')),const Text('All fields are validated before saving.')])),
+ NgButton(onPressed:()=>setState((){revision++;name='';owner='';notes='';reference='';status='Not saved';}),child:const Text('Reset application')),
+ Text(status),
+]);
+'''

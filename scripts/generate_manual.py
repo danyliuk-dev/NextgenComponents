@@ -64,25 +64,37 @@ help={
 'onsubmit':'Trimmed nonempty prompt submitted by the user.',
 'oncancel':'Request cancellation; the application owns stopping its transport.',
 }
+def purpose(component, name):
+ form_help = {
+  'columns': 'Maximum responsive column count (1–4); default 1.',
+  'mincolumnwidth': 'Preferred minimum cell width (120–1200); default 240.',
+  'gap': 'Horizontal and vertical cell spacing (0–64); default 16.',
+  'fields': 'Explicit ordered fields; do not combine with legacy content.',
+  'actions': 'Full-width action area inside the disabled fieldset; use a submit button.',
+  'actionsbuilder': 'Custom actions receiving context and a nullable guarded submit callback.',
+  'child': 'Legacy content with application-owned layout; use child or fields.',
+  'childcontent': 'Legacy content with application-owned layout; use ChildContent or Fields.',
+ }
+ return (form_help.get(name.lower()) if component == 'NgForm' else None) or help.get(name.lower(), 'See the behavior rules and model contract above.')
 flutter={}
 for p in (root/'packages/nextgen_components/lib/src').glob('*.dart'):
  s=p.read_text()
  for m in re.finditer(r'class (Ng\w+)(?:<[^\n]+>)? extends (?:StatefulWidget|StatelessWidget)',s):
   end=s.find('@override',m.end());flutter[m[1]]=(p,s[m.end():end])
 def md(s):return s.replace('|','\\|').replace('\n',' ')
-index=['# Nextgen Components manual','','Version 0.49.0. Detailed guidance for every public Blazor and Flutter Web component. This documents the implemented API, not full Telerik feature parity.','','Start with [Getting started](getting-started.md) and [Code examples](code-examples.md). See [data models and formulas](models.md) for shared model contracts and [verification](../verification.md) for tested behavior.','','Each page includes a live appearance preview with Blazor / Flutter Web switching, followed by the exact source examples, API tables and integration rules. Start both demos through the desktop launcher to use the embedded previews. Flutter snippets belong inside a State class with the Material and Nextgen imports; the getting-started page supplies the full application shell.','','| Component | Purpose |','|---|---|']
+index=['# Nextgen Components manual','','Version 0.50.0. Detailed guidance for every public Blazor and Flutter Web component. This documents the implemented API, not full Telerik feature parity.','','Start with [Getting started](getting-started.md) and [Code examples](code-examples.md). See [data models and formulas](models.md) for shared model contracts and [verification](../verification.md) for tested behavior.','','Each page includes a live appearance preview with Blazor / Flutter Web switching, followed by the exact source examples, API tables and integration rules. Start both demos through the desktop launcher to use the embedded previews. Flutter snippets belong inside a State class with the Material and Nextgen imports; the getting-started page supplies the full application shell.','','| Component | Purpose |','|---|---|']
 for p in sorted((root/'src/NextgenComponents.Blazor').glob('Ng*.razor')):
  n=p.stem;d=D[n];source=p.read_text();fp,fs=flutter[n]
  lines=[f'# {n} — {d["title"]}','','[Manual](README.md) · [Getting started](getting-started.md) · [Code examples](code-examples.md) · [Models](models.md)','','## When to use it','',d['use'],'','## Appearance and live example','',f'[Try the Blazor example](http://127.0.0.1:5180/preview/{n}) · [Try the Flutter Web example](http://127.0.0.1:5181/?preview={n})','','The documentation launcher embeds these running examples here. Choose a framework, interact with the component, and compare it with the exact code below. Use Reload example to restore the initial state. Dialogs and drawers start closed; use their Open button. Tooltips appear on hover or keyboard focus.','','## Behavior and practical rules','',d['notes'],'','## Blazor example','','```razor',d['blazor'],'```','','## Flutter example','','```dart',d['dart'],'```','','## Blazor parameters and events','','Names are case-sensitive. `?` permits null. `EditorRequired` parameters are marked required; other values use the initializer or CLR default.','','| Parameter | Type | Default / requirement | Purpose |','|---|---|---|---|']
  for m in re.finditer(r'\[Parameter([^\]]*)\]\s*public\s+([^\n{}]+?)\s+(\w+)\s*\{\s*get;\s*set;\s*\}\s*(?:=\s*([^;]+);)?',source):
-  attrs,typ,name,default=m.groups();lines.append(f'| `{name}` | `{md(typ)}` | {md("required" if "EditorRequired" in attrs else default or ("false" if typ=="bool" else "0" if typ in ["int","double","decimal"] else "not set"))} | {help.get(name.lower(),"See the behavior rules and model contract above.")} |')
+  attrs,typ,name,default=m.groups();lines.append(f'| `{name}` | `{md(typ)}` | {md("required" if "EditorRequired" in attrs else default or ("false" if typ=="bool" else "0" if typ in ["int","double","decimal"] else "not set"))} | {purpose(n,name)} |')
  inherited=re.search(r'@inherits InputBase<(.+)>',source)
  if inherited:
   typ=inherited[1];lines.extend([f'| `Value` | `{typ}` | model value | Current field value. |',f'| `ValueChanged` | `EventCallback<{typ}>` | not set | Value change callback. |',f'| `ValueExpression` | `Expression<Func<{typ}>>` | required | Supplied by @bind-Value; pass explicitly with manual binding. |','| `AdditionalAttributes` | HTML attribute dictionary | null | Extra HTML/ARIA attributes. |'])
  lines+=['','## Flutter parameters and events','','`required` marks a mandatory argument even if its type is nullable. `key` is the standard Flutter Key. The exact constructor below specifies defaults.','','| Argument | Type | Purpose |','|---|---|---|']
  for m in re.finditer(r'final\s+(.+?)\s+(\w+(?:,\s*\w+)*)\s*;',fs,re.S):
   typ,names=m.groups()
-  for name in re.split(r',\s*',names):lines.append(f'| `{name}` | `{md(typ.strip())}` | {help.get(name.lower(),"See the behavior rules and model contract above.")} |')
+  for name in re.split(r',\s*',names):lines.append(f'| `{name}` | `{md(typ.strip())}` | {purpose(n,name)} |')
  ctor=re.search(r'(?:const )?'+n+r'\(\{.*?\}\);',fs,re.S)
  lines+=['','```dart',ctor[0] if ctor else '// See the source linked below.','```','','## Integration and troubleshooting','','If the UI does not update, confirm that the parent stores callback values and passes them back. Blazor event handlers need interactive rendering; Flutter requires setState or a state manager. Submit form data only after successful validation.','','Check accessible labels, empty/invalid states, disabled actions and narrow layouts. Keyboard support is not full screen-reader certification. Current visual verification targets Web in visible Chrome on Linux/iMac; native mobile platforms are a separate phase.','','## Source and complete examples','',f'- [Blazor source]({"../../"+str(p.relative_to(root))})',f'- [Flutter source]({"../../"+str(fp.relative_to(root))})','- [Galleries and launch commands](../../README.md#run)','- [Capability matrix](../catalog.md)','','API declarations are generated from current source. Curated examples and behavior live in `scripts/manual_content.py`; regenerate with `python3 scripts/generate_manual.py`.','']
  (out/(n+'.md')).write_text('\n'.join(lines));index.append(f'| [{n}]({n}.md) | {d["title"]} |')

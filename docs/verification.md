@@ -665,3 +665,20 @@ Validation completed:
 Evidence: [Blazor notification count](screenshots/text049-blazor-NgTextArea.png), [Flutter password sample](screenshots/text049-flutter-NgTextBox.png), [desktop manual](screenshots/text049-desktop-manual.png).
 
 Composition-specific suppression and cancellation of already-started application work are not supplied. Flutter Form.reset may schedule the reset value through native onChanged; same-value Blazor binding echoes cannot be distinguished from external resets. Native platforms and full screen-reader certification remain unverified.
+
+
+## Responsive form fields and actions — 0.50 (2026-10-19, Linux on iMac)
+
+NgForm adds explicit field lists, a maximum of 1–4 columns, preferred minimum cell width, configurable gaps and custom actions below the grid. Legacy child content retains its own layout. Columns adapt to available container width without rebuilding field state.
+
+Validation completed:
+
+- 358 Blazor rendering/data checks, including field/action markup and invalid layout configuration; gallery build passed with zero warnings/errors.
+- 217 Flutter tests and clean Dart analysis. New tests cover responsive columns, retained values/focus/validation, keyed field reordering (including a GlobalKey), guarded custom submit, busy/disabled actions, invalid configuration, empty fields and a 100 px parent.
+- 47 Razor and 47 Dart manual examples compiled/analyzed; 94 lossless highlighting checks. Flutter release Web build passed with the existing CupertinoIcons font warning.
+- Foreground local Chrome: 19 Blazor and 19 Flutter checks via `scripts/form-layout-check.py`. Four fields, wide/two-column and narrow/one-column layout, explicit column/spacing switches, retained draft and actual validation error, 390 px overflow check, custom save, failure/retry, reset and disabled submission all passed.
+- Desktop shell opened the updated Form manual and live preview. Wide/narrow screenshots were inspected directly.
+
+Evidence: [Blazor narrow form](screenshots/form050-blazor-narrow.png), [Flutter wide form](screenshots/form050-flutter-wide.png), [Flutter narrow form](screenshots/form050-flutter-narrow.png), [desktop manual](screenshots/form050-desktop-manual.png).
+
+This is explicit field layout, not model-driven editor generation. Spans, nested groups, conditional schemas and custom validation-summary templates remain open. Flutter requires bounded horizontal constraints. Native platforms and full screen-reader certification remain unverified.

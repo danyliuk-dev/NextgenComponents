@@ -189,3 +189,7 @@ textarea.ng-textarea-auto{box-sizing:border-box;line-height:1.5;resize:none}
 .ng-text-size-small>textarea.ng-input:not(.ng-textarea-auto){min-height:60px}
 .ng-text-size-large>textarea.ng-input:not(.ng-textarea-auto){min-height:104px}
 .ng-text-editor>textarea.ng-textarea-auto{min-height:0}
+
+.ng-form-layout{display:grid;gap:var(--ng-form-gap);grid-template-columns:repeat(auto-fit,minmax(min(100%,max(var(--ng-form-min),calc((100% - (var(--ng-form-columns) - 1)*var(--ng-form-gap))/var(--ng-form-columns)))),1fr));align-items:start}
+.ng-form-cell{min-width:0}
+.ng-form-actions{display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin-top:24px}

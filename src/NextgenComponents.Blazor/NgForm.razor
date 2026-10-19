@@ -2,7 +2,14 @@
 <EditForm Model="Model" OnValidSubmit="Submit" OnInvalidSubmit="Invalid" FormName="Name" class="ng-form">
 <DataAnnotationsValidator />
 @if(ShowSummary){<div class="ng-validation-summary" role="status"><ValidationSummary /></div>}
-<fieldset class="ng-form-fields" disabled="@(Disabled||busy)" aria-busy="@(busy?"true":"false")">@ChildContent</fieldset>
+<fieldset class="ng-form-fields" disabled="@(Disabled||busy)" aria-busy="@(busy?"true":"false")">
+@if(Fields is not null){
+ <div class="ng-form-layout" style="@LayoutStyle">
+ @foreach(var field in Fields){<div class="ng-form-cell">@field</div>}
+ </div>
+}else{@ChildContent}
+@if(Actions is not null){<div class="ng-form-actions">@Actions</div>}
+</fieldset>
 @if(busy){<p role="status">@BusyText</p>}
 @if(error){<p class="ng-form-error" role="alert">@ErrorText</p>}
 </EditForm>
@@ -13,11 +20,23 @@
  [Parameter] public bool Disabled {get;set;}
  [Parameter] public string BusyText {get;set;}="Saving…";
  [Parameter] public string ErrorText {get;set;}="Unable to save. Try again.";
+ [Parameter] public IReadOnlyList<RenderFragment>? Fields {get;set;}
+ [Parameter] public int Columns {get;set;}=1;
+ [Parameter] public int MinColumnWidth {get;set;}=240;
+ [Parameter] public int Gap {get;set;}=16;
+ [Parameter] public RenderFragment? Actions {get;set;}
+ private string LayoutStyle=>$"--ng-form-columns:{Columns};--ng-form-min:{MinColumnWidth}px;--ng-form-gap:{Gap}px";
  [Parameter] public RenderFragment? ChildContent {get;set;}
  [Parameter] public EventCallback<EditContext> OnValidSubmit {get;set;}
  [Parameter] public EventCallback<EditContext> OnInvalidSubmit {get;set;}
  private bool busy,error,disposed;private object? previous;private int revision;
- protected override void OnParametersSet(){if(!ReferenceEquals(previous,Model)){previous=Model;revision++;busy=false;error=false;}}
+ protected override void OnParametersSet(){
+  if(Columns is <1 or >4)throw new ArgumentOutOfRangeException(nameof(Columns));
+  if(MinColumnWidth is <120 or >1200)throw new ArgumentOutOfRangeException(nameof(MinColumnWidth));
+  if(Gap is <0 or >64)throw new ArgumentOutOfRangeException(nameof(Gap));
+  if(Fields is not null&&ChildContent is not null)throw new ArgumentException("Use Fields or ChildContent, not both.");
+  if(Fields?.Any(f=>f is null)==true)throw new ArgumentException("Fields cannot contain null entries.",nameof(Fields));
+if(!ReferenceEquals(previous,Model)){previous=Model;revision++;busy=false;error=false;}}
  private async Task Submit(EditContext context){if(Disabled||busy||disposed||!OnValidSubmit.HasDelegate)return;var version=++revision;busy=true;error=false;try{await OnValidSubmit.InvokeAsync(context);}catch(Exception){if(!disposed&&revision==version)error=true;}finally{if(!disposed&&revision==version)busy=false;}}
  private Task Invalid(EditContext context)=>Disabled||busy||disposed?Task.CompletedTask:OnInvalidSubmit.InvokeAsync(context);
  public void Dispose(){disposed=true;revision++;}
