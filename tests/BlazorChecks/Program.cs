@@ -505,6 +505,17 @@ foreach(var (op,expected) in new[]{("sum",18d),("average",6d),("min",2d),("max",
 Rule(new NgGroupAggregate<double?>("Mean",v=>v,"average").Calculate([null]) is null,"empty average is missing");
 Reject(()=>new NgGroupAggregate<int>("Bad",v=>v,"bad").Calculate([]),"unknown aggregate rejected");
 await Check<NgDataGrid<string>>(new(){["Items"]=new[]{"A/x/1","A/y/3"},["Columns"]=remoteColumns,["RowId"]=(Func<string,string>)(s=>s),["GroupSelectors"]=new Func<string,string>[]{s=>s.Split('/')[0],s=>s.Split('/')[1]},["GroupAggregates"]=new[]{new NgGroupAggregate<string>("<Sum>",s=>double.Parse(s.Split('/')[2]))},["CollapsibleGroups"]=true,["CollapsedGroups"]=new HashSet<string>{NgDataOperations.GroupId(["A"]) }},"aria-expanded=\"false\"","Expand A","&lt;Sum&gt;: 4","disabled");
+var groupRequest=new NgGroupedDataRequest(1,2,"",[],["name","kind"]);
+var serverPage=NgGroupedData.Page(new[]{"A/x/2","B/x/9","A/y/10","A/x/6"},new Func<string,string>[]{r=>r.Split('/')[0],r=>r.Split('/')[1]},new[]{new NgGroupAggregate<string>("Mean",r=>double.Parse(r.Split('/')[2]),"average")},1,2);
+var remoteTree=NgGroupedData.Validate(serverPage,groupRequest,r=>r);
+Rule(remoteTree[0].Count==3 && remoteTree[0].Items.Count==2 && remoteTree[0].Summaries![0].Value==6,"server counts and weighted summaries are not page totals");
+Rule(remoteTree[0].Items.SequenceEqual(new[]{"A/x/2","A/x/6"}),"server grouping before paging");
+foreach(var bad in new[]{serverPage with {Groups=[]},serverPage with {Items=[serverPage.Items[0],serverPage.Items[0]]},serverPage with {Total=-1},serverPage with {Groups=serverPage.Groups.Append(serverPage.Groups[0]).ToArray()},serverPage with {Groups=serverPage.Groups.Select((g,i)=>i==0?g with {Count=1}:g).ToArray()},serverPage with {Groups=serverPage.Groups.Select((g,i)=>i==0?g with {Summaries=[new("Bad",double.NaN)]}:g).ToArray()},serverPage with {Items=[serverPage.Items[0]]}})Reject(()=>NgGroupedData.Validate(bad,groupRequest,r=>r),"malformed grouped envelope rejected atomically");
+var interleaved=new NgGroupedDataResult<string>([new("a",["A"]),new("b",["B"]),new("c",["A"])],3,[new(["A"],2,[]),new(["B"],1,[])]);
+Reject(()=>NgGroupedData.Validate(interleaved,new(1,3,"",[],["name"]),r=>r),"interleaved group paths rejected");
+Reject(()=>NgGroupedData.ValidateKeys(["name","name"]),"duplicate remote group keys rejected");
+await Check<NgDataGrid<string>>(new(){["Columns"]=remoteColumns,["RowId"]=(Func<string,string>)(s=>s),["InitialPageSize"]=2,["RemoteGroupKeys"]=new[]{"name","kind"},["ReadGroupedData"]=(Func<NgGroupedDataRequest,CancellationToken,Task<NgGroupedDataResult<string>>>)((r,t)=>Task.FromResult(serverPage)),["CollapsibleGroups"]=true},"A (3)","Mean: 6","A/x/2","Collapse page groups");
+await Check<NgDataGrid<string>>(new(){["Columns"]=remoteColumns,["RowId"]=(Func<string,string>)(s=>s),["InitialPageSize"]=2,["RemoteGroupKeys"]=new[]{"name","kind"},["ReadGroupedData"]=(Func<NgGroupedDataRequest,CancellationToken,Task<NgGroupedDataResult<string>>>)((r,t)=>Task.FromResult(serverPage with {Groups=[]}))},"Unable to load records.","Retry");
 Console.WriteLine($"{count} rendering and data/date-rule checks passed. Browser interaction requires the separate visual run.");
 sealed class NoBrowserJS : IJSRuntime {
  public ValueTask<TValue> InvokeAsync<TValue>(string identifier, object?[]? args) => throw new InvalidOperationException("JS must not execute in SSR");

@@ -3576,3 +3576,60 @@ _g['notes'] += ' GroupSelectors/groupSelectors accepts up to eight ordered strin
 # Keep the complete grouping contract readable in the manual.
 for _start,_heading in [('GroupBy/groupBy enables','Local grouping and paging'),('GroupSelectors/groupSelectors accepts','Nested groups'),('CollapsibleGroups/collapsibleGroups opts','Controlled expansion'),('Bulk actions affect','Bulk actions and selection'),('GroupAggregates/groupAggregates supplies','Group summaries')]:
     D['NgDataGrid']['notes']=D['NgDataGrid']['notes'].replace(' '+_start,'\n\n### '+_heading+'\n\n'+_start)
+# 0.66: real HTTP grouped-data fixture, shared by both Web galleries.
+_g=D['NgDataGrid']
+_g['blazor']='@using System.Net.Http.Json\n@inject System.Net.Http.IHttpClientFactory HttpFactory\n@inject NavigationManager Navigation\n'+_g['blazor']
+_g['blazor']=_g['blazor'].replace('<h3>Remote paging adapter</h3>', '''<h3>HTTP grouped inventory</h3>
+<p>Live requests to the local gallery API. Counts and summaries are computed before server paging.</p>
+<NgCheckBox Label="Remote nested groups" @bind-Value="remoteNested"/>
+<NgCheckBox Label="Fail grouped requests" @bind-Value="groupFail"/>
+<NgCheckBox Label="Malformed grouped response" @bind-Value="groupMalformed"/>
+<NgCheckBox Label="Small remote dataset" @bind-Value="groupSmall"/>
+<NgButton OnClick="()=>groupVersion++">Reload grouped source</NgButton>
+<NgDataGrid TItem="Product" Label="HTTP grouped inventory" ReadGroupedData="ReadGrouped" RemoteGroupKeys="@(remoteNested?new[]{"name","availability"}:new[]{"name"})" DataVersion="groupVersion" MultiSort="true" Columns="columns" RowId="r=>r.Id" CollapsibleGroups="true" @bind-CollapsedGroups="remoteCollapsed" @bind-SelectedIds="remoteSelected" CanSelect="r=>r.Count<100"/>
+<p>Grouped requests: @groupRequests · @groupQuery</p>
+<h3>Remote paging adapter</h3>''').replace(' private bool fail;', ''' private bool remoteNested=true,groupFail,groupMalformed,groupSmall;private int groupVersion,groupRequests;private string groupQuery="";
+ private HashSet<string> remoteCollapsed=[],remoteSelected=[];
+ private async Task<NgGroupedDataResult<Product>> ReadGrouped(NgGroupedDataRequest request,CancellationToken token){
+   groupRequests++;groupQuery=$"HTTP page {request.Page} / {string.Join(" > ",request.GroupKeys)} / {request.Search}";
+   try{
+     using var client=HttpFactory.CreateClient();
+     var url=new Uri(new Uri(Navigation.BaseUri),$"api/grouped-inventory?fail={groupFail.ToString().ToLowerInvariant()}&malformed={groupMalformed.ToString().ToLowerInvariant()}&small={groupSmall.ToString().ToLowerInvariant()}");
+     using var response=await client.PostAsJsonAsync(url,request,token);response.EnsureSuccessStatusCode();
+     return await response.Content.ReadFromJsonAsync<NgGroupedDataResult<Product>>(cancellationToken:token)??throw new InvalidOperationException("Empty response");
+   }finally{if(!token.IsCancellationRequested)await InvokeAsync(StateHasChanged);}
+ }
+ private bool fail;''')
+_g['dart_imports']=["import 'dart:convert';","import 'dart:js_interop';","import 'package:web/web.dart' as web;"]
+_g['dart']=_g['dart'].replace("  const Text('Remote paging adapter'),", """  const Text('HTTP grouped inventory'),
+  const Text('Live requests to the local gallery API. Start the Blazor gallery on port 5180.'),
+  NgCheckBox(label:'Remote nested groups',value:remoteNested,onChanged:(v)=>setState(()=>remoteNested=v)),
+  NgCheckBox(label:'Fail grouped requests',value:groupFail,onChanged:(v)=>setState(()=>groupFail=v)),
+  NgCheckBox(label:'Malformed grouped response',value:groupMalformed,onChanged:(v)=>setState(()=>groupMalformed=v)),
+  NgCheckBox(label:'Small remote dataset',value:groupSmall,onChanged:(v)=>setState(()=>groupSmall=v)),
+  NgButton(onPressed:()=>setState(()=>groupVersion++),child:const Text('Reload grouped source')),
+  NgDataGrid<({String id,String name,int count})>(label:'HTTP grouped inventory',readGroupedData:readGrouped,remoteGroupKeys:remoteNested?['name','availability']:['name'],dataVersion:groupVersion,multiSort:true,columns:columns,rowId:(r)=>r.id,collapsibleGroups:true,collapsedGroups:remoteCollapsed,onCollapsedGroupsChanged:(v)=>setState(()=>remoteCollapsed=v),selectedIds:remoteSelected,onSelectionChanged:(v)=>setState(()=>remoteSelected=v),canSelect:(r)=>r.count<100),
+  Text('Grouped requests: $groupRequests · $groupQuery'),
+  const Text('Remote paging adapter'),""")
+_g['dart']='''bool remoteNested=true,groupFail=false,groupMalformed=false,groupSmall=false;
+int groupVersion=0,groupRequests=0;
+String groupQuery='';
+Set<String> remoteCollapsed={},remoteSelected={};
+Future<NgGroupedDataResult<({String id,String name,int count})>> readGrouped(NgGroupedDataRequest request)async{
+  groupRequests++;groupQuery='HTTP page ${request.page} / ${request.groupKeys.join(" > ")} / ${request.search}';
+  try{
+    final url='http://127.0.0.1:5180/api/grouped-inventory?fail=$groupFail&malformed=$groupMalformed&small=$groupSmall';
+    final response=await web.window.fetch(url.toJS,web.RequestInit(method:'POST',headers:{'Content-Type':'application/json'}.jsify()! as JSObject,body:jsonEncode(request.toJson()).toJS)).toDart;
+    if(!response.ok)throw StateError('Grouped request failed');
+    final json=jsonDecode((await response.text().toDart).toDart) as Map<String,dynamic>;
+    return NgGroupedDataResult.fromJson(json,(row)=>(id:row['id'] as String,name:row['name'] as String,count:row['count'] as int));
+  }finally{if(mounted)setState((){});}
+}
+'''+_g['dart']
+_g['notes']=_g['notes'].replace('Remote grouping, virtualization and built-in CRUD remain open.','Virtualization and built-in CRUD remain open; remote grouping uses the separate adapter below.').replace('remote grouping requires a separate group-aware protocol and is rejected, not approximated from one server page.','use ReadGroupedData/readGroupedData for the group-aware server protocol, never approximate a full group from one server page.')
+_g['notes']+='''
+
+### HTTP grouped data
+
+ReadGroupedData/readGroupedData uses NgGroupedDataRequest (page, pageSize, search, sorts, groupKeys) and NgGroupedDataResult<T> (items with full paths, filtered total and full-count/summary metadata for the page groups). RemoteGroupKeys/remoteGroupKeys contains one to eight distinct field identifiers. Changing keys resets paging and invalidates pending work. Local selectors/aggregates and ordinary ReadData cannot be combined with this mode. Counts and summaries come from the server; malformed envelopes fail atomically into ErrorText and Retry. Collapse is local and retains record paging. Bulk actions explicitly affect page groups only; off-page state is preserved. RemoteSummaryText/remoteSummaryText formats numeric server summaries as plain text. The HTTP example calls the read-only Blazor gallery fixture endpoint from both platforms; keep port 5180 running for Flutter. Put the extra Dart imports at file scope (the transport is Web-specific); the remaining snippet belongs in a State class. No database provider is bundled. See [Remote grouped data](remote-grouped-data.md) for JSON schemas, validation rules, cancellation, adapter helpers and failure/shrink exercises.
+'''

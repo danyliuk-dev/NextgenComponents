@@ -13,7 +13,8 @@ public sealed record NgBreadcrumbItem(string Id,string Label);
 
 public sealed record NgDataGroup<T>(string Key,IReadOnlyList<T> Items);
 
-public sealed record NgGridGroup<T>(IReadOnlyList<string> Path,IReadOnlyList<T> Items,IReadOnlyList<NgGridGroup<T>> Children) {
+public sealed record NgGridGroup<T>(IReadOnlyList<string> Path,IReadOnlyList<T> Items,IReadOnlyList<NgGridGroup<T>> Children,int? Total=null,IReadOnlyList<NgGroupSummary>? Summaries=null) {
+    public int Count=>Total??Items.Count;
     public string Id=>NgDataOperations.GroupId(Path);
     public string Key=>Path[^1];
     public int Depth=>Path.Count-1;

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'components.dart';
+part 'grouped_data.dart';
 
 class NgDataColumn<T> {
   final String key, title;
@@ -24,10 +25,19 @@ class NgGridGroup<T> {
   final List<String> path;
   final List<T> items;
   final List<NgGridGroup<T>> children;
-  NgGridGroup(List<String> path, List<T> items, List<NgGridGroup<T>> children)
-    : path = List.unmodifiable(path),
-      items = List.unmodifiable(items),
-      children = List.unmodifiable(children);
+  final int? total;
+  final List<NgGroupSummary> summaries;
+  int get count => total ?? items.length;
+  NgGridGroup(
+    List<String> path,
+    List<T> items,
+    List<NgGridGroup<T>> children, {
+    this.total,
+    List<NgGroupSummary> summaries = const [],
+  }) : path = List.unmodifiable(path),
+       items = List.unmodifiable(items),
+       children = List.unmodifiable(children),
+       summaries = List.unmodifiable(summaries);
   String get id => ngGroupId(path);
   String get key => path.last;
   int get depth => path.length - 1;
@@ -525,6 +535,11 @@ class NgBreadcrumb extends StatelessWidget {
 class NgDataGrid<T> extends StatefulWidget {
   final List<T> items;
   final Future<NgDataResult<T>> Function(NgDataRequest)? readData;
+  final Future<NgGroupedDataResult<T>> Function(NgGroupedDataRequest)?
+  readGroupedData;
+  final List<String> remoteGroupKeys;
+  final String Function(String, double?)? remoteSummaryText;
+  final String expandPageGroupsText, collapsePageGroupsText;
   final Object? dataVersion;
   final String Function(T)? groupBy;
   final String Function(String, int)? groupText;
@@ -552,6 +567,11 @@ class NgDataGrid<T> extends StatefulWidget {
     super.key,
     this.items = const [],
     this.readData,
+    this.readGroupedData,
+    this.remoteGroupKeys = const [],
+    this.remoteSummaryText,
+    this.expandPageGroupsText = 'Expand page groups',
+    this.collapsePageGroupsText = 'Collapse page groups',
     this.dataVersion,
     this.groupBy,
     this.groupText,
@@ -594,12 +614,22 @@ class _NgDataGridState<T> extends State<NgDataGrid<T>> {
   bool loading = false, error = false;
   int total = 0, revision = 0;
   List<T> remote = [];
+  List<NgGridGroup<T>> remoteGroups = [];
+  List<String> previousGroupKeys = [];
+  bool get isRemote =>
+      widget.readData != null || widget.readGroupedData != null;
+  bool get isGrouped => selectors.isNotEmpty || widget.readGroupedData != null;
+  String summaryText(NgGroupSummary s) =>
+      widget.remoteSummaryText?.call(s.title, s.value) ??
+      '${s.title}: ${s.value == null ? "—" : s.value!.toStringAsFixed(2).replaceFirst(RegExp(r'\.?0+$'), '')}';
   List<String Function(T)> get selectors =>
       widget.groupBy == null ? widget.groupSelectors : [widget.groupBy!];
   List<T> get queried =>
       NgDataOperations.queryMany(widget.items, widget.columns, search, sorts);
-  List<NgGridGroup<T>> get groups => ngGroupTree(queried, selectors);
-  List<T> get rows => widget.readData != null
+  List<NgGridGroup<T>> get groups => widget.readGroupedData != null
+      ? remoteGroups
+      : ngGroupTree(queried, selectors);
+  List<T> get rows => isRemote
       ? remote
       : selectors.isEmpty
       ? queried
@@ -613,14 +643,14 @@ class _NgDataGridState<T> extends State<NgDataGrid<T>> {
       widget.collapsibleGroups &&
       !widget.groupExpansionReadOnly &&
       widget.onCollapsedGroupsChanged != null &&
-      selectors.isNotEmpty;
+      isGrouped;
   bool canBulk(bool collapse) =>
       canToggleGroups &&
       ngAllGroups(
         groups,
       ).any((g) => widget.collapsedGroups.contains(g.id) != collapse);
   List<(NgGridGroup<T>?, List<T>)> get sections {
-    if (selectors.isEmpty) return [(null, visible)];
+    if (!isGrouped) return [(null, visible)];
     final ids = visible.map(widget.rowId).toSet();
     final result = <(NgGridGroup<T>?, List<T>)>[];
     void walk(List<NgGridGroup<T>> nodes) {
@@ -664,7 +694,7 @@ class _NgDataGridState<T> extends State<NgDataGrid<T>> {
 
   Widget groupHeader(NgGridGroup<T> group) {
     final expanded = !isCollapsed(group.id);
-    final caption = groupTitle(group.key, group.items.length);
+    final caption = groupTitle(group.key, group.count);
     final label =
         widget.groupToggleLabel?.call(group.path, expanded) ??
         '${expanded ? "Collapse" : "Expand"} ${group.path.map((k) => k.isEmpty ? "(empty)" : k).join(" / ")}';
@@ -691,6 +721,8 @@ class _NgDataGridState<T> extends State<NgDataGrid<T>> {
                 style: const TextStyle(fontWeight: FontWeight.bold),
               ),
             ),
+          for (final summary in group.summaries)
+            Text(' · ${summaryText(summary)}'),
           for (final aggregate in widget.groupAggregates)
             Text(' · ${aggregate.text(group.items)}'),
         ],
@@ -703,10 +735,9 @@ class _NgDataGridState<T> extends State<NgDataGrid<T>> {
         '${key.isEmpty ? "(empty)" : key} ($count)';
   }
 
-  List<T> get visible => widget.readData == null
-      ? rows.skip((page - 1) * size).take(size).toList()
-      : remote;
-  int get count => widget.readData == null ? rows.length : total;
+  List<T> get visible =>
+      !isRemote ? rows.skip((page - 1) * size).take(size).toList() : remote;
+  int get count => !isRemote ? rows.length : total;
   void validate(List<T> values) {
     if (values.any((r) => widget.rowId(r).trim().isEmpty) ||
         values.map(widget.rowId).toSet().length != values.length) {
@@ -717,36 +748,59 @@ class _NgDataGridState<T> extends State<NgDataGrid<T>> {
   Future<void> reload() async {
     validateGrouping();
     final ticket = ++revision;
-    if (widget.readData == null) {
+    if (!isRemote) {
       loading = error = false;
       return;
     }
     loading = true;
     error = false;
     remote = [];
+    remoteGroups = [];
     try {
-      final result = await widget.readData!(
-        NgDataRequest(page, size, search, sorts),
-      );
-      if (!mounted || ticket != revision) return;
-      if (result.total < 0 ||
-          result.items.length > size ||
-          result.items.length > result.total) {
-        throw ArgumentError('Invalid server page.');
+      List<T> nextRows;
+      List<NgGridGroup<T>> nextGroups = [];
+      int nextTotal;
+      final groupedReader = widget.readGroupedData;
+      if (groupedReader != null) {
+        final request = NgGroupedDataRequest(
+          page,
+          size,
+          search,
+          sorts,
+          widget.remoteGroupKeys,
+        );
+        final result = await groupedReader(request);
+        if (!mounted || ticket != revision) return;
+        nextGroups = NgGroupedData.validate(result, request, widget.rowId);
+        nextRows = nextGroups.expand((g) => g.items).toList();
+        nextTotal = result.total;
+      } else {
+        final result = await widget.readData!(
+          NgDataRequest(page, size, search, sorts),
+        );
+        if (!mounted || ticket != revision) return;
+        if (result.total < 0 ||
+            result.items.length > size ||
+            result.items.length > result.total)
+          throw ArgumentError('Invalid server page.');
+        validate(result.items);
+        nextRows = List.of(result.items);
+        nextTotal = result.total;
       }
-      validate(result.items);
-      total = result.total;
+      total = nextTotal;
       final clamped = NgDataOperations.clampPage(page, total, size);
       if (clamped != page) {
         page = clamped;
         await reload();
         return;
       }
-      remote = List.of(result.items);
+      remote = nextRows;
+      remoteGroups = nextGroups;
     } catch (_) {
       if (mounted && ticket == revision) {
         error = true;
         remote = [];
+        remoteGroups = [];
       }
     } finally {
       if (mounted && ticket == revision) setState(() => loading = false);
@@ -791,9 +845,12 @@ class _NgDataGridState<T> extends State<NgDataGrid<T>> {
         (selectors.isEmpty))
       page = 1;
     if (oldWidget.readData != widget.readData ||
+        oldWidget.readGroupedData != widget.readGroupedData ||
+        ngGroupId(previousGroupKeys) != ngGroupId(widget.remoteGroupKeys) ||
         oldWidget.dataVersion != widget.dataVersion ||
         before != sorts.length) {
       page = 1;
+      previousGroupKeys = List.of(widget.remoteGroupKeys);
       reload();
     }
   }
@@ -810,6 +867,7 @@ class _NgDataGridState<T> extends State<NgDataGrid<T>> {
   void initState() {
     super.initState();
     validateGrouping();
+    previousGroupKeys = List.of(widget.remoteGroupKeys);
     size = widget.initialPageSize < 1 ? 1 : widget.initialPageSize;
     reload();
   }
@@ -822,7 +880,7 @@ class _NgDataGridState<T> extends State<NgDataGrid<T>> {
       (widget.canSelect?.call(row) ?? true);
   void selectRow(T row) {
     if (!mounted) return;
-    final matches = (widget.readData == null ? widget.items : remote).where(
+    final matches = (!isRemote ? widget.items : remote).where(
       (item) => widget.rowId(item) == widget.rowId(row),
     );
     if (matches.isEmpty ||
@@ -841,6 +899,17 @@ class _NgDataGridState<T> extends State<NgDataGrid<T>> {
       throw ArgumentError('At most eight group levels are supported.');
     for (final aggregate in widget.groupAggregates) {
       aggregate.calculate(<T>[]);
+    }
+    if (widget.readGroupedData != null) {
+      NgGroupedData.validateKeys(widget.remoteGroupKeys);
+      if (widget.readData != null ||
+          selectors.isNotEmpty ||
+          widget.groupAggregates.isNotEmpty)
+        throw ArgumentError(
+          'Grouped remote mode cannot use readData or local grouping/aggregates.',
+        );
+    } else if (widget.remoteGroupKeys.isNotEmpty) {
+      throw ArgumentError('Remote group keys require readGroupedData.');
     }
     if (selectors.isNotEmpty && widget.readData != null)
       throw ArgumentError('Local grouping requires items, not readData.');
@@ -921,17 +990,25 @@ class _NgDataGridState<T> extends State<NgDataGrid<T>> {
           ],
         ),
         const SizedBox(height: 16),
-        if (widget.collapsibleGroups && selectors.isNotEmpty)
+        if (widget.collapsibleGroups && isGrouped)
           Wrap(
             spacing: 8,
             children: [
               TextButton(
                 onPressed: canBulk(false) ? () => bulkGroups(false) : null,
-                child: Text(widget.expandGroupsText),
+                child: Text(
+                  widget.readGroupedData == null
+                      ? widget.expandGroupsText
+                      : widget.expandPageGroupsText,
+                ),
               ),
               TextButton(
                 onPressed: canBulk(true) ? () => bulkGroups(true) : null,
-                child: Text(widget.collapseGroupsText),
+                child: Text(
+                  widget.readGroupedData == null
+                      ? widget.collapseGroupsText
+                      : widget.collapsePageGroupsText,
+                ),
               ),
             ],
           ),

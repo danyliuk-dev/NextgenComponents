@@ -88,3 +88,11 @@ Local grouping now supports up to eight ordered levels, controlled per-path coll
 Numeric group summaries support sum, average, min, max and count with custom formatting. Every level aggregates its full filtered records before paging/collapse; parent averages are record-weighted. Null and nonfinite values are excluded. Count counts finite numeric values; group headers count all records. Calculations use double precision. Demo controls switch grouping, nesting, totals and expansion locks on both platforms. See the Grid manual for complete contracts.
 
 Remote grouping requires a separate group-aware loading protocol and remains unsupported. Virtualization, built-in CRUD, drag-to-group UI, aggregate footers/templates and native/accessibility certification remain open. This is a complete bounded local grouping block, not a claim of full Telerik parity.
+
+## Remote Grid grouping and HTTP adapters (0.66)
+
+A separate grouped request/response protocol carries ordered field keys, paged records with full group paths, full filtered counts and server numeric summaries. Both platforms validate an entire envelope before showing it. Malformed paths, counts, missing/duplicate metadata, nonfinite summaries and interleaved groups fail into error/retry. Requests are snapshotted; reader/key/version changes invalidate older results. Shrinking totals trigger a corrected page request. Blazor propagates cancellation; Flutter discards obsolete futures.
+
+Controlled collapse keeps record page ranges and never requests data. Bulk actions explicitly affect current page groups, preserving off-page IDs. Selection covers eligible rendered rows. Both Web galleries use a shared real HTTP fixture endpoint with delay, failure, malformed-response and smaller-dataset controls. Reference in-memory adapter helpers and JSON contracts are documented in the remote grouped-data manual.
+
+Database providers/query translation, lazy group paging, virtualization, CRUD/export and native/accessibility certification remain separate work. Server totals are checked for consistency, not independently recomputed by the client. The next data-management block should be scoped as a complete workflow rather than individual parameters.

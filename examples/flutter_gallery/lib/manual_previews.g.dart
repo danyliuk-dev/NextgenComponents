@@ -1,6 +1,9 @@
 // GENERATED from scripts/manual_content.py. Do not edit.
 import 'package:flutter/material.dart';
 import 'package:nextgen_components/nextgen_components.dart';
+import 'dart:convert';
+import 'dart:js_interop';
+import 'package:web/web.dart' as web;
 class ComponentPreview extends StatelessWidget {
   final String name;
   const ComponentPreview({super.key, required this.name});
@@ -328,6 +331,20 @@ Widget build(BuildContext context) => NgBreadcrumb(
 }
 class NgDataGridExample extends StatefulWidget { const NgDataGridExample({super.key}); @override State<NgDataGridExample> createState()=>_NgDataGridExampleState(); }
 class _NgDataGridExampleState extends State<NgDataGridExample> {
+bool remoteNested=true,groupFail=false,groupMalformed=false,groupSmall=false;
+int groupVersion=0,groupRequests=0;
+String groupQuery='';
+Set<String> remoteCollapsed={},remoteSelected={};
+Future<NgGroupedDataResult<({String id,String name,int count})>> readGrouped(NgGroupedDataRequest request)async{
+  groupRequests++;groupQuery='HTTP page ${request.page} / ${request.groupKeys.join(" > ")} / ${request.search}';
+  try{
+    final url='http://127.0.0.1:5180/api/grouped-inventory?fail=$groupFail&malformed=$groupMalformed&small=$groupSmall';
+    final response=await web.window.fetch(url.toJS,web.RequestInit(method:'POST',headers:{'Content-Type':'application/json'}.jsify()! as JSObject,body:jsonEncode(request.toJson()).toJS)).toDart;
+    if(!response.ok)throw StateError('Grouped request failed');
+    final json=jsonDecode((await response.text().toDart).toDart) as Map<String,dynamic>;
+    return NgGroupedDataResult.fromJson(json,(row)=>(id:row['id'] as String,name:row['name'] as String,count:row['count'] as int));
+  }finally{if(mounted)setState((){});}
+}
 final rows = List.generate(40, (i) => (id: 'p${i+1}', name: i.isOdd ? 'Desk' : 'Chair', count: (i+1)*4));
 final columns = <NgDataColumn<({String id, String name, int count})>>[
   NgDataColumn('name', 'Name', (r) => r.name), NgDataColumn('count', 'Quantity', (r) => r.count)];
@@ -353,6 +370,15 @@ Widget build(BuildContext context) => Column(crossAxisAlignment: CrossAxisAlignm
   NgCheckBox(label:'Lock group expansion',value:groupLocked,onChanged:(v)=>setState(()=>groupLocked=v)),
   NgDataGrid<({String id,String name,int count})>(label:'Grouped inventory',items:rows,columns:columns,rowId:(r)=>r.id,groupSelectors:!grouped?[]:nested?[(r)=>r.name,(r)=>r.count<100?'Available':'Protected']:[(r)=>r.name],dataVersion:'$grouped/$nested',collapsibleGroups:true,collapsedGroups:collapsed,onCollapsedGroupsChanged:(v)=>setState(()=>collapsed=v),groupExpansionReadOnly:groupLocked,groupAggregates:totals?aggregates:[],groupText:(key,count)=>'$key: $count matching records',multiSort:true,selectedIds:localSelected,onSelectionChanged:(v)=>setState(()=>localSelected=v),canSelect:(r)=>r.count<100),
   Text('Local selection: ${(localSelected.toList()..sort()).join(", ")}'),
+  const Text('HTTP grouped inventory'),
+  const Text('Live requests to the local gallery API. Start the Blazor gallery on port 5180.'),
+  NgCheckBox(label:'Remote nested groups',value:remoteNested,onChanged:(v)=>setState(()=>remoteNested=v)),
+  NgCheckBox(label:'Fail grouped requests',value:groupFail,onChanged:(v)=>setState(()=>groupFail=v)),
+  NgCheckBox(label:'Malformed grouped response',value:groupMalformed,onChanged:(v)=>setState(()=>groupMalformed=v)),
+  NgCheckBox(label:'Small remote dataset',value:groupSmall,onChanged:(v)=>setState(()=>groupSmall=v)),
+  NgButton(onPressed:()=>setState(()=>groupVersion++),child:const Text('Reload grouped source')),
+  NgDataGrid<({String id,String name,int count})>(label:'HTTP grouped inventory',readGroupedData:readGrouped,remoteGroupKeys:remoteNested?['name','availability']:['name'],dataVersion:groupVersion,multiSort:true,columns:columns,rowId:(r)=>r.id,collapsibleGroups:true,collapsedGroups:remoteCollapsed,onCollapsedGroupsChanged:(v)=>setState(()=>remoteCollapsed=v),selectedIds:remoteSelected,onSelectionChanged:(v)=>setState(()=>remoteSelected=v),canSelect:(r)=>r.count<100),
+  Text('Grouped requests: $groupRequests · $groupQuery'),
   const Text('Remote paging adapter'),
   NgCheckBox(label: 'Fail requests', value: fail, onChanged: (v) => setState(() => fail = v)),
   NgButton(onPressed: () => setState(() => version++), child: const Text('Reload source')),

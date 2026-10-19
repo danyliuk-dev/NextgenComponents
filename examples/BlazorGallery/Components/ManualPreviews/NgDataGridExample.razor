@@ -1,4 +1,7 @@
 @* Generated from scripts/manual_content.py *@
+@using System.Net.Http.Json
+@inject System.Net.Http.IHttpClientFactory HttpFactory
+@inject NavigationManager Navigation
 <h3>Local grouped inventory</h3>
 <NgCheckBox Label="Group by product" @bind-Value="grouped"/>
 <NgCheckBox Label="Also group by availability" @bind-Value="nested"/>
@@ -6,6 +9,15 @@
 <NgCheckBox Label="Lock group expansion" @bind-Value="groupLocked"/>
 <NgDataGrid TItem="Product" Label="Grouped inventory" Items="rows" Columns="columns" RowId="r=>r.Id" GroupSelectors="Grouping" DataVersion="@($"{grouped}/{nested}")" CollapsibleGroups="true" @bind-CollapsedGroups="collapsed" GroupExpansionReadOnly="groupLocked" GroupAggregates="@(totals?aggregates:[])" GroupText="GroupCaption" MultiSort="true" @bind-SelectedIds="localSelected" CanSelect="r=>r.Count<100"/>
 <p>Local selection: @string.Join(", ",localSelected.Order())</p>
+<h3>HTTP grouped inventory</h3>
+<p>Live requests to the local gallery API. Counts and summaries are computed before server paging.</p>
+<NgCheckBox Label="Remote nested groups" @bind-Value="remoteNested"/>
+<NgCheckBox Label="Fail grouped requests" @bind-Value="groupFail"/>
+<NgCheckBox Label="Malformed grouped response" @bind-Value="groupMalformed"/>
+<NgCheckBox Label="Small remote dataset" @bind-Value="groupSmall"/>
+<NgButton OnClick="()=>groupVersion++">Reload grouped source</NgButton>
+<NgDataGrid TItem="Product" Label="HTTP grouped inventory" ReadGroupedData="ReadGrouped" RemoteGroupKeys="@(remoteNested?new[]{"name","availability"}:new[]{"name"})" DataVersion="groupVersion" MultiSort="true" Columns="columns" RowId="r=>r.Id" CollapsibleGroups="true" @bind-CollapsedGroups="remoteCollapsed" @bind-SelectedIds="remoteSelected" CanSelect="r=>r.Count<100"/>
+<p>Grouped requests: @groupRequests · @groupQuery</p>
 <h3>Remote paging adapter</h3>
 <NgCheckBox Label="Fail requests" @bind-Value="fail"/>
 <NgButton OnClick="()=>version++">Reload source</NgButton>
@@ -17,6 +29,17 @@
  private HashSet<string> collapsed=[];
  private IReadOnlyList<Func<Product,string>> Grouping=>!grouped?[]:nested?[ProductGroup,r=>r.Count<100?"Available":"Protected"]:[ProductGroup];
  private static readonly NgGroupAggregate<Product>[] aggregates=[new("Total quantity",r=>r.Count),new("Average",r=>r.Count,"average",v=>v?.ToString("0.0")??"—")]; private HashSet<string> localSelected=[]; private string ProductGroup(Product row)=>row.Name; private string GroupCaption(string key,int count)=>$"{key}: {count} matching records";
+ private bool remoteNested=true,groupFail,groupMalformed,groupSmall;private int groupVersion,groupRequests;private string groupQuery="";
+ private HashSet<string> remoteCollapsed=[],remoteSelected=[];
+ private async Task<NgGroupedDataResult<Product>> ReadGrouped(NgGroupedDataRequest request,CancellationToken token){
+   groupRequests++;groupQuery=$"HTTP page {request.Page} / {string.Join(" > ",request.GroupKeys)} / {request.Search}";
+   try{
+     using var client=HttpFactory.CreateClient();
+     var url=new Uri(new Uri(Navigation.BaseUri),$"api/grouped-inventory?fail={groupFail.ToString().ToLowerInvariant()}&malformed={groupMalformed.ToString().ToLowerInvariant()}&small={groupSmall.ToString().ToLowerInvariant()}");
+     using var response=await client.PostAsJsonAsync(url,request,token);response.EnsureSuccessStatusCode();
+     return await response.Content.ReadFromJsonAsync<NgGroupedDataResult<Product>>(cancellationToken:token)??throw new InvalidOperationException("Empty response");
+   }finally{if(!token.IsCancellationRequested)await InvokeAsync(StateHasChanged);}
+ }
  private bool fail; private int version,requests; private string query="";
  private HashSet<string> selected=[];
  private static readonly Product[] rows=Enumerable.Range(1,40).Select(i=>new Product($"p{i}",i%2==0?"Desk":"Chair",i*4)).ToArray();

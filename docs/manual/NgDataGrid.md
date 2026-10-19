@@ -18,7 +18,7 @@ ReadData/readData enables asynchronous page loading; Items/items is used only in
 
 ### Local grouping and paging
 
-GroupBy/groupBy enables one local grouping level over string keys; empty strings are a valid group and keys are case-sensitive. Search and sort run first, then groups gather matching records in first-appearance order while preserving sorted order within each group, then the flattened grouped rows are paged. Headers do not consume page slots. A group crossing a page boundary repeats its header; the count is the complete filtered group count, not only the current page. GroupText/groupText formats the key and count as plain text. Selection/page selection covers data rows only and retains off-page IDs. Enabling/disabling grouping resets to page 1; changing a grouping rule in-place requires DataVersion/dataVersion to reset paging. Selectors must be pure. GroupBy/groupBy cannot be combined with ReadData/readData: remote grouping requires a separate group-aware protocol and is rejected, not approximated from one server page. Remote grouping, virtualization and built-in CRUD remain open.
+GroupBy/groupBy enables one local grouping level over string keys; empty strings are a valid group and keys are case-sensitive. Search and sort run first, then groups gather matching records in first-appearance order while preserving sorted order within each group, then the flattened grouped rows are paged. Headers do not consume page slots. A group crossing a page boundary repeats its header; the count is the complete filtered group count, not only the current page. GroupText/groupText formats the key and count as plain text. Selection/page selection covers data rows only and retains off-page IDs. Enabling/disabling grouping resets to page 1; changing a grouping rule in-place requires DataVersion/dataVersion to reset paging. Selectors must be pure. GroupBy/groupBy cannot be combined with ReadData/readData: use ReadGroupedData/readGroupedData for the group-aware server protocol, never approximate a full group from one server page. Virtualization and built-in CRUD remain open; remote grouping uses the separate adapter below.
 
 ### Nested groups
 
@@ -36,9 +36,17 @@ Bulk actions affect every currently filtered group, including off-page descendan
 
 GroupAggregates/groupAggregates supplies NgGroupAggregate descriptors: title, numeric value selector, operation (sum, average, min, max, count) and optional format callback. Aggregates use all filtered records at each level, independently of paging and collapse; parent averages are record-weighted. Null/NaN/infinite values are ignored; count counts finite numeric values, while the header count counts records. Empty sum/count are zero, empty average/min/max are missing (displayed as an em dash). Results use double precision, not financial decimal arithmetic. Invalid operations fail validation. Headers and aggregate formatting are plain text; callbacks must be pure. The grid uses native keyboard buttons for toggling; no screen-reader certification or native-target parity is claimed.
 
+### HTTP grouped data
+
+ReadGroupedData/readGroupedData uses NgGroupedDataRequest (page, pageSize, search, sorts, groupKeys) and NgGroupedDataResult<T> (items with full paths, filtered total and full-count/summary metadata for the page groups). RemoteGroupKeys/remoteGroupKeys contains one to eight distinct field identifiers. Changing keys resets paging and invalidates pending work. Local selectors/aggregates and ordinary ReadData cannot be combined with this mode. Counts and summaries come from the server; malformed envelopes fail atomically into ErrorText and Retry. Collapse is local and retains record paging. Bulk actions explicitly affect page groups only; off-page state is preserved. RemoteSummaryText/remoteSummaryText formats numeric server summaries as plain text. The HTTP example calls the read-only Blazor gallery fixture endpoint from both platforms; keep port 5180 running for Flutter. Put the extra Dart imports at file scope (the transport is Web-specific); the remaining snippet belongs in a State class. No database provider is bundled. See [Remote grouped data](remote-grouped-data.md) for JSON schemas, validation rules, cancellation, adapter helpers and failure/shrink exercises.
+
+
 ## Blazor example
 
 ```razor
+@using System.Net.Http.Json
+@inject System.Net.Http.IHttpClientFactory HttpFactory
+@inject NavigationManager Navigation
 <h3>Local grouped inventory</h3>
 <NgCheckBox Label="Group by product" @bind-Value="grouped"/>
 <NgCheckBox Label="Also group by availability" @bind-Value="nested"/>
@@ -46,6 +54,15 @@ GroupAggregates/groupAggregates supplies NgGroupAggregate descriptors: title, nu
 <NgCheckBox Label="Lock group expansion" @bind-Value="groupLocked"/>
 <NgDataGrid TItem="Product" Label="Grouped inventory" Items="rows" Columns="columns" RowId="r=>r.Id" GroupSelectors="Grouping" DataVersion="@($"{grouped}/{nested}")" CollapsibleGroups="true" @bind-CollapsedGroups="collapsed" GroupExpansionReadOnly="groupLocked" GroupAggregates="@(totals?aggregates:[])" GroupText="GroupCaption" MultiSort="true" @bind-SelectedIds="localSelected" CanSelect="r=>r.Count<100"/>
 <p>Local selection: @string.Join(", ",localSelected.Order())</p>
+<h3>HTTP grouped inventory</h3>
+<p>Live requests to the local gallery API. Counts and summaries are computed before server paging.</p>
+<NgCheckBox Label="Remote nested groups" @bind-Value="remoteNested"/>
+<NgCheckBox Label="Fail grouped requests" @bind-Value="groupFail"/>
+<NgCheckBox Label="Malformed grouped response" @bind-Value="groupMalformed"/>
+<NgCheckBox Label="Small remote dataset" @bind-Value="groupSmall"/>
+<NgButton OnClick="()=>groupVersion++">Reload grouped source</NgButton>
+<NgDataGrid TItem="Product" Label="HTTP grouped inventory" ReadGroupedData="ReadGrouped" RemoteGroupKeys="@(remoteNested?new[]{"name","availability"}:new[]{"name"})" DataVersion="groupVersion" MultiSort="true" Columns="columns" RowId="r=>r.Id" CollapsibleGroups="true" @bind-CollapsedGroups="remoteCollapsed" @bind-SelectedIds="remoteSelected" CanSelect="r=>r.Count<100"/>
+<p>Grouped requests: @groupRequests · @groupQuery</p>
 <h3>Remote paging adapter</h3>
 <NgCheckBox Label="Fail requests" @bind-Value="fail"/>
 <NgButton OnClick="()=>version++">Reload source</NgButton>
@@ -57,6 +74,17 @@ GroupAggregates/groupAggregates supplies NgGroupAggregate descriptors: title, nu
  private HashSet<string> collapsed=[];
  private IReadOnlyList<Func<Product,string>> Grouping=>!grouped?[]:nested?[ProductGroup,r=>r.Count<100?"Available":"Protected"]:[ProductGroup];
  private static readonly NgGroupAggregate<Product>[] aggregates=[new("Total quantity",r=>r.Count),new("Average",r=>r.Count,"average",v=>v?.ToString("0.0")??"—")]; private HashSet<string> localSelected=[]; private string ProductGroup(Product row)=>row.Name; private string GroupCaption(string key,int count)=>$"{key}: {count} matching records";
+ private bool remoteNested=true,groupFail,groupMalformed,groupSmall;private int groupVersion,groupRequests;private string groupQuery="";
+ private HashSet<string> remoteCollapsed=[],remoteSelected=[];
+ private async Task<NgGroupedDataResult<Product>> ReadGrouped(NgGroupedDataRequest request,CancellationToken token){
+   groupRequests++;groupQuery=$"HTTP page {request.Page} / {string.Join(" > ",request.GroupKeys)} / {request.Search}";
+   try{
+     using var client=HttpFactory.CreateClient();
+     var url=new Uri(new Uri(Navigation.BaseUri),$"api/grouped-inventory?fail={groupFail.ToString().ToLowerInvariant()}&malformed={groupMalformed.ToString().ToLowerInvariant()}&small={groupSmall.ToString().ToLowerInvariant()}");
+     using var response=await client.PostAsJsonAsync(url,request,token);response.EnsureSuccessStatusCode();
+     return await response.Content.ReadFromJsonAsync<NgGroupedDataResult<Product>>(cancellationToken:token)??throw new InvalidOperationException("Empty response");
+   }finally{if(!token.IsCancellationRequested)await InvokeAsync(StateHasChanged);}
+ }
  private bool fail; private int version,requests; private string query="";
  private HashSet<string> selected=[];
  private static readonly Product[] rows=Enumerable.Range(1,40).Select(i=>new Product($"p{i}",i%2==0?"Desk":"Chair",i*4)).ToArray();
@@ -74,6 +102,24 @@ GroupAggregates/groupAggregates supplies NgGroupAggregate descriptors: title, nu
 ## Flutter example
 
 ```dart
+import 'dart:convert';
+import 'dart:js_interop';
+import 'package:web/web.dart' as web;
+
+bool remoteNested=true,groupFail=false,groupMalformed=false,groupSmall=false;
+int groupVersion=0,groupRequests=0;
+String groupQuery='';
+Set<String> remoteCollapsed={},remoteSelected={};
+Future<NgGroupedDataResult<({String id,String name,int count})>> readGrouped(NgGroupedDataRequest request)async{
+  groupRequests++;groupQuery='HTTP page ${request.page} / ${request.groupKeys.join(" > ")} / ${request.search}';
+  try{
+    final url='http://127.0.0.1:5180/api/grouped-inventory?fail=$groupFail&malformed=$groupMalformed&small=$groupSmall';
+    final response=await web.window.fetch(url.toJS,web.RequestInit(method:'POST',headers:{'Content-Type':'application/json'}.jsify()! as JSObject,body:jsonEncode(request.toJson()).toJS)).toDart;
+    if(!response.ok)throw StateError('Grouped request failed');
+    final json=jsonDecode((await response.text().toDart).toDart) as Map<String,dynamic>;
+    return NgGroupedDataResult.fromJson(json,(row)=>(id:row['id'] as String,name:row['name'] as String,count:row['count'] as int));
+  }finally{if(mounted)setState((){});}
+}
 final rows = List.generate(40, (i) => (id: 'p${i+1}', name: i.isOdd ? 'Desk' : 'Chair', count: (i+1)*4));
 final columns = <NgDataColumn<({String id, String name, int count})>>[
   NgDataColumn('name', 'Name', (r) => r.name), NgDataColumn('count', 'Quantity', (r) => r.count)];
@@ -99,6 +145,15 @@ Widget build(BuildContext context) => Column(crossAxisAlignment: CrossAxisAlignm
   NgCheckBox(label:'Lock group expansion',value:groupLocked,onChanged:(v)=>setState(()=>groupLocked=v)),
   NgDataGrid<({String id,String name,int count})>(label:'Grouped inventory',items:rows,columns:columns,rowId:(r)=>r.id,groupSelectors:!grouped?[]:nested?[(r)=>r.name,(r)=>r.count<100?'Available':'Protected']:[(r)=>r.name],dataVersion:'$grouped/$nested',collapsibleGroups:true,collapsedGroups:collapsed,onCollapsedGroupsChanged:(v)=>setState(()=>collapsed=v),groupExpansionReadOnly:groupLocked,groupAggregates:totals?aggregates:[],groupText:(key,count)=>'$key: $count matching records',multiSort:true,selectedIds:localSelected,onSelectionChanged:(v)=>setState(()=>localSelected=v),canSelect:(r)=>r.count<100),
   Text('Local selection: ${(localSelected.toList()..sort()).join(", ")}'),
+  const Text('HTTP grouped inventory'),
+  const Text('Live requests to the local gallery API. Start the Blazor gallery on port 5180.'),
+  NgCheckBox(label:'Remote nested groups',value:remoteNested,onChanged:(v)=>setState(()=>remoteNested=v)),
+  NgCheckBox(label:'Fail grouped requests',value:groupFail,onChanged:(v)=>setState(()=>groupFail=v)),
+  NgCheckBox(label:'Malformed grouped response',value:groupMalformed,onChanged:(v)=>setState(()=>groupMalformed=v)),
+  NgCheckBox(label:'Small remote dataset',value:groupSmall,onChanged:(v)=>setState(()=>groupSmall=v)),
+  NgButton(onPressed:()=>setState(()=>groupVersion++),child:const Text('Reload grouped source')),
+  NgDataGrid<({String id,String name,int count})>(label:'HTTP grouped inventory',readGroupedData:readGrouped,remoteGroupKeys:remoteNested?['name','availability']:['name'],dataVersion:groupVersion,multiSort:true,columns:columns,rowId:(r)=>r.id,collapsibleGroups:true,collapsedGroups:remoteCollapsed,onCollapsedGroupsChanged:(v)=>setState(()=>remoteCollapsed=v),selectedIds:remoteSelected,onSelectionChanged:(v)=>setState(()=>remoteSelected=v),canSelect:(r)=>r.count<100),
+  Text('Grouped requests: $groupRequests · $groupQuery'),
   const Text('Remote paging adapter'),
   NgCheckBox(label: 'Fail requests', value: fail, onChanged: (v) => setState(() => fail = v)),
   NgButton(onPressed: () => setState(() => version++), child: const Text('Reload source')),
@@ -116,6 +171,11 @@ Names are case-sensitive. `?` permits null. `EditorRequired` parameters are mark
 | Parameter | Type | Default / requirement | Purpose |
 |---|---|---|---|
 | `ReadData` | `Func<NgDataRequest,CancellationToken,Task<NgDataResult<TItem>>>?` | not set | Async page adapter; return requested rows and filtered total. See request/result contracts above. |
+| `ReadGroupedData` | `Func<NgGroupedDataRequest,CancellationToken,Task<NgGroupedDataResult<TItem>>>?` | not set | Async grouped page adapter; mutually exclusive with ReadData and local grouping/aggregates. |
+| `RemoteGroupKeys` | `IReadOnlyList<string>` | [] | Ordered application-defined field identifiers, one to eight distinct nonblank keys. Changes reload page 1. |
+| `RemoteSummaryText` | `Func<string,double?,string>?` | not set | Plain-text server summary formatter receiving title and nullable numeric value. |
+| `ExpandPageGroupsText` | `string` | "Expand page groups" | Localized remote bulk-expand label; affects current page groups only. |
+| `CollapsePageGroupsText` | `string` | "Collapse page groups" | Localized remote bulk-collapse label; affects current page groups only. |
 | `GroupBy` | `Func<TItem,string>?` | not set | Pure local string-key selector; grouping precedes paging and cannot be combined with ReadData. |
 | `GroupText` | `Func<string,int,string>?` | not set | Plain-text caption from the group key and complete filtered group count. |
 | `GroupSelectors` | `IReadOnlyList<Func<TItem,string>>` | [] | Ordered local string selectors, up to eight levels. Mutually exclusive with GroupBy. |
@@ -156,6 +216,11 @@ Names are case-sensitive. `?` permits null. `EditorRequired` parameters are mark
 |---|---|---|
 | `items` | `List<T>` | Input collection. Replace it when changing records or configuration. |
 | `readData` | `Future<NgDataResult<T>> Function(NgDataRequest)?` | Async page adapter; return requested rows and filtered total. See request/result contracts above. |
+| `readGroupedData` | `Future<NgGroupedDataResult<T>> Function(NgGroupedDataRequest)?` | Async grouped page adapter; mutually exclusive with ReadData and local grouping/aggregates. |
+| `remoteGroupKeys` | `List<String>` | Ordered application-defined field identifiers, one to eight distinct nonblank keys. Changes reload page 1. |
+| `remoteSummaryText` | `String Function(String, double?)?` | Plain-text server summary formatter receiving title and nullable numeric value. |
+| `expandPageGroupsText` | `String` | Localized remote bulk-expand label; affects current page groups only. |
+| `collapsePageGroupsText` | `String` | Localized remote bulk-collapse label; affects current page groups only. |
 | `dataVersion` | `Object?` | Change to invalidate pending reads and cached data; keep stable otherwise. |
 | `groupBy` | `String Function(T)?` | Pure local string-key selector; grouping precedes paging and cannot be combined with ReadData. |
 | `groupText` | `String Function(String, int)?` | Plain-text caption from the group key and complete filtered group count. |
@@ -191,6 +256,11 @@ const NgDataGrid({
     super.key,
     this.items = const [],
     this.readData,
+    this.readGroupedData,
+    this.remoteGroupKeys = const [],
+    this.remoteSummaryText,
+    this.expandPageGroupsText = 'Expand page groups',
+    this.collapsePageGroupsText = 'Collapse page groups',
     this.dataVersion,
     this.groupBy,
     this.groupText,

@@ -27,6 +27,7 @@ def generate():
     private Type? ExampleType => Name switch {
 ''' + choices + '\n_ => null\n};\n}\n')
     dart = "// GENERATED from scripts/manual_content.py. Do not edit.\nimport 'package:flutter/material.dart';\nimport 'package:nextgen_components/nextgen_components.dart';\n"
+    dart += '\n'.join(sorted({item for data in D.values() for item in data.get('dart_imports',[])}))+'\n'
     dart += '''class ComponentPreview extends StatelessWidget {
   final String name;
   const ComponentPreview({super.key, required this.name});

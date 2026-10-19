@@ -13,6 +13,7 @@ folder=root/'artifacts/manual-check';folder.mkdir(parents=True,exist_ok=True)
 for n,d in D.items():(folder/(n+'Example.razor')).write_text(d['blazor'])
 fixture=root/'examples/flutter_gallery/test/manual_examples.g.dart';fixture.parent.mkdir(exist_ok=True)
 code="import 'package:flutter/material.dart';\nimport 'package:nextgen_components/nextgen_components.dart';\n"
+code+='\n'.join(sorted({item for d in D.values() for item in d.get('dart_imports',[])}))+'\n'
 for n,d in D.items():code+=f'class {n}Example extends StatefulWidget {{ const {n}Example({{super.key}}); @override State<{n}Example> createState()=>_{n}ExampleState(); }}\nclass _{n}ExampleState extends State<{n}Example> {{\n'+d['dart']+'\n}\n'
 try:
  fixture.write_text(code)
