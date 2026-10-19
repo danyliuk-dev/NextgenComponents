@@ -33,6 +33,57 @@ class NgTreeNode<T> {
   });
 }
 
+// Cascade applies to the parent record and loaded descendants. Protected nodes
+// are subtree barriers, irrespective of search and expansion visibility.
+List<String> _treeCheckTargets<T>(
+  NgTreeNode<T> node,
+  bool cascade,
+  bool Function(NgTreeNode<T>)? canCheck,
+) {
+  final ids = [node.id];
+  void walk(NgTreeNode<T> parent) {
+    for (final child in parent.children) {
+      if (child.disabled || !(canCheck?.call(child) ?? true)) continue;
+      ids.add(child.id);
+      walk(child);
+    }
+  }
+
+  if (cascade && !node.disabled && (canCheck?.call(node) ?? true)) walk(node);
+  return ids;
+}
+
+bool? _treeCheckState<T>(
+  NgTreeNode<T> node,
+  Set<String> checkedIds,
+  bool cascade,
+  bool Function(NgTreeNode<T>)? canCheck,
+) {
+  final targets = _treeCheckTargets(node, cascade, canCheck);
+  final count = targets.where(checkedIds.contains).length;
+  return count == 0
+      ? false
+      : count == targets.length
+      ? true
+      : null;
+}
+
+Set<String> _toggleTreeCheck<T>(
+  NgTreeNode<T> node,
+  Set<String> checkedIds,
+  bool cascade,
+  bool Function(NgTreeNode<T>)? canCheck,
+) {
+  final next = {...checkedIds};
+  final targets = _treeCheckTargets(node, cascade, canCheck);
+  if (targets.every(checkedIds.contains)) {
+    next.removeAll(targets);
+  } else {
+    next.addAll(targets);
+  }
+  return next;
+}
+
 class NgTreeRow<T> {
   final NgTreeNode<T> node;
   final int depth;
@@ -783,7 +834,8 @@ class NgTreeView<T> extends StatefulWidget {
   final String Function(T) text;
   final String label, emptyText;
   final bool selectionReadOnly, expansionReadOnly;
-  final bool checkboxes, checkingReadOnly;
+  final bool checkboxes, checkingReadOnly, checkChildren;
+  final String partialCheckText;
   final Set<String> checkedIds;
   final ValueChanged<Set<String>>? onCheckedChanged;
   final bool Function(NgTreeNode<T>)? canCheck;
@@ -806,6 +858,8 @@ class NgTreeView<T> extends StatefulWidget {
     this.onSelected,
     this.selectedId,
     this.label = 'Folders',
+    this.partialCheckText = 'Partially checked',
+    this.checkChildren = false,
     this.checkboxes = false,
     this.checkingReadOnly = false,
     this.checkedIds = const {},
@@ -868,8 +922,12 @@ class _NgTreeViewState<T> extends State<NgTreeView<T>> {
     if (!mounted) return;
     final node = currentNode(id);
     if (node == null || !canToggleCheck(node)) return;
-    final next = {...widget.checkedIds};
-    if (!next.add(id)) next.remove(id);
+    final next = _toggleTreeCheck(
+      node,
+      widget.checkedIds,
+      widget.checkChildren,
+      widget.canCheck,
+    );
     widget.onCheckedChanged!(next);
   }
 
@@ -1037,11 +1095,27 @@ class _NgTreeViewState<T> extends State<NgTreeView<T>> {
                           if (widget.checkboxes)
                             Semantics(
                               container: true,
+                              value:
+                                  _treeCheckState(
+                                        row.node,
+                                        widget.checkedIds,
+                                        widget.checkChildren,
+                                        widget.canCheck,
+                                      ) ==
+                                      null
+                                  ? widget.partialCheckText
+                                  : null,
                               label:
                                   widget.checkLabel?.call(row.node.item) ??
                                   'Check ${widget.text(row.node.item)}',
                               child: Checkbox(
-                                value: widget.checkedIds.contains(row.node.id),
+                                tristate: widget.checkChildren,
+                                value: _treeCheckState(
+                                  row.node,
+                                  widget.checkedIds,
+                                  widget.checkChildren,
+                                  widget.canCheck,
+                                ),
                                 onChanged: canToggleCheck(row.node)
                                     ? (_) => toggleCheck(row.node.id)
                                     : null,
@@ -1100,7 +1174,8 @@ class NgTreeList<T> extends StatefulWidget {
   final String? selectedId;
   final String label, emptyText;
   final bool selectionReadOnly, expansionReadOnly;
-  final bool checkboxes, checkingReadOnly;
+  final bool checkboxes, checkingReadOnly, checkChildren;
+  final String partialCheckText;
   final Set<String> checkedIds;
   final ValueChanged<Set<String>>? onCheckedChanged;
   final bool Function(NgTreeNode<T>)? canCheck;
@@ -1119,6 +1194,8 @@ class NgTreeList<T> extends StatefulWidget {
     this.onSelected,
     this.selectedId,
     this.label = 'Hierarchy',
+    this.partialCheckText = 'Partially checked',
+    this.checkChildren = false,
     this.checkboxes = false,
     this.checkingReadOnly = false,
     this.checkedIds = const {},
@@ -1175,8 +1252,12 @@ class _NgTreeListState<T> extends State<NgTreeList<T>> {
     if (!mounted) return;
     final node = currentNode(id);
     if (node == null || !canToggleCheck(node)) return;
-    final next = {...widget.checkedIds};
-    if (!next.add(id)) next.remove(id);
+    final next = _toggleTreeCheck(
+      node,
+      widget.checkedIds,
+      widget.checkChildren,
+      widget.canCheck,
+    );
     widget.onCheckedChanged!(next);
   }
 
@@ -1311,14 +1392,28 @@ class _NgTreeListState<T> extends State<NgTreeList<T>> {
                                       if (widget.checkboxes)
                                         Semantics(
                                           container: true,
+                                          value:
+                                              _treeCheckState(
+                                                    row.node,
+                                                    widget.checkedIds,
+                                                    widget.checkChildren,
+                                                    widget.canCheck,
+                                                  ) ==
+                                                  null
+                                              ? widget.partialCheckText
+                                              : null,
                                           label:
                                               widget.checkLabel?.call(
                                                 row.node.item,
                                               ) ??
                                               'Check ${widget.columns.first.text(row.node.item)}',
                                           child: Checkbox(
-                                            value: widget.checkedIds.contains(
-                                              row.node.id,
+                                            tristate: widget.checkChildren,
+                                            value: _treeCheckState(
+                                              row.node,
+                                              widget.checkedIds,
+                                              widget.checkChildren,
+                                              widget.canCheck,
                                             ),
                                             onChanged: canToggleCheck(row.node)
                                                 ? (_) =>

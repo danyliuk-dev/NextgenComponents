@@ -14,6 +14,22 @@ async Task Check<T>(Dictionary<string, object?> parameters, params string[] expe
  foreach (var text in expected) if (!html.Contains(text)) throw new Exception($"{typeof(T).Name}: missing {text} in {html}");
  Console.WriteLine($"PASS {typeof(T).Name}"); count++;
 }
+var cascadeRoot=new NgTreeNode<string>("root","Root",[
+ new("a","Alpha"),new("group","Group",[new("b","Beta")]),
+ new("locked","Locked",[new("locked-child","Hidden locked child")],Disabled:true),
+ new("protected","Protected",[new("protected-child","Hidden protected child")]),new("lazy","Lazy",HasChildren:true)]);
+Func<NgTreeNode<string>,bool> permitted=n=>n.Id!="protected";
+var originalChecks=new HashSet<string>{"unknown","locked","protected-child"};
+var cascaded=NgDataOperations.ToggleTreeCheck(cascadeRoot,originalChecks,true,permitted);
+if(!cascaded.SetEquals(["unknown","locked","protected-child","root","a","group","b","lazy"]) || originalChecks.Count!=3)throw new Exception("Cascade mutated or crossed protection");count++;
+if(NgDataOperations.TreeCheckState(cascadeRoot,cascaded,true,permitted)!=true)throw new Exception("Full cascade state");count++;
+cascaded.Remove("b");if(NgDataOperations.TreeCheckState(cascadeRoot,cascaded,true,permitted)!=null)throw new Exception("Partial cascade state");count++;
+var restored=NgDataOperations.ToggleTreeCheck(cascadeRoot,cascaded,true,permitted);
+var cleared=NgDataOperations.ToggleTreeCheck(cascadeRoot,restored,true,permitted);
+if(!cleared.SetEquals(originalChecks))throw new Exception("Cascade clear lost protected/unknown IDs");count++;
+if(!NgDataOperations.ToggleTreeCheck(cascadeRoot,originalChecks,false,permitted).SetEquals(["unknown","locked","protected-child","root"]))throw new Exception("Independent mode changed");count++;
+await Check<NgTreeView<string>>(new(){["Items"]=new[]{cascadeRoot},["Text"]=(Func<string,string>)(s=>s),["Checkboxes"]=true,["CheckChildren"]=true,["CheckedIds"]=new HashSet<string>{"a"}},"aria-checked=\"mixed\"");
+await Check<NgTreeList<string>>(new(){["Items"]=new[]{cascadeRoot},["Columns"]=new[]{new NgDataColumn<string>("name","Name",s=>s)},["Checkboxes"]=true,["CheckChildren"]=true,["CheckedIds"]=new HashSet<string>{"a"}},"aria-checked=\"mixed\"");
 var checkedTree=new[]{new NgTreeNode<string>("a","<Alpha>"),new NgTreeNode<string>("b","Beta",Disabled:true)};
 var checkHandler=EventCallback.Factory.Create<HashSet<string>>(new object(),(HashSet<string> ids)=>{});
 foreach(var locked in new[]{false,true}) {

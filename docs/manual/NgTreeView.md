@@ -14,7 +14,7 @@ The documentation launcher embeds these running examples here. Choose a framewor
 
 ## Behavior and practical rules
 
-HasChildren/hasChildren marks an unloaded branch. LoadChildren/loadChildren returns its children on the first explicit expansion; a failed expansion displays ErrorText/errorText and can be retried. Keep lazy branches initially collapsed. LoadingText/loadingText is shown while waiting. Children are cached for collapse/reopen, including an empty result which turns the branch into a leaf. Duplicate/cyclic IDs across the resolved tree are rejected as load errors. Search examines loaded nodes only and does not fetch descendants. Replace the immutable root collection, loader, or DataVersion/dataVersion to invalidate the cache and pending results; keep references stable across selection/expansion rebuilds. Blazor sends cancellation; Flutter discards stale futures without transport cancellation. Selection and expansion remain parent-controlled; locks and disabled nodes are rechecked after loading. Returned children do not mutate the parent root collection. Templates and custom empty text remain supported. Virtualization, drag/drop, cascading checks and complete keyboard/screen-reader parity remain open. Checkboxes/checkboxes enables independent multi-checking through CheckedIds/checkedIds and CheckedIdsChanged/onCheckedChanged. Store the proposed fresh set in the parent; rejecting it keeps the previous display. CheckingReadOnly/checkingReadOnly and CanCheck/canCheck protect checking independently of row selection and expansion. Disabled nodes cannot change. CheckLabel/checkLabel supplies a localized accessible checkbox label. Checks preserve unknown, filtered and collapsed IDs and never mutate the supplied set. Checking a lazy parent does not load or check children. Each checkbox is keyboard reachable; Space changes that checkbox without selecting or expanding its row. There is no cascade, partial parent state, check-all or automatic pruning; these remain application policy.
+HasChildren/hasChildren marks an unloaded branch. LoadChildren/loadChildren returns its children on the first explicit expansion; a failed expansion displays ErrorText/errorText and can be retried. Keep lazy branches initially collapsed. LoadingText/loadingText is shown while waiting. Children are cached for collapse/reopen, including an empty result which turns the branch into a leaf. Duplicate/cyclic IDs across the resolved tree are rejected as load errors. Search examines loaded nodes only and does not fetch descendants. Replace the immutable root collection, loader, or DataVersion/dataVersion to invalidate the cache and pending results; keep references stable across selection/expansion rebuilds. Blazor sends cancellation; Flutter discards stale futures without transport cancellation. Selection and expansion remain parent-controlled; locks and disabled nodes are rechecked after loading. Returned children do not mutate the parent root collection. Templates and custom empty text remain supported. Virtualization, drag/drop, complete keyboard/screen-reader parity remain open. Checkboxes/checkboxes enables independent multi-checking through CheckedIds/checkedIds and CheckedIdsChanged/onCheckedChanged. Store the proposed fresh set in the parent; rejecting it keeps the previous display. CheckingReadOnly/checkingReadOnly and CanCheck/canCheck protect checking independently of row selection and expansion. Disabled nodes cannot change. CheckLabel/checkLabel supplies a localized accessible checkbox label. Checks preserve unknown, filtered and collapsed IDs and never mutate the supplied set. Checking a lazy parent does not load or check children. Each checkbox is keyboard reachable; Space changes that checkbox without selecting or expanding its row. CheckChildren/checkChildren (default false) enables a cascade over the parent record plus its eligible, already loaded descendants. The checkbox is checked when all those IDs are present, unchecked when none are, and mixed otherwise. Clicking mixed checks the complete eligible branch; clicking checked clears it. One callback contains the whole proposed set. Disabled nodes and CanCheck/canCheck=false nodes are subtree barriers, preserving all IDs below them. Filtering and collapsing do not narrow this branch operation. CheckingReadOnly does not change the aggregate display. Independently checking every child does not check the parent record: its own ID also participates. Newly loaded descendants do not inherit marks and can turn a previously checked parent mixed without emitting a callback. Changing the cascade mode, predicate, source or loaded children only recomputes display; it does not normalize parent data. Unknown IDs and excluded branches are retained. Check-all, upward ID normalization, automatic pruning and fetching unseen descendants remain application policy. Flutter partialCheckText supplies a localized spoken value for a mixed checkbox (default Partially checked). The current Flutter Web SDK renders a mixed checkbox visually and reports CheckedState.mixed internally, but its legacy DOM checkbox role maps aria-checked to false. The explicit spoken value preserves the partial-state information; exact Web ARIA mixed-state parity and physical screen-reader verification remain open. Blazor uses native indeterminate plus aria-checked=mixed.
 
 ## Blazor example
 
@@ -25,12 +25,13 @@ HasChildren/hasChildren marks an unloaded branch. LoadChildren/loadChildren retu
 <NgCheckBox Label="Checking read-only" @bind-Value="checkingReadOnly"/>
 <NgCheckBox Label="Protect Design" @bind-Value="protectDesign"/>
 <NgCheckBox Label="Reject check changes" @bind-Value="rejectChecks"/>
+<NgCheckBox Label="Cascade loaded children" @bind-Value="cascade"/>
 <NgButton OnClick="Reset">Reset tree</NgButton>
-<NgTreeView TItem="string" Items="nodes" Text="s=>s" LoadChildren="Load" Checkboxes="true" CheckedIds="checkedIds" CheckedIdsChanged="AcceptChecks" CheckingReadOnly="checkingReadOnly" CanCheck="CanCheckNode" DataVersion="version" @bind-ExpandedIds="expanded" @bind-SelectedId="selected" SelectionReadOnly="selectionReadOnly" ExpansionReadOnly="expansionReadOnly" EmptyText="No teams found."/>
+<NgTreeView TItem="string" Items="nodes" Text="s=>s" LoadChildren="Load" Checkboxes="true" CheckChildren="cascade" CheckedIds="checkedIds" CheckedIdsChanged="AcceptChecks" CheckingReadOnly="checkingReadOnly" CanCheck="CanCheckNode" DataVersion="version" @bind-ExpandedIds="expanded" @bind-SelectedId="selected" SelectionReadOnly="selectionReadOnly" ExpansionReadOnly="expansionReadOnly" EmptyText="No teams found."/>
 <p>Checked IDs: @string.Join(", ",checkedIds.Order())</p>
 <p>Selected team: @(selected??"none") · Child requests: @requests</p>
 @code {
- private bool rejectChecks;
+ private bool rejectChecks; private bool cascade=true;
  private void AcceptChecks(HashSet<string> next){if(!rejectChecks)checkedIds=next;}
  private bool CanCheckNode(NgTreeNode<string> n)=>!protectDesign || n.Id!="a";
  private bool checkingReadOnly,protectDesign=true; private HashSet<string> checkedIds=["offscreen"];
@@ -50,7 +51,7 @@ HasChildren/hasChildren marks an unloaded branch. LoadChildren/loadChildren retu
 ```dart
 final nodes = <NgTreeNode<String>>[const NgTreeNode('root','Projects',hasChildren: true)];
 Set<String> checkedIds = {"offscreen"};
-bool checkingReadOnly=false,protectDesign=true,rejectChecks=false;
+bool checkingReadOnly=false,protectDesign=true,rejectChecks=false,cascade=true;
 Set<String> expanded = {};
 String? selected;
 bool selectionReadOnly = false, expansionReadOnly = false, fail = false;
@@ -68,8 +69,9 @@ Widget build(BuildContext context) => Column(crossAxisAlignment: CrossAxisAlignm
  NgCheckBox(label:'Checking read-only',value:checkingReadOnly,onChanged:(v)=>setState(()=>checkingReadOnly=v)),
  NgCheckBox(label:'Protect Design',value:protectDesign,onChanged:(v)=>setState(()=>protectDesign=v)),
  NgCheckBox(label:'Reject check changes',value:rejectChecks,onChanged:(v)=>setState(()=>rejectChecks=v)),
+ NgCheckBox(label:'Cascade loaded children',value:cascade,onChanged:(v)=>setState(()=>cascade=v)),
  NgButton(onPressed:()=>setState((){version++;expanded={};selected=null;checkedIds={"offscreen"};}),child:const Text('Reset tree')),
- NgTreeView<String>(items:nodes,text: (s) => s, loadChildren:load,dataVersion:version,checkboxes:true,checkedIds:checkedIds,onCheckedChanged:(v){if(!rejectChecks)setState(()=>checkedIds=v);},checkingReadOnly:checkingReadOnly,canCheck:(n)=>!protectDesign || n.id!="a",
+ NgTreeView<String>(items:nodes,text: (s) => s, loadChildren:load,dataVersion:version,checkboxes:true,checkChildren:cascade,checkedIds:checkedIds,onCheckedChanged:(v){if(!rejectChecks)setState(()=>checkedIds=v);},checkingReadOnly:checkingReadOnly,canCheck:(n)=>!protectDesign || n.id!="a",
    expandedIds:expanded,onExpandedChanged:(v)=>setState(()=>expanded=v),selectedId:selected,onSelected:(v)=>setState(()=>selected=v),
    selectionReadOnly:selectionReadOnly,expansionReadOnly:expansionReadOnly,emptyText:'No teams found.'),
  Text('Checked IDs: ${(checkedIds.toList()..sort()).join(", ")}'),
@@ -99,6 +101,7 @@ Names are case-sensitive. `?` permits null. `EditorRequired` parameters are mark
 | `DataVersion` | `object?` | not set | Change to invalidate pending reads and cached data; keep stable otherwise. |
 | `LoadingText` | `string` | "Loading children…" | Localized loading status. |
 | `ErrorText` | `string` | "Unable to load children. Expand to retry." | Localized failure status; raw service errors are not rendered. |
+| `CheckChildren` | `bool` | false | Cascade over the parent record and eligible loaded descendants; mixed checks the full branch. Default false. |
 | `Checkboxes` | `bool` | false | Show independent node checkboxes (default false). |
 | `CheckedIds` | `HashSet<string>` | [] | Parent-owned checked IDs; hidden/unknown IDs are preserved. |
 | `CheckedIdsChanged` | `EventCallback<HashSet<string>>` | not set | Proposed fresh set; store to accept or ignore to reject. |
@@ -125,6 +128,8 @@ Names are case-sensitive. `?` permits null. `EditorRequired` parameters are mark
 | `expansionReadOnly` | `bool` | See the behavior rules and model contract above. |
 | `checkboxes` | `bool` | Show independent node checkboxes (default false). |
 | `checkingReadOnly` | `bool` | Lock checking independently of selection and expansion. |
+| `checkChildren` | `bool` | Cascade over the parent record and eligible loaded descendants; mixed checks the full branch. Default false. |
+| `partialCheckText` | `String` | Flutter spoken value for mixed checks; default Partially checked. See Web ARIA limitation. |
 | `checkedIds` | `Set<String>` | Parent-owned checked IDs; hidden/unknown IDs are preserved. |
 | `onCheckedChanged` | `ValueChanged<Set<String>>?` | Proposed fresh set; store with setState to accept. |
 | `canCheck` | `bool Function(NgTreeNode<T>)?` | Pure node predicate; false protects existing checked state. |
@@ -149,6 +154,8 @@ const NgTreeView({
     this.onSelected,
     this.selectedId,
     this.label = 'Folders',
+    this.partialCheckText = 'Partially checked',
+    this.checkChildren = false,
     this.checkboxes = false,
     this.checkingReadOnly = false,
     this.checkedIds = const {},

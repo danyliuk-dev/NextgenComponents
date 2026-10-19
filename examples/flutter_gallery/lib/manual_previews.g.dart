@@ -355,7 +355,7 @@ class NgTreeViewExample extends StatefulWidget { const NgTreeViewExample({super.
 class _NgTreeViewExampleState extends State<NgTreeViewExample> {
 final nodes = <NgTreeNode<String>>[const NgTreeNode('root','Projects',hasChildren: true)];
 Set<String> checkedIds = {"offscreen"};
-bool checkingReadOnly=false,protectDesign=true,rejectChecks=false;
+bool checkingReadOnly=false,protectDesign=true,rejectChecks=false,cascade=true;
 Set<String> expanded = {};
 String? selected;
 bool selectionReadOnly = false, expansionReadOnly = false, fail = false;
@@ -373,8 +373,9 @@ Widget build(BuildContext context) => Column(crossAxisAlignment: CrossAxisAlignm
  NgCheckBox(label:'Checking read-only',value:checkingReadOnly,onChanged:(v)=>setState(()=>checkingReadOnly=v)),
  NgCheckBox(label:'Protect Design',value:protectDesign,onChanged:(v)=>setState(()=>protectDesign=v)),
  NgCheckBox(label:'Reject check changes',value:rejectChecks,onChanged:(v)=>setState(()=>rejectChecks=v)),
+ NgCheckBox(label:'Cascade loaded children',value:cascade,onChanged:(v)=>setState(()=>cascade=v)),
  NgButton(onPressed:()=>setState((){version++;expanded={};selected=null;checkedIds={"offscreen"};}),child:const Text('Reset tree')),
- NgTreeView<String>(items:nodes,text: (s) => s, loadChildren:load,dataVersion:version,checkboxes:true,checkedIds:checkedIds,onCheckedChanged:(v){if(!rejectChecks)setState(()=>checkedIds=v);},checkingReadOnly:checkingReadOnly,canCheck:(n)=>!protectDesign || n.id!="a",
+ NgTreeView<String>(items:nodes,text: (s) => s, loadChildren:load,dataVersion:version,checkboxes:true,checkChildren:cascade,checkedIds:checkedIds,onCheckedChanged:(v){if(!rejectChecks)setState(()=>checkedIds=v);},checkingReadOnly:checkingReadOnly,canCheck:(n)=>!protectDesign || n.id!="a",
    expandedIds:expanded,onExpandedChanged:(v)=>setState(()=>expanded=v),selectedId:selected,onSelected:(v)=>setState(()=>selected=v),
    selectionReadOnly:selectionReadOnly,expansionReadOnly:expansionReadOnly,emptyText:'No teams found.'),
  Text('Checked IDs: ${(checkedIds.toList()..sort()).join(", ")}'),
@@ -385,7 +386,7 @@ class NgTreeListExample extends StatefulWidget { const NgTreeListExample({super.
 class _NgTreeListExampleState extends State<NgTreeListExample> {
 final nodes = <NgTreeNode<String>>[const NgTreeNode('root','Projects',hasChildren: true)];
 Set<String> checkedIds = {"offscreen"};
-bool checkingReadOnly=false,protectDesign=true,rejectChecks=false;
+bool checkingReadOnly=false,protectDesign=true,rejectChecks=false,cascade=true;
 Set<String> expanded = {};
 String? selected;
 bool selectionReadOnly = false, expansionReadOnly = false, fail = false;
@@ -403,8 +404,9 @@ Widget build(BuildContext context) => Column(crossAxisAlignment: CrossAxisAlignm
  NgCheckBox(label:'Checking read-only',value:checkingReadOnly,onChanged:(v)=>setState(()=>checkingReadOnly=v)),
  NgCheckBox(label:'Protect Design',value:protectDesign,onChanged:(v)=>setState(()=>protectDesign=v)),
  NgCheckBox(label:'Reject check changes',value:rejectChecks,onChanged:(v)=>setState(()=>rejectChecks=v)),
+ NgCheckBox(label:'Cascade loaded children',value:cascade,onChanged:(v)=>setState(()=>cascade=v)),
  NgButton(onPressed:()=>setState((){version++;expanded={};selected=null;checkedIds={"offscreen"};}),child:const Text('Reset tree')),
- NgTreeList<String>(items:nodes,columns: [NgDataColumn('name','Name',(s) => s)], loadChildren:load,dataVersion:version,checkboxes:true,checkedIds:checkedIds,onCheckedChanged:(v){if(!rejectChecks)setState(()=>checkedIds=v);},checkingReadOnly:checkingReadOnly,canCheck:(n)=>!protectDesign || n.id!="a",
+ NgTreeList<String>(items:nodes,columns: [NgDataColumn('name','Name',(s) => s)], loadChildren:load,dataVersion:version,checkboxes:true,checkChildren:cascade,checkedIds:checkedIds,onCheckedChanged:(v){if(!rejectChecks)setState(()=>checkedIds=v);},checkingReadOnly:checkingReadOnly,canCheck:(n)=>!protectDesign || n.id!="a",
    expandedIds:expanded,onExpandedChanged:(v)=>setState(()=>expanded=v),selectedId:selected,onSelected:(v)=>setState(()=>selected=v),
    selectionReadOnly:selectionReadOnly,expansionReadOnly:expansionReadOnly,emptyText:'No teams found.'),
  Text('Checked IDs: ${(checkedIds.toList()..sort()).join(", ")}'),

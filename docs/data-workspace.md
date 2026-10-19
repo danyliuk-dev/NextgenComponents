@@ -60,3 +60,11 @@ See the [Grid manual](manual/NgDataGrid.md), [TreeView manual](manual/NgTreeView
 TreeView and TreeList expose opt-in, controlled checked-ID sets on both Web platforms. Checking is independent of row selection and expansion. Read-only state, a node predicate, disabled nodes and absent callbacks protect changes. Each accepted request supplies a fresh set without pruning hidden, collapsed or unknown IDs. Localized accessible labels and keyboard Space are supported. Checking unloaded parents never fetches or checks children.
 
 Remaining: cascading/partial parent checks, check-all, tree virtualization, drag/drop, remote filtering/sorting, native targets and full accessibility certification. Grid virtualization, grouping and built-in CRUD remain open. See both tree manuals.
+
+## Cascading loaded tree checks (0.62)
+
+Opt-in CheckChildren/checkChildren applies a single proposed checked-ID set to the parent record plus eligible loaded descendants. Mixed state means some of those records are checked; activating mixed selects the whole eligible branch, while activating checked clears it. Filtering and collapse do not change that scope. Protected/disabled nodes are subtree barriers and preserve their existing IDs. Unknown IDs are retained. Default independent behavior is unchanged.
+
+Lazy loading never inherits checks or emits a checking callback. Newly loaded descendants can make the parent mixed. The parent record participates in aggregation; independently checking all children does not insert its ID. Mode/predicate/data changes recompute display without normalizing application state. Full-remote cascade, upward ID normalization, check-all, virtualization, drag/drop and native/accessibility certification remain open.
+
+Current Flutter Web SDK maps its internal mixed checkbox state to aria-checked=false in the legacy DOM role; a localized partialCheckText spoken value supplies partial-state information. Native Flutter semantics tests see CheckedState.mixed. Exact Web ARIA parity and physical screen-reader behavior remain unverified.

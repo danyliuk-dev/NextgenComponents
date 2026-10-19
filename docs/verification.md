@@ -853,3 +853,12 @@ Counter formatting receives counts rather than password text and must remain pur
 - Blazor controlled binding was verified with rejected pointer/Space changes in both controls: the DOM checkbox returns to the parent-owned state; acceptance still updates without selecting/loading.
 - Browser review found merged checkbox/cell semantics in Flutter TreeList. Separate semantic containers fixed the issue; focused checkbox semantics and keyboard tests were rerun successfully.
 - Public marketing sites remain deleted from Cloudflare. Local documentation/demo updates do not publish them.
+
+## Cascading loaded tree checks — 0.62 (2026-10-19, Linux on iMac)
+
+- TreeView/TreeList opt-in CheckChildren/checkChildren cascades over the parent record and eligible loaded descendants in one controlled callback. Protected/disabled nodes stop traversal into their subtrees. Mixed state selects the whole eligible branch; fully checked clears it. Unknown IDs are retained; no implicit fetching or upward normalization.
+- 429 .NET rendering/data checks passed; gallery build passed without warnings/errors. 262 Flutter tests passed and clean analysis. Eight focused checking tests were rerun after the accessible-value addition. Tests cover rejected changes, partial aggregate semantics, protected subtrees, collapsed/filtered descendants, mode/lock changes, immutable input and newly loaded children without inherited marks/callbacks.
+- All 47 Razor and 47 Dart manual examples compiled/analyzed; 94 lossless highlighting checks. Flutter Web build passed with the existing unused CupertinoIcons font warning.
+- Visible Chrome on local Linux/iMac: Blazor and Flutter branch checks, keyboard Space, protected children, lazy nested loading, partial states, rejected proposals and filtering/collapse retention checked. No row selection was triggered by checkbox actions. Blazor native indeterminate indicators were visually inspected.
+- Current Flutter Web SDK's legacy checkbox role maps internal CheckedState.mixed to aria-checked=false. The visual dash and internal semantics are correct; partialCheckText adds a localized accessible value. Exact Web ARIA mixed-state parity and physical screen-reader output remain unverified; the SDK was not modified.
+- Public Cloudflare sites remain deleted. Local demos/documentation only; check-all, full-remote cascades, upward normalization, virtualization and drag/drop remain open.

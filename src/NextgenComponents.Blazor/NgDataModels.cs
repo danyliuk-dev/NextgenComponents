@@ -17,6 +17,26 @@ public sealed record NgDataResult<T>(IReadOnlyList<T> Items,int Total);
 
 public static class NgDataOperations
 {
+    // A branch check represents its own record plus eligible, loaded descendants.
+    // Protected nodes are subtree barriers; their existing IDs are preserved.
+    public static IReadOnlyList<string> TreeCheckTargets<T>(NgTreeNode<T> node,bool cascade,Func<NgTreeNode<T>,bool>? canCheck=null) {
+        var ids=new List<string>{node.Id};
+        void Walk(NgTreeNode<T> parent){foreach(var child in parent.Children??[]){if(child.Disabled || !(canCheck?.Invoke(child)??true))continue;ids.Add(child.Id);Walk(child);}}
+        if(cascade && !node.Disabled && (canCheck?.Invoke(node)??true))Walk(node);
+        return ids;
+    }
+    public static bool? TreeCheckState<T>(NgTreeNode<T> node,ISet<string> checkedIds,bool cascade,Func<NgTreeNode<T>,bool>? canCheck=null) {
+        var targets=TreeCheckTargets(node,cascade,canCheck);var count=targets.Count(checkedIds.Contains);
+        return count==0?false:count==targets.Count?true:null;
+    }
+    public static HashSet<string> ToggleTreeCheck<T>(NgTreeNode<T> node,ISet<string> checkedIds,bool cascade,Func<NgTreeNode<T>,bool>? canCheck=null) {
+        var next=new HashSet<string>(checkedIds);
+        if(node.Disabled || !(canCheck?.Invoke(node)??true))return next;
+        var targets=TreeCheckTargets(node,cascade,canCheck);var clear=targets.All(checkedIds.Contains);
+        foreach(var id in targets){if(clear)next.Remove(id);else next.Add(id);}
+        return next;
+    }
+
     public static int PageCount(int total,int size) => Math.Max(1,(int)Math.Ceiling(Math.Max(0,total)/(double)Math.Max(1,size)));
     public static int ClampPage(int page,int total,int size) => Math.Clamp(page,1,PageCount(total,size));
     public static IReadOnlyList<T> Query<T>(IEnumerable<T> source,IReadOnlyList<NgDataColumn<T>> columns,string search,string? sortKey,bool descending)

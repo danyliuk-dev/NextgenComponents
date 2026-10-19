@@ -59,3 +59,11 @@ export function tree(root) {
   next?.focus();
  });
 }
+
+// Native checkbox indeterminate is a DOM property, not an HTML attribute.
+export function treeChecks(root) {
+ for (const box of root.querySelectorAll('input.ng-tree-check')) {
+  box.indeterminate=box.getAttribute('aria-checked')==='mixed';
+  box.checked=box.getAttribute('aria-checked')==='true';
+ }
+}
