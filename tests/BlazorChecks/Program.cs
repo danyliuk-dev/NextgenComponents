@@ -23,6 +23,8 @@ NgOption[] options = [new("a", "Alpha"), new("b", "Beta", true)];
 await Check<NgButton>(new() { ["Disabled"] = true, ["Primary"] = true, ["ChildContent"] = Text("Save") }, "disabled", "ng-primary", "type=\"button\"");
 await Check<NgTextBox>(new(){["Label"]="Password",["Value"]="sample",["ValueExpression"]=(Expression<Func<string?>>)(()=>name),["Password"]=true,["ShowPasswordToggle"]=true,["ShowClearButton"]=true},"type=\"password\"","Show password","Clear Password");
 await Check<NgTextBox>(new(){["ValueExpression"]=(Expression<Func<string?>>)(()=>name),["Size"]="large",["FillMode"]="filled"},"ng-text-size-large","ng-text-fill-filled");
+try{await Check<NgTextBox>(new(){["ValueExpression"]=(Expression<Func<string?>>)(()=>name),["DebounceDelay"]=-1});throw new Exception("Negative delay accepted");}catch(ArgumentOutOfRangeException){count++;}
+try{await Check<NgTextArea>(new(){["ValueExpression"]=(Expression<Func<string?>>)(()=>name),["DebounceDelay"]=60001});throw new Exception("Excessive delay accepted");}catch(ArgumentOutOfRangeException){count++;}
 await Check<NgTextArea>(new(){["ValueExpression"]=(Expression<Func<string?>>)(()=>name),["Size"]="small",["FillMode"]="outline",["AutoSize"]=true},"ng-text-size-small","ng-text-fill-outline","ng-textarea-auto");
 try{await Check<NgTextBox>(new(){["ValueExpression"]=(Expression<Func<string?>>)(()=>name),["Size"]="invalid"});throw new Exception("Invalid size accepted");}catch(ArgumentException){count++;}
 try{await Check<NgTextArea>(new(){["ValueExpression"]=(Expression<Func<string?>>)(()=>name),["FillMode"]="invalid"});throw new Exception("Invalid fill accepted");}catch(ArgumentException){count++;}

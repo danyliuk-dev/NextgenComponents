@@ -648,3 +648,20 @@ Validation completed:
 Evidence: [Blazor narrow editor](screenshots/text048-blazor-NgTextArea-narrow.png), [Flutter filled password editor](screenshots/text048-flutter-NgTextBox-large.png), [Flutter narrow editor](screenshots/text048-flutter-NgTextArea-narrow.png), [desktop manual](screenshots/text048-desktop-manual.png).
 
 Flutter retains theme-defined borders and native action hit targets. Pixel parity, native platforms and a full screen-reader audit are not claimed. Debounced notifications, further border/radius options and generated form schemas remain open.
+
+
+## Debounced text notifications — 0.49 (2026-10-19, Linux on iMac)
+
+TextBox and TextArea expose optional delayed callbacks with a bounded 0–60000 ms delay. Binding and validation remain immediate; bursts deliver the latest value. Locks, external replacement, delay changes, handler removal and disposal cancel pending work. Submit/blur remains independent.
+
+Validation completed:
+
+- 352 Blazor rendering/data checks; gallery build with zero warnings/errors.
+- 212 Flutter tests and clean Dart analysis. New tests cover burst coalescing, selection/appearance rebuilds, external replacement, read-only/disabled locks, changed delay, handler removal, controller replacement, clear, zero delay, disposal, native form reset and invalid bounds.
+- 47 Razor and 47 Dart manual examples compiled/analyzed; 94 lossless highlighting checks. Flutter release Web build passed with the existing CupertinoIcons font warning.
+- Foreground local Chrome: 26 Blazor and 26 Flutter checks using `scripts/text-debounce-check.py`. Immediate values, delayed/coalesced callbacks, replacement/read-only cancellation, changed/zero delay, appearance rebuilds and delayed clear passed for both editors. Native mouse clicks confirmed blur neither flushes nor cancels the callback.
+- Desktop shell opened the updated TextArea manual and live example. Screenshots were inspected directly.
+
+Evidence: [Blazor notification count](screenshots/text049-blazor-NgTextArea.png), [Flutter password sample](screenshots/text049-flutter-NgTextBox.png), [desktop manual](screenshots/text049-desktop-manual.png).
+
+Composition-specific suppression and cancellation of already-started application work are not supplied. Flutter Form.reset may schedule the reset value through native onChanged; same-value Blazor binding echoes cannot be distinguished from external resets. Native platforms and full screen-reader certification remain unverified.

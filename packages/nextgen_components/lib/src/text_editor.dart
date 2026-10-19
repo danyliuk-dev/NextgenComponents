@@ -1,8 +1,11 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 
 // Internal shared implementation; TextBox and TextArea retain their public APIs.
 class NextgenTextEditor extends StatefulWidget {
   final String label;
+  final int debounceDelay;
+  final ValueChanged<String>? onDebouncedChange;
   final String size, fillMode;
   final TextEditingController? controller;
   final String? initialValue, placeholder, helperText;
@@ -20,6 +23,8 @@ class NextgenTextEditor extends StatefulWidget {
     required this.label,
     this.size = 'medium',
     this.fillMode = 'theme',
+    this.debounceDelay = 300,
+    this.onDebouncedChange,
     this.controller,
     this.initialValue,
     this.placeholder,
@@ -54,6 +59,31 @@ class _NextgenTextEditorState extends State<NextgenTextEditor> {
       field.currentState?.value ??
       widget.initialValue ??
       '';
+  Timer? debounce;
+  String? pendingValue;
+  void cancelDebounce() {
+    debounce?.cancel();
+    debounce = null;
+    pendingValue = null;
+  }
+
+  void scheduleDebounce(String value) {
+    cancelDebounce();
+    if (!mounted ||
+        !widget.enabled ||
+        widget.readOnly ||
+        widget.onDebouncedChange == null ||
+        text != value)
+      return;
+    pendingValue = value;
+    debounce = Timer(Duration(milliseconds: widget.debounceDelay), () {
+      if (!mounted || !widget.enabled || widget.readOnly || text != value)
+        return;
+      cancelDebounce();
+      widget.onDebouncedChange?.call(value);
+    });
+  }
+
   bool revealed = false;
   int revision = 0;
   @override
@@ -63,6 +93,8 @@ class _NextgenTextEditorState extends State<NextgenTextEditor> {
   }
 
   void changed() {
+    if (pendingValue != null && widget.controller?.text != pendingValue)
+      cancelDebounce();
     if (mounted) setState(() {});
   }
 
@@ -70,6 +102,12 @@ class _NextgenTextEditorState extends State<NextgenTextEditor> {
   void didUpdateWidget(covariant NextgenTextEditor oldWidget) {
     super.didUpdateWidget(oldWidget);
     revision++;
+    if (oldWidget.controller != widget.controller ||
+        oldWidget.debounceDelay != widget.debounceDelay ||
+        !widget.enabled ||
+        widget.readOnly ||
+        widget.onDebouncedChange == null)
+      cancelDebounce();
     if (oldWidget.controller != widget.controller) {
       oldWidget.controller?.removeListener(changed);
       widget.controller?.addListener(changed);
@@ -84,6 +122,7 @@ class _NextgenTextEditorState extends State<NextgenTextEditor> {
 
   @override
   void dispose() {
+    cancelDebounce();
     widget.controller?.removeListener(changed);
     ownedFocus.dispose();
     super.dispose();
@@ -102,6 +141,7 @@ class _NextgenTextEditorState extends State<NextgenTextEditor> {
     widget.controller?.clear();
     inputFocus.requestFocus();
     widget.onChanged?.call('');
+    scheduleDebounce('');
   }
 
   @override
@@ -112,6 +152,8 @@ class _NextgenTextEditorState extends State<NextgenTextEditor> {
     if (!['theme', 'outline', 'filled'].contains(widget.fillMode)) {
       throw ArgumentError('Use theme, outline or filled.');
     }
+    if (widget.debounceDelay < 0 || widget.debounceDelay > 60000)
+      throw ArgumentError('Use a debounce delay of 0–60000 milliseconds.');
     final current = revision;
     final actions = <Widget>[
       if (widget.password && widget.showPasswordToggle)
@@ -161,6 +203,7 @@ class _NextgenTextEditorState extends State<NextgenTextEditor> {
               !widget.readOnly) {
             setState(() {});
             widget.onChanged?.call(value);
+            scheduleDebounce(value);
           }
         },
         onFieldSubmitted: (value) {

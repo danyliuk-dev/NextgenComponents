@@ -26,7 +26,7 @@ MaxLength must be positive when supplied. It limits user entry, not application 
 OnCommit is the Blazor native change event (normally blur, or Enter for a single-line input); ValueChanged still fires while typing. Flutter onSubmitted is the platform submission action, not a blur event; multiline Enter normally inserts a newline. These are deliberately documented platform contracts, not identical event timing.
 
 ### Current scope
-No debounce, automatic resize, full appearance variants or certified screen-reader parity. Native/mobile verification remains deferred. Application supplies localized labels, guidance and validation errors.
+No arbitrary border/radius customization or certified screen-reader parity. Native/mobile verification remains deferred. Application supplies localized labels, guidance and validation errors.
 
 ### Clear action (0.46)
 ShowClearButton/showClearButton adds a labelled Clear action. It is disabled for empty, read-only or disabled fields. Clear sets the value to the empty string, not null, updates the form field and emits one value-change callback. It restores input focus and does not explicitly invoke OnCommit/onSubmitted; Blazor native blur/change can still commit the preceding typed value when focus moves to the button. Required validators can therefore reject the empty field. Flutter preserves controller ownership and initialValue form reset; retained actions cannot clear a replacement controller or bypass locks. The clear action and supplied suffix can coexist.
@@ -38,22 +38,35 @@ Password/password masks the single-line value; default false. ShowPasswordToggle
 ### Size and fill (0.48)
 Size/size accepts small, medium (default), or large. FillMode/fillMode accepts theme (default), outline, or filled. Invalid values throw. Medium and theme inherit the existing application density/decoration. Small and large adjust text size and padding; they do not impose a fixed TextArea height. Outline removes background fill; filled uses a theme-aware surface. Borders, focus and validation indicators remain controlled by the platform/theme. Flutter custom themes should supply an outline border if that shape is required; fill selection does not replace theme borders.
 
-Changing appearance preserves the value, selection and form state and emits no change callback. Automatic TextArea height recalculates with the new metrics. Read-only/disabled permissions and clear/password behavior remain unchanged. Flutter keeps native action hit targets; compact fields containing actions can therefore remain taller than fields without actions. Prefix/suffix templates keep their own sizing. The two platforms do not promise equal pixel heights. Debounced notifications and further radius/border customization remain open.
+Changing appearance preserves the value, selection and form state and emits no change callback. Automatic TextArea height recalculates with the new metrics. Read-only/disabled permissions and clear/password behavior remain unchanged. Flutter keeps native action hit targets; compact fields containing actions can therefore remain taller than fields without actions. Prefix/suffix templates keep their own sizing. The two platforms do not promise equal pixel heights. Further radius/border customization remains open.
+
+
+### Debounced notifications (0.49)
+OnDebouncedChange/onDebouncedChange is an optional notification after typing or Clear pauses for DebounceDelay/debounceDelay milliseconds (default 300, range 0–60000). The latest value in a burst wins. Zero means no intentional wait; Flutter uses the next timer turn. Value binding, onChanged and form validation remain immediate. These callbacks receive the actual value even in password mode; the sample displays only its length.
+
+A different externally supplied value, a changed delay, read-only/disabled state, handler removal, Flutter controller replacement or disposal cancels a pending notification. External changes alone never schedule notifications. Appearance changes and ordinary parent rebuilds retain pending work; the current callback receives the notification. Flutter selection-only controller changes do not cancel it. Flutter Form.reset follows TextFormField's native onChanged behavior and may schedule the reset value; use a replacement key/controller to discard all draft work.
+
+OnCommit/onSubmitted stays independent: blur/submit neither flushes nor cancels the delayed callback. Debouncing does not make submission wait or perform validation/network requests. Once a callback starts, cancelling later input cannot undo its effects: applications must protect asynchronous search results with their own request/version checks. IME composition follows native input events; composition-aware suppression is not supplied. Blazor cannot distinguish an external assignment of the same string from the normal binding echo; use a replacement key to reset the editor unconditionally.
 
 
 ## Blazor example
 
 ```razor
+<div class="ng-prompt-actions"><NgButton OnClick="ReplaceDraft">Replace draft</NgButton><NgButton OnClick="()=>delay=delay==600?0:600">Change delay</NgButton></div>
+<p>Delay: @delay ms · Notifications: @notifications · Notified length: @notifiedLength</p>
 <div class="ng-prompt-actions"><NgButton OnClick="CycleSize">Change size</NgButton><NgButton OnClick="CycleFill">Change fill</NgButton></div>
 <p>Size: @size · Fill: @fill</p>
 <NgButton OnClick="()=>password=!password">Toggle password mode</NgButton>
 <NgCheckBox Label="Read only" @bind-Value="locked"/>
-<NgTextBox Size="@size" FillMode="@fill" @ref="editor" Label="Project name" @bind-Value="text" ReadOnly="locked" ShowClearButton="true" Password="password" ShowPasswordToggle="true" MaxLength="80" HelperText="Use a short, descriptive name." OnCommit="v=>committed=v">
+<NgTextBox DebounceDelay="delay" OnDebouncedChange="Debounced" Size="@size" FillMode="@fill" @ref="editor" Label="Project name" @bind-Value="text" ReadOnly="locked" ShowClearButton="true" Password="password" ShowPasswordToggle="true" MaxLength="80" HelperText="Use a short, descriptive name." OnCommit="v=>committed=v">
 <PrefixTemplate><span aria-hidden="true">@@</span></PrefixTemplate>
 </NgTextBox>
 <NgButton OnClick="()=>editor!.FocusAsync().AsTask()">Focus editor</NgButton>
 <p>Length: @(text?.Length??0)</p>
 @code {
+ private int delay=600,notifications,notifiedLength;
+ private void Debounced(string? value){notifications++;notifiedLength=value?.Length??0;}
+ private void ReplaceDraft()=>text="External replacement";
  private string size="medium",fill="theme";
  private void CycleSize()=>size=size=="medium"?"large":size=="large"?"small":"medium";
  private void CycleFill()=>fill=fill=="theme"?"filled":fill=="filled"?"outline":"theme"; private NgTextBox? editor; private bool locked,password=true; private string? text="Design review",committed; }
@@ -63,17 +76,20 @@ Changing appearance preserves the value, selection and form state and emits no c
 ## Flutter example
 
 ```dart
+int delay=600,notifications=0,notifiedLength=0;
 String size='medium',fill='theme';
 bool locked = false, password = true; String submitted = '';
 final editor = TextEditingController(text:'Design review');
 final focus = FocusNode();
 @override void dispose(){editor.dispose();focus.dispose();super.dispose();}
 Widget build(BuildContext context)=>Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
+Wrap(spacing:8,children:[NgButton(onPressed:()=>setState(()=>editor.text='External replacement'),child:const Text('Replace draft')),NgButton(onPressed:()=>setState(()=>delay=delay==600?0:600),child:const Text('Change delay'))]),
+Text('Delay: $delay ms · Notifications: $notifications · Notified length: $notifiedLength'),
 Wrap(spacing:8,children:[NgButton(onPressed:()=>setState(()=>size=size=='medium'?'large':size=='large'?'small':'medium'),child:const Text('Change size')),NgButton(onPressed:()=>setState(()=>fill=fill=='theme'?'filled':fill=='filled'?'outline':'theme'),child:const Text('Change fill'))]),
 Text('Size: $size · Fill: $fill'),
 NgButton(onPressed:()=>setState(()=>password=!password),child:const Text('Toggle password mode')),
 NgCheckBox(label:'Read only',value:locked,onChanged:(v)=>setState(()=>locked=v)),
-NgTextBox(size:size,fillMode:fill,label:'Project name',controller:editor,focusNode:focus,readOnly:locked,showClearButton:true,password:password,showPasswordToggle:true,maxLength:80,
+NgTextBox(debounceDelay:delay,onDebouncedChange:(v)=>setState((){notifications++;notifiedLength=v.length;}),size:size,fillMode:fill,label:'Project name',controller:editor,focusNode:focus,readOnly:locked,showClearButton:true,password:password,showPasswordToggle:true,maxLength:80,
 helperText:'Use a short, descriptive name.',prefix:const Icon(Icons.edit_outlined),
 onChanged:(_)=>setState((){}),onSubmitted:(v)=>setState(()=>submitted=v)),
 NgButton(onPressed:()=>focus.requestFocus(),child:const Text('Focus editor')),
@@ -101,6 +117,8 @@ Names are case-sensitive. `?` permits null. `EditorRequired` parameters are mark
 | `HelperText` | `string?` | not set | See the behavior rules and model contract above. |
 | `PrefixTemplate` | `RenderFragment?` | not set | See the behavior rules and model contract above. |
 | `SuffixTemplate` | `RenderFragment?` | not set | See the behavior rules and model contract above. |
+| `DebounceDelay` | `int` | 300 | See the behavior rules and model contract above. |
+| `OnDebouncedChange` | `EventCallback<string?>` | not set | See the behavior rules and model contract above. |
 | `OnCommit` | `EventCallback<string?>` | not set | See the behavior rules and model contract above. |
 | `Value` | `string?` | model value | Current field value. |
 | `ValueChanged` | `EventCallback<string?>` | not set | Value change callback. |
@@ -114,6 +132,8 @@ Names are case-sensitive. `?` permits null. `EditorRequired` parameters are mark
 | Argument | Type | Purpose |
 |---|---|---|
 | `label` | `String` | Visible label or accessible name. |
+| `debounceDelay` | `int` | See the behavior rules and model contract above. |
+| `onDebouncedChange` | `ValueChanged<String>?` | See the behavior rules and model contract above. |
 | `size` | `String` | See the behavior rules and model contract above. |
 | `fillMode` | `String` | Chip fill: solid or outline; see the documented defaults. |
 | `controller` | `TextEditingController?` | Text controller; do not combine with initialValue. Dispose in its owner. |
@@ -139,6 +159,8 @@ const NgTextBox({
     required this.label,
     this.size = 'medium',
     this.fillMode = 'theme',
+    this.debounceDelay = 300,
+    this.onDebouncedChange,
     this.controller,
     this.initialValue,
     this.onChanged,

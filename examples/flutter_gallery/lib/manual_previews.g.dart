@@ -68,17 +68,20 @@ Widget build(BuildContext context) => NgButton(primary: true,
 }
 class NgTextBoxExample extends StatefulWidget { const NgTextBoxExample({super.key}); @override State<NgTextBoxExample> createState()=>_NgTextBoxExampleState(); }
 class _NgTextBoxExampleState extends State<NgTextBoxExample> {
+int delay=600,notifications=0,notifiedLength=0;
 String size='medium',fill='theme';
 bool locked = false, password = true; String submitted = '';
 final editor = TextEditingController(text:'Design review');
 final focus = FocusNode();
 @override void dispose(){editor.dispose();focus.dispose();super.dispose();}
 Widget build(BuildContext context)=>Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
+Wrap(spacing:8,children:[NgButton(onPressed:()=>setState(()=>editor.text='External replacement'),child:const Text('Replace draft')),NgButton(onPressed:()=>setState(()=>delay=delay==600?0:600),child:const Text('Change delay'))]),
+Text('Delay: $delay ms · Notifications: $notifications · Notified length: $notifiedLength'),
 Wrap(spacing:8,children:[NgButton(onPressed:()=>setState(()=>size=size=='medium'?'large':size=='large'?'small':'medium'),child:const Text('Change size')),NgButton(onPressed:()=>setState(()=>fill=fill=='theme'?'filled':fill=='filled'?'outline':'theme'),child:const Text('Change fill'))]),
 Text('Size: $size · Fill: $fill'),
 NgButton(onPressed:()=>setState(()=>password=!password),child:const Text('Toggle password mode')),
 NgCheckBox(label:'Read only',value:locked,onChanged:(v)=>setState(()=>locked=v)),
-NgTextBox(size:size,fillMode:fill,label:'Project name',controller:editor,focusNode:focus,readOnly:locked,showClearButton:true,password:password,showPasswordToggle:true,maxLength:80,
+NgTextBox(debounceDelay:delay,onDebouncedChange:(v)=>setState((){notifications++;notifiedLength=v.length;}),size:size,fillMode:fill,label:'Project name',controller:editor,focusNode:focus,readOnly:locked,showClearButton:true,password:password,showPasswordToggle:true,maxLength:80,
 helperText:'Use a short, descriptive name.',prefix:const Icon(Icons.edit_outlined),
 onChanged:(_)=>setState((){}),onSubmitted:(v)=>setState(()=>submitted=v)),
 NgButton(onPressed:()=>focus.requestFocus(),child:const Text('Focus editor')),
@@ -87,11 +90,14 @@ Text('Length: ${editor.text.length}')]);
 }
 class NgTextAreaExample extends StatefulWidget { const NgTextAreaExample({super.key}); @override State<NgTextAreaExample> createState()=>_NgTextAreaExampleState(); }
 class _NgTextAreaExampleState extends State<NgTextAreaExample> {
+int delay=600,notifications=0,notifiedLength=0;
 String size='medium',fill='theme';
 bool automatic = true, locked = false;
 final editor = TextEditingController(text:'Short note');
 @override void dispose(){editor.dispose();super.dispose();}
 Widget build(BuildContext context)=>Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
+Wrap(spacing:8,children:[NgButton(onPressed:()=>setState(()=>editor.text='External replacement'),child:const Text('Replace draft')),NgButton(onPressed:()=>setState(()=>delay=delay==600?0:600),child:const Text('Change delay'))]),
+Text('Delay: $delay ms · Notifications: $notifications · Notified length: $notifiedLength'),
 Wrap(spacing:8,children:[NgButton(onPressed:()=>setState(()=>size=size=='medium'?'large':size=='large'?'small':'medium'),child:const Text('Change size')),NgButton(onPressed:()=>setState(()=>fill=fill=='theme'?'filled':fill=='filled'?'outline':'theme'),child:const Text('Change fill'))]),
 Text('Size: $size · Fill: $fill'),
  Wrap(spacing:8,runSpacing:8,children:[
@@ -100,7 +106,7 @@ Text('Size: $size · Fill: $fill'),
   NgButton(onPressed:()=>setState(()=>editor.text='Short note'),child:const Text('Load short text')),
  ]),
  NgCheckBox(label:'Read only',value:locked,onChanged:(v)=>setState(()=>locked=v)),
- NgTextArea(size:size,fillMode:fill,label:'Delivery notes',controller:editor,rows:2,maxRows:6,autoSize:automatic,
+ NgTextArea(debounceDelay:delay,onDebouncedChange:(v)=>setState((){notifications++;notifiedLength=v.length;}),size:size,fillMode:fill,label:'Delivery notes',controller:editor,rows:2,maxRows:6,autoSize:automatic,
   readOnly:locked,showClearButton:true,helperText:'Grows from 2 to 6 rows; longer notes scroll.',onChanged:(_)=>setState((){})),
  Text('Automatic height: $automatic · Length: ${editor.text.length}'),
 ]);

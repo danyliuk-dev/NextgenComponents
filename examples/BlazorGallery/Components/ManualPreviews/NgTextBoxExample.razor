@@ -1,14 +1,19 @@
 @* Generated from scripts/manual_content.py *@
+<div class="ng-prompt-actions"><NgButton OnClick="ReplaceDraft">Replace draft</NgButton><NgButton OnClick="()=>delay=delay==600?0:600">Change delay</NgButton></div>
+<p>Delay: @delay ms · Notifications: @notifications · Notified length: @notifiedLength</p>
 <div class="ng-prompt-actions"><NgButton OnClick="CycleSize">Change size</NgButton><NgButton OnClick="CycleFill">Change fill</NgButton></div>
 <p>Size: @size · Fill: @fill</p>
 <NgButton OnClick="()=>password=!password">Toggle password mode</NgButton>
 <NgCheckBox Label="Read only" @bind-Value="locked"/>
-<NgTextBox Size="@size" FillMode="@fill" @ref="editor" Label="Project name" @bind-Value="text" ReadOnly="locked" ShowClearButton="true" Password="password" ShowPasswordToggle="true" MaxLength="80" HelperText="Use a short, descriptive name." OnCommit="v=>committed=v">
+<NgTextBox DebounceDelay="delay" OnDebouncedChange="Debounced" Size="@size" FillMode="@fill" @ref="editor" Label="Project name" @bind-Value="text" ReadOnly="locked" ShowClearButton="true" Password="password" ShowPasswordToggle="true" MaxLength="80" HelperText="Use a short, descriptive name." OnCommit="v=>committed=v">
 <PrefixTemplate><span aria-hidden="true">@@</span></PrefixTemplate>
 </NgTextBox>
 <NgButton OnClick="()=>editor!.FocusAsync().AsTask()">Focus editor</NgButton>
 <p>Length: @(text?.Length??0)</p>
 @code {
+ private int delay=600,notifications,notifiedLength;
+ private void Debounced(string? value){notifications++;notifiedLength=value?.Length??0;}
+ private void ReplaceDraft()=>text="External replacement";
  private string size="medium",fill="theme";
  private void CycleSize()=>size=size=="medium"?"large":size=="large"?"small":"medium";
  private void CycleFill()=>fill=fill=="theme"?"filled":fill=="filled"?"outline":"theme"; private NgTextBox? editor; private bool locked,password=true; private string? text="Design review",committed; }

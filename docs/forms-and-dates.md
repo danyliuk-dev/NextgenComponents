@@ -82,3 +82,8 @@ Blazor measures after interactive rendering with its packaged module and observe
 ## Text editor appearance (0.48)
 
 TextBox and TextArea support Size/size (small, medium, large) and FillMode/fillMode (theme, outline, filled). Defaults retain existing theme/density. Appearance changes keep text and form state, including automatic TextArea height. Invalid configuration throws. Flutter preserves native action hit targets and theme borders; equal sizes do not imply pixel parity. See the component manuals for live switches, theme behavior and limitations.
+
+
+## Debounced notifications (0.49)
+
+TextBox/TextArea offer OnDebouncedChange/onDebouncedChange with DebounceDelay/debounceDelay (300 ms default, 0–60000). Binding and validation remain immediate; only the optional notification is delayed. Each new input replaces pending work; locks, changed delay, external replacement, handler removal and disposal cancel it. Commit/submit remains independent and does not flush. Already-started asynchronous application work needs its own stale-result protection. See each editor manual for controller/reset and IME limitations.

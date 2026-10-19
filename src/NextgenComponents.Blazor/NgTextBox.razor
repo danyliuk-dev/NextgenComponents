@@ -21,6 +21,8 @@
  [Parameter] public bool ShowClearButton {get;set;}
  [Parameter] public bool Password {get;set;}
  [Parameter] public bool ShowPasswordToggle {get;set;}
+ private bool disposed;
+ protected override void Dispose(bool disposing){disposed=true;CancelDebounce();base.Dispose(disposing);}
  private bool revealed;
  private void HidePassword()=>revealed=false;
  private void TogglePassword(){if(!Disabled&&!ReadOnly&&Password&&ShowPasswordToggle)revealed=!revealed;}
@@ -28,14 +30,35 @@
  [Parameter] public string? HelperText {get;set;}
  [Parameter] public RenderFragment? PrefixTemplate {get;set;}
  [Parameter] public RenderFragment? SuffixTemplate {get;set;}
+ [Parameter] public int DebounceDelay {get;set;}=300;
+ [Parameter] public EventCallback<string?> OnDebouncedChange {get;set;}
+ private CancellationTokenSource? debounce;
+ private string? pendingValue;
+ private int pendingDelay;
+ private void CancelDebounce(){debounce?.Cancel();debounce?.Dispose();debounce=null;}
+ private void ScheduleDebounce(string? value){
+  CancelDebounce();
+  if(disposed||Disabled||ReadOnly||!OnDebouncedChange.HasDelegate||CurrentValue!=value)return;
+  pendingValue=CurrentValue;pendingDelay=DebounceDelay;
+  debounce=new();_ = NotifyAfterDelay(debounce.Token,pendingValue);
+ }
+ private async Task NotifyAfterDelay(CancellationToken token,string? value){
+  try{await Task.Delay(DebounceDelay,token);}catch(OperationCanceledException){return;}
+  try{
+   await InvokeAsync(async()=>{
+    if(token.IsCancellationRequested||disposed||Disabled||ReadOnly||CurrentValue!=value||!OnDebouncedChange.HasDelegate)return;
+    CancelDebounce();await OnDebouncedChange.InvokeAsync(value);
+   });
+  }catch(Exception error){if(!disposed)await DispatchExceptionAsync(error);}
+ }
  [Parameter] public EventCallback<string?> OnCommit {get;set;}
 
  private ElementReference element;
  private string? DescriptionIds=>string.Join(" ",new[]{AdditionalAttributes?.GetValueOrDefault("aria-describedby")?.ToString(),string.IsNullOrEmpty(HelperText)?null:Id+"-help"}.Where(s=>!string.IsNullOrWhiteSpace(s)));
  public ValueTask FocusAsync()=>element.FocusAsync();
- protected override void OnParametersSet(){base.OnParametersSet();if(Size is not ("small" or "medium" or "large"))throw new ArgumentException("Use small, medium or large.",nameof(Size));if(FillMode is not ("theme" or "outline" or "filled"))throw new ArgumentException("Use theme, outline or filled.",nameof(FillMode));if(!Password||!ShowPasswordToggle||Disabled||ReadOnly)revealed=false;if(MaxLength is <=0)throw new ArgumentOutOfRangeException(nameof(MaxLength));}
- private async Task Clear(){if(Disabled||ReadOnly||string.IsNullOrEmpty(CurrentValue))return;revealed=false;CurrentValueAsString="";await element.FocusAsync();}
- private void Input(ChangeEventArgs e){if(!Disabled&&!ReadOnly)CurrentValueAsString=e.Value?.ToString();}
+ protected override void OnParametersSet(){base.OnParametersSet();if(DebounceDelay is <0 or >60000)throw new ArgumentOutOfRangeException(nameof(DebounceDelay));if(debounce is not null&&(Disabled||ReadOnly||!OnDebouncedChange.HasDelegate||CurrentValue!=pendingValue||DebounceDelay!=pendingDelay))CancelDebounce();if(Size is not ("small" or "medium" or "large"))throw new ArgumentException("Use small, medium or large.",nameof(Size));if(FillMode is not ("theme" or "outline" or "filled"))throw new ArgumentException("Use theme, outline or filled.",nameof(FillMode));if(!Password||!ShowPasswordToggle||Disabled||ReadOnly)revealed=false;if(MaxLength is <=0)throw new ArgumentOutOfRangeException(nameof(MaxLength));}
+ private async Task Clear(){if(disposed||Disabled||ReadOnly||string.IsNullOrEmpty(CurrentValue))return;revealed=false;CurrentValueAsString="";ScheduleDebounce("");await element.FocusAsync();}
+ private void Input(ChangeEventArgs e){if(!disposed&&!Disabled&&!ReadOnly){var value=e.Value?.ToString();CurrentValueAsString=value;ScheduleDebounce(value);}}
  private Task Commit(ChangeEventArgs e)=>Disabled||ReadOnly?Task.CompletedTask:OnCommit.InvokeAsync(e.Value?.ToString());
  protected override bool TryParseValueFromString(string? value,out string? result,[System.Diagnostics.CodeAnalysis.NotNullWhen(false)] out string? validationErrorMessage){result=value;validationErrorMessage=null;return true;}
 }
