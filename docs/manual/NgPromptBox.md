@@ -14,19 +14,23 @@ The documentation launcher embeds these running examples here. Choose a framewor
 
 ## Behavior and practical rules
 
-Value/value is a controlled draft. Store ValueChanged/onChanged and pass the value back. External value replacement updates the field. MaxLength is 1–8000 UTF-16 code units, default 8000; emoji may occupy two units. Values longer than the limit are rejected. Blank input cannot be submitted. Send trims outer whitespace; Enter inserts a newline. Tab followed by Enter/Space activates buttons; no special submit shortcut is installed.
+Value/value supplies the draft. Store ValueChanged/onChanged and pass the value back; unchanged parent values preserve local edits. External value replacement updates the field. MaxLength is 1–8000 UTF-16 code units, default 8000; emoji may occupy two units. External values may contain up to 8000 units. A value or retained draft above MaxLength stays visible with an error and Send disabled, so reducing the limit never silently truncates text. Input beyond the limit is rejected unless it shortens an already oversized draft; further deletion remains possible. Values over the absolute 8000-unit cap are rejected. Blank input cannot be submitted. Send trims outer whitespace; Enter inserts a newline. Tab followed by Enter/Space activates buttons; no special submit shortcut is installed.
 
 Busy makes the input read-only and replaces Send with Cancel. The parent owns the asynchronous request, busy state, result/error display and cancellation. OnCancel only signals the parent: it does not stop a network request by itself. Use a cancellation token/transport adapter and invalidate late responses. The example demonstrates this ownership. ReadOnly prevents submission and editing; a busy Cancel remains available when its callback exists. A missing submit/cancel callback disables the corresponding action.
 
 This is an input control, not an AI client or form-validation engine. Use NgAIPrompt for history and response actions. Attachments, speech input, model selection, streaming and provider integration are not included. Do not put provider secrets in browser code.
 
+Actions recheck the current busy/read-only state and current callbacks, including retained actions after a rebuild or disposal. Cancel requires Busy; ReadOnly alone does not disable cancellation.
+
+
 ## Blazor example
 
 ```razor
-<NgPromptBox Label="Prompt" @bind-Value="prompt" Busy="busy" OnSubmit="Submit" OnCancel="Cancel"/>
+<NgButton OnClick="()=>limit=limit==80?8:80">Toggle length limit</NgButton>
+<NgPromptBox Label="Prompt" @bind-Value="prompt" MaxLength="limit" Busy="busy" OnSubmit="Submit" OnCancel="Cancel"/>
 <p>@result</p>
 @code {
- private string prompt="",result=""; private bool busy; private int revision;
+ private string prompt="",result=""; private bool busy; private int revision; private int limit=80;
  private async Task Submit(string text) {
   var request=++revision; busy=true;
   await Task.Delay(700); // Local example; replace with an application handler.
@@ -42,7 +46,7 @@ This is an input control, not an AI client or form-validation engine. Use NgAIPr
 ```dart
 String prompt = '', result = '';
 bool busy = false;
-int revision = 0;
+int revision = 0, limit = 80;
 Future<void> submit(String text) async {
   final request = ++revision;
   setState(() => busy = true);
@@ -50,10 +54,12 @@ Future<void> submit(String text) async {
   if (!mounted || request != revision) return;
   setState(() { result = 'Received prompt: $text'; busy = false; });
 }
-Widget build(BuildContext context) => NgPromptBox(label: 'Prompt', value: prompt,
+Widget build(BuildContext context) => Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+ NgButton(onPressed: () => setState(() => limit = limit == 80 ? 8 : 80), child: const Text('Toggle length limit')),
+ NgPromptBox(label: 'Prompt', value: prompt, maxLength: limit,
   onChanged: (v) => setState(() => prompt = v), busy: busy,
   onSubmit: submit,
-  onCancel: () => setState(() { revision++; busy = false; result = 'Cancelled'; }));
+  onCancel: () => setState(() { revision++; busy = false; result = 'Cancelled'; })), Text(result)]);
 ```
 
 ## Blazor parameters and events

@@ -1,8 +1,9 @@
 @* Generated from scripts/manual_content.py *@
-<NgPromptBox Label="Prompt" @bind-Value="prompt" Busy="busy" OnSubmit="Submit" OnCancel="Cancel"/>
+<NgButton OnClick="()=>limit=limit==80?8:80">Toggle length limit</NgButton>
+<NgPromptBox Label="Prompt" @bind-Value="prompt" MaxLength="limit" Busy="busy" OnSubmit="Submit" OnCancel="Cancel"/>
 <p>@result</p>
 @code {
- private string prompt="",result=""; private bool busy; private int revision;
+ private string prompt="",result=""; private bool busy; private int revision; private int limit=80;
  private async Task Submit(string text) {
   var request=++revision; busy=true;
   await Task.Delay(700); // Local example; replace with an application handler.

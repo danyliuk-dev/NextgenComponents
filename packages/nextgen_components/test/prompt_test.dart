@@ -185,4 +185,175 @@ void main() {
       expect(find.text('Generation failed. Try again.'), findsNothing);
     },
   );
+  testWidgets(
+    'PromptBox retains oversized draft after a smaller limit and guards old Send',
+    (tester) async {
+      var sent = 0;
+      Widget box(int limit, {bool busy = false}) => MaterialApp(
+        home: Scaffold(
+          body: NgPromptBox(
+            value: '',
+            maxLength: limit,
+            busy: busy,
+            onSubmit: (_) => sent++,
+          ),
+        ),
+      );
+      await tester.pumpWidget(box(10));
+      await tester.enterText(find.byType(TextField), 'abcdef');
+      await tester.pump();
+      final oldSend = tester
+          .widget<NgButton>(find.widgetWithText(NgButton, 'Send'))
+          .onPressed!;
+      await tester.pumpWidget(box(3));
+      oldSend();
+      expect(sent, 0);
+      expect(find.textContaining('Shorten the prompt'), findsOneWidget);
+      expect(
+        tester.widget<TextField>(find.byType(TextField)).controller!.text,
+        'abcdef',
+      );
+      await tester.enterText(find.byType(TextField), 'abcd');
+      await tester.pump();
+      expect(
+        tester.widget<TextField>(find.byType(TextField)).controller!.text,
+        'abcd',
+      );
+      await tester.enterText(find.byType(TextField), 'abc');
+      await tester.pump();
+      await tester.tap(find.text('Send'));
+      expect(sent, 1);
+      await tester.pumpWidget(box(3, busy: true));
+      oldSend();
+      expect(sent, 1);
+    },
+  );
+  testWidgets(
+    'Independent permissions guard retained feedback and clear callbacks',
+    (tester) async {
+      var feedback = 0;
+      Widget page({
+        bool history = false,
+        bool vote = false,
+        bool generation = false,
+        bool handler = true,
+      }) => MaterialApp(
+        home: Scaffold(
+          body: SingleChildScrollView(
+            child: NgAIPrompt(
+              value: 'request',
+              historyReadOnly: history,
+              feedbackReadOnly: vote,
+              generationReadOnly: generation,
+              generate: (_, _) async => 'answer',
+              onFeedback: handler ? (_) => feedback++ : null,
+            ),
+          ),
+        ),
+      );
+      await tester.pumpWidget(page());
+      await tester.tap(find.text('Send'));
+      await tester.pumpAndSettle();
+      final oldVote = tester
+          .widget<NgButton>(find.widgetWithText(NgButton, 'Helpful'))
+          .onPressed!;
+      final oldClear = tester
+          .widget<NgButton>(find.widgetWithText(NgButton, 'Clear history'))
+          .onPressed!;
+      await tester.pumpWidget(page(history: true, vote: true));
+      oldVote();
+      oldClear();
+      await tester.pump();
+      expect(feedback, 0);
+      expect(find.text('answer'), findsOneWidget);
+      expect(
+        tester
+            .widget<NgButton>(find.widgetWithText(NgButton, 'Send'))
+            .onPressed,
+        isNotNull,
+      );
+      await tester.pumpWidget(page(generation: true));
+      expect(
+        tester
+            .widget<NgButton>(find.widgetWithText(NgButton, 'Send'))
+            .onPressed,
+        isNull,
+      );
+      expect(
+        tester
+            .widget<NgButton>(find.widgetWithText(NgButton, 'Helpful'))
+            .onPressed,
+        isNotNull,
+      );
+      oldVote();
+      await tester.pump();
+      expect(feedback, 1);
+      await tester.pumpWidget(page(handler: false));
+      oldVote();
+      expect(feedback, 1);
+      expect(
+        tester
+            .widget<NgButton>(find.widgetWithText(NgButton, 'Helpful'))
+            .onPressed,
+        isNull,
+      );
+      oldClear();
+      await tester.pump();
+      oldVote();
+      expect(feedback, 1);
+      expect(find.text('answer'), findsNothing);
+    },
+  );
+  testWidgets(
+    'Generation lock cancels pending work but preserves successful history',
+    (tester) async {
+      final pending = Completer<String>();
+      var calls = 0, completed = 0;
+      Future<String> generate(String text, NgPromptCancellation cancellation) {
+        calls++;
+        return calls == 1 ? Future.value('first answer') : pending.future;
+      }
+
+      Widget page(bool locked) => MaterialApp(
+        home: Scaffold(
+          body: SingleChildScrollView(
+            child: NgAIPrompt(
+              value: 'request',
+              generate: generate,
+              generationReadOnly: locked,
+              onCompleted: (_) => completed++,
+            ),
+          ),
+        ),
+      );
+      await tester.pumpWidget(page(false));
+      await tester.tap(find.text('Send'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Send'));
+      await tester.pump();
+      await tester.pumpWidget(page(true));
+      await tester.pump();
+      pending.complete('late answer');
+      await tester.pumpAndSettle();
+      expect(completed, 1);
+      expect(find.text('first answer'), findsOneWidget);
+      expect(find.text('late answer'), findsNothing);
+      expect(find.text('Cancelled.'), findsOneWidget);
+    },
+  );
+  testWidgets('No provider disables suggestions as well as composition', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(body: NgAIPrompt(suggestions: const ['Suggestion'])),
+      ),
+    );
+    expect(
+      tester
+          .widget<NgButton>(find.widgetWithText(NgButton, 'Suggestion'))
+          .onPressed,
+      isNull,
+    );
+  });
 }

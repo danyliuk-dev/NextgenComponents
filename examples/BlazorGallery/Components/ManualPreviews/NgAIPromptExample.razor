@@ -1,14 +1,22 @@
 @* Generated from scripts/manual_content.py *@
+<div class="ng-prompt-actions">
+ <NgButton OnClick="()=>generationLocked=!generationLocked">Toggle generation lock</NgButton>
+ <NgButton OnClick="()=>historyLocked=!historyLocked">Toggle history lock</NgButton>
+ <NgButton OnClick="()=>feedbackLocked=!feedbackLocked">Toggle feedback lock</NgButton>
+</div>
 <NgAIPrompt Label="Assistant" @bind-Value="prompt" Generate="Generate"
-    Suggestions="suggestions" OnCompleted="Completed" OnFeedback="Feedback"/>
-<p>@status</p>
+ GenerationReadOnly="generationLocked" HistoryReadOnly="historyLocked" FeedbackReadOnly="feedbackLocked"
+ Suggestions="suggestions" OnCompleted="Completed" OnFeedback="Feedback"/>
+<p>Completed: @completed · Feedback events: @feedbackCount</p>
 @code {
- private string prompt="Draft a meeting agenda",status="";
+ private string prompt="Draft a meeting agenda";
+ private bool generationLocked,historyLocked,feedbackLocked;
+ private int completed,feedbackCount;
  private string[] suggestions=["Draft a meeting agenda","Suggest next steps"];
  private async Task<string> Generate(string text,CancellationToken cancellation) {
-  await Task.Delay(600,cancellation);
+  await Task.Delay(1200,cancellation);
   return $"Local example response to: {text}"; // Connect your application service here.
  }
- private void Completed(NgPromptResponse response){status=$"Response {response.Id} ready";}
- private void Feedback(NgPromptFeedback feedback){status=$"Response feedback {feedback.Response.Id}: {feedback.Helpful}";}
+ private void Completed(NgPromptResponse response){completed++;}
+ private void Feedback(NgPromptFeedback feedback){feedbackCount++;}
 }

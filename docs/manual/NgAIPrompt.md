@@ -22,7 +22,7 @@ The application owns authentication, model choice, rate limits, timeouts and pro
 ### Draft and request lifecycle
 Value/value and change callbacks control the draft. Maximum prompt: 8000 UTF-16 units. Up to 8 nonempty suggestions, each at most 200 units. Suggestions fill the draft without sending. Enter inserts a newline; Send submits. Duplicate submission is blocked while busy. The user cannot edit during a request, but an external Value replacement changes the next draft, not the captured request.
 
-Cancel immediately releases the UI and signals cancellation. A new request may start immediately. Even if an older handler ignores cancellation, its late result/error cannot enter history or replace newer state. Disposal, ReadOnly or removing the handler also cancels pending work. ReadOnly keeps history browsing/copying available. Transport cancellation is the application's responsibility.
+Cancel immediately releases the UI and signals cancellation. A new request may start immediately. Even if an older handler ignores cancellation, its late result/error cannot enter history or replace newer state. Disposal, ReadOnly, GenerationReadOnly or removing the handler also cancels pending work. ReadOnly keeps history browsing/copying available. Transport cancellation is the application's responsibility.
 
 Provider exceptions show a generic Generation failed. Try again. message; log details in your handler. Retry request uses the last failed prompt even if the draft changed. Empty/whitespace responses and responses over 32000 UTF-16 units are errors. Previous successful history survives failures. Timeouts belong to the application.
 
@@ -36,38 +36,62 @@ Responses render as plain text, with no HTML/Markdown execution. Copy response u
 ### Session API and integration
 NgPromptSession exposes read-only Responses/responses, Selected/selected, IsBusy/isBusy, Error/error and Status/status. RunAsync/run invokes a handler; Cancel/cancel invalidates pending work; Select/select changes selection; Clear/clear resets history; Dispose/dispose ends the session. Blazor Changed and Flutter ChangeNotifier report state changes. Use it on the UI thread, dispose it in its owner, and do not mutate response collections. The component owns its own session; use the public session only when building a separate custom interface. Native mobile and full accessibility certification remain separate.
 
+### Independent permissions (0.45)
+GenerationReadOnly/generationReadOnly disables composition, suggestions, Send, Retry and Regenerate and cancels pending work. HistoryReadOnly/historyReadOnly prevents Clear history; reading, selecting and copying responses remain available. FeedbackReadOnly/feedbackReadOnly prevents voting. All default to false. ReadOnly applies all three restrictions. Missing generation handlers disable suggestions as well as composition; missing feedback handlers disable voting, with no local-only votes.
+
+Action handlers recheck current permissions and disposal, not just button appearance. Regenerate and feedback require the captured response still to be selected; removed suggestions and evicted/cleared history actions are ignored. Feedback remains available during generation for the selected previous response when permitted. History selection and copy remain available under every lock. The locks control UI behavior; application services must enforce their own authorization.
+
+
 ## Blazor example
 
 ```razor
+<div class="ng-prompt-actions">
+ <NgButton OnClick="()=>generationLocked=!generationLocked">Toggle generation lock</NgButton>
+ <NgButton OnClick="()=>historyLocked=!historyLocked">Toggle history lock</NgButton>
+ <NgButton OnClick="()=>feedbackLocked=!feedbackLocked">Toggle feedback lock</NgButton>
+</div>
 <NgAIPrompt Label="Assistant" @bind-Value="prompt" Generate="Generate"
-    Suggestions="suggestions" OnCompleted="Completed" OnFeedback="Feedback"/>
-<p>@status</p>
+ GenerationReadOnly="generationLocked" HistoryReadOnly="historyLocked" FeedbackReadOnly="feedbackLocked"
+ Suggestions="suggestions" OnCompleted="Completed" OnFeedback="Feedback"/>
+<p>Completed: @completed · Feedback events: @feedbackCount</p>
 @code {
- private string prompt="Draft a meeting agenda",status="";
+ private string prompt="Draft a meeting agenda";
+ private bool generationLocked,historyLocked,feedbackLocked;
+ private int completed,feedbackCount;
  private string[] suggestions=["Draft a meeting agenda","Suggest next steps"];
  private async Task<string> Generate(string text,CancellationToken cancellation) {
-  await Task.Delay(600,cancellation);
+  await Task.Delay(1200,cancellation);
   return $"Local example response to: {text}"; // Connect your application service here.
  }
- private void Completed(NgPromptResponse response){status=$"Response {response.Id} ready";}
- private void Feedback(NgPromptFeedback feedback){status=$"Response feedback {feedback.Response.Id}: {feedback.Helpful}";}
+ private void Completed(NgPromptResponse response){completed++;}
+ private void Feedback(NgPromptFeedback feedback){feedbackCount++;}
 }
 ```
 
 ## Flutter example
 
 ```dart
-String prompt = 'Draft a meeting agenda', status = '';
+String prompt = 'Draft a meeting agenda';
+bool generationLocked = false, historyLocked = false, feedbackLocked = false;
+int completed = 0, feedbackCount = 0;
 Future<String> generate(String text, NgPromptCancellation cancellation) async {
-  await Future<void>.delayed(const Duration(milliseconds: 600));
+  await Future<void>.delayed(const Duration(milliseconds: 1200));
   cancellation.throwIfCancelled();
-  return 'Local example response to: $text'; // Replace with your application service.
+  return 'Local example response to: $text'; // Connect your application service here.
 }
-Widget build(BuildContext context) => NgAIPrompt(label: 'Assistant', value: prompt,
-  onChanged: (v) => setState(() => prompt = v), generate: generate,
+Widget build(BuildContext context) => Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+ Wrap(spacing: 8, runSpacing: 8, children: [
+  NgButton(onPressed: () => setState(() => generationLocked = !generationLocked), child: const Text('Toggle generation lock')),
+  NgButton(onPressed: () => setState(() => historyLocked = !historyLocked), child: const Text('Toggle history lock')),
+  NgButton(onPressed: () => setState(() => feedbackLocked = !feedbackLocked), child: const Text('Toggle feedback lock')),
+ ]),
+ NgAIPrompt(label: 'Assistant', value: prompt, onChanged: (v) => setState(() => prompt = v),
+  generate: generate, generationReadOnly: generationLocked, historyReadOnly: historyLocked,
+  feedbackReadOnly: feedbackLocked,
   suggestions: const ['Draft a meeting agenda', 'Suggest next steps'],
-  onCompleted: (r) => setState(() => status = 'Response ${r.id} ready'),
-  onFeedback: (f) => setState(() => status = 'Response feedback ${f.response.id}: ${f.helpful}'));
+  onCompleted: (_) => setState(() => completed++), onFeedback: (_) => setState(() => feedbackCount++)),
+ Text('Completed: $completed · Feedback events: $feedbackCount'),
+]);
 ```
 
 ## Blazor parameters and events
@@ -82,6 +106,9 @@ Names are case-sensitive. `?` permits null. `EditorRequired` parameters are mark
 | `Suggestions` | `IReadOnlyList<string>` | Array.Empty<string>() | See the behavior rules and model contract above. |
 | `Generate` | `Func<string,CancellationToken,Task<string>>?` | not set | Application-owned async response handler; provider credentials belong on the backend. |
 | `ReadOnly` | `bool` | false | Prevent changes while retaining supported viewing actions. |
+| `GenerationReadOnly` | `bool` | false | See the behavior rules and model contract above. |
+| `HistoryReadOnly` | `bool` | false | See the behavior rules and model contract above. |
+| `FeedbackReadOnly` | `bool` | false | See the behavior rules and model contract above. |
 | `OnCompleted` | `EventCallback<NgPromptResponse>` | not set | Accepted successful response callback; not called for failed/cancelled requests. |
 | `OnFeedback` | `EventCallback<NgPromptFeedback>` | not set | Response and helpful/not-helpful/cleared vote. |
 
@@ -96,6 +123,9 @@ Names are case-sensitive. `?` permits null. `EditorRequired` parameters are mark
 | `suggestions` | `List<String>` | See the behavior rules and model contract above. |
 | `generate` | `NgPromptGenerator?` | Application-owned async response handler; provider credentials belong on the backend. |
 | `readOnly` | `bool` | Prevent changes while retaining supported viewing actions. |
+| `generationReadOnly` | `bool` | See the behavior rules and model contract above. |
+| `historyReadOnly` | `bool` | See the behavior rules and model contract above. |
+| `feedbackReadOnly` | `bool` | See the behavior rules and model contract above. |
 | `onChanged` | `ValueChanged<String>?` | Store the new value using setState or your state manager. |
 | `onCompleted` | `ValueChanged<NgPromptResponse>?` | Accepted successful response callback; not called for failed/cancelled requests. |
 | `onFeedback` | `ValueChanged<NgPromptFeedback>?` | Response and helpful/not-helpful/cleared vote. |
@@ -108,6 +138,9 @@ const NgAIPrompt({
     this.suggestions = const [],
     this.generate,
     this.readOnly = false,
+    this.generationReadOnly = false,
+    this.historyReadOnly = false,
+    this.feedbackReadOnly = false,
     this.onChanged,
     this.onCompleted,
     this.onFeedback,

@@ -541,7 +541,7 @@ class NgPromptBoxExample extends StatefulWidget { const NgPromptBoxExample({supe
 class _NgPromptBoxExampleState extends State<NgPromptBoxExample> {
 String prompt = '', result = '';
 bool busy = false;
-int revision = 0;
+int revision = 0, limit = 80;
 Future<void> submit(String text) async {
   final request = ++revision;
   setState(() => busy = true);
@@ -549,24 +549,36 @@ Future<void> submit(String text) async {
   if (!mounted || request != revision) return;
   setState(() { result = 'Received prompt: $text'; busy = false; });
 }
-Widget build(BuildContext context) => NgPromptBox(label: 'Prompt', value: prompt,
+Widget build(BuildContext context) => Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+ NgButton(onPressed: () => setState(() => limit = limit == 80 ? 8 : 80), child: const Text('Toggle length limit')),
+ NgPromptBox(label: 'Prompt', value: prompt, maxLength: limit,
   onChanged: (v) => setState(() => prompt = v), busy: busy,
   onSubmit: submit,
-  onCancel: () => setState(() { revision++; busy = false; result = 'Cancelled'; }));
+  onCancel: () => setState(() { revision++; busy = false; result = 'Cancelled'; })), Text(result)]);
 }
 class NgAIPromptExample extends StatefulWidget { const NgAIPromptExample({super.key}); @override State<NgAIPromptExample> createState()=>_NgAIPromptExampleState(); }
 class _NgAIPromptExampleState extends State<NgAIPromptExample> {
-String prompt = 'Draft a meeting agenda', status = '';
+String prompt = 'Draft a meeting agenda';
+bool generationLocked = false, historyLocked = false, feedbackLocked = false;
+int completed = 0, feedbackCount = 0;
 Future<String> generate(String text, NgPromptCancellation cancellation) async {
-  await Future<void>.delayed(const Duration(milliseconds: 600));
+  await Future<void>.delayed(const Duration(milliseconds: 1200));
   cancellation.throwIfCancelled();
-  return 'Local example response to: $text'; // Replace with your application service.
+  return 'Local example response to: $text'; // Connect your application service here.
 }
-Widget build(BuildContext context) => NgAIPrompt(label: 'Assistant', value: prompt,
-  onChanged: (v) => setState(() => prompt = v), generate: generate,
+Widget build(BuildContext context) => Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+ Wrap(spacing: 8, runSpacing: 8, children: [
+  NgButton(onPressed: () => setState(() => generationLocked = !generationLocked), child: const Text('Toggle generation lock')),
+  NgButton(onPressed: () => setState(() => historyLocked = !historyLocked), child: const Text('Toggle history lock')),
+  NgButton(onPressed: () => setState(() => feedbackLocked = !feedbackLocked), child: const Text('Toggle feedback lock')),
+ ]),
+ NgAIPrompt(label: 'Assistant', value: prompt, onChanged: (v) => setState(() => prompt = v),
+  generate: generate, generationReadOnly: generationLocked, historyReadOnly: historyLocked,
+  feedbackReadOnly: feedbackLocked,
   suggestions: const ['Draft a meeting agenda', 'Suggest next steps'],
-  onCompleted: (r) => setState(() => status = 'Response ${r.id} ready'),
-  onFeedback: (f) => setState(() => status = 'Response feedback ${f.response.id}: ${f.helpful}'));
+  onCompleted: (_) => setState(() => completed++), onFeedback: (_) => setState(() => feedbackCount++)),
+ Text('Completed: $completed · Feedback events: $feedbackCount'),
+]);
 }
 class NgStepperExample extends StatefulWidget { const NgStepperExample({super.key}); @override State<NgStepperExample> createState()=>_NgStepperExampleState(); }
 class _NgStepperExampleState extends State<NgStepperExample> {

@@ -4,20 +4,20 @@
  <h3>@Label</h3>
  <div class="ng-ai-layout">
  <div class="ng-ai-compose">
- <NgPromptBox Label="Prompt" Value="@draft" ValueChanged="Edit" Busy="session.IsBusy" ReadOnly="@(ReadOnly||Generate is null)" OnSubmit="Run" OnCancel="Cancel"/>
+ <NgPromptBox Label="Prompt" Value="@draft" ValueChanged="Edit" Busy="session.IsBusy" ReadOnly="@(GenerationLocked||Generate is null)" OnSubmit="Run" OnCancel="Cancel"/>
  @if(Generate is null){<p role="status">Connect a generation handler to enable requests.</p>}
- <div class="ng-prompt-actions" role="group" aria-label="Prompt suggestions">@foreach(var suggestion in Suggestions){<NgButton Disabled="@(ReadOnly||session.IsBusy)" OnClick="()=>Edit(suggestion)">@suggestion</NgButton>}</div>
+ <div class="ng-prompt-actions" role="group" aria-label="Prompt suggestions">@foreach(var suggestion in Suggestions){<NgButton Disabled="@(GenerationLocked||session.IsBusy||Generate is null)" OnClick="()=>Suggest(suggestion)">@suggestion</NgButton>}</div>
  <p role="status">@(notice??session.Status)</p>
- @if(session.Error is not null){<p role="alert" class="ng-ai-error">@session.Error</p><NgButton Disabled="@(ReadOnly||session.IsBusy||Generate is null)" OnClick="()=>Run(lastPrompt)">Retry request</NgButton>}
- <div class="ng-prompt-actions"><h4>History (@session.Responses.Count / 20)</h4><NgButton Disabled="@(ReadOnly||session.IsBusy||session.Responses.Count==0)" OnClick="Clear">Clear history</NgButton></div>
+ @if(session.Error is not null){<p role="alert" class="ng-ai-error">@session.Error</p><NgButton Disabled="@(GenerationLocked||session.IsBusy||Generate is null)" OnClick="()=>Run(lastPrompt)">Retry request</NgButton>}
+ <div class="ng-prompt-actions"><h4>History (@session.Responses.Count / 20)</h4><NgButton Disabled="@(ReadOnly||HistoryReadOnly||session.IsBusy||session.Responses.Count==0)" OnClick="Clear">Clear history</NgButton></div>
  <div class="ng-ai-history" aria-label="Response history">@foreach(var item in session.Responses.Reverse()){<button type="button" class="ng-button" aria-pressed="@(session.Selected?.Id==item.Id?"true":"false")" @onclick="()=>Select(item.Id)">@item.Id. @item.Prompt</button>}</div>
  </div>
  <article class="ng-ai-response" aria-label="Generated response" aria-busy="@(session.IsBusy?"true":"false")">
  @if(session.Selected is { } response){
  <h4>Response @response.Id</h4><p class="ng-ai-question">@response.Prompt</p><div class="ng-ai-text">@response.Text</div>
- <div class="ng-prompt-actions"><NgButton OnClick="()=>Copy(response.Text)">Copy response</NgButton><NgButton Disabled="@(ReadOnly||session.IsBusy||Generate is null)" OnClick="()=>Run(response.Prompt)">Regenerate</NgButton>
- <button type="button" class="ng-button" disabled="@ReadOnly" aria-pressed="@(Vote(response.Id)==true?"true":"false")" @onclick="()=>Feedback(response,true)">Helpful</button>
- <button type="button" class="ng-button" disabled="@ReadOnly" aria-pressed="@(Vote(response.Id)==false?"true":"false")" @onclick="()=>Feedback(response,false)">Not helpful</button></div>
+ <div class="ng-prompt-actions"><NgButton OnClick="()=>Copy(response.Text)">Copy response</NgButton><NgButton Disabled="@(GenerationLocked||session.IsBusy||Generate is null)" OnClick="()=>Regenerate(response)">Regenerate</NgButton>
+ <button type="button" class="ng-button" disabled="@(ReadOnly||FeedbackReadOnly||!OnFeedback.HasDelegate)" aria-pressed="@(Vote(response.Id)==true?"true":"false")" @onclick="()=>Feedback(response,true)">Helpful</button>
+ <button type="button" class="ng-button" disabled="@(ReadOnly||FeedbackReadOnly||!OnFeedback.HasDelegate)" aria-pressed="@(Vote(response.Id)==false?"true":"false")" @onclick="()=>Feedback(response,false)">Not helpful</button></div>
  }else{<p>No responses yet. Enter a prompt or choose a suggestion.</p>}
  </article>
  </div>
@@ -29,20 +29,26 @@
  [Parameter] public IReadOnlyList<string> Suggestions {get;set;}=Array.Empty<string>();
  [Parameter] public Func<string,CancellationToken,Task<string>>? Generate {get;set;}
  [Parameter] public bool ReadOnly {get;set;}
+ [Parameter] public bool GenerationReadOnly {get;set;}
+ [Parameter] public bool HistoryReadOnly {get;set;}
+ [Parameter] public bool FeedbackReadOnly {get;set;}
+ private bool GenerationLocked=>ReadOnly||GenerationReadOnly;
  [Parameter] public EventCallback<NgPromptResponse> OnCompleted {get;set;}
  [Parameter] public EventCallback<NgPromptFeedback> OnFeedback {get;set;}
  private readonly NgPromptSession session=new();private readonly Dictionary<int,bool?> votes=[];
  private string draft="",lastPrompt="";private string? incoming,notice;private bool disposed;
  protected override void OnInitialized()=>session.Changed+=Changed;
- protected override void OnParametersSet(){if(Value is null||Value.Length>8000||Suggestions is null||Suggestions.Count>8||Suggestions.Any(s=>string.IsNullOrWhiteSpace(s)||s.Length>200))throw new ArgumentException("Use up to 8 suggestions (1–200 characters) and a prompt up to 8000 characters.");if(Value!=incoming){draft=Value;incoming=Value;}if(ReadOnly||Generate is null)session.Cancel();}
+ protected override void OnParametersSet(){if(Value is null||Value.Length>8000||Suggestions is null||Suggestions.Count>8||Suggestions.Any(s=>string.IsNullOrWhiteSpace(s)||s.Length>200))throw new ArgumentException("Use up to 8 suggestions (1–200 characters) and a prompt up to 8000 characters.");if(Value!=incoming){draft=Value;incoming=Value;}if(GenerationLocked||Generate is null)session.Cancel();}
  private void Changed(){if(!disposed)_=InvokeAsync(StateHasChanged);}
- private async Task Edit(string value){draft=value;notice=null;await ValueChanged.InvokeAsync(value);}
- private async Task Run(string prompt){if(ReadOnly||session.IsBusy||Generate is null)return;lastPrompt=prompt;notice=null;var result=await session.RunAsync(prompt,Generate);if(result is not null&&!disposed){foreach(var id in votes.Keys.Where(id=>!session.Responses.Any(r=>r.Id==id)).ToArray())votes.Remove(id);await OnCompleted.InvokeAsync(result);}}
- private void Cancel(){notice=null;session.Cancel();}
- private void Clear(){notice=null;votes.Clear();session.Clear();}
- private void Select(int id){notice=null;session.Select(id);}
+ private async Task Edit(string value){if(disposed||GenerationLocked||session.IsBusy||Generate is null||value.Length>8000)return;draft=value;notice=null;await ValueChanged.InvokeAsync(value);}
+ private async Task Run(string prompt){if(disposed||GenerationLocked||session.IsBusy||Generate is null||string.IsNullOrWhiteSpace(prompt)||prompt.Length>8000)return;lastPrompt=prompt;notice=null;var result=await session.RunAsync(prompt,Generate);if(result is not null&&!disposed){foreach(var id in votes.Keys.Where(id=>!session.Responses.Any(r=>r.Id==id)).ToArray())votes.Remove(id);await OnCompleted.InvokeAsync(result);}}
+ private void Cancel(){if(disposed||!session.IsBusy)return;notice=null;session.Cancel();}
+ private void Clear(){if(disposed||ReadOnly||HistoryReadOnly||session.IsBusy)return;notice=null;votes.Clear();session.Clear();}
+ private void Select(int id){if(disposed||!session.Responses.Any(r=>r.Id==id))return;notice=null;session.Select(id);}
  private bool? Vote(int id)=>votes.GetValueOrDefault(id);
- private async Task Feedback(NgPromptResponse response,bool helpful){if(ReadOnly)return;var vote=Vote(response.Id)==helpful?(bool?)null:helpful;votes[response.Id]=vote;await OnFeedback.InvokeAsync(new(response,vote));}
- private async Task Copy(string text){try{await JS.InvokeVoidAsync("navigator.clipboard.writeText",text);notice="Response copied.";}catch(JSException){notice="Copy unavailable. Select the response text to copy it.";}}
+ private async Task Feedback(NgPromptResponse response,bool helpful){if(disposed||ReadOnly||FeedbackReadOnly||!OnFeedback.HasDelegate||!ReferenceEquals(session.Selected,response))return;var vote=Vote(response.Id)==helpful?(bool?)null:helpful;votes[response.Id]=vote;await OnFeedback.InvokeAsync(new(response,vote));}
+ private Task Suggest(string value)=>Suggestions.Contains(value)?Edit(value):Task.CompletedTask;
+ private Task Regenerate(NgPromptResponse response)=>ReferenceEquals(session.Selected,response)?Run(response.Prompt):Task.CompletedTask;
+ private async Task Copy(string text){if(disposed)return;try{await JS.InvokeVoidAsync("navigator.clipboard.writeText",text);notice="Response copied.";}catch(JSException){notice="Copy unavailable. Select the response text to copy it.";}}
  public void Dispose(){disposed=true;session.Changed-=Changed;session.Dispose();}
 }

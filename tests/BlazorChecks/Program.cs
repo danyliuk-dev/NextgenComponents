@@ -214,6 +214,8 @@ foreach(var radius in new[]{19,121}) {
  catch(ArgumentOutOfRangeException){Rule(true,"map rejects cluster radius "+radius);}
 }
 await Check<NgMap>(new(){["ClusterMarkers"]=true,["ClusterRadius"]=120},"map-viewer/index.html");
+await Check<NgPromptBox>(new(){["Value"]="Long draft",["MaxLength"]=3},"Long draft","Shorten the prompt to 3","disabled");
+await Check<NgAIPrompt>(new(){["Value"]="draft",["GenerationReadOnly"]=true,["HistoryReadOnly"]=true,["FeedbackReadOnly"]=true,["Generate"]=(Func<string,CancellationToken,Task<string>>)((_,_)=>Task.FromResult("response"))},"readonly","disabled","No responses yet");
 await Check<NgPromptBox>(new(){["Value"]="<unsafe>",["Busy"]=true},"&lt;unsafe&gt;","readonly","Cancel","8000");
 await Check<NgAIPrompt>(new(){["Suggestions"]=new[]{"First suggestion"},["Value"]="Bound initial prompt"},"Bound initial prompt","No responses yet","Connect a generation handler","First suggestion");
 using(var prompts=new NgPromptSession()) {

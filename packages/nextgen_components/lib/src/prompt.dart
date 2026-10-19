@@ -177,9 +177,9 @@ class _NgPromptBoxState extends State<NgPromptBox> {
   Widget build(BuildContext context) {
     if (widget.maxLength < 1 ||
         widget.maxLength > 8000 ||
-        widget.value.length > widget.maxLength)
+        widget.value.length > 8000)
       throw ArgumentError(
-        'Use maxLength 1–8000 and a value within that limit.',
+        'Use maxLength 1–8000 and a value up to 8000 UTF-16 units.',
       );
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -190,7 +190,9 @@ class _NgPromptBoxState extends State<NgPromptBox> {
           maxLines: 6,
           inputFormatters: [
             TextInputFormatter.withFunction(
-              (oldValue, newValue) => newValue.text.length <= widget.maxLength
+              (oldValue, newValue) =>
+                  (newValue.text.length <= widget.maxLength ||
+                      newValue.text.length < oldValue.text.length)
                   ? newValue
                   : oldValue,
             ),
@@ -202,6 +204,7 @@ class _NgPromptBoxState extends State<NgPromptBox> {
             counterText: '${controller.text.length} / ${widget.maxLength}',
           ),
           onChanged: (value) {
+            if (!mounted || widget.readOnly || widget.busy) return;
             setState(() {});
             widget.onChanged?.call(value);
           },
@@ -212,17 +215,39 @@ class _NgPromptBoxState extends State<NgPromptBox> {
           crossAxisAlignment: WrapCrossAlignment.center,
           children: [
             const Text('Enter adds a new line'),
+            if (controller.text.length > widget.maxLength)
+              Semantics(
+                liveRegion: true,
+                child: Text(
+                  'Shorten the prompt to ${widget.maxLength} UTF-16 units before sending.',
+                ),
+              ),
             if (widget.busy)
-              NgButton(onPressed: widget.onCancel, child: const Text('Cancel'))
+              NgButton(
+                onPressed: widget.onCancel == null
+                    ? null
+                    : () {
+                        if (mounted && widget.busy) widget.onCancel?.call();
+                      },
+                child: const Text('Cancel'),
+              )
             else
               NgButton(
                 primary: true,
                 onPressed:
                     widget.readOnly ||
                         controller.text.trim().isEmpty ||
+                        controller.text.length > widget.maxLength ||
                         widget.onSubmit == null
                     ? null
-                    : () => widget.onSubmit!(controller.text.trim()),
+                    : () {
+                        if (mounted &&
+                            !widget.readOnly &&
+                            !widget.busy &&
+                            controller.text.length <= widget.maxLength &&
+                            controller.text.trim().isNotEmpty)
+                          widget.onSubmit?.call(controller.text.trim());
+                      },
                 child: const Text('Send'),
               ),
           ],
@@ -236,7 +261,7 @@ class NgAIPrompt extends StatefulWidget {
   final String label, value;
   final List<String> suggestions;
   final NgPromptGenerator? generate;
-  final bool readOnly;
+  final bool readOnly, generationReadOnly, historyReadOnly, feedbackReadOnly;
   final ValueChanged<String>? onChanged;
   final ValueChanged<NgPromptResponse>? onCompleted;
   final ValueChanged<NgPromptFeedback>? onFeedback;
@@ -247,6 +272,9 @@ class NgAIPrompt extends StatefulWidget {
     this.suggestions = const [],
     this.generate,
     this.readOnly = false,
+    this.generationReadOnly = false,
+    this.historyReadOnly = false,
+    this.feedbackReadOnly = false,
     this.onChanged,
     this.onCompleted,
     this.onFeedback,
@@ -256,6 +284,7 @@ class NgAIPrompt extends StatefulWidget {
 }
 
 class _NgAIPromptState extends State<NgAIPrompt> {
+  bool get generationLocked => widget.readOnly || widget.generationReadOnly;
   final session = NgPromptSession();
   final Map<int, bool?> votes = {};
   late String draft = widget.value;
@@ -275,7 +304,7 @@ class _NgAIPromptState extends State<NgAIPrompt> {
   void didUpdateWidget(covariant NgAIPrompt oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.value != oldWidget.value) draft = widget.value;
-    if (widget.readOnly || widget.generate == null) session.cancel();
+    if (generationLocked || widget.generate == null) session.cancel();
   }
 
   @override
@@ -286,6 +315,12 @@ class _NgAIPromptState extends State<NgAIPrompt> {
   }
 
   void edit(String value) {
+    if (!mounted ||
+        generationLocked ||
+        session.isBusy ||
+        widget.generate == null ||
+        value.length > 8000)
+      return;
     setState(() {
       draft = value;
       notice = null;
@@ -294,7 +329,13 @@ class _NgAIPromptState extends State<NgAIPrompt> {
   }
 
   Future<void> run(String prompt) async {
-    if (widget.readOnly || session.isBusy || widget.generate == null) return;
+    if (!mounted ||
+        generationLocked ||
+        session.isBusy ||
+        widget.generate == null ||
+        prompt.trim().isEmpty ||
+        prompt.length > 8000)
+      return;
     lastPrompt = prompt;
     notice = null;
     final result = await session.run(prompt, widget.generate!);
@@ -305,12 +346,19 @@ class _NgAIPromptState extends State<NgAIPrompt> {
   }
 
   void feedback(NgPromptResponse response, bool helpful) {
+    if (!mounted ||
+        widget.readOnly ||
+        widget.feedbackReadOnly ||
+        widget.onFeedback == null ||
+        !identical(session.selected, response))
+      return;
     final vote = votes[response.id] == helpful ? null : helpful;
     setState(() => votes[response.id] = vote);
     widget.onFeedback?.call(NgPromptFeedback(response, vote));
   }
 
   Future<void> copy(String text) async {
+    if (!mounted) return;
     String message;
     try {
       await Clipboard.setData(ClipboardData(text: text));
@@ -337,9 +385,10 @@ class _NgAIPromptState extends State<NgAIPrompt> {
           value: draft,
           onChanged: edit,
           busy: session.isBusy,
-          readOnly: widget.readOnly || widget.generate == null,
+          readOnly: generationLocked || widget.generate == null,
           onSubmit: run,
           onCancel: () {
+            if (!mounted || !session.isBusy) return;
             notice = null;
             session.cancel();
           },
@@ -353,9 +402,15 @@ class _NgAIPromptState extends State<NgAIPrompt> {
           children: [
             for (final suggestion in widget.suggestions)
               NgButton(
-                onPressed: widget.readOnly || session.isBusy
+                onPressed:
+                    generationLocked ||
+                        session.isBusy ||
+                        widget.generate == null
                     ? null
-                    : () => edit(suggestion),
+                    : () {
+                        if (widget.suggestions.contains(suggestion))
+                          edit(suggestion);
+                      },
                 child: Text(suggestion),
               ),
           ],
@@ -369,7 +424,7 @@ class _NgAIPromptState extends State<NgAIPrompt> {
           ),
           NgButton(
             onPressed:
-                widget.readOnly || session.isBusy || widget.generate == null
+                generationLocked || session.isBusy || widget.generate == null
                 ? null
                 : () => run(lastPrompt),
             child: const Text('Retry request'),
@@ -384,9 +439,17 @@ class _NgAIPromptState extends State<NgAIPrompt> {
             Text('History (${session.responses.length} / 20)'),
             NgButton(
               onPressed:
-                  widget.readOnly || session.isBusy || session.responses.isEmpty
+                  widget.readOnly ||
+                      widget.historyReadOnly ||
+                      session.isBusy ||
+                      session.responses.isEmpty
                   ? null
                   : () {
+                      if (!mounted ||
+                          widget.readOnly ||
+                          widget.historyReadOnly ||
+                          session.isBusy)
+                        return;
                       notice = null;
                       votes.clear();
                       session.clear();
@@ -406,6 +469,8 @@ class _NgAIPromptState extends State<NgAIPrompt> {
                     selected: response?.id == item.id,
                     child: TextButton(
                       onPressed: () {
+                        if (!mounted || !session.responses.contains(item))
+                          return;
                         notice = null;
                         session.select(item.id);
                       },
@@ -461,11 +526,14 @@ class _NgAIPromptState extends State<NgAIPrompt> {
                 ),
                 NgButton(
                   onPressed:
-                      widget.readOnly ||
+                      generationLocked ||
                           session.isBusy ||
                           widget.generate == null
                       ? null
-                      : () => run(response.prompt),
+                      : () {
+                          if (identical(session.selected, response))
+                            run(response.prompt);
+                        },
                   child: const Text('Regenerate'),
                 ),
                 for (final helpful in [true, false])
@@ -473,7 +541,10 @@ class _NgAIPromptState extends State<NgAIPrompt> {
                     selected: votes[response.id] == helpful,
                     child: NgButton(
                       primary: votes[response.id] == helpful,
-                      onPressed: widget.readOnly
+                      onPressed:
+                          widget.readOnly ||
+                              widget.feedbackReadOnly ||
+                              widget.onFeedback == null
                           ? null
                           : () => feedback(response, helpful),
                       child: Text(helpful ? 'Helpful' : 'Not helpful'),

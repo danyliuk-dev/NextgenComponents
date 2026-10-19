@@ -1,9 +1,11 @@
+@implements IDisposable
 <div class="ng-prompt-box" aria-busy="@(Busy?"true":"false")">
  <label class="ng-field">@Label<textarea class="ng-input" aria-label="@Label" rows="3" maxlength="@MaxLength" placeholder="@Placeholder" value="@draft" @oninput="Edit" readonly="@(ReadOnly||Busy)"></textarea></label>
  <div class="ng-prompt-actions"><small>@draft.Length / @MaxLength · Enter adds a new line</small>
- @if(Busy){<NgButton OnClick="()=>OnCancel.InvokeAsync()" Disabled="@(!OnCancel.HasDelegate)">Cancel</NgButton>}
- else{<NgButton Primary OnClick="Submit" Disabled="@(ReadOnly||string.IsNullOrWhiteSpace(draft)||!OnSubmit.HasDelegate)">Send</NgButton>}
+ @if(Busy){<NgButton OnClick="Cancel" Disabled="@(!OnCancel.HasDelegate)">Cancel</NgButton>}
+ else{<NgButton Primary OnClick="Submit" Disabled="@(ReadOnly||draft.Length>MaxLength||string.IsNullOrWhiteSpace(draft)||!OnSubmit.HasDelegate)">Send</NgButton>}
  </div>
+ @if(draft.Length>MaxLength){<p role="alert">Shorten the prompt to @MaxLength UTF-16 units before sending.</p>}
 </div>
 @code {
  [Parameter] public string Label {get;set;}="Prompt";
@@ -15,8 +17,10 @@
  [Parameter] public bool ReadOnly {get;set;}
  [Parameter] public EventCallback<string> OnSubmit {get;set;}
  [Parameter] public EventCallback OnCancel {get;set;}
- private string draft="";private string? incoming;
- protected override void OnParametersSet(){if(MaxLength<1||MaxLength>8000||Value is null||Value.Length>MaxLength)throw new ArgumentException("Use MaxLength 1–8000 and a Value within that limit.");if(Value!=incoming){draft=Value;incoming=Value;}}
- private async Task Edit(ChangeEventArgs e){if(Busy||ReadOnly)return;draft=e.Value?.ToString()??"";await ValueChanged.InvokeAsync(draft);}
- private async Task Submit(){if(!Busy&&!ReadOnly&&!string.IsNullOrWhiteSpace(draft)&&draft.Length<=MaxLength)await OnSubmit.InvokeAsync(draft.Trim());}
+ private bool disposed;private string draft="";private string? incoming;
+ protected override void OnParametersSet(){if(MaxLength<1||MaxLength>8000||Value is null||Value.Length>8000)throw new ArgumentException("Use MaxLength 1–8000 and a Value up to 8000 UTF-16 units.");if(Value!=incoming){draft=Value;incoming=Value;}}
+ private async Task Edit(ChangeEventArgs e){if(disposed||Busy||ReadOnly)return;var value=e.Value?.ToString()??"";if(value.Length>MaxLength&&value.Length>=draft.Length)return;draft=value;await ValueChanged.InvokeAsync(draft);}
+ private async Task Submit(){if(!disposed&&OnSubmit.HasDelegate&&!Busy&&!ReadOnly&&!string.IsNullOrWhiteSpace(draft)&&draft.Length<=MaxLength)await OnSubmit.InvokeAsync(draft.Trim());}
+ private Task Cancel()=>!disposed&&Busy&&OnCancel.HasDelegate?OnCancel.InvokeAsync():Task.CompletedTask;
+ public void Dispose()=>disposed=true;
 }
