@@ -1,14 +1,17 @@
 @* Generated from scripts/manual_content.py *@
+<div class="ng-prompt-actions"><NgButton OnClick="()=>customSummary=!customSummary">Toggle custom summary</NgButton><NgButton OnClick="()=>showSummary=!showSummary">Toggle summary visibility</NgButton></div>
 <div class="ng-prompt-actions"><NgButton OnClick="()=>columns=columns==2?1:2">Change columns</NgButton><NgButton OnClick="()=>gap=gap==16?32:16">Change spacing</NgButton></div>
 <p>Maximum columns: @columns · Gap: @gap</p>
 <NgCheckBox Label="Simulate save failure" @bind-Value="fail"/>
 <NgCheckBox Label="Disable form" @bind-Value="disabled"/>
-<NgForm @key="model" Model="model" Fields="FormFields" Columns="columns" Gap="gap" Disabled="disabled" OnValidSubmit="Save">
+<NgForm @key="model" Model="model" ShowSummary="showSummary" SummaryTitle="Review this application" SummaryTemplate="@(customSummary?CustomSummary:null)" Fields="FormFields" Columns="columns" Gap="gap" Disabled="disabled" OnValidSubmit="Save">
  <Actions><NgButton Type="submit" Primary>Save application</NgButton><span>All fields are validated before saving.</span></Actions>
 </NgForm>
 <NgButton OnClick="Reset">Reset application</NgButton>
 <p role="status">@status</p>
 @code {
+ private bool customSummary=true,showSummary=true;
+ private RenderFragment<IReadOnlyList<string>> CustomSummary=>errors=>@<div><strong>Review @errors.Count issue(s)</strong><ul>@foreach(var message in errors){<li>@message</li>}</ul></div>;
  private Draft model=new(); private bool fail,disabled; private int columns=2,gap=16; private string status="Not saved";
  private IReadOnlyList<RenderFragment> FormFields=>new[]{NameField,OwnerField,NotesField,ReferenceField};
  private RenderFragment NameField=>@<NgTextBox Label="Application name" @bind-Value="model.Name" MaxLength="80" HelperText="Required before saving."/>;
@@ -17,5 +20,5 @@
  private RenderFragment ReferenceField=>@<NgTextBox Label="Reference" @bind-Value="model.Reference"/>;
  private void Reset(){model=new();status="Not saved";}
  private async Task Save(){var draft=model;var denied=fail;var name=draft.Name;await Task.Delay(1000);if(denied)throw new InvalidOperationException();if(ReferenceEquals(model,draft))status=$"Saved: {name}";}
- public class Draft{[System.ComponentModel.DataAnnotations.Required] public string? Name{get;set;} public string? Owner{get;set;} public string? Notes{get;set;} public string? Reference{get;set;}}
+ public class Draft{[System.ComponentModel.DataAnnotations.Required] public string? Name{get;set;} [System.ComponentModel.DataAnnotations.Required(ErrorMessage="Enter an owner.")] public string? Owner{get;set;} public string? Notes{get;set;} public string? Reference{get;set;}}
 }

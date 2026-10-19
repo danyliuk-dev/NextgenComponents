@@ -610,6 +610,8 @@ class NgForm extends StatefulWidget {
   final VoidCallback? onInvalidSubmit;
   final bool enabled, showSummary;
   final String busyText, errorText;
+  final String summaryTitle;
+  final Widget Function(BuildContext, List<String>)? summaryBuilder;
   final String submitLabel;
   final GlobalKey<FormState>? formKey;
   const NgForm({
@@ -625,6 +627,8 @@ class NgForm extends StatefulWidget {
     this.onInvalidSubmit,
     this.enabled = true,
     this.showSummary = true,
+    this.summaryTitle = 'Please correct the highlighted fields.',
+    this.summaryBuilder,
     this.busyText = 'Saving…',
     this.errorText = 'Unable to save. Try again.',
     this.formKey,
@@ -635,12 +639,43 @@ class NgForm extends StatefulWidget {
 
 class _NgFormState extends State<NgForm> {
   final internalKey = GlobalKey<FormState>();
-  bool invalid = false, busy = false, error = false;
+  bool busy = false, error = false, attempted = false, refreshQueued = false;
+  List<String> messages = const [];
+  List<String> collectErrors(FormState form) => List.unmodifiable(
+    form.validateGranularly().map((field) => field.errorText ?? ''),
+  );
+  void queueSummaryRefresh() {
+    if (!attempted || refreshQueued) return;
+    refreshQueued = true;
+    final key = widget.formKey ?? internalKey;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      refreshQueued = false;
+      if (!mounted ||
+          !attempted ||
+          key != (widget.formKey ?? internalKey) ||
+          key.currentState == null)
+        return;
+      final next = collectErrors(key.currentState!);
+      setState(() => messages = next);
+    });
+  }
+
+  @override
+  void didUpdateWidget(covariant NgForm oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.formKey != widget.formKey) {
+      attempted = false;
+      messages = const [];
+    }
+  }
+
   Future<void> submit() async {
     if (!mounted || busy || !widget.enabled) return;
-    final valid = (widget.formKey ?? internalKey).currentState!.validate();
+    final next = collectErrors((widget.formKey ?? internalKey).currentState!);
+    final valid = next.isEmpty;
     setState(() {
-      invalid = !valid;
+      attempted = true;
+      messages = next;
       error = false;
     });
     if (!valid) {
@@ -669,18 +704,29 @@ class _NgFormState extends State<NgForm> {
       throw ArgumentError('Use a gap of 0–64.');
     return Form(
       key: widget.formKey ?? internalKey,
+      onChanged: queueSummaryRefresh,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          if (invalid && widget.showSummary)
+          if (messages.isNotEmpty && widget.showSummary)
             Padding(
               padding: const EdgeInsets.only(bottom: 16),
               child: Semantics(
                 liveRegion: true,
-                child: Text(
-                  'Please correct the highlighted fields.',
-                  style: TextStyle(color: Theme.of(context).colorScheme.error),
-                ),
+                child:
+                    widget.summaryBuilder?.call(context, messages) ??
+                    DefaultTextStyle.merge(
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.error,
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(widget.summaryTitle),
+                          for (final message in messages) Text('• $message'),
+                        ],
+                      ),
+                    ),
               ),
             ),
           AbsorbPointer(

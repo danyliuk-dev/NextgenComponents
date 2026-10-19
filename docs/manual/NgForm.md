@@ -22,7 +22,7 @@ OnValidSubmit/onValidSubmit may be asynchronous. While it is pending, further su
 ### Reset and persistence boundaries
 The application owns the model, transport and persisted result. To reset draft state, touched fields and validation, replace both the model and the component key (Blazor @key, Flutter Key); external Flutter formKey must also be new. Disposed forms ignore late local state updates. Reset does not cancel transport or undo a save already accepted by the server. Snapshot the submitted values and use backend idempotency for important operations. A completed submission does not permanently lock the form: a later explicit submit may save again.
 
-Automatic model-driven editor generation, conditional schemas, custom summary templates, full Telerik event/API compatibility remain unimplemented. This block is Web-only verification.
+Automatic model-driven editor generation, conditional schemas, full Telerik event/API compatibility remain unimplemented. This block is Web-only verification.
 
 ### Responsive fields and actions (0.50)
 Fields/fields is an explicit ordered list of field fragments/widgets. Supply it instead of ChildContent/child; combining them throws. An empty list is allowed. Legacy content keeps its existing layout. The library does not inspect the model or generate editors.
@@ -34,19 +34,30 @@ Changing width, columns or gaps preserves the existing field widgets, values and
 Actions is a Blazor fragment below all fields, inside the disabled fieldset; use Type="submit" for save buttons. Flutter actionsBuilder replaces the default Save button and receives (context, submit). The submit callback is null while disabled/busy; wire it directly to the button. Retained submit callbacks recheck current permissions. Pointer/focus interaction with custom Flutter actions is blocked while saving or disabled. Custom programmatic actions, overlays and side effects still require application guards. Actions remain outside the field grid and can wrap on narrow screens. Omitting actionsBuilder retains Flutter's existing submit button.
 
 
+### Live validation summary (0.51)
+SummaryTitle/summaryTitle localizes the default heading; the default is "Please correct the highlighted fields." The default summary lists individual errors. SummaryTemplate/summaryBuilder replaces the heading and list and receives a read-only snapshot of message strings. Supply localized validator messages in the application. Duplicates and empty strings are retained so an invalid field never silently becomes valid. Message order follows platform validation registration, not a promised cross-platform order. Default text is rendered as plain text, never HTML.
+
+ShowSummary/showSummary hides the entire summary, including the custom template; it does not disable validation or field errors. Empty summaries are hidden. Blazor follows EditContext validation notifications (including field-level errors before submission). Flutter starts summary collection on the first attempted submit; later field changes revalidate the registered fields after the frame and update the summary without calling onInvalidSubmit or saving. Validators must be synchronous and free of side effects. Flutter native FormState.reset also triggers that refresh after a submit attempt; replace the form key for a pristine reset.
+
+Changing presentation or hiding/revealing the summary preserves fields and errors. Replacing the model/key resets validation as described above. Blazor unsubscribes from old EditContext notifications; disposed Flutter forms ignore queued refreshes. A custom template should contain descriptive content; field-focus links and a standardized error-to-field ID mapping are not supplied. The live-region wrapper remains around custom content, but full screen-reader certification is still open.
+
+
 ## Blazor example
 
 ```razor
+<div class="ng-prompt-actions"><NgButton OnClick="()=>customSummary=!customSummary">Toggle custom summary</NgButton><NgButton OnClick="()=>showSummary=!showSummary">Toggle summary visibility</NgButton></div>
 <div class="ng-prompt-actions"><NgButton OnClick="()=>columns=columns==2?1:2">Change columns</NgButton><NgButton OnClick="()=>gap=gap==16?32:16">Change spacing</NgButton></div>
 <p>Maximum columns: @columns · Gap: @gap</p>
 <NgCheckBox Label="Simulate save failure" @bind-Value="fail"/>
 <NgCheckBox Label="Disable form" @bind-Value="disabled"/>
-<NgForm @key="model" Model="model" Fields="FormFields" Columns="columns" Gap="gap" Disabled="disabled" OnValidSubmit="Save">
+<NgForm @key="model" Model="model" ShowSummary="showSummary" SummaryTitle="Review this application" SummaryTemplate="@(customSummary?CustomSummary:null)" Fields="FormFields" Columns="columns" Gap="gap" Disabled="disabled" OnValidSubmit="Save">
  <Actions><NgButton Type="submit" Primary>Save application</NgButton><span>All fields are validated before saving.</span></Actions>
 </NgForm>
 <NgButton OnClick="Reset">Reset application</NgButton>
 <p role="status">@status</p>
 @code {
+ private bool customSummary=true,showSummary=true;
+ private RenderFragment<IReadOnlyList<string>> CustomSummary=>errors=>@<div><strong>Review @errors.Count issue(s)</strong><ul>@foreach(var message in errors){<li>@message</li>}</ul></div>;
  private Draft model=new(); private bool fail,disabled; private int columns=2,gap=16; private string status="Not saved";
  private IReadOnlyList<RenderFragment> FormFields=>new[]{NameField,OwnerField,NotesField,ReferenceField};
  private RenderFragment NameField=>@<NgTextBox Label="Application name" @bind-Value="model.Name" MaxLength="80" HelperText="Required before saving."/>;
@@ -55,7 +66,7 @@ Actions is a Blazor fragment below all fields, inside the disabled fieldset; use
  private RenderFragment ReferenceField=>@<NgTextBox Label="Reference" @bind-Value="model.Reference"/>;
  private void Reset(){model=new();status="Not saved";}
  private async Task Save(){var draft=model;var denied=fail;var name=draft.Name;await Task.Delay(1000);if(denied)throw new InvalidOperationException();if(ReferenceEquals(model,draft))status=$"Saved: {name}";}
- public class Draft{[System.ComponentModel.DataAnnotations.Required] public string? Name{get;set;} public string? Owner{get;set;} public string? Notes{get;set;} public string? Reference{get;set;}}
+ public class Draft{[System.ComponentModel.DataAnnotations.Required] public string? Name{get;set;} [System.ComponentModel.DataAnnotations.Required(ErrorMessage="Enter an owner.")] public string? Owner{get;set;} public string? Notes{get;set;} public string? Reference{get;set;}}
 }
 
 ```
@@ -63,18 +74,20 @@ Actions is a Blazor fragment below all fields, inside the disabled fieldset; use
 ## Flutter example
 
 ```dart
+bool customSummary=true,showSummary=true;
 int revision=0,columns=2,gap=16; bool fail=false,disabled=false; String name='',owner='',notes='',reference='',status='Not saved';
 Widget build(BuildContext context)=>Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
+ Wrap(spacing:8,children:[NgButton(onPressed:()=>setState(()=>customSummary=!customSummary),child:const Text('Toggle custom summary')),NgButton(onPressed:()=>setState(()=>showSummary=!showSummary),child:const Text('Toggle summary visibility'))]),
  Wrap(spacing:8,children:[NgButton(onPressed:()=>setState(()=>columns=columns==2?1:2),child:const Text('Change columns')),NgButton(onPressed:()=>setState(()=>gap=gap==16?32:16),child:const Text('Change spacing'))]),
  Text('Maximum columns: $columns · Gap: $gap'),
  NgCheckBox(label:'Simulate save failure',value:fail,onChanged:(v)=>setState(()=>fail=v)),
  NgCheckBox(label:'Disable form',value:disabled,onChanged:(v)=>setState(()=>disabled=v)),
- NgForm(key:ValueKey(revision),columns:columns,gap:gap,enabled:!disabled,onValidSubmit:()async{
+ NgForm(showSummary:showSummary,summaryTitle:'Review this application',summaryBuilder:customSummary?(_,errors)=>Column(crossAxisAlignment:CrossAxisAlignment.start,children:[Text('Review ${errors.length} issue(s)',style:const TextStyle(fontWeight:FontWeight.bold)),for(final message in errors)Text(message)]):null,key:ValueKey(revision),columns:columns,gap:gap,enabled:!disabled,onValidSubmit:()async{
   final version=revision,denied=fail;final snapshot=name;await Future<void>.delayed(const Duration(seconds:1));
   if(denied)throw StateError('Demo failure');if(mounted&&version==revision)setState(()=>status='Saved: $snapshot');
  },fields:[
   NgTextBox(label:'Application name',initialValue:name,maxLength:80,helperText:'Required before saving.',onChanged:(v)=>name=v,validator:(v)=>v==null||v.trim().isEmpty?'Enter an application name.':null),
-  NgTextBox(label:'Owner',initialValue:owner,onChanged:(v)=>owner=v),
+  NgTextBox(label:'Owner',initialValue:owner,onChanged:(v)=>owner=v,validator:(v)=>(v??'').trim().isEmpty?'Enter an owner.':null),
   NgTextArea(label:'Notes',initialValue:notes,rows:2,onChanged:(v)=>notes=v),
   NgTextBox(label:'Reference',initialValue:reference,onChanged:(v)=>reference=v),
  ],actionsBuilder:(_,submit)=>Wrap(spacing:12,runSpacing:8,crossAxisAlignment:WrapCrossAlignment.center,children:[NgButton(primary:true,onPressed:submit,child:const Text('Save application')),const Text('All fields are validated before saving.')])),
@@ -92,6 +105,8 @@ Names are case-sensitive. `?` permits null. `EditorRequired` parameters are mark
 |---|---|---|---|
 | `Model` | `object` | required | See the behavior rules and model contract above. |
 | `Name` | `string` | "ng-form" | See the behavior rules and model contract above. |
+| `SummaryTitle` | `string` | "Please correct the highlighted fields." | Localized heading for the default validation summary. |
+| `SummaryTemplate` | `RenderFragment<IReadOnlyList<string>>?` | not set | Custom summary receiving a read-only snapshot of validation messages. |
 | `ShowSummary` | `bool` | true | See the behavior rules and model contract above. |
 | `Disabled` | `bool` | false | Disable user interaction. |
 | `BusyText` | `string` | "Saving…" | See the behavior rules and model contract above. |
@@ -123,6 +138,8 @@ Names are case-sensitive. `?` permits null. `EditorRequired` parameters are mark
 | `showSummary` | `bool` | See the behavior rules and model contract above. |
 | `busyText` | `String` | See the behavior rules and model contract above. |
 | `errorText` | `String` | See the behavior rules and model contract above. |
+| `summaryTitle` | `String` | Localized heading for the default validation summary. |
+| `summaryBuilder` | `Widget Function(BuildContext, List<String>)?` | Custom summary receiving context and an unmodifiable message list. |
 | `submitLabel` | `String` | See the behavior rules and model contract above. |
 | `formKey` | `GlobalKey<FormState>?` | See the behavior rules and model contract above. |
 
@@ -140,6 +157,8 @@ const NgForm({
     this.onInvalidSubmit,
     this.enabled = true,
     this.showSummary = true,
+    this.summaryTitle = 'Please correct the highlighted fields.',
+    this.summaryBuilder,
     this.busyText = 'Saving…',
     this.errorText = 'Unable to save. Try again.',
     this.formKey,

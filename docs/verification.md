@@ -682,3 +682,20 @@ Validation completed:
 Evidence: [Blazor narrow form](screenshots/form050-blazor-narrow.png), [Flutter wide form](screenshots/form050-flutter-wide.png), [Flutter narrow form](screenshots/form050-flutter-narrow.png), [desktop manual](screenshots/form050-desktop-manual.png).
 
 This is explicit field layout, not model-driven editor generation. Spans, nested groups, conditional schemas and custom validation-summary templates remain open. Flutter requires bounded horizontal constraints. Native platforms and full screen-reader certification remain unverified.
+
+
+## Live validation summaries — 0.51 (2026-10-19, Linux on iMac)
+
+NgForm adds localized default headings, individual error lists and custom templates/builders receiving read-only snapshots. Hidden summaries still validate. Blazor subscribes to its current EditContext and releases subscriptions on replacement/disposal; Flutter refreshes registered validators after field changes following an attempted submit.
+
+Validation completed:
+
+- 358 Blazor rendering/data checks; gallery build passed with zero warnings/errors.
+- 221 Flutter tests and clean Dart analysis. New tests verify live updates without automatic save/invalid callbacks, immutable/stable snapshots, hidden-summary validation, empty error strings blocking save, disposal with a queued refresh and form-key replacement.
+- 47 Razor and 47 Dart manual examples compiled/analyzed; 94 lossless highlighting checks. Flutter release Web build passed with the existing CupertinoIcons font warning.
+- Foreground local Chrome: 22 Blazor and 22 Flutter checks via `scripts/form-summary-check.py`. Two errors reduce to one and then none while editing; visibility and custom/default presentation switches preserve validation, layout changes retain errors, narrow layout fits, valid save succeeds and reset discards old errors. The Flutter browser test waits for native focus transfer before sending text.
+- Desktop shell opened the updated Form manual and live example. Screenshots were inspected directly.
+
+Evidence: [Blazor custom summary](screenshots/form051-blazor-two-errors.png), [Flutter narrow summary](screenshots/form051-flutter-narrow.png), [desktop manual](screenshots/form051-desktop-manual.png).
+
+Platform timing remains explicit: Blazor follows validation notifications; Flutter starts summary collection at submit and later revalidates after field changes. Validators must have no side effects. Error-to-field focus mapping, automatic schemas and native/full screen-reader certification remain open.

@@ -1,7 +1,12 @@
 @implements IDisposable
-<EditForm Model="Model" OnValidSubmit="Submit" OnInvalidSubmit="Invalid" FormName="Name" class="ng-form">
+<EditForm EditContext="editContext" OnValidSubmit="Submit" OnInvalidSubmit="Invalid" FormName="Name" class="ng-form">
 <DataAnnotationsValidator />
-@if(ShowSummary){<div class="ng-validation-summary" role="status"><ValidationSummary /></div>}
+@if(ShowSummary&&messages.Count>0){
+ <div class="ng-validation-summary" role="status">
+ @if(SummaryTemplate is not null){@SummaryTemplate(messages)}
+ else{<p>@SummaryTitle</p><ul>@foreach(var message in messages){<li>@message</li>}</ul>}
+ </div>
+}
 <fieldset class="ng-form-fields" disabled="@(Disabled||busy)" aria-busy="@(busy?"true":"false")">
 @if(Fields is not null){
  <div class="ng-form-layout" style="@LayoutStyle">
@@ -16,6 +21,15 @@
 @code {
  [Parameter,EditorRequired] public object Model {get;set;}=default!;
  [Parameter] public string Name {get;set;}="ng-form";
+ [Parameter] public string SummaryTitle {get;set;}="Please correct the highlighted fields.";
+ [Parameter] public RenderFragment<IReadOnlyList<string>>? SummaryTemplate {get;set;}
+ private EditContext editContext=default!;
+ private IReadOnlyList<string> messages=Array.Empty<string>();
+ private void ValidationChanged(object? sender,ValidationStateChangedEventArgs args){
+  if(disposed||!ReferenceEquals(sender,editContext))return;
+  messages=Array.AsReadOnly(editContext.GetValidationMessages().ToArray());
+  _ = InvokeAsync(()=>{if(!disposed)StateHasChanged();});
+ }
  [Parameter] public bool ShowSummary {get;set;}=true;
  [Parameter] public bool Disabled {get;set;}
  [Parameter] public string BusyText {get;set;}="Saving…";
@@ -36,8 +50,12 @@
   if(Gap is <0 or >64)throw new ArgumentOutOfRangeException(nameof(Gap));
   if(Fields is not null&&ChildContent is not null)throw new ArgumentException("Use Fields or ChildContent, not both.");
   if(Fields?.Any(f=>f is null)==true)throw new ArgumentException("Fields cannot contain null entries.",nameof(Fields));
-if(!ReferenceEquals(previous,Model)){previous=Model;revision++;busy=false;error=false;}}
+if(!ReferenceEquals(previous,Model)||editContext is null){
+  if(editContext is not null)editContext.OnValidationStateChanged-=ValidationChanged;
+  editContext=new EditContext(Model);editContext.OnValidationStateChanged+=ValidationChanged;
+  messages=Array.Empty<string>();previous=Model;revision++;busy=false;error=false;
+ }}
  private async Task Submit(EditContext context){if(Disabled||busy||disposed||!OnValidSubmit.HasDelegate)return;var version=++revision;busy=true;error=false;try{await OnValidSubmit.InvokeAsync(context);}catch(Exception){if(!disposed&&revision==version)error=true;}finally{if(!disposed&&revision==version)busy=false;}}
  private Task Invalid(EditContext context)=>Disabled||busy||disposed?Task.CompletedTask:OnInvalidSubmit.InvokeAsync(context);
- public void Dispose(){disposed=true;revision++;}
+ public void Dispose(){disposed=true;revision++;if(editContext is not null)editContext.OnValidationStateChanged-=ValidationChanged;}
 }

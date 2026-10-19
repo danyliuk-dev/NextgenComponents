@@ -2,7 +2,7 @@
 
 Blazor and Flutter component libraries with a shared design-token source and a Telerik Blazor component roadmap.
 
-**Current release: 0.50.0 responsive form fields and custom actions, 47 controls on each Web platform (53 catalogue entries including chart modes).** This is not a complete Telerik replacement or API-compatible clone. The [catalog](docs/catalog.md) tracks 139 named entries from the published Telerik Blazor index; chart variants are counted separately. See [foundation capabilities](docs/foundation.md) and [forms/date capabilities](docs/forms-and-dates.md) and [data workspace capabilities and gaps](docs/data-workspace.md) and [analytics/schedule capabilities](docs/analytics-and-schedule.md).
+**Current release: 0.51.0 live and customizable form validation summaries, 47 controls on each Web platform (53 catalogue entries including chart modes).** This is not a complete Telerik replacement or API-compatible clone. The [catalog](docs/catalog.md) tracks 139 named entries from the published Telerik Blazor index; chart variants are counted separately. See [foundation capabilities](docs/foundation.md) and [forms/date capabilities](docs/forms-and-dates.md) and [data workspace capabilities and gaps](docs/data-workspace.md) and [analytics/schedule capabilities](docs/analytics-and-schedule.md).
 
 ## Manual
 
