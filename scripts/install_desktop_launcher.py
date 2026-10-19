@@ -12,7 +12,7 @@ applications = Path(os.environ.get('XDG_DATA_HOME', Path.home() / '.local/share'
 def quote(value):
     return '"' + str(value).replace('\\', '\\\\').replace('"', '\\"').replace('`', '\\`').replace('$', '\\$').replace('%', '%%') + '"'
 
-command = f'{quote(sys.executable)} {quote(root / "scripts/desktop_launcher.py")}'
+command = f'{quote(sys.executable)} {quote(root / "scripts/desktop_launcher.py")} --desktop'
 content = f'''[Desktop Entry]
 Type=Application
 Name=Nextgen Components

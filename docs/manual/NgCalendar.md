@@ -16,19 +16,37 @@ The documentation launcher embeds these running examples here. Choose a framewor
 
 Input format: calendar selection. Min/Max include boundary values. Invalid dates such as April 31 and times such as 24:00 are rejected. DisabledDate returns true for unavailable days. Blazor uses DateOnly, TimeOnly or DateTime; Flutter uses DateTime or TimeOfDay. Normalize timezones at application boundaries. Empty optional input is null. Validate required values through the form or application rule; Calendar has no required parameter. See [forms and dates](../forms-and-dates.md) for supported calendar interactions and parsing limitations.
 
+ReadOnly/readOnly prevents user changes. Disabled/enabled also disables interaction. Date editors keep readable, focusable text in read-only mode and disable their picker action; Calendar blocks selection and navigation (Flutter also excludes keyboard focus). Bounds must be ordered; invalid configuration throws. Values are Gregorian calendar dates; date text is ISO yyyy-MM-dd, independent of Blazor's current culture. Empty optional input clears to null.
+
+DisabledDate/disabledDate applies to typing and calendar selection. In a range it checks both endpoints, not every date between them. Partial and reversed ranges fail form validation. Flutter range validation reads the current parent value after replacement. Applications own validation of external single-date values. Replace the form key to discard an invalid draft when the model value is unchanged.
+
+Flutter calendars use Material locale/week-start and default bounds 1900–2100; Blazor uses Culture/FirstDayOfWeek and DateOnly bounds. Supply explicit bounds for matching domains. Calendar selection is single-date only. Shared range highlighting, multiple calendar views, cell templates, week numbers, segmented/custom-format input and complete keyboard/screen-reader parity remain open. Flutter popup results are ignored after a parent rebuild, edit or disposal.
+
 ## Blazor example
 
 ```razor
-<NgCalendar @bind-Value="value"/>
-@code { private DateOnly? value=new(2026,10,20); }
+<NgCalendar @bind-Value="value" Min="min" Max="max" DisabledDate="Unavailable" ReadOnly="readOnly" />
+<NgButton OnClick="Toggle">Read only</NgButton>
+<p>Accepted date: @value</p>
+@code {
+ private DateOnly? value=new(2026,10,20); private bool readOnly;
+ private DateOnly min=new(2026,10,1), max=new(2026,10,31);
+ private bool Unavailable(DateOnly d)=>d.DayOfWeek==DayOfWeek.Sunday;
+ private void Toggle()=>readOnly=!readOnly;
+}
 ```
 
 ## Flutter example
 
 ```dart
-DateTime? value = DateTime(2026,10,20,9,30);
-Widget build(BuildContext context) => NgCalendar(value: value,
-  onChanged: (v) => setState(() => value = v));
+DateTime? value=DateTime(2026,10,20); bool readOnly=false;
+Widget build(BuildContext context)=>Column(crossAxisAlignment:CrossAxisAlignment.start, children:[
+ NgCalendar(value:value,min:DateTime(2026,10,1),max:DateTime(2026,10,31),
+  readOnly:readOnly,disabledDate:(d)=>d.weekday==DateTime.sunday,
+  onChanged:(v)=>setState(()=>value=v)),
+ NgButton(onPressed:()=>setState(()=>readOnly=!readOnly),child:const Text('Read only')),
+ Text('Accepted date: $value'),
+]);
 ```
 
 ## Blazor parameters and events
@@ -42,6 +60,7 @@ Names are case-sensitive. `?` permits null. `EditorRequired` parameters are mark
 | `Min` | `DateOnly?` | not set | Inclusive minimum. |
 | `Max` | `DateOnly?` | not set | Inclusive maximum. |
 | `DisabledDate` | `Func<DateOnly,bool>?` | not set | See the behavior rules and model contract above. |
+| `ReadOnly` | `bool` | false | Prevent changes while retaining supported viewing actions. |
 | `Disabled` | `bool` | false | Disable user interaction. |
 | `Label` | `string` | "Calendar" | Visible label or accessible name. |
 | `Culture` | `CultureInfo` | CultureInfo.CurrentCulture | See the behavior rules and model contract above. |
@@ -57,6 +76,8 @@ Names are case-sensitive. `?` permits null. `EditorRequired` parameters are mark
 | `min` | `DateTime?` | Inclusive minimum. |
 | `max` | `DateTime?` | Inclusive maximum. |
 | `onChanged` | `ValueChanged<DateTime>?` | Store the new value using setState or your state manager. |
+| `enabled` | `bool` | See the behavior rules and model contract above. |
+| `readOnly` | `bool` | Prevent changes while retaining supported viewing actions. |
 | `disabledDate` | `bool Function(DateTime)?` | See the behavior rules and model contract above. |
 
 ```dart
@@ -67,6 +88,8 @@ const NgCalendar({
     this.max,
     this.onChanged,
     this.disabledDate,
+    this.enabled = true,
+    this.readOnly = false,
   });
 ```
 

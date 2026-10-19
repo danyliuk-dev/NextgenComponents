@@ -1,3 +1,3 @@
 @* Generated from scripts/manual_content.py *@
-<NgDateRangePicker Label="Period" @bind-Value="range"/>
+<NgDateRangePicker Label="Period" DisabledDate="d => d.DayOfWeek == DayOfWeek.Sunday" @bind-Value="range"/>
 @code { private NgDateRange? range=new(new(2026,10,20),new(2026,10,23)); }

@@ -44,6 +44,16 @@ abstract final class NgDateRules {
         !(disabledDate?.call(date) ?? false);
   }
 
+  static void checkBounds(DateTime? min, DateTime? max) {
+    if ((min != null && (min.year < 1 || min.year > 9999)) ||
+        (max != null && (max.year < 1 || max.year > 9999)) ||
+        (min != null && max != null && dateOnly(min).isAfter(dateOnly(max)))) {
+      throw ArgumentError(
+        'Dates must be within years 1–9999 and Min must not exceed Max',
+      );
+    }
+  }
+
   static String? rangeError(NgDateRange? range) {
     if (range == null || (range.start == null && range.end == null))
       return null;
@@ -68,6 +78,7 @@ class NgDateRange {
 class NgCalendar extends StatelessWidget {
   final DateTime? value, min, max;
   final ValueChanged<DateTime>? onChanged;
+  final bool enabled, readOnly;
   final bool Function(DateTime)? disabledDate;
   const NgCalendar({
     super.key,
@@ -76,12 +87,16 @@ class NgCalendar extends StatelessWidget {
     this.max,
     this.onChanged,
     this.disabledDate,
+    this.enabled = true,
+    this.readOnly = false,
   });
   @override
   Widget build(BuildContext context) {
+    NgDateRules.checkBounds(min, max);
     final first = NgDateRules.dateOnly(min ?? DateTime(1900));
     final last = NgDateRules.dateOnly(max ?? DateTime(2100, 12, 31));
-    assert(!last.isBefore(first), 'Min must not exceed Max');
+    NgDateRules.checkBounds(first, last);
+
     // A disabled selected value must never trigger CalendarDatePicker's assertion.
     var initial = NgDateRules.dateOnly(value ?? DateTime.now());
     if (initial.isBefore(first)) initial = first;
@@ -109,18 +124,31 @@ class NgCalendar extends StatelessWidget {
       width: 300,
       height: 320,
       child: AbsorbPointer(
-        absorbing: onChanged == null,
-        child: Opacity(
-          opacity: onChanged == null ? 0.5 : 1,
-          child: CalendarDatePicker(
-            key: ValueKey(
-              '${NgDateRules.dateText(value)}:${NgDateRules.dateText(first)}:${NgDateRules.dateText(last)}',
+        absorbing: onChanged == null || !enabled || readOnly,
+        child: ExcludeFocus(
+          excluding: onChanged == null || !enabled || readOnly,
+          child: Opacity(
+            opacity: !enabled || onChanged == null ? 0.5 : 1,
+            child: CalendarDatePicker(
+              key: ValueKey(
+                '${NgDateRules.dateText(value)}:${NgDateRules.dateText(first)}:${NgDateRules.dateText(last)}:${NgDateRules.dateText(initial)}',
+              ),
+              initialDate: initial,
+              firstDate: first,
+              lastDate: last,
+              selectableDayPredicate: (d) => !(disabledDate?.call(d) ?? false),
+              onDateChanged: (d) {
+                if (enabled &&
+                    !readOnly &&
+                    NgDateRules.allowed(
+                      d,
+                      min: min,
+                      max: max,
+                      disabledDate: disabledDate,
+                    ))
+                  onChanged?.call(d);
+              },
             ),
-            initialDate: initial,
-            firstDate: first,
-            lastDate: last,
-            selectableDayPredicate: (d) => !(disabledDate?.call(d) ?? false),
-            onDateChanged: (d) => onChanged?.call(d),
           ),
         ),
       ),
@@ -171,8 +199,15 @@ class _NgTemporalFieldState<T> extends State<NgTemporalField<T>> {
     super.didUpdateWidget(old);
     revision++;
     if (old.value != widget.value &&
-        widget.parse(controller.text) != widget.value)
-      controller.text = widget.format(widget.value);
+        widget.parse(controller.text) != widget.value) {
+      final generation = revision;
+      // Controller listeners notify FormState; defer until its build completes.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && generation == revision) {
+          controller.text = widget.format(widget.value);
+        }
+      });
+    }
   }
 
   String? validate(String? text) {
@@ -226,7 +261,7 @@ class _NgTemporalFieldState<T> extends State<NgTemporalField<T>> {
 class NgDateInput extends StatelessWidget {
   final String label;
   final DateTime? value, min, max;
-  final bool required, enabled;
+  final bool required, enabled, readOnly;
   final bool Function(DateTime)? disabledDate;
   final ValueChanged<DateTime?>? onChanged;
   const NgDateInput({
@@ -238,29 +273,34 @@ class NgDateInput extends StatelessWidget {
     this.max,
     this.required = false,
     this.enabled = true,
+    this.readOnly = false,
     this.disabledDate,
   });
   @override
-  Widget build(BuildContext context) => NgTemporalField<DateTime>(
-    label: label,
-    hint: 'yyyy-mm-dd',
-    value: value,
-    onChanged: onChanged,
-    format: NgDateRules.dateText,
-    parse: NgDateRules.parseDate,
-    required: required,
-    enabled: enabled,
-    validateValue: (d) =>
-        NgDateRules.allowed(d, min: min, max: max, disabledDate: disabledDate)
-        ? null
-        : 'This date is not available.',
-  );
+  Widget build(BuildContext context) {
+    NgDateRules.checkBounds(min, max);
+    return NgTemporalField<DateTime>(
+      label: label,
+      hint: 'yyyy-mm-dd',
+      value: value,
+      onChanged: onChanged,
+      format: NgDateRules.dateText,
+      parse: NgDateRules.parseDate,
+      required: required,
+      enabled: enabled,
+      readOnly: readOnly,
+      validateValue: (d) =>
+          NgDateRules.allowed(d, min: min, max: max, disabledDate: disabledDate)
+          ? null
+          : 'This date is not available.',
+    );
+  }
 }
 
 class NgDatePicker extends StatelessWidget {
   final String label;
   final DateTime? value, min, max;
-  final bool required, enabled;
+  final bool required, enabled, readOnly;
   final bool Function(DateTime)? disabledDate;
   final ValueChanged<DateTime?>? onChanged;
   const NgDatePicker({
@@ -272,55 +312,60 @@ class NgDatePicker extends StatelessWidget {
     this.max,
     this.required = false,
     this.enabled = true,
+    this.readOnly = false,
     this.disabledDate,
   });
   @override
-  Widget build(BuildContext context) => NgTemporalField<DateTime>(
-    label: label,
-    hint: 'yyyy-mm-dd',
-    value: value,
-    onChanged: onChanged,
-    format: NgDateRules.dateText,
-    parse: NgDateRules.parseDate,
-    required: required,
-    enabled: enabled,
-    validateValue: (d) =>
-        NgDateRules.allowed(d, min: min, max: max, disabledDate: disabledDate)
-        ? null
-        : 'This date is not available.',
-    suffixBuilder: (apply) => IconButton(
-      tooltip: 'Choose $label',
-      icon: const Icon(Icons.calendar_month),
-      onPressed: !enabled
+  Widget build(BuildContext context) {
+    NgDateRules.checkBounds(min, max);
+    return NgTemporalField<DateTime>(
+      label: label,
+      hint: 'yyyy-mm-dd',
+      value: value,
+      onChanged: onChanged,
+      format: NgDateRules.dateText,
+      parse: NgDateRules.parseDate,
+      required: required,
+      enabled: enabled,
+      readOnly: readOnly,
+      validateValue: (d) =>
+          NgDateRules.allowed(d, min: min, max: max, disabledDate: disabledDate)
           ? null
-          : () async {
-              final result = await showDialog<DateTime>(
-                context: context,
-                builder: (ctx) => AlertDialog(
-                  title: Text('Choose $label'),
-                  content: SizedBox(
-                    width: 300,
-                    height: 320,
-                    child: NgCalendar(
-                      value: value,
-                      min: min,
-                      max: max,
-                      disabledDate: disabledDate,
-                      onChanged: (d) => Navigator.pop(ctx, d),
+          : 'This date is not available.',
+      suffixBuilder: (apply) => IconButton(
+        tooltip: 'Choose $label',
+        icon: const Icon(Icons.calendar_month),
+        onPressed: !enabled || readOnly || onChanged == null
+            ? null
+            : () async {
+                final result = await showDialog<DateTime>(
+                  context: context,
+                  builder: (ctx) => AlertDialog(
+                    title: Text('Choose $label'),
+                    content: SizedBox(
+                      width: 300,
+                      height: 320,
+                      child: NgCalendar(
+                        value: value,
+                        min: min,
+                        max: max,
+                        disabledDate: disabledDate,
+                        onChanged: (d) => Navigator.pop(ctx, d),
+                      ),
                     ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(ctx),
+                        child: const Text('Cancel'),
+                      ),
+                    ],
                   ),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(ctx),
-                      child: const Text('Cancel'),
-                    ),
-                  ],
-                ),
-              );
-              if (result != null) apply(result);
-            },
-    ),
-  );
+                );
+                if (result != null) apply(result);
+              },
+      ),
+    );
+  }
 }
 
 class NgTimePicker extends StatelessWidget {
@@ -483,11 +528,39 @@ class NgDateTimePicker extends StatelessWidget {
   }
 }
 
+// Synchronize external replacements without losing an edit before parent rebuild.
+class _NgRangeField extends FormField<NgDateRange> {
+  final NgDateRange? controlledValue;
+  _NgRangeField({
+    required this.controlledValue,
+    required super.enabled,
+    required super.validator,
+    required super.builder,
+  }) : super(
+         initialValue: controlledValue,
+         autovalidateMode: AutovalidateMode.onUserInteraction,
+       );
+  @override
+  FormFieldState<NgDateRange> createState() => _NgRangeFieldState();
+}
+
+class _NgRangeFieldState extends FormFieldState<NgDateRange> {
+  @override
+  void didUpdateWidget(covariant _NgRangeField oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final current = widget as _NgRangeField;
+    if (oldWidget.controlledValue != current.controlledValue) {
+      setValue(current.controlledValue);
+    }
+  }
+}
+
 class NgDateRangePicker extends StatelessWidget {
   final String label;
   final NgDateRange? value;
   final DateTime? min, max;
-  final bool enabled, required;
+  final bool enabled, required, readOnly;
+  final bool Function(DateTime)? disabledDate;
   final ValueChanged<NgDateRange?>? onChanged;
   const NgDateRangePicker({
     super.key,
@@ -498,71 +571,95 @@ class NgDateRangePicker extends StatelessWidget {
     this.max,
     this.enabled = true,
     this.required = false,
+    this.readOnly = false,
+    this.disabledDate,
   });
   @override
-  Widget build(BuildContext context) => FormField<NgDateRange>(
-    initialValue: value,
-    enabled: enabled,
-    validator: (current) =>
-        required &&
-            (current == null || (current.start == null && current.end == null))
-        ? '$label is required'
-        : NgDateRules.rangeError(current),
-    autovalidateMode: AutovalidateMode.onUserInteraction,
-    builder: (field) {
-      void update(NgDateRange next) {
-        field.didChange(next);
-        onChanged?.call(next);
-      }
+  Widget build(BuildContext context) {
+    NgDateRules.checkBounds(min, max);
+    return _NgRangeField(
+      controlledValue: value,
+      enabled: enabled,
+      validator: (current) =>
+          required &&
+              (current == null ||
+                  (current.start == null && current.end == null))
+          ? '$label is required'
+          : NgDateRules.rangeError(current) ??
+                ([current?.start, current?.end].whereType<DateTime>().any(
+                      (d) => !NgDateRules.allowed(
+                        d,
+                        min: min,
+                        max: max,
+                        disabledDate: disabledDate,
+                      ),
+                    )
+                    ? "This date is not available."
+                    : null),
+      builder: (field) {
+        void update(NgDateRange next) {
+          if (!enabled || readOnly || onChanged == null) return;
+          field.didChange(next);
+          onChanged?.call(next);
+        }
 
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(label),
-          const SizedBox(height: 12),
-          LayoutBuilder(
-            builder: (context, c) => Wrap(
-              spacing: 16,
-              runSpacing: 16,
-              children: [
-                SizedBox(
-                  width: c.maxWidth > 550 ? (c.maxWidth - 16) / 2 : c.maxWidth,
-                  child: NgDatePicker(
-                    label: 'Start date',
-                    value: value?.start,
-                    min: min,
-                    max: max,
-                    enabled: enabled,
-                    onChanged: (d) => update(NgDateRange(d, value?.end)),
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(label),
+            const SizedBox(height: 12),
+            LayoutBuilder(
+              builder: (context, c) => Wrap(
+                spacing: 16,
+                runSpacing: 16,
+                children: [
+                  SizedBox(
+                    width: c.maxWidth > 550
+                        ? (c.maxWidth - 16) / 2
+                        : c.maxWidth,
+                    child: NgDatePicker(
+                      label: 'Start date',
+                      value: value?.start,
+                      min: min,
+                      max: max,
+                      enabled: enabled,
+                      readOnly: readOnly,
+                      disabledDate: disabledDate,
+                      onChanged: (d) => update(NgDateRange(d, value?.end)),
+                    ),
                   ),
-                ),
-                SizedBox(
-                  width: c.maxWidth > 550 ? (c.maxWidth - 16) / 2 : c.maxWidth,
-                  child: NgDatePicker(
-                    label: 'End date',
-                    value: value?.end,
-                    min: min,
-                    max: max,
-                    enabled: enabled,
-                    onChanged: (d) => update(NgDateRange(value?.start, d)),
+                  SizedBox(
+                    width: c.maxWidth > 550
+                        ? (c.maxWidth - 16) / 2
+                        : c.maxWidth,
+                    child: NgDatePicker(
+                      label: 'End date',
+                      value: value?.end,
+                      min: min,
+                      max: max,
+                      enabled: enabled,
+                      readOnly: readOnly,
+                      disabledDate: disabledDate,
+                      onChanged: (d) => update(NgDateRange(value?.start, d)),
+                    ),
                   ),
-                ),
-              ],
-            ),
-          ),
-          if (field.hasError)
-            Padding(
-              padding: const EdgeInsets.only(top: 8),
-              child: Text(
-                field.errorText!,
-                style: TextStyle(
-                  color: Theme.of(context).colorScheme.error,
-                  fontSize: 12,
-                ),
+                ],
               ),
             ),
-        ],
-      );
-    },
-  );
+            if (field.hasError)
+              Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: Text(
+                  field.errorText!,
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.error,
+                    fontSize: 12,
+                  ),
+                ),
+              ),
+          ],
+        );
+      },
+    );
+  }
 }

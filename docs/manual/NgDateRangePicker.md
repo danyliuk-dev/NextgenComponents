@@ -16,10 +16,16 @@ The documentation launcher embeds these running examples here. Choose a framewor
 
 NgDateRange contains nullable Start/End (Blazor DateOnly, Flutter DateTime). An end before the start is invalid. Min/Max constrain both endpoints. Callbacks replace the whole range. A partially filled draft may exist; the form determines whether it is valid for submission. Do not save the last valid model while an invalid draft is visible: submit through NgForm. This is a calendar-date range, not a timezone-aware interval.
 
+ReadOnly/readOnly prevents user changes. Disabled/enabled also disables interaction. Date editors keep readable, focusable text in read-only mode and disable their picker action; Calendar blocks selection and navigation (Flutter also excludes keyboard focus). Bounds must be ordered; invalid configuration throws. Values are Gregorian calendar dates; date text is ISO yyyy-MM-dd, independent of Blazor's current culture. Empty optional input clears to null.
+
+DisabledDate/disabledDate applies to typing and calendar selection. In a range it checks both endpoints, not every date between them. Partial and reversed ranges fail form validation. Flutter range validation reads the current parent value after replacement. Applications own validation of external single-date values. Replace the form key to discard an invalid draft when the model value is unchanged.
+
+Flutter calendars use Material locale/week-start and default bounds 1900–2100; Blazor uses Culture/FirstDayOfWeek and DateOnly bounds. Supply explicit bounds for matching domains. Calendar selection is single-date only. Shared range highlighting, multiple calendar views, cell templates, week numbers, segmented/custom-format input and complete keyboard/screen-reader parity remain open. Flutter popup results are ignored after a parent rebuild, edit or disposal.
+
 ## Blazor example
 
 ```razor
-<NgDateRangePicker Label="Period" @bind-Value="range"/>
+<NgDateRangePicker Label="Period" DisabledDate="d => d.DayOfWeek == DayOfWeek.Sunday" @bind-Value="range"/>
 @code { private NgDateRange? range=new(new(2026,10,20),new(2026,10,23)); }
 ```
 
@@ -28,7 +34,7 @@ NgDateRange contains nullable Start/End (Blazor DateOnly, Flutter DateTime). An 
 ```dart
 NgDateRange? range = NgDateRange(DateTime(2026,10,20), DateTime(2026,10,23));
 Widget build(BuildContext context) => NgDateRangePicker(label: 'Period', value: range,
-  required: true, onChanged: (v) => setState(() => range = v));
+  disabledDate: (d) => d.weekday == DateTime.sunday, required: true, onChanged: (v) => setState(() => range = v));
 ```
 
 ## Blazor parameters and events
@@ -43,6 +49,8 @@ Names are case-sensitive. `?` permits null. `EditorRequired` parameters are mark
 | `ValueExpression` | `Expression<Func<NgDateRange?>>?` | not set | Expression identifying the model field; @bind-Value supplies it automatically. |
 | `Min` | `DateOnly?` | not set | Inclusive minimum. |
 | `Max` | `DateOnly?` | not set | Inclusive maximum. |
+| `ReadOnly` | `bool` | false | Prevent changes while retaining supported viewing actions. |
+| `DisabledDate` | `Func<DateOnly,bool>?` | not set | See the behavior rules and model contract above. |
 | `Disabled` | `bool` | false | Disable user interaction. |
 
 ## Flutter parameters and events
@@ -57,6 +65,8 @@ Names are case-sensitive. `?` permits null. `EditorRequired` parameters are mark
 | `max` | `DateTime?` | Inclusive maximum. |
 | `enabled` | `bool` | See the behavior rules and model contract above. |
 | `required` | `bool` | Require a nonempty/selected value during form validation. |
+| `readOnly` | `bool` | Prevent changes while retaining supported viewing actions. |
+| `disabledDate` | `bool Function(DateTime)?` | See the behavior rules and model contract above. |
 | `onChanged` | `ValueChanged<NgDateRange?>?` | Store the new value using setState or your state manager. |
 
 ```dart
@@ -69,6 +79,8 @@ const NgDateRangePicker({
     this.max,
     this.enabled = true,
     this.required = false,
+    this.readOnly = false,
+    this.disabledDate,
   });
 ```
 

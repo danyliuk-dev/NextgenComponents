@@ -1,8 +1,8 @@
 @using System.Linq.Expressions
 <div class="ng-date-picker" @onkeydown="KeyDown">
-    <NgDateInput @ref="input" Id="@Id" Label="@Label" Value="Value" ValueChanged="ValueChanged" ValueExpression="ValueExpression" Min="Min" Max="Max" DisabledDate="DisabledDate" Disabled="Disabled" />
-    <button @ref="trigger" type="button" class="ng-button ng-picker-trigger" disabled="@Disabled" aria-label="@($"Choose {Label}")" aria-expanded="@(open ? "true" : "false")" aria-controls="@(Id+"-calendar")" @onclick="() => open=!open">▦</button>
-    @if(open && !Disabled) {
+    <NgDateInput @ref="input" Id="@Id" Label="@Label" Value="Value" ValueChanged="ValueChanged" ValueExpression="ValueExpression" Min="Min" Max="Max" DisabledDate="DisabledDate" Disabled="Disabled" ReadOnly="ReadOnly" />
+    <button @ref="trigger" type="button" class="ng-button ng-picker-trigger" disabled="@(Disabled || ReadOnly)" aria-label="@($"Choose {Label}")" aria-expanded="@(open ? "true" : "false")" aria-controls="@(Id+"-calendar")" @onclick="() => open=!open">▦</button>
+    @if(open && !Disabled && !ReadOnly) {
         <div class="ng-picker-panel" role="dialog" id="@(Id+"-calendar")" aria-label="@($"Choose {Label}")">
             <NgCalendar Value="Value" ValueChanged="Selected" Min="Min" Max="Max" DisabledDate="DisabledDate" />
             <div class="ng-picker-actions"><NgButton OnClick="() => Selected(null)">Clear</NgButton><NgButton OnClick="Close">Close</NgButton></div>
@@ -19,6 +19,8 @@
     [Parameter] public DateOnly? Max { get; set; }
     [Parameter] public Func<DateOnly,bool>? DisabledDate { get; set; }
     [Parameter] public bool Disabled { get; set; }
+    [Parameter] public bool ReadOnly { get; set; }
+    protected override void OnParametersSet() { if (Min > Max) throw new ArgumentException("Min must not exceed Max."); if (Disabled || ReadOnly) open=false; }
     private bool open;
     private NgDateInput? input;
     private ElementReference trigger;

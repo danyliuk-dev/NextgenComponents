@@ -7,6 +7,100 @@ Widget app(Widget child) => MaterialApp(
   home: Scaffold(body: SingleChildScrollView(child: child)),
 );
 void main() {
+  testWidgets(
+    'date range validates parent replacement and unavailable endpoints',
+    (t) async {
+      NgDateRange? range = NgDateRange(
+        DateTime(2026, 10, 20),
+        DateTime(2026, 10, 23),
+      );
+      late StateSetter change;
+      final form = GlobalKey<FormState>();
+      await t.pumpWidget(
+        app(
+          StatefulBuilder(
+            builder: (context, set) {
+              change = set;
+              return Form(
+                key: form,
+                child: NgDateRangePicker(
+                  value: range,
+                  disabledDate: (d) => d.day == 25,
+                  onChanged: (v) => set(() => range = v),
+                ),
+              );
+            },
+          ),
+        ),
+      );
+      expect(form.currentState!.validate(), isTrue);
+      change(
+        () =>
+            range = NgDateRange(DateTime(2026, 10, 24), DateTime(2026, 10, 23)),
+      );
+      await t.pump();
+      expect(form.currentState!.validate(), isFalse);
+      change(
+        () =>
+            range = NgDateRange(DateTime(2026, 10, 20), DateTime(2026, 10, 25)),
+      );
+      await t.pump();
+      expect(form.currentState!.validate(), isFalse);
+      change(() => range = null);
+      await t.pump();
+      expect(form.currentState!.validate(), isTrue);
+    },
+  );
+  testWidgets('readonly date editors suppress picker and keyboard changes', (
+    t,
+  ) async {
+    var changes = 0;
+    await t.pumpWidget(
+      app(
+        NgDateRangePicker(
+          value: NgDateRange(DateTime(2026, 10, 20), DateTime(2026, 10, 23)),
+          readOnly: true,
+          onChanged: (_) => changes++,
+        ),
+      ),
+    );
+    expect(
+      t.widgetList<TextField>(find.byType(TextField)).every((f) => f.readOnly),
+      isTrue,
+    );
+    expect(
+      t
+          .widgetList<IconButton>(find.byType(IconButton))
+          .every((b) => b.onPressed == null),
+      isTrue,
+    );
+    expect(changes, 0);
+  });
+  testWidgets('calendar readonly also prevents keyboard focus', (t) async {
+    await t.pumpWidget(
+      app(
+        NgCalendar(
+          value: DateTime(2026, 10, 20),
+          readOnly: true,
+          onChanged: (_) {},
+        ),
+      ),
+    );
+    expect(
+      t.widget<ExcludeFocus>(find.byType(ExcludeFocus).first).excluding,
+      isTrue,
+    );
+  });
+  test('date configuration rejects inverted bounds', () {
+    expect(
+      () => NgDateRules.checkBounds(
+        DateTime(2026, 10, 23),
+        DateTime(2026, 10, 20),
+      ),
+      throwsArgumentError,
+    );
+  });
+
   test('strict calendar and wall-clock rules reject rollover', () {
     expect(NgDateRules.parseDate('2024-02-29'), DateTime(2024, 2, 29));
     for (final text in [

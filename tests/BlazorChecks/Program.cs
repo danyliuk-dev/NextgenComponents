@@ -329,6 +329,12 @@ var timeProbe=new TimeProbe();
 Rule(!timeProbe.Parse("09:17")&&timeProbe.Parse("09:15"),"time minute interval validation");
 var stampProbe=new StampProbe();
 Rule(!stampProbe.Parse("2026-10-20 09:17")&&stampProbe.Parse("2026-10-20 09:15"),"datetime minute interval validation");
+await Check<NgDateInput>(new(){["Value"]=date,["ValueExpression"]=(Expression<Func<DateOnly?>>)(()=>date),["ReadOnly"]=true},"readonly");
+await Check<NgDatePicker>(new(){["Value"]=date,["ValueExpression"]=(Expression<Func<DateOnly?>>)(()=>date),["ReadOnly"]=true},"readonly","disabled");
+var dateProbe = new DateProbe();
+Rule(dateProbe.Parse("", out var emptyDate) && emptyDate is null,"date input clears optional value");
+Rule(!dateProbe.Parse("2026-02-29",out _),"date input rejects invalid leap day");
+Rule(dateProbe.Parse("2024-02-29",out _),"date input accepts leap day");
 Console.WriteLine($"{count} rendering and data/date-rule checks passed. Browser interaction requires the separate visual run.");
 sealed class NoBrowserJS : IJSRuntime {
  public ValueTask<TValue> InvokeAsync<TValue>(string identifier, object?[]? args) => throw new InvalidOperationException("JS must not execute in SSR");
@@ -347,4 +353,8 @@ sealed class TimeProbe:NgTimePicker {
 }
 sealed class StampProbe:NgDateTimePicker {
  public bool Parse(string text){MinuteStep=15;return TryParseValueFromString(text,out _,out _);}
+}
+
+sealed class DateProbe:NgDateInput {
+ public bool Parse(string text,out DateOnly? value) => TryParseValueFromString(text,out value,out _);
 }

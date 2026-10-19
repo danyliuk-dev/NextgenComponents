@@ -2,7 +2,7 @@
 
 Blazor and Flutter component libraries with a shared design-token source and a Telerik Blazor component roadmap.
 
-**Current release: 0.31.0 numeric bounds and spin controls, read-only numeric/time inputs and minute-interval validation, 47 controls on each Web platform (53 catalogue entries including chart modes).** This is not a complete Telerik replacement or API-compatible clone. The [catalog](docs/catalog.md) tracks 139 named entries from the published Telerik Blazor index; chart variants are counted separately. See [foundation capabilities](docs/foundation.md) and [forms/date capabilities](docs/forms-and-dates.md) and [data workspace capabilities and gaps](docs/data-workspace.md) and [analytics/schedule capabilities](docs/analytics-and-schedule.md).
+**Current release: 0.32.0 calendar/date editing safeguards and a Linux desktop workspace for documentation and both demos, 47 controls on each Web platform (53 catalogue entries including chart modes).** This is not a complete Telerik replacement or API-compatible clone. The [catalog](docs/catalog.md) tracks 139 named entries from the published Telerik Blazor index; chart variants are counted separately. See [foundation capabilities](docs/foundation.md) and [forms/date capabilities](docs/forms-and-dates.md) and [data workspace capabilities and gaps](docs/data-workspace.md) and [analytics/schedule capabilities](docs/analytics-and-schedule.md).
 
 ## Manual
 
@@ -45,7 +45,15 @@ python3 -m http.server 5181 --bind 127.0.0.1 --directory build/web
 python3 scripts/install_desktop_launcher.py
 ```
 
-Creates **Nextgen Components** on the desktop and in the applications menu. Open it to launch a local page with Blazor demo, Flutter demo and the English manual rendered with tables and code examples. The shortcut context menu also has direct actions for each destination.
+Creates **Nextgen Components** on the desktop and in the applications menu. It opens a dedicated Chrome app window with Documentation, Blazor demo and Flutter demo sections. Each section retains its page and in-memory state while switching; Reload resets the active demo to its entry page (documentation reload preserves the page). Open in browser opens the active documentation page or demo entry page. Closing the window leaves the local services running. This is a Linux desktop shell for the Web demos, not a native Flutter Desktop build.
+
+Run without installing a shortcut:
+
+```bash
+python3 scripts/desktop_launcher.py --desktop
+```
+
+The app uses its own Chrome profile under `artifacts/launcher/chrome-profile`; personal tabs are separate. Desktop shortcut actions select the initial section. A manual-only browser launch remains available with `python3 scripts/desktop_launcher.py --page manual`. The desktop shell starts both demos so all three sections are available.
 
 The launcher starts missing services on loopback ports 5180–5182 through the user systemd manager and reuses running galleries. It does not replace unrelated processes on occupied ports. Logs: `artifacts/launcher/`. Existing demo builds are reused; after source changes rebuild the galleries using the commands above. Missing builds are built on first launch (.NET/Flutter SDK required). Documentation reads the current Markdown files without a separate build.
 

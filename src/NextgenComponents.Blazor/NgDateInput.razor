@@ -1,7 +1,7 @@
 @inherits InputBase<DateOnly?>
 <div class="ng-field">
     <label for="@Id">@Label</label>
-    <input @attributes="AdditionalAttributes" id="@Id" class="ng-input @CssClass" type="text" inputmode="numeric" placeholder="yyyy-mm-dd" value="@CurrentValueAsString" @oninput="Changed" disabled="@Disabled" aria-invalid="@(error is not null ? "true" : "false")" aria-describedby="@(error is not null ? Id+"-error" : null)" />
+    <input @attributes="AdditionalAttributes" id="@Id" class="ng-input @CssClass" type="text" inputmode="numeric" placeholder="yyyy-mm-dd" value="@CurrentValueAsString" @oninput="Changed" disabled="@Disabled" readonly="@ReadOnly" aria-invalid="@(error is not null ? "true" : "false")" aria-describedby="@(error is not null ? Id+"-error" : null)" />
     @if(error is not null) { <span id="@(Id+"-error")" class="ng-field-error" role="status">@error</span> }
 </div>
 @code {
@@ -11,12 +11,18 @@
     [Parameter] public DateOnly? Max { get; set; }
     [Parameter] public Func<DateOnly,bool>? DisabledDate { get; set; }
     [Parameter] public bool Disabled { get; set; }
+    [Parameter] public bool ReadOnly { get; set; }
     private string? error;
-    private void Changed(ChangeEventArgs e) { error=null; CurrentValueAsString=e.Value?.ToString(); }
-    protected override string? FormatValueAsString(DateOnly? value) => value?.ToString("yyyy-MM-dd");
-    public void SetDate(DateOnly? value) { error=null; CurrentValueAsString=FormatValueAsString(value); }
+    protected override void OnParametersSet() {
+        base.OnParametersSet();
+        if (Min > Max) throw new ArgumentException("Min must not exceed Max.");
+    }
+    private void Changed(ChangeEventArgs e) { if (Disabled || ReadOnly) return; error=null; CurrentValueAsString=e.Value?.ToString(); }
+    protected override string? FormatValueAsString(DateOnly? value) => value?.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
+    public void SetDate(DateOnly? value) { if (Disabled || ReadOnly) return; error=null; CurrentValueAsString=FormatValueAsString(value); }
     protected override bool TryParseValueFromString(string? value, out DateOnly? result, [System.Diagnostics.CodeAnalysis.NotNullWhen(false)] out string? validationErrorMessage) {
         error=null; result=null;
+        if (string.IsNullOrEmpty(value)) { validationErrorMessage=null; return true; }
         if (!NgDateRules.TryDate(value, out var date)) error="Enter a valid date (yyyy-mm-dd).";
         else if (!NgDateRules.Allowed(date,Min,Max,DisabledDate)) error="This date is not available.";
         else result=date;

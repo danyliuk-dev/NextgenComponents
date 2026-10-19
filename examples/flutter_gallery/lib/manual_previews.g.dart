@@ -169,21 +169,36 @@ Text('Selected IDs: ${selected.join(', ')}')]);
 }
 class NgDateInputExample extends StatefulWidget { const NgDateInputExample({super.key}); @override State<NgDateInputExample> createState()=>_NgDateInputExampleState(); }
 class _NgDateInputExampleState extends State<NgDateInputExample> {
-DateTime? value = DateTime(2026,10,20,9,30);
-Widget build(BuildContext context) => NgDateInput(value: value,
-  onChanged: (v) => setState(() => value = v));
+DateTime? value=DateTime(2026,10,20); bool readOnly=false;
+Widget build(BuildContext context)=>Column(crossAxisAlignment:CrossAxisAlignment.start, children:[
+ NgDateInput(value:value,min:DateTime(2026,10,1),max:DateTime(2026,10,31),
+  readOnly:readOnly,disabledDate:(d)=>d.weekday==DateTime.sunday,
+  onChanged:(v)=>setState(()=>value=v)),
+ NgButton(onPressed:()=>setState(()=>readOnly=!readOnly),child:const Text('Read only')),
+ Text('Accepted date: $value'),
+]);
 }
 class NgDatePickerExample extends StatefulWidget { const NgDatePickerExample({super.key}); @override State<NgDatePickerExample> createState()=>_NgDatePickerExampleState(); }
 class _NgDatePickerExampleState extends State<NgDatePickerExample> {
-DateTime? value = DateTime(2026,10,20,9,30);
-Widget build(BuildContext context) => NgDatePicker(value: value,
-  onChanged: (v) => setState(() => value = v));
+DateTime? value=DateTime(2026,10,20); bool readOnly=false;
+Widget build(BuildContext context)=>Column(crossAxisAlignment:CrossAxisAlignment.start, children:[
+ NgDatePicker(value:value,min:DateTime(2026,10,1),max:DateTime(2026,10,31),
+  readOnly:readOnly,disabledDate:(d)=>d.weekday==DateTime.sunday,
+  onChanged:(v)=>setState(()=>value=v)),
+ NgButton(onPressed:()=>setState(()=>readOnly=!readOnly),child:const Text('Read only')),
+ Text('Accepted date: $value'),
+]);
 }
 class NgCalendarExample extends StatefulWidget { const NgCalendarExample({super.key}); @override State<NgCalendarExample> createState()=>_NgCalendarExampleState(); }
 class _NgCalendarExampleState extends State<NgCalendarExample> {
-DateTime? value = DateTime(2026,10,20,9,30);
-Widget build(BuildContext context) => NgCalendar(value: value,
-  onChanged: (v) => setState(() => value = v));
+DateTime? value=DateTime(2026,10,20); bool readOnly=false;
+Widget build(BuildContext context)=>Column(crossAxisAlignment:CrossAxisAlignment.start, children:[
+ NgCalendar(value:value,min:DateTime(2026,10,1),max:DateTime(2026,10,31),
+  readOnly:readOnly,disabledDate:(d)=>d.weekday==DateTime.sunday,
+  onChanged:(v)=>setState(()=>value=v)),
+ NgButton(onPressed:()=>setState(()=>readOnly=!readOnly),child:const Text('Read only')),
+ Text('Accepted date: $value'),
+]);
 }
 class NgDateTimePickerExample extends StatefulWidget { const NgDateTimePickerExample({super.key}); @override State<NgDateTimePickerExample> createState()=>_NgDateTimePickerExampleState(); }
 class _NgDateTimePickerExampleState extends State<NgDateTimePickerExample> {
@@ -201,7 +216,7 @@ class NgDateRangePickerExample extends StatefulWidget { const NgDateRangePickerE
 class _NgDateRangePickerExampleState extends State<NgDateRangePickerExample> {
 NgDateRange? range = NgDateRange(DateTime(2026,10,20), DateTime(2026,10,23));
 Widget build(BuildContext context) => NgDateRangePicker(label: 'Period', value: range,
-  required: true, onChanged: (v) => setState(() => range = v));
+  disabledDate: (d) => d.weekday == DateTime.sunday, required: true, onChanged: (v) => setState(() => range = v));
 }
 class NgFormExample extends StatefulWidget { const NgFormExample({super.key}); @override State<NgFormExample> createState()=>_NgFormExampleState(); }
 class _NgFormExampleState extends State<NgFormExample> {

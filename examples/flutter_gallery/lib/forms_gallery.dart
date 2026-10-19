@@ -111,7 +111,7 @@ class _FormsGalleryState extends State<FormsGallery> {
               ),
               const SizedBox(height: 40),
               Text(
-                'FLUTTER / FORMS AND DATES 0.31',
+                'FLUTTER / FORMS AND DATES 0.32',
                 style: TextStyle(color: Theme.of(context).colorScheme.primary),
               ),
               const SizedBox(height: 16),
@@ -127,7 +127,7 @@ class _FormsGalleryState extends State<FormsGallery> {
               Wrap(
                 children: [
                   NgCheckBox(
-                    label: 'Read only text',
+                    label: 'Read only text and dates',
                     value: readOnly,
                     onChanged: (v) => setState(() => readOnly = v),
                   ),
@@ -251,6 +251,7 @@ class _FormsGalleryState extends State<FormsGallery> {
                         ),
                         NgDateInput(
                           label: 'Registration deadline',
+                          readOnly: readOnly,
                           value: deadline,
                           min: min,
                           max: max,
@@ -259,6 +260,7 @@ class _FormsGalleryState extends State<FormsGallery> {
                         ),
                         NgDatePicker(
                           label: 'Workshop date',
+                          readOnly: readOnly,
                           value: date,
                           min: min,
                           max: max,
@@ -292,6 +294,8 @@ class _FormsGalleryState extends State<FormsGallery> {
                       const SizedBox(height: 24),
                       NgDateRangePicker(
                         label: 'Room reservation',
+                        readOnly: readOnly,
+                        disabledDate: (d) => d.weekday == DateTime.sunday,
                         value: range,
                         min: min,
                         max: max,
@@ -315,7 +319,7 @@ class _FormsGalleryState extends State<FormsGallery> {
                         Align(
                           alignment: Alignment.topLeft,
                           child: NgCalendar(
-                            value: date,
+                            readOnly: readOnly,                            value: date,
                             min: min,
                             max: max,
                             disabledDate: (d) => d.weekday == DateTime.sunday,

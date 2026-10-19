@@ -7,7 +7,7 @@ Web-first implementation on Blazor and Flutter: eleven additional controls, brin
 | NgCalendar | Single date, month navigation, bounds, disabled days; Blazor culture/week start and day arrow keys; Flutter Material year selection | Multi-selection, multi-view calendar, configurable templates, parity of keyboard navigation/localization |
 | NgDateInput | Strict yyyy-mm-dd parsing, impossible-date rejection, bounds, disabled dates, form errors | Segmented editing, configurable date formats |
 | NgDatePicker | Text input plus calendar selection, disabled days, bounds; Blazor Clear/Close/Escape, Flutter modal dismissal | Unified popup behavior, templates, complete accessibility audit |
-| NgDateRangePicker | Two date pickers, complete-pair and start/end ordering validation | Shared dual-calendar range highlighting, presets, disabled-date predicate |
+| NgDateRangePicker | Two date pickers, complete-pair and start/end ordering validation, endpoint disabled-date rules and read-only | Shared dual-calendar range highlighting, presets |
 | NgTimePicker | Strict HH:mm, bounds, picker UI | Custom step intervals and time-list templates |
 | NgDateTimePicker | Strict yyyy-mm-dd HH:mm, bounds, picker UI | Time-zone conversion, custom formats and step intervals |
 | NgTextArea | Multiple rows, maximum length, disabled state, form integration | Auto-resizing and character-counter parity |
@@ -53,3 +53,9 @@ Blazor AutoComplete still uses a browser datalist; Flutter uses a native Materia
 NumericTextBox validates inclusive bounds inside the component on both platforms, preserves invalid drafts, and offers labelled increment/decrement buttons with clamping. Typed values need not be multiples of Step. Blazor uses invariant decimal syntax; Flutter finite double syntax, without exponent/group separators. Read-only protects the editor and buttons.
 
 TimePicker and DateTimePicker add read-only and MinuteStep (positive divisors of 60). Intervals start at each hour, independent of Min. Native/Material popup minute choices remain unrestricted; off-step values are rejected. Flutter ignores stale popup results after parent rebuild, editing or disposal. Models supplied externally still require application validation. See the runnable manual examples for limits and usage.
+
+## Calendar and date editing update
+
+Calendar, DateInput, DatePicker and DateRangePicker now expose read-only behavior on both Web frameworks. Date range restrictions apply to each endpoint, not the intervening dates. Invalid Min/Max configurations fail early. Optional Blazor date input can be cleared without a parsing error. Flutter range validation follows parent model replacement; unchanged-value draft resets still require a new key. Calendar disables pointer and keyboard interaction in read-only mode.
+
+Updated manual examples demonstrate October 2026 bounds, unavailable Sundays and a read-only toggle. See the parity matrix for the remaining reference features and verification history for current evidence.

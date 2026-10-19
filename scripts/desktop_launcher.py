@@ -27,6 +27,7 @@ CSS += '''.layout{grid-template-columns:290px minmax(0,1fr)}.component-tree,.com
 CSS += (ROOT / 'scripts/documentation.css').read_text()
 
 SCRIPT = r'''(()=>{
+ try{if(parent!==window&&parent.location.pathname==='/desktop')document.querySelector('body>header')?.remove();}catch{}
  const search=document.getElementById('component-search'),branches=[...document.querySelectorAll('[data-category]')];let beforeSearch=null;
  if(search)search.addEventListener('input',()=>{
   const q=search.value.trim().toLowerCase();if(q&&beforeSearch===null)beforeSearch=branches.map(branch=>branch.open);
@@ -54,7 +55,7 @@ SCRIPT = r'''(()=>{
   const kicker=document.createElement('div');kicker.className='doc-kicker';kicker.textContent=category?'Component reference':'Nextgen learning center';
   title.before(hero);hero.append(breadcrumb,kicker,title);
   if(category&&title.textContent.includes(' — ')){const parts=title.textContent.split(' — ');title.textContent=parts.shift();const subtitle=document.createElement('p');subtitle.className='doc-subtitle';subtitle.textContent=parts.join(' — ');hero.append(subtitle);}
-  const badges=document.createElement('div');badges.className='doc-badges';for(const text of ['Blazor','Flutter Web','Version 0.31']){const badge=document.createElement('span');badge.className='doc-badge';badge.textContent=text;badges.append(badge);}hero.append(badges);
+  const badges=document.createElement('div');badges.className='doc-badges';for(const text of ['Blazor','Flutter Web','Version 0.32']){const badge=document.createElement('span');badge.className='doc-badge';badge.textContent=text;badges.append(badge);}hero.append(badges);
   const oldNav=hero.nextElementSibling;if(category&&oldNav?.tagName==='P'&&oldNav.querySelectorAll('a').length>=3&&!oldNav.textContent.includes('Start with'))oldNav.remove();
  }
  const appearance=main.querySelector('#appearance-and-live-example');
@@ -119,10 +120,12 @@ def page(title, body):
 class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         path = unquote(urlsplit(self.path).path)
+        if path == '/desktop':
+            return self.reply((ROOT / 'scripts/desktop-shell.html').read_bytes())
         if path == '/health':
             return self.reply(json.dumps({'app': 'nextgen-components-launcher', 'root': str(ROOT)}).encode(), 'application/json')
         if path == '/':
-            return self.reply(page('Demo and documentation', '<p class="eyebrow">Developer hub / 0.31</p><h1>Build your next interface.</h1><p class="hero-copy">47 components. Two frameworks. Working examples that take you from your first button to a complete data workflow.</p><div class="route"><a href="/docs/manual/getting-started.md"><b>01 · Install</b><span>Connect the library and theme.</span></a><a href="/docs/manual/code-examples.md"><b>02 · Run</b><span>Start from a working example.</span></a><a href="/docs/manual/models.md"><b>03 · Connect</b><span>Bind your data and save changes.</span></a></div><div class="cards"><a class="card" href="http://127.0.0.1:5180/"><small>Interactive / .NET</small><strong>Blazor playground ↗</strong>Explore forms, grids, charts, documents and step-by-step workflows.</a><a class="card" href="http://127.0.0.1:5181/"><small>Interactive / Dart</small><strong>Flutter playground ↗</strong>Try the same workflows in a running Flutter Web application.</a><a class="card" href="/docs/manual/code-examples.md"><small>Learn by building</small><strong>Code examples →</strong>Copy real Blazor and Flutter code for state, validation and events.</a><a class="card" href="/docs/manual/README.md"><small>API and behavior</small><strong>Component manual →</strong>Understand parameters, limits, data contracts and integration rules.</a></div><h2 id="workflows">What are you building?</h2><ul><li><a href="/docs/manual/NgWizard.md">A multi-step application with validation</a></li><li><a href="/docs/manual/NgDataGrid.md">A searchable workspace for business records</a></li><li><a href="/docs/manual/NgAIPrompt.md">An AI interface connected to your backend</a></li><li><a href="/docs/manual/NgMap.md">A geographic view with markers and clustering</a></li></ul><div class="tip"><strong>Start small.</strong> Open Getting started, run one example, then connect your application data. Each component page includes both framework versions.</div><p class="muted">Demos run locally. Web is the currently verified target; native mobile validation is a separate phase.</p>').encode())
+            return self.reply(page('Demo and documentation', '<p class="eyebrow">Developer hub / 0.32</p><h1>Build your next interface.</h1><p class="hero-copy">47 components. Two frameworks. Working examples that take you from your first button to a complete data workflow.</p><div class="route"><a href="/docs/manual/getting-started.md"><b>01 · Install</b><span>Connect the library and theme.</span></a><a href="/docs/manual/code-examples.md"><b>02 · Run</b><span>Start from a working example.</span></a><a href="/docs/manual/models.md"><b>03 · Connect</b><span>Bind your data and save changes.</span></a></div><div class="cards"><a class="card" href="http://127.0.0.1:5180/"><small>Interactive / .NET</small><strong>Blazor playground ↗</strong>Explore forms, grids, charts, documents and step-by-step workflows.</a><a class="card" href="http://127.0.0.1:5181/"><small>Interactive / Dart</small><strong>Flutter playground ↗</strong>Try the same workflows in a running Flutter Web application.</a><a class="card" href="/docs/manual/code-examples.md"><small>Learn by building</small><strong>Code examples →</strong>Copy real Blazor and Flutter code for state, validation and events.</a><a class="card" href="/docs/manual/README.md"><small>API and behavior</small><strong>Component manual →</strong>Understand parameters, limits, data contracts and integration rules.</a></div><h2 id="workflows">What are you building?</h2><ul><li><a href="/docs/manual/NgWizard.md">A multi-step application with validation</a></li><li><a href="/docs/manual/NgDataGrid.md">A searchable workspace for business records</a></li><li><a href="/docs/manual/NgAIPrompt.md">An AI interface connected to your backend</a></li><li><a href="/docs/manual/NgMap.md">A geographic view with markers and clustering</a></li></ul><div class="tip"><strong>Start small.</strong> Open Getting started, run one example, then connect your application data. Each component page includes both framework versions.</div><p class="muted">Demos run locally. Web is the currently verified target; native mobile validation is a separate phase.</p>').encode())
         target = (ROOT / path.lstrip('/')).resolve()
         try:
             relative = target.relative_to(ROOT)
@@ -187,18 +190,18 @@ def start(name, command, cwd, url, expected):
     raise RuntimeError(f'Unable to start {name}. Another application may be using the port. Log: {STATE / (name + ".log")}')
 
 
-def launch(destination, open_browser):
+def launch(destination, open_browser, desktop=False):
     from markdown_it import MarkdownIt  # fail before starting any services
     STATE.mkdir(parents=True, exist_ok=True)
     with (STATE / 'launch.lock').open('w') as lock:
         fcntl.flock(lock, fcntl.LOCK_EX)
-        if destination in {'home', 'blazor'}:
+        if desktop or destination in {'home', 'blazor'}:
             blazor = ROOT / 'examples/BlazorGallery'
             dll = blazor / 'bin/Debug/net10.0/BlazorGallery.dll'
             if not dll.exists():
                 subprocess.run(['dotnet', 'build', str(blazor), '-m:1'], cwd=ROOT, check=True)
             start('blazor', ['dotnet', str(dll), '--urls', 'http://127.0.0.1:5180'], blazor, 'http://127.0.0.1:5180/', 'NEXTGEN COMPONENTS')
-        if destination in {'home', 'flutter'}:
+        if desktop or destination in {'home', 'flutter'}:
             web = ROOT / 'examples/flutter_gallery/build/web'
             if not (web / 'index.html').exists():
                 flutter = os.environ.get('NEXTGEN_FLUTTER') or shutil.which('flutter')
@@ -213,13 +216,16 @@ def launch(destination, open_browser):
             start('flutter', [sys.executable, '-m', 'http.server', '5181', '--bind', '127.0.0.1', '--directory', str(web)], ROOT, 'http://127.0.0.1:5181/', 'flutter_bootstrap.js')
         start('documentation', [sys.executable, str(Path(__file__).resolve()), '--serve'], ROOT, f'http://127.0.0.1:{PORT}/health', str(ROOT))
     urls = {'home': f'http://127.0.0.1:{PORT}/', 'manual': f'http://127.0.0.1:{PORT}/docs/manual/README.md', 'blazor': 'http://127.0.0.1:5180/', 'flutter': 'http://127.0.0.1:5181/'}
+    url = f'http://127.0.0.1:{PORT}/desktop?page={destination if destination != "home" else "manual"}' if desktop else urls[destination]
     if open_browser:
-        subprocess.Popen(['google-chrome', '--new-window', urls[destination]], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
-    print(urls[destination])
+        command = ['google-chrome', f'--user-data-dir={STATE / "chrome-profile"}', f'--app={url}', '--window-size=1440,960'] if desktop else ['google-chrome', '--new-window', url]
+        subprocess.Popen(command, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
+    print(url)
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--desktop', action='store_true', help='Open the documentation and demos in a dedicated app window')
     parser.add_argument('--serve', action='store_true')
     parser.add_argument('--no-browser', action='store_true')
     parser.add_argument('--page', choices=['home', 'manual', 'blazor', 'flutter'], default='home')
@@ -228,7 +234,7 @@ if __name__ == '__main__':
         if args.serve:
             ThreadingHTTPServer(('127.0.0.1', PORT), Handler).serve_forever()
         else:
-            launch(args.page, not args.no_browser)
+            launch(args.page, not args.no_browser, args.desktop)
     except Exception as error:
         message = str(error)
         print(message, file=sys.stderr)

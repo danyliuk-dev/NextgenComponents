@@ -2,8 +2,8 @@
 @implements IDisposable
 <fieldset class="ng-range" disabled="@Disabled"><legend>@Label</legend>
 <div class="ng-form-grid">
-<NgDatePicker Label="Start date" Value="start" ValueChanged="StartChanged" ValueExpression="() => start" Min="Min" Max="Max" Disabled="Disabled" />
-<NgDatePicker Label="End date" Value="end" ValueChanged="EndChanged" ValueExpression="() => end" Min="Min" Max="Max" Disabled="Disabled" />
+<NgDatePicker Label="Start date" Value="start" ValueChanged="StartChanged" ValueExpression="() => start" Min="Min" Max="Max" Disabled="Disabled" ReadOnly="ReadOnly" DisabledDate="DisabledDate" />
+<NgDatePicker Label="End date" Value="end" ValueChanged="EndChanged" ValueExpression="() => end" Min="Min" Max="Max" Disabled="Disabled" ReadOnly="ReadOnly" DisabledDate="DisabledDate" />
 </div>
 @if(error is not null) { <span class="ng-field-error" role="status">@error</span> }
 </fieldset>
@@ -15,6 +15,8 @@
  [Parameter] public Expression<Func<NgDateRange?>>? ValueExpression { get; set; }
  [Parameter] public DateOnly? Min { get; set; }
  [Parameter] public DateOnly? Max { get; set; }
+ [Parameter] public bool ReadOnly { get; set; }
+ [Parameter] public Func<DateOnly,bool>? DisabledDate { get; set; }
  [Parameter] public bool Disabled { get; set; }
  private DateOnly? start,end;
  private NgDateRange? previous;
@@ -24,14 +26,15 @@
  private ValidationMessageStore? messages;
  private FieldIdentifier field;
  protected override void OnParametersSet() {
+  if (Min > Max) throw new ArgumentException("Min must not exceed Max.");
   if(!initialized || Value != previous) { start=Value?.Start; end=Value?.End; previous=Value; initialized=true; }
   if (Context != registered) { Detach(); registered=Context; if(Context is not null && ValueExpression is not null) { field=FieldIdentifier.Create(ValueExpression); messages=new(Context); Context.OnValidationRequested+=Validate; } }
  }
- private async Task StartChanged(DateOnly? value) { start=value; await Changed(); }
- private async Task EndChanged(DateOnly? value) { end=value; await Changed(); }
+ private async Task StartChanged(DateOnly? value) { if (Disabled || ReadOnly) return; start=value; await Changed(); }
+ private async Task EndChanged(DateOnly? value) { if (Disabled || ReadOnly) return; end=value; await Changed(); }
  private async Task Changed() { var next=new NgDateRange(start,end); previous=next; await ValueChanged.InvokeAsync(next); if(messages is not null) registered?.NotifyFieldChanged(field); UpdateError(); }
  private void Validate(object? sender, ValidationRequestedEventArgs e) => UpdateError();
- private void UpdateError() { error=NgDateRules.RangeError(new(start,end)); messages?.Clear(); if(error is not null) messages?.Add(field,error); registered?.NotifyValidationStateChanged(); StateHasChanged(); }
+ private void UpdateError() { error=NgDateRules.RangeError(new(start,end)) ?? (new[]{start,end}.Any(d => d is not null && !NgDateRules.Allowed(d.Value,Min,Max,DisabledDate)) ? "This date is not available." : null); messages?.Clear(); if(error is not null) messages?.Add(field,error); registered?.NotifyValidationStateChanged(); StateHasChanged(); }
  private void Detach() { if(registered is not null) { registered.OnValidationRequested-=Validate; messages?.Clear(); registered.NotifyValidationStateChanged(); } messages=null; }
  public void Dispose() => Detach();
 }

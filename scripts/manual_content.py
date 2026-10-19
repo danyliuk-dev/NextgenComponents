@@ -2245,3 +2245,34 @@ ReadOnly/readOnly blocks typing and picker changes while keeping the value reada
 Custom display formats, time zones, disabled time lists and popup templates remain gaps. No implicit UTC conversion occurs; values represent local wall-clock time."""
  D[_name]['blazor']=D[_name]['blazor'].replace('Label="Date"', 'Label="Appointment" MinuteStep="15"')
  D[_name]['dart']=D[_name]['dart'].replace('(value: value,', "(label: 'Appointment', minuteStep: 15, value: value,")
+
+# Calendar/date editing block: executable, bounded and read-only examples.
+for _name in ['NgDateInput', 'NgDatePicker', 'NgCalendar', 'NgDateRangePicker']:
+ D[_name]['notes'] += """
+
+ReadOnly/readOnly prevents user changes. Disabled/enabled also disables interaction. Date editors keep readable, focusable text in read-only mode and disable their picker action; Calendar blocks selection and navigation (Flutter also excludes keyboard focus). Bounds must be ordered; invalid configuration throws. Values are Gregorian calendar dates; date text is ISO yyyy-MM-dd, independent of Blazor's current culture. Empty optional input clears to null.
+
+DisabledDate/disabledDate applies to typing and calendar selection. In a range it checks both endpoints, not every date between them. Partial and reversed ranges fail form validation. Flutter range validation reads the current parent value after replacement. Applications own validation of external single-date values. Replace the form key to discard an invalid draft when the model value is unchanged.
+
+Flutter calendars use Material locale/week-start and default bounds 1900–2100; Blazor uses Culture/FirstDayOfWeek and DateOnly bounds. Supply explicit bounds for matching domains. Calendar selection is single-date only. Shared range highlighting, multiple calendar views, cell templates, week numbers, segmented/custom-format input and complete keyboard/screen-reader parity remain open. Flutter popup results are ignored after a parent rebuild, edit or disposal."""
+ if _name != 'NgDateRangePicker':
+  D[_name]['blazor'] = f'''<{_name} @bind-Value="value" Min="min" Max="max" DisabledDate="Unavailable" ReadOnly="readOnly" />
+<NgButton OnClick="Toggle">Read only</NgButton>
+<p>Accepted date: @value</p>
+@code {{
+ private DateOnly? value=new(2026,10,20); private bool readOnly;
+ private DateOnly min=new(2026,10,1), max=new(2026,10,31);
+ private bool Unavailable(DateOnly d)=>d.DayOfWeek==DayOfWeek.Sunday;
+ private void Toggle()=>readOnly=!readOnly;
+}}'''
+  D[_name]['dart'] = f'''DateTime? value=DateTime(2026,10,20); bool readOnly=false;
+Widget build(BuildContext context)=>Column(crossAxisAlignment:CrossAxisAlignment.start, children:[
+ {_name}(value:value,min:DateTime(2026,10,1),max:DateTime(2026,10,31),
+  readOnly:readOnly,disabledDate:(d)=>d.weekday==DateTime.sunday,
+  onChanged:(v)=>setState(()=>value=v)),
+ NgButton(onPressed:()=>setState(()=>readOnly=!readOnly),child:const Text('Read only')),
+ Text('Accepted date: $value'),
+]);'''
+ else:
+  D[_name]['blazor']=D[_name]['blazor'].replace('Label="Period"', 'Label="Period" DisabledDate="d => d.DayOfWeek == DayOfWeek.Sunday"')
+  D[_name]['dart']=D[_name]['dart'].replace('required: true,', 'disabledDate: (d) => d.weekday == DateTime.sunday, required: true,')

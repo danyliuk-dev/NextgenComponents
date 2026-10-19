@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nextgen Components — Desktop</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font:14px system-ui,sans-serif;background:#101d32;color:#eef4ff;height:100vh;display:flex;flex-direction:column}header{display:flex;align-items:center;gap:24px;padding:14px 22px;border-bottom:1px solid #364761}.brand{font-weight:800;letter-spacing:1px}.brand span{display:inline-grid;place-items:center;width:32px;height:32px;margin-right:10px;background:#6676ed;border-radius:9px}nav{display:flex;gap:6px;flex:1}button,a{font:inherit;color:inherit;border:1px solid #465775;background:#20314c;border-radius:8px;padding:9px 14px;cursor:pointer;text-decoration:none}button:hover,a:hover{background:#354e73}button[aria-pressed=true]{background:#6676ed;border-color:#8794ff}button:focus-visible,a:focus-visible{outline:3px solid #ffcb76;outline-offset:3px}main{flex:1;min-height:0;background:#f5f7fb;position:relative}iframe{display:block;width:100%;height:100%;border:0;background:white}iframe[hidden]{display:none}footer{display:flex;gap:16px;padding:8px 22px;color:#becce1;font-size:12px}.tools{display:flex;gap:6px}#status{flex:1}@media(max-width:780px){header{flex-wrap:wrap;gap:10px;padding:10px}nav{order:3;flex-basis:100%}.tools{margin-left:auto}nav button{flex:1}footer{padding:8px 10px}.brand{font-size:12px}button,a{padding:8px 10px}}
+</style>
+</head>
+<body>
+<header><div class="brand"><span>N</span>NEXTGEN COMPONENTS</div>
+<nav aria-label="Workspace"><button data-page="manual" aria-pressed="false">Documentation</button><button data-page="blazor" aria-pressed="false">Blazor demo</button><button data-page="flutter" aria-pressed="false">Flutter demo</button></nav>
+<div class="tools"><button id="reload" title="Reload the active section">Reload</button><a id="external" target="_blank" rel="noopener">Open in browser ↗</a></div></header>
+<main aria-label="Active workspace"></main>
+<footer><span id="status" role="status">Opening workspace…</span><span>Local workspace · Web demos</span></footer>
+<script>
+(()=>{
+ const routes={manual:'/docs/manual/README.md',blazor:'http://127.0.0.1:5180/',flutter:'http://127.0.0.1:5181/'};
+ const names={manual:'Documentation',blazor:'Blazor demo',flutter:'Flutter demo'};
+ const frames=new Map();let active;
+ const status=document.querySelector('#status');
+ function select(key){
+  if(!Object.hasOwn(routes,key))key='manual';
+  active=key;
+  document.querySelectorAll('[data-page]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.page===key)));
+  for(const [id,frame] of frames)frame.hidden=id!==key;
+  let frame=frames.get(key);
+  if(!frame){
+   frame=document.createElement('iframe');frame.title=names[key];frame.src=routes[key];
+   frame.addEventListener('load',()=>{if(active===key)status.textContent=names[key]+' · Local workspace';});
+   frames.set(key,frame);document.querySelector('main').append(frame);
+  }
+  frame.hidden=false;
+  document.querySelector('#external').href=routes[key];
+  status.textContent=names[key]+' · Local workspace';
+  document.title=names[key]+' — Nextgen Components';
+  try{localStorage.setItem('nextgen-desktop-section',key);}catch{}
+ }
+ document.querySelectorAll('[data-page]').forEach(b=>b.addEventListener('click',()=>select(b.dataset.page)));
+ document.querySelector('#reload').addEventListener('click',()=>{
+  const frame=frames.get(active);
+  // Same-origin documentation reload keeps the current component page.
+  try{frame.contentWindow.location.reload();}catch{frame.src=routes[active];}
+  status.textContent='Reloading '+names[active]+'…';
+ });
+ document.querySelector('#external').addEventListener('click',e=>{
+  try{e.currentTarget.href=frames.get(active).contentWindow.location.href;}catch{e.currentTarget.href=routes[active];}
+ });
+ let saved;try{saved=localStorage.getItem('nextgen-desktop-section');}catch{}
+ select(new URLSearchParams(location.search).get('page')||saved||'manual');
+})();
+</script></body></html>

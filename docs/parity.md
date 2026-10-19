@@ -11,7 +11,7 @@ A component can be marked complete only after every reference feature is recorde
 ## Current work order
 
 1. Chip/ChipList remaining gaps stay tracked below; do not mark full parity or silently accept them. Work is delivered in component blocks, not one release per parameter.
-2. ToggleButton/ButtonGroup and Menu/Drawer implementation blocks are delivered with explicit remaining gaps below. Stepper/Wizard is also delivered below; TextBox/TextArea/Form is delivered in 0.29; AutoComplete/ComboBox/MultiSelect is delivered in 0.30; numeric/time editing is delivered in 0.31; next work moves to Calendar, DateInput, DatePicker and DateRangePicker. No block is a full-parity verdict.
+2. ToggleButton/ButtonGroup and Menu/Drawer implementation blocks are delivered with explicit remaining gaps below. Stepper/Wizard is also delivered below; TextBox/TextArea/Form is delivered in 0.29; AutoComplete/ComboBox/MultiSelect is delivered in 0.30; numeric/time editing is delivered in 0.31; Calendar, DateInput, DatePicker and DateRangePicker are delivered in 0.32; continue through remaining editors/forms and data management. No block is a full-parity verdict.
 3. Continue through existing editors/forms, data management, visualization and complex editors. Add new component names only after closing the active group or recording a user-approved exception.
 
 ## Chip and ChipList feature matrix
@@ -291,3 +291,20 @@ Sources: [AutoComplete filtering](https://www.telerik.com/blazor-ui/documentatio
 | Numeric increment | Labelled increase/decrease, positive step, clamping, read-only | Culture/currency formatting, precision policy and acceleration |
 | Time intervals | MinuteStep dividing 60, input and picker validation, read-only | Restricted-minute popup, disabled-time lists, custom formats and time zones |
 | Pending Flutter dialogs | Ignore results after parent rebuild, editor change or disposal | Dialog cancellation/automatic dismissal is not implemented |
+
+
+## Calendar and date editors (0.32)
+
+Sources: [Calendar API](https://www.telerik.com/blazor-ui/documentation/api/telerik.blazor.components.telerikcalendar), [DatePicker API](https://www.telerik.com/blazor-ui/documentation/api/telerik.blazor.components.telerikdatepicker-1), [DateRangePicker overview](https://www.telerik.com/blazor-ui/documentation/components/daterangepicker/overview).
+
+| Capability | Both Web implementations | Difference / open scope |
+|---|---|---|
+| Read-only | Calendar, DateInput, DatePicker and DateRangePicker block edits | Calendar navigation is also blocked; native focus differs |
+| Bounds and unavailable dates | Inclusive bounds, invalid configuration rejection, range endpoint predicates | Excluded days inside an otherwise valid range are allowed |
+| Empty/invalid drafts | Optional clearing, retained invalid input, form validation | Blazor single-date external model validation remains application-owned |
+| Controlled range | Parent replacement participates in Flutter validation | Unchanged-value draft reset requires a new key |
+| Calendar presentation | Single date; platform calendar navigation | Multi-select, shared range highlighting, week numbers, multiple views and templates remain open |
+| Formatting/localization | ISO editor text; framework-specific calendar locale | Segmented/custom-format input and unified localization remain open |
+| Popup and accessibility | Existing Escape/dismissal behavior, guarded Flutter results | Full popup event API, keyboard parity, screen-reader and native/mobile certification remain open |
+
+This block is not a full-parity verdict. See verification history for automated and foreground Chrome evidence.

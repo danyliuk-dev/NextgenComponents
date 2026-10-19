@@ -1,3 +1,10 @@
 @* Generated from scripts/manual_content.py *@
-<NgDatePicker Label="Date" @bind-Value="value"/>
-@code { private DateOnly? value=new(2026,10,20); }
+<NgDatePicker @bind-Value="value" Min="min" Max="max" DisabledDate="Unavailable" ReadOnly="readOnly" />
+<NgButton OnClick="Toggle">Read only</NgButton>
+<p>Accepted date: @value</p>
+@code {
+ private DateOnly? value=new(2026,10,20); private bool readOnly;
+ private DateOnly min=new(2026,10,1), max=new(2026,10,31);
+ private bool Unavailable(DateOnly d)=>d.DayOfWeek==DayOfWeek.Sunday;
+ private void Toggle()=>readOnly=!readOnly;
+}
