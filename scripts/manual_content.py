@@ -407,47 +407,106 @@ D = {'NgButton': {'title': 'Button',
                          'not implement server data binding, virtualization, column grouping or Excel '
                          'export; see [data workspace](../data-workspace.md).'},
  'NgTreeView': {'title': 'Tree view',
-                'use': 'Browse and select hierarchical records.',
-                'blazor': '<NgTreeView TItem="string" Items="nodes" Text="s=>s" @bind-ExpandedIds="expanded" '
-                          '@bind-SelectedId="selected"/>\n'
-                          '@code { private string? selected; private HashSet<string> expanded=["root"]; '
-                          'private NgTreeNode<string>[] '
-                          'nodes=[new("root","Projects",[new("a","Design"),new("b","Engineering")])]; }',
-                'dart': "Set<String> expanded = {'root'}; String? selected;\n"
-                        'Widget build(BuildContext context) => NgTreeView<String>(\n'
-                        "  items: const [NgTreeNode('root','Projects',children: "
-                        "[NgTreeNode('a','Design'),NgTreeNode('b','Engineering')])],\n"
-                        '  text: (s) => s,\n'
-                        '  expandedIds: expanded, selectedId: selected,\n'
-                        '  onExpandedChanged: (v) => setState(() => expanded = v),\n'
-                        '  onSelected: (v) => setState(() => selected = v));',
-                'notes': 'NgTreeNode<T> contains a stable unique ID, item, children and disabled flag. The '
-                         'graph must be acyclic. ExpandedIds and SelectedId are controlled: save callbacks '
-                         'and pass updated collections back. Replacing the tree should also remove obsolete '
-                         'IDs from parent selection/expansion. Disabled nodes cannot be selected. Lazy '
-                         'server loading, drag/drop and virtualization are not implemented.'},
+ 'use': 'Browse and select hierarchical records.',
+ 'blazor': '<NgCheckBox Label="Selection read-only" @bind-Value="selectionReadOnly"/>\n'
+           '<NgCheckBox Label="Expansion read-only" @bind-Value="expansionReadOnly"/>\n'
+           '<NgTreeView TItem="string" Items="nodes" Text="s=>s" @bind-ExpandedIds="expanded" '
+           '@bind-SelectedId="selected" SelectionReadOnly="selectionReadOnly" '
+           'ExpansionReadOnly="expansionReadOnly" EmptyText="No teams found."><ItemTemplate '
+           'Context="item"><strong>@item</strong><span> · team</span></ItemTemplate></NgTreeView>\n'
+           '<p>Selected team: @(selected??"none")</p>\n'
+           '@code { private bool selectionReadOnly,expansionReadOnly; private string? selected; '
+           'private HashSet<string> expanded=["root"]; private NgTreeNode<string>[] '
+           'nodes=[new("root","Projects",[new("a","Design"),new("b","Engineering")])]; }',
+ 'dart': 'bool selectionReadOnly = false, expansionReadOnly = false;\n'
+         "Set<String> expanded = {'root'}; String? selected;\n"
+         'Widget build(BuildContext context) => Column(crossAxisAlignment: '
+         'CrossAxisAlignment.stretch, children: [\n'
+         "  NgCheckBox(label: 'Selection read-only', value: selectionReadOnly, onChanged: (v) => "
+         'setState(() => selectionReadOnly = v)),\n'
+         "  NgCheckBox(label: 'Expansion read-only', value: expansionReadOnly, onChanged: (v) => "
+         'setState(() => expansionReadOnly = v)),\n'
+         '  NgTreeView<String>(\n'
+         '  selectionReadOnly: selectionReadOnly, expansionReadOnly: expansionReadOnly,\n'
+         "  emptyText: 'No teams found.',\n"
+         "  items: const [NgTreeNode('root','Projects',children: "
+         "[NgTreeNode('a','Design'),NgTreeNode('b','Engineering')])],\n"
+         '  text: (s) => s,\n'
+         "  itemBuilder: (context, s) => Text('$s · team', style: const TextStyle(fontWeight: "
+         'FontWeight.bold)),\n'
+         '  expandedIds: expanded, selectedId: selected,\n'
+         '  onExpandedChanged: (v) => setState(() => expanded = v),\n'
+         '  onSelected: (v) => setState(() => selected = v)),\n'
+         '  Text(\'Selected team: ${selected ?? "none"}\'),\n'
+         ']);',
+ 'notes': 'NgTreeNode<T> contains a stable unique ID, item, children and disabled flag. The graph '
+          'must be acyclic. ExpandedIds and SelectedId are controlled: save callbacks and pass '
+          'updated collections back. Replacing the tree should also remove obsolete IDs from '
+          'parent selection/expansion. Disabled nodes cannot be selected. Lazy server loading, '
+          'drag/drop and virtualization are not implemented. SelectionReadOnly/selectionReadOnly '
+          'blocks selection but permits navigation and expansion. '
+          'ExpansionReadOnly/expansionReadOnly freezes expansion but permits selection. Search '
+          'still reveals matching descendant paths without changing expanded IDs; clearing search '
+          'restores caller state. Whitespace-only search is inactive. Disabled nodes and stale '
+          'callbacks cannot change state. EmptyText/emptyText and EmptyTemplate/emptyBuilder '
+          'customize no-results content. IDs must be nonempty. Parent updates can replace or clear '
+          'state even in read-only mode. Missing selected/expanded IDs are retained in caller '
+          'state, not automatically pruned. ItemTemplate/itemBuilder is decorative: Text/text '
+          'supplies the accessible name and search text. Do not place interactive controls in this '
+          'template. ArrowRight enters only an enabled immediate child; leaves do not move focus '
+          'to siblings. Full roving-tabindex/focus recovery, type-ahead, checkboxes and '
+          'multi-selection remain open.'},
  'NgTreeList': {'title': 'Tree list',
-                'use': 'Combine hierarchical rows with typed columns.',
-                'blazor': '<NgTreeList TItem="string" Items="nodes" Columns="columns" '
-                          '@bind-ExpandedIds="expanded" @bind-SelectedId="selected"/>\n'
-                          '@code { private string? selected; private HashSet<string> expanded=["root"]; '
-                          'private NgTreeNode<string>[] '
-                          'nodes=[new("root","Projects",[new("a","Design"),new("b","Engineering")])]; '
-                          'private NgDataColumn<string>[] columns=[new("name","Name",s=>s)]; }',
-                'dart': "Set<String> expanded = {'root'}; String? selected;\n"
-                        'Widget build(BuildContext context) => NgTreeList<String>(\n'
-                        "  items: const [NgTreeNode('root','Projects',children: "
-                        "[NgTreeNode('a','Design'),NgTreeNode('b','Engineering')])],\n"
-                        "  columns: [NgDataColumn('name','Name',(s) => s)],\n"
-                        '  expandedIds: expanded, selectedId: selected,\n'
-                        '  onExpandedChanged: (v) => setState(() => expanded = v),\n'
-                        '  onSelected: (v) => setState(() => selected = v));',
-                'notes': 'Use NgTreeNode<T> for hierarchy and NgDataColumn<T> for cells. IDs must be unique '
-                         'across the whole tree. Persist expanded/selected IDs through callbacks; replace '
-                         'collections after data changes. Column accessors return underlying values, while '
-                         'format/cell templates define presentation. Application code owns edits and '
-                         'persistence. See [data workspace](../data-workspace.md) for sorting/filtering '
-                         'scope and omitted server/virtualization features.'},
+ 'use': 'Combine hierarchical rows with typed columns.',
+ 'blazor': '<NgCheckBox Label="Selection read-only" @bind-Value="selectionReadOnly"/>\n'
+           '<NgCheckBox Label="Expansion read-only" @bind-Value="expansionReadOnly"/>\n'
+           '<NgTreeList TItem="string" Items="nodes" Columns="columns" '
+           '@bind-ExpandedIds="expanded" @bind-SelectedId="selected" '
+           'SelectionReadOnly="selectionReadOnly" ExpansionReadOnly="expansionReadOnly" '
+           'EmptyText="No teams found."/>\n'
+           '<p>Selected team: @(selected??"none")</p>\n'
+           '@code { private bool selectionReadOnly,expansionReadOnly; private string? selected; '
+           'private HashSet<string> expanded=["root"]; private NgTreeNode<string>[] '
+           'nodes=[new("root","Projects",[new("a","Design"),new("b","Engineering")])]; private '
+           'NgDataColumn<string>[] '
+           'columns=[new("name","Name",s=>s,Template:s=>@<strong>@s</strong>)]; }',
+ 'dart': 'bool selectionReadOnly = false, expansionReadOnly = false;\n'
+         "Set<String> expanded = {'root'}; String? selected;\n"
+         'Widget build(BuildContext context) => Column(crossAxisAlignment: '
+         'CrossAxisAlignment.stretch, children: [\n'
+         "  NgCheckBox(label: 'Selection read-only', value: selectionReadOnly, onChanged: (v) => "
+         'setState(() => selectionReadOnly = v)),\n'
+         "  NgCheckBox(label: 'Expansion read-only', value: expansionReadOnly, onChanged: (v) => "
+         'setState(() => expansionReadOnly = v)),\n'
+         '  NgTreeList<String>(\n'
+         '  selectionReadOnly: selectionReadOnly, expansionReadOnly: expansionReadOnly,\n'
+         "  emptyText: 'No teams found.',\n"
+         "  items: const [NgTreeNode('root','Projects',children: "
+         "[NgTreeNode('a','Design'),NgTreeNode('b','Engineering')])],\n"
+         "  columns: [NgDataColumn('name','Name',(s) => s, cellBuilder: (context,s) => Text(s, "
+         'style: const TextStyle(fontWeight: FontWeight.bold)))],\n'
+         '  expandedIds: expanded, selectedId: selected,\n'
+         '  onExpandedChanged: (v) => setState(() => expanded = v),\n'
+         '  onSelected: (v) => setState(() => selected = v)),\n'
+         '  Text(\'Selected team: ${selected ?? "none"}\'),\n'
+         ']);',
+ 'notes': 'Use NgTreeNode<T> for hierarchy and NgDataColumn<T> for cells. IDs must be unique '
+          'across the whole tree. Persist expanded/selected IDs through callbacks; replace '
+          'collections after data changes. Column accessors return underlying values, while '
+          'format/cell templates define presentation. Application code owns edits and persistence. '
+          'See [data workspace](../data-workspace.md) for sorting/filtering scope and omitted '
+          'server/virtualization features. SelectionReadOnly/selectionReadOnly blocks selection '
+          'but permits navigation and expansion. ExpansionReadOnly/expansionReadOnly freezes '
+          'expansion but permits selection. Search still reveals matching descendant paths without '
+          'changing expanded IDs; clearing search restores caller state. Whitespace-only search is '
+          'inactive. Disabled nodes and stale callbacks cannot change state. EmptyText/emptyText '
+          'and EmptyTemplate/emptyBuilder customize no-results content. IDs must be nonempty. '
+          'Parent updates can replace or clear state even in read-only mode. Missing '
+          'selected/expanded IDs are retained in caller state, not automatically pruned. '
+          'First-column Template/cellBuilder now works inside the select control; keep it '
+          'decorative. The formatted column text supplies the accessible name. Columns require '
+          'unique nonempty keys and at least one entry. TreeList has table/button keyboard '
+          'semantics, not a treegrid keyboard model.'},
  'NgChart': {'title': 'Chart',
              'use': 'Visualize local series as column, bar, line, area, pie or donut charts.',
              'blazor': '<NgChart Title="Sales" Kind="NgChartKind.Line" Categories="categories" '

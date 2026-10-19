@@ -4,7 +4,7 @@
 <PageTitle>Nextgen • Data workspace</PageTitle>
 <div class="ng-scope gallery" data-ng-theme="@(dark?"dark":"light")" data-ng-density="@(compact?"compact":"normal")"><main>
 <nav><a href="/code-examples">Code examples</a><strong><span class="brand-icon">N</span> NEXTGEN COMPONENTS</strong><div class="row"><a href="/">Foundation</a><a href="/forms">Forms and dates</a><NgSwitch Label="Dark theme" @bind-Value="dark"/><NgCheckBox Label="Compact" @bind-Value="compact"/></div></nav>
-<section class="hero"><p class="eyebrow">BLAZOR / DATA WORKSPACE 0.34</p><h1>Find the detail.<br/>Keep the context.</h1><p>Explore projects by team, sort budgets, select across pages and edit a project. All changes stay in this example.</p></section>
+<section class="hero"><p class="eyebrow">BLAZOR / DATA WORKSPACE 0.35</p><h1>Find the detail.<br/>Keep the context.</h1><p>Explore projects by team, sort budgets, select across pages and edit a project. All changes stay in this example.</p></section>
 <NgBreadcrumb Items="Crumbs" OnNavigate="ChooseFolder" />
 <div class="workspace-layout"><aside class="panel"><h2>Teams</h2><NgTreeView TItem="string" Items="folders" Text="x=>x" SelectedId="folder" SelectedIdChanged="ChooseFolder" @bind-ExpandedIds="folderExpanded" /></aside>
 <section class="panel workspace-main"><div class="panel-heading"><h2>@FolderName</h2><span class="tag">@Projects.Count PROJECTS</span></div>
@@ -17,13 +17,14 @@
 <p class="data-hint">Paused projects are protected. Selection follows project IDs across sorting and pages. Click a column heading to reverse sorting.</p>
 </section></div>
 <section class="panel"><div class="panel-heading"><h2>Portfolio hierarchy</h2><span class="tag">TREELIST</span></div>
-<NgTreeList TItem="Project" Items="Hierarchy" Columns="treeColumns" @bind-ExpandedIds="portfolioExpanded" @bind-SelectedId="portfolioSelection" Label="Portfolio" />
+<div class="row"><NgCheckBox Label="Tree selection read-only" @bind-Value="treeSelectionReadOnly"/><NgCheckBox Label="Tree expansion read-only" @bind-Value="treeExpansionReadOnly"/></div>
+<NgTreeList SelectionReadOnly="treeSelectionReadOnly" ExpansionReadOnly="treeExpansionReadOnly" TItem="Project" Items="Hierarchy" Columns="treeColumns" @bind-ExpandedIds="portfolioExpanded" @bind-SelectedId="portfolioSelection" Label="Portfolio" />
 <p role="status">Selected node: @(portfolioSelection??"none")</p></section>
 <footer class="page-footer">27 COMPONENTS <span>WEB FIRST / BLAZOR + FLUTTER</span></footer>
 <NgDialog Title="Edit project" @bind-Open="editing"><ChildContent>@if(draft is not null){<NgForm @key="draft" Model="draft" OnValidSubmit="Save"><div class="fields"><NgTextBox Label="Project name" @bind-Value="draft.Name"/><NgTextBox Label="Owner" @bind-Value="draft.Owner"/><NgNumericTextBox Label="Budget" @bind-Value="draft.Budget" Min="0" Max="1000000"/><NgDropDownList Label="Status" Items="statuses" @bind-Value="draft.Status"/></div><div class="row"><NgButton Primary Type="submit">Save project</NgButton><NgButton OnClick="()=>editing=false">Cancel</NgButton></div></NgForm>}</ChildContent></NgDialog>
 </main></div>
 @code {
- private bool dark,compact,editing,selectionReadOnly;
+ private bool dark,compact,editing,selectionReadOnly,treeSelectionReadOnly,treeExpansionReadOnly;
  private static bool CanSelectProject(Project p)=>p.Status!="Paused";
  private void ClearSelection(){if(!selectionReadOnly)selected=selected.Where(id=>projects.Any(p=>p.Id==id && p.Status=="Paused")).ToHashSet();}
  private string? folder="all",saved,portfolioSelection;

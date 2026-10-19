@@ -1,3 +1,6 @@
 @* Generated from scripts/manual_content.py *@
-<NgTreeView TItem="string" Items="nodes" Text="s=>s" @bind-ExpandedIds="expanded" @bind-SelectedId="selected"/>
-@code { private string? selected; private HashSet<string> expanded=["root"]; private NgTreeNode<string>[] nodes=[new("root","Projects",[new("a","Design"),new("b","Engineering")])]; }
+<NgCheckBox Label="Selection read-only" @bind-Value="selectionReadOnly"/>
+<NgCheckBox Label="Expansion read-only" @bind-Value="expansionReadOnly"/>
+<NgTreeView TItem="string" Items="nodes" Text="s=>s" @bind-ExpandedIds="expanded" @bind-SelectedId="selected" SelectionReadOnly="selectionReadOnly" ExpansionReadOnly="expansionReadOnly" EmptyText="No teams found."><ItemTemplate Context="item"><strong>@item</strong><span> · team</span></ItemTemplate></NgTreeView>
+<p>Selected team: @(selected??"none")</p>
+@code { private bool selectionReadOnly,expansionReadOnly; private string? selected; private HashSet<string> expanded=["root"]; private NgTreeNode<string>[] nodes=[new("root","Projects",[new("a","Design"),new("b","Engineering")])]; }

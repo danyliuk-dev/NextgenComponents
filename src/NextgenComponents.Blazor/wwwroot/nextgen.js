@@ -53,7 +53,7 @@ export function tree(root) {
   if(e.key==='ArrowUp')next=items[index-1];
   if(e.key==='Home')next=items[0];
   if(e.key==='End')next=items.at(-1);
-  if(e.key==='ArrowRight'&&item.getAttribute('aria-expanded')==='true')next=items[index+1];
+  if(e.key==='ArrowRight'&&item.getAttribute('aria-expanded')==='true')next=items.slice(index+1).find(x=>x.dataset.parent===item.dataset.treeId);
   if(e.key==='ArrowLeft'&&item.getAttribute('aria-expanded')!=='true')next=items.find(x=>x.dataset.treeId===item.dataset.parent);
   if(['ArrowDown','ArrowUp','Home','End','ArrowRight','ArrowLeft',' '].includes(e.key))e.preventDefault();
   next?.focus();

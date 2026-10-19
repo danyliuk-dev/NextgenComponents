@@ -78,6 +78,12 @@ await Check<NgDataGrid<string>>(new(){["Items"]=Array.Empty<string>(),["Columns"
 await Check<NgPager>(new(){["Total"]=int.MaxValue,["Page"]=2,["PageSize"]=int.MaxValue-1},"2147483647", "of 2147483647");
 await Check<NgTreeView<string>>(new(){["Items"]=tree,["Text"]=(Func<string,string>)(s=>s)},"role=\"tree\"", "Root", "aria-expanded=\"false\"");
 await Check<NgTreeList<string>>(new(){["Items"]=tree,["Columns"]=new NgDataColumn<string>[]{new("name","Name",s=>s)}},"Root", "Expand Root", "Search Hierarchy");
+await Check<NgTreeView<string>>(new(){["Items"]=tree,["Text"]=(Func<string,string>)(s=>s),["ExpansionReadOnly"]=true,["ItemTemplate"]=(RenderFragment<string>)(s=>Text("Team "+s))},"Team Root", "aria-label=\"Root\"", "disabled");
+await Check<NgTreeList<string>>(new(){["Items"]=tree,["Columns"]=new NgDataColumn<string>[]{new("name","Name",s=>s,Template:s=>Text("Team "+s))},["SelectionReadOnly"]=true},"Team Root","aria-label=\"Root\"","disabled");
+await Check<NgTreeView<string>>(new(){["Text"]=(Func<string,string>)(s=>s),["EmptyTemplate"]=Text("Empty tree")},"Empty tree");
+await Check<NgTreeList<string>>(new(){["Columns"]=new NgDataColumn<string>[]{new("name","Name",s=>s)},["EmptyText"]="Empty hierarchy"},"Empty hierarchy");
+Rule(!NgDataOperations.Flatten(tree,new HashSet<string>{"root","a"},s=>s).Single(r=>r.Node.Id=="a").Expanded,"leaf expanded IDs ignored");
+try{NgDataOperations.Flatten(new[]{new NgTreeNode<string>(" ","Bad")},new HashSet<string>(),s=>s);throw new Exception("blank ID accepted");}catch(ArgumentException){Rule(true,"blank tree IDs rejected");}
 NgChartSeries[] signed=[new("Values",[-10,0,20])];
 var chart=NgChartMath.Build(NgChartKind.Column,["A","B","C"],signed);
 var bars=chart.Marks.Where(m=>m.Point!=null).ToArray();

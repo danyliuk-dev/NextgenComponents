@@ -14,25 +14,36 @@ The documentation launcher embeds these running examples here. Choose a framewor
 
 ## Behavior and practical rules
 
-Use NgTreeNode<T> for hierarchy and NgDataColumn<T> for cells. IDs must be unique across the whole tree. Persist expanded/selected IDs through callbacks; replace collections after data changes. Column accessors return underlying values, while format/cell templates define presentation. Application code owns edits and persistence. See [data workspace](../data-workspace.md) for sorting/filtering scope and omitted server/virtualization features.
+Use NgTreeNode<T> for hierarchy and NgDataColumn<T> for cells. IDs must be unique across the whole tree. Persist expanded/selected IDs through callbacks; replace collections after data changes. Column accessors return underlying values, while format/cell templates define presentation. Application code owns edits and persistence. See [data workspace](../data-workspace.md) for sorting/filtering scope and omitted server/virtualization features. SelectionReadOnly/selectionReadOnly blocks selection but permits navigation and expansion. ExpansionReadOnly/expansionReadOnly freezes expansion but permits selection. Search still reveals matching descendant paths without changing expanded IDs; clearing search restores caller state. Whitespace-only search is inactive. Disabled nodes and stale callbacks cannot change state. EmptyText/emptyText and EmptyTemplate/emptyBuilder customize no-results content. IDs must be nonempty. Parent updates can replace or clear state even in read-only mode. Missing selected/expanded IDs are retained in caller state, not automatically pruned. First-column Template/cellBuilder now works inside the select control; keep it decorative. The formatted column text supplies the accessible name. Columns require unique nonempty keys and at least one entry. TreeList has table/button keyboard semantics, not a treegrid keyboard model.
 
 ## Blazor example
 
 ```razor
-<NgTreeList TItem="string" Items="nodes" Columns="columns" @bind-ExpandedIds="expanded" @bind-SelectedId="selected"/>
-@code { private string? selected; private HashSet<string> expanded=["root"]; private NgTreeNode<string>[] nodes=[new("root","Projects",[new("a","Design"),new("b","Engineering")])]; private NgDataColumn<string>[] columns=[new("name","Name",s=>s)]; }
+<NgCheckBox Label="Selection read-only" @bind-Value="selectionReadOnly"/>
+<NgCheckBox Label="Expansion read-only" @bind-Value="expansionReadOnly"/>
+<NgTreeList TItem="string" Items="nodes" Columns="columns" @bind-ExpandedIds="expanded" @bind-SelectedId="selected" SelectionReadOnly="selectionReadOnly" ExpansionReadOnly="expansionReadOnly" EmptyText="No teams found."/>
+<p>Selected team: @(selected??"none")</p>
+@code { private bool selectionReadOnly,expansionReadOnly; private string? selected; private HashSet<string> expanded=["root"]; private NgTreeNode<string>[] nodes=[new("root","Projects",[new("a","Design"),new("b","Engineering")])]; private NgDataColumn<string>[] columns=[new("name","Name",s=>s,Template:s=>@<strong>@s</strong>)]; }
 ```
 
 ## Flutter example
 
 ```dart
+bool selectionReadOnly = false, expansionReadOnly = false;
 Set<String> expanded = {'root'}; String? selected;
-Widget build(BuildContext context) => NgTreeList<String>(
+Widget build(BuildContext context) => Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+  NgCheckBox(label: 'Selection read-only', value: selectionReadOnly, onChanged: (v) => setState(() => selectionReadOnly = v)),
+  NgCheckBox(label: 'Expansion read-only', value: expansionReadOnly, onChanged: (v) => setState(() => expansionReadOnly = v)),
+  NgTreeList<String>(
+  selectionReadOnly: selectionReadOnly, expansionReadOnly: expansionReadOnly,
+  emptyText: 'No teams found.',
   items: const [NgTreeNode('root','Projects',children: [NgTreeNode('a','Design'),NgTreeNode('b','Engineering')])],
-  columns: [NgDataColumn('name','Name',(s) => s)],
+  columns: [NgDataColumn('name','Name',(s) => s, cellBuilder: (context,s) => Text(s, style: const TextStyle(fontWeight: FontWeight.bold)))],
   expandedIds: expanded, selectedId: selected,
   onExpandedChanged: (v) => setState(() => expanded = v),
-  onSelected: (v) => setState(() => selected = v));
+  onSelected: (v) => setState(() => selected = v)),
+  Text('Selected team: ${selected ?? "none"}'),
+]);
 ```
 
 ## Blazor parameters and events
@@ -41,6 +52,10 @@ Names are case-sensitive. `?` permits null. `EditorRequired` parameters are mark
 
 | Parameter | Type | Default / requirement | Purpose |
 |---|---|---|---|
+| `SelectionReadOnly` | `bool` | false | See the behavior rules and model contract above. |
+| `ExpansionReadOnly` | `bool` | false | See the behavior rules and model contract above. |
+| `EmptyTemplate` | `RenderFragment?` | not set | See the behavior rules and model contract above. |
+| `EmptyText` | `string` | "No matching items." | See the behavior rules and model contract above. |
 | `Label` | `string` | "Hierarchy" | Visible label or accessible name. |
 | `Items` | `IReadOnlyList<NgTreeNode<TItem>>` | [] | Input collection. Replace it when changing records or configuration. |
 | `Columns` | `IReadOnlyList<NgDataColumn<TItem>>` | [] | Column definitions; see the data model and example. |
@@ -62,6 +77,10 @@ Names are case-sensitive. `?` permits null. `EditorRequired` parameters are mark
 | `onSelected` | `ValueChanged<String>?` | See the behavior rules and model contract above. |
 | `selectedId` | `String?` | Current selected item ID; the parent owns this value. |
 | `label` | `String` | Visible label or accessible name. |
+| `emptyText` | `String` | See the behavior rules and model contract above. |
+| `selectionReadOnly` | `bool` | See the behavior rules and model contract above. |
+| `expansionReadOnly` | `bool` | See the behavior rules and model contract above. |
+| `emptyBuilder` | `Widget?` | See the behavior rules and model contract above. |
 
 ```dart
 const NgTreeList({
@@ -73,6 +92,10 @@ const NgTreeList({
     this.onSelected,
     this.selectedId,
     this.label = 'Hierarchy',
+    this.selectionReadOnly = false,
+    this.expansionReadOnly = false,
+    this.emptyBuilder,
+    this.emptyText = 'No matching items.',
   });
 ```
 

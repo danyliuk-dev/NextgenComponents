@@ -32,7 +32,9 @@ class DataGallery extends StatefulWidget {
 
 class _DataGalleryState extends State<DataGallery> {
   String folder = 'all';
-  bool selectionReadOnly = false;
+  bool selectionReadOnly = false,
+      treeSelectionReadOnly = false,
+      treeExpansionReadOnly = false;
   String? saved, portfolioSelection;
   Set<String> selected = {}, expanded = {'all'}, portfolioExpanded = {'design'};
   List<Project> projects = List.generate(18, (index) {
@@ -336,7 +338,7 @@ class _DataGalleryState extends State<DataGallery> {
                 ),
                 const SizedBox(height: 40),
                 Text(
-                  'FLUTTER / DATA WORKSPACE 0.34',
+                  'FLUTTER / DATA WORKSPACE 0.35',
                   style: TextStyle(
                     color: Theme.of(context).colorScheme.primary,
                   ),
@@ -386,7 +388,21 @@ class _DataGalleryState extends State<DataGallery> {
                         ),
                       ),
                       const SizedBox(height: 20),
+                      NgCheckBox(
+                        label: 'Tree selection read-only',
+                        value: treeSelectionReadOnly,
+                        onChanged: (v) =>
+                            setState(() => treeSelectionReadOnly = v ?? false),
+                      ),
+                      NgCheckBox(
+                        label: 'Tree expansion read-only',
+                        value: treeExpansionReadOnly,
+                        onChanged: (v) =>
+                            setState(() => treeExpansionReadOnly = v ?? false),
+                      ),
                       NgTreeList<Project>(
+                        selectionReadOnly: treeSelectionReadOnly,
+                        expansionReadOnly: treeExpansionReadOnly,
                         items: hierarchy,
                         columns: columns.skip(1).toList(),
                         expandedIds: portfolioExpanded,

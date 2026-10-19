@@ -295,23 +295,40 @@ Widget build(BuildContext context) => NgDataGrid<({String id, String name, int c
 }
 class NgTreeViewExample extends StatefulWidget { const NgTreeViewExample({super.key}); @override State<NgTreeViewExample> createState()=>_NgTreeViewExampleState(); }
 class _NgTreeViewExampleState extends State<NgTreeViewExample> {
+bool selectionReadOnly = false, expansionReadOnly = false;
 Set<String> expanded = {'root'}; String? selected;
-Widget build(BuildContext context) => NgTreeView<String>(
+Widget build(BuildContext context) => Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+  NgCheckBox(label: 'Selection read-only', value: selectionReadOnly, onChanged: (v) => setState(() => selectionReadOnly = v)),
+  NgCheckBox(label: 'Expansion read-only', value: expansionReadOnly, onChanged: (v) => setState(() => expansionReadOnly = v)),
+  NgTreeView<String>(
+  selectionReadOnly: selectionReadOnly, expansionReadOnly: expansionReadOnly,
+  emptyText: 'No teams found.',
   items: const [NgTreeNode('root','Projects',children: [NgTreeNode('a','Design'),NgTreeNode('b','Engineering')])],
   text: (s) => s,
+  itemBuilder: (context, s) => Text('$s · team', style: const TextStyle(fontWeight: FontWeight.bold)),
   expandedIds: expanded, selectedId: selected,
   onExpandedChanged: (v) => setState(() => expanded = v),
-  onSelected: (v) => setState(() => selected = v));
+  onSelected: (v) => setState(() => selected = v)),
+  Text('Selected team: ${selected ?? "none"}'),
+]);
 }
 class NgTreeListExample extends StatefulWidget { const NgTreeListExample({super.key}); @override State<NgTreeListExample> createState()=>_NgTreeListExampleState(); }
 class _NgTreeListExampleState extends State<NgTreeListExample> {
+bool selectionReadOnly = false, expansionReadOnly = false;
 Set<String> expanded = {'root'}; String? selected;
-Widget build(BuildContext context) => NgTreeList<String>(
+Widget build(BuildContext context) => Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+  NgCheckBox(label: 'Selection read-only', value: selectionReadOnly, onChanged: (v) => setState(() => selectionReadOnly = v)),
+  NgCheckBox(label: 'Expansion read-only', value: expansionReadOnly, onChanged: (v) => setState(() => expansionReadOnly = v)),
+  NgTreeList<String>(
+  selectionReadOnly: selectionReadOnly, expansionReadOnly: expansionReadOnly,
+  emptyText: 'No teams found.',
   items: const [NgTreeNode('root','Projects',children: [NgTreeNode('a','Design'),NgTreeNode('b','Engineering')])],
-  columns: [NgDataColumn('name','Name',(s) => s)],
+  columns: [NgDataColumn('name','Name',(s) => s, cellBuilder: (context,s) => Text(s, style: const TextStyle(fontWeight: FontWeight.bold)))],
   expandedIds: expanded, selectedId: selected,
   onExpandedChanged: (v) => setState(() => expanded = v),
-  onSelected: (v) => setState(() => selected = v));
+  onSelected: (v) => setState(() => selected = v)),
+  Text('Selected team: ${selected ?? "none"}'),
+]);
 }
 class NgChartExample extends StatefulWidget { const NgChartExample({super.key}); @override State<NgChartExample> createState()=>_NgChartExampleState(); }
 class _NgChartExampleState extends State<NgChartExample> {

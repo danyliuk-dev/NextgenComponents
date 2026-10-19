@@ -40,3 +40,13 @@ The header toggles only eligible rows on the current filtered page. A partial el
 `PageSizes` / `pageSizes` configures page choices (positive, distinct, sorted, retaining the current size). `EmptyTemplate` / `emptyBuilder` supplies custom empty-result content (a RenderFragment / Widget). Grid validates nonempty unique row IDs and column keys and requires at least one column. A removed sort column clears sorting.
 
 The Data workspace protects Paused projects, offers Selection read-only, and clears only selectable IDs. App-owned editing remains available. Server data, virtualization, multi-sort/grouping, range/cell selection, direct page entry and localization remain open.
+
+## Tree state and templates (0.35)
+
+TreeView and TreeList now share independent selection and expansion read-only flags. The controls propose changes through callbacks without modifying input collections or accepting rejected changes internally. Read-only does not prevent parent-supplied state updates. Disabled, removed, hidden and newly locked nodes cannot be changed by stale callbacks. Existing missing IDs stay in the parent state; applications decide when to prune them.
+
+Search temporarily opens matching paths and disables expansion actions, without changing the saved expanded set. Clearing search restores that set; whitespace-only search is inactive. Read-only selection does not block expansion, and read-only expansion does not block selection. Search and TreeList sorting remain available.
+
+TreeView `ItemTemplate`/`itemBuilder` customizes decorative node content. TreeList supports the first column's cell template inside the selection button. Keep these templates noninteractive; Text/text or formatted column text remains the accessible name and search source. Both trees offer EmptyText/emptyText and EmptyTemplate/emptyBuilder.
+
+IDs must be nonempty and unique across the tree. TreeList requires at least one column with unique nonempty keys. Leaf IDs in expanded sets are ignored. TreeView ArrowRight only enters an enabled immediate child, never a sibling of a leaf. Full roving tabindex, focus recovery after node removal, type-ahead, checkbox/multiple selection and TreeList treegrid keyboard navigation remain open. Native/mobile and screen-reader certification remain separate.

@@ -11,7 +11,7 @@ A component can be marked complete only after every reference feature is recorde
 ## Current work order
 
 1. Chip/ChipList remaining gaps stay tracked below; do not mark full parity or silently accept them. Work is delivered in component blocks, not one release per parameter.
-2. ToggleButton/ButtonGroup and Menu/Drawer implementation blocks are delivered with explicit remaining gaps below. Stepper/Wizard is also delivered below; TextBox/TextArea/Form is delivered in 0.29; AutoComplete/ComboBox/MultiSelect is delivered in 0.30; numeric/time editing is delivered in 0.31; Calendar, DateInput, DatePicker and DateRangePicker are delivered in 0.32; RadioGroup and DropDownList are delivered in 0.33; Grid protected/read-only selection is delivered in 0.34; next work continues with TreeView/TreeList data management. No block is a full-parity verdict.
+2. ToggleButton/ButtonGroup and Menu/Drawer implementation blocks are delivered with explicit remaining gaps below. Stepper/Wizard is also delivered below; TextBox/TextArea/Form is delivered in 0.29; AutoComplete/ComboBox/MultiSelect is delivered in 0.30; numeric/time editing is delivered in 0.31; Calendar, DateInput, DatePicker and DateRangePicker are delivered in 0.32; RadioGroup and DropDownList are delivered in 0.33; Grid protected/read-only selection is delivered in 0.34; TreeView/TreeList controlled state and templates are delivered in 0.35; next work continues with visualization. No block is a full-parity verdict.
 3. Continue through existing editors/forms, data management, visualization and complex editors. Add new component names only after closing the active group or recording a user-approved exception.
 
 ## Chip and ChipList feature matrix
@@ -334,3 +334,17 @@ Sources: [DropDownList overview](https://www.telerik.com/blazor-ui/documentation
 | Presentation | Empty template/widget and configured page sizes; current size retained | No direct page input or localization API |
 | Validation | Nonempty unique row IDs and column keys, at least one column | Server loading, virtualization, multi-sort, grouping and built-in CRUD remain open |
 | Certification | Blazor/Flutter Web tests and visible local Chrome | No full Telerik, native or screen-reader certification |
+
+
+## TreeView and TreeList state (0.35)
+
+| Capability | Shared implementation | Remaining boundary |
+|---|---|---|
+| Controlled state | Callbacks propose selection/expansion; caller accepts or rejects; stale and disabled handlers guarded | Parent owns pruning removed IDs |
+| Independent locks | SelectionReadOnly and ExpansionReadOnly; programmatic updates still accepted | These are Nextgen UI controls, not authorization |
+| Search | Matching paths temporarily expanded, clearing restores caller expansion; whitespace inactive | Local filtering only |
+| Templates | TreeView decorative item content; TreeList first-column cell content; custom empty content | Model labels remain accessible/search names; no interactive template controls |
+| Keyboard | TreeView arrows navigate enabled nodes; ArrowRight enters immediate children only; stale leaf expansion ignored | Roving tabindex, focus recovery, type-ahead, multi/check selection and TreeList treegrid semantics remain open |
+| Scope | Nested local data, nonempty unique IDs/column keys | Lazy loading, virtualization, drag/drop, server operations and full Telerik parity remain open |
+
+Reference: [Telerik TreeView expansion](https://www.telerik.com/blazor-ui/documentation/components/treeview/expanded-items) and [selection](https://www.telerik.com/blazor-ui/documentation/components/treeview/selection/overview). Contracts above describe Nextgen behavior, not API compatibility.

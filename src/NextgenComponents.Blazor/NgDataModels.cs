@@ -31,7 +31,7 @@ public static class NgDataOperations
     public static IReadOnlyList<NgTreeRow<T>> Flatten<T>(IReadOnlyList<NgTreeNode<T>> roots,ISet<string> expanded,Func<T,string> label,string search="",Comparison<NgTreeNode<T>>? comparison=null)
     {
         var ids=new HashSet<string>();
-        void Validate(IEnumerable<NgTreeNode<T>> nodes) { foreach(var node in nodes) { if(!ids.Add(node.Id))throw new ArgumentException($"Duplicate or cyclic tree ID: {node.Id}"); Validate(node.Children??[]); } }
+        void Validate(IEnumerable<NgTreeNode<T>> nodes) { foreach(var node in nodes) { if(string.IsNullOrWhiteSpace(node.Id) || !ids.Add(node.Id))throw new ArgumentException($"Duplicate or cyclic tree ID: {node.Id}"); Validate(node.Children??[]); } }
         Validate(roots);
         var filtering=!string.IsNullOrWhiteSpace(search);
         List<NgTreeRow<T>> Walk(IEnumerable<NgTreeNode<T>> nodes,int depth,string? parent) {
@@ -41,7 +41,7 @@ public static class NgDataOperations
                 var children=Walk(node.Children??[],depth+1,node.Id);
                 var match=label(node.Item).Contains(search.Trim(),StringComparison.CurrentCultureIgnoreCase);
                 if(filtering && !match && children.Count==0)continue;
-                var open=filtering ? children.Count>0 : expanded.Contains(node.Id);
+                var open=filtering ? children.Count>0 : node.Children?.Count>0 && expanded.Contains(node.Id);
                 result.Add(new(node,depth,parent,open));
                 if(open)result.AddRange(children);
             }

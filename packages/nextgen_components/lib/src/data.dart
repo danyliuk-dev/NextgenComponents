@@ -95,7 +95,7 @@ abstract final class NgDataOperations {
     final ids = <String>{};
     void validate(List<NgTreeNode<T>> nodes) {
       for (final n in nodes) {
-        if (!ids.add(n.id))
+        if (n.id.trim().isEmpty || !ids.add(n.id))
           throw ArgumentError('Duplicate or cyclic tree ID: ${n.id}');
         validate(n.children);
       }
@@ -124,7 +124,7 @@ abstract final class NgDataOperations {
           continue;
         final open = needle.isNotEmpty
             ? children.isNotEmpty
-            : expanded.contains(n.id);
+            : n.children.isNotEmpty && expanded.contains(n.id);
         result.add(NgTreeRow(n, depth, parent, open));
         if (open) result.addAll(children);
       }
@@ -548,9 +548,12 @@ class _NgDataGridState<T> extends State<NgDataGrid<T>> {
 }
 
 class NgTreeView<T> extends StatefulWidget {
+  final Widget Function(BuildContext, T)? itemBuilder;
   final List<NgTreeNode<T>> items;
   final String Function(T) text;
-  final String label;
+  final String label, emptyText;
+  final bool selectionReadOnly, expansionReadOnly;
+  final Widget? emptyBuilder;
   final String? selectedId;
   final Set<String> expandedIds;
   final ValueChanged<String>? onSelected;
@@ -564,6 +567,11 @@ class NgTreeView<T> extends StatefulWidget {
     this.onSelected,
     this.selectedId,
     this.label = 'Folders',
+    this.selectionReadOnly = false,
+    this.expansionReadOnly = false,
+    this.emptyBuilder,
+    this.emptyText = 'No matching items.',
+    this.itemBuilder,
   });
   @override
   State<NgTreeView<T>> createState() => _NgTreeViewState<T>();
@@ -578,7 +586,24 @@ class _NgTreeViewState<T> extends State<NgTreeView<T>> {
     widget.text,
     search: search,
   );
+  NgTreeNode<T>? currentNode(String id) => NgDataOperations.flatten(
+    widget.items,
+    widget.expandedIds,
+    widget.text,
+    search: search,
+  ).where((r) => r.node.id == id).firstOrNull?.node;
+  void select(String id) {
+    if (!mounted || widget.selectionReadOnly) return;
+    final node = currentNode(id);
+    if (node == null || node.disabled) return;
+    widget.onSelected?.call(id);
+  }
+
   void toggle(String id) {
+    if (!mounted || widget.expansionReadOnly || search.trim().isNotEmpty)
+      return;
+    final node = currentNode(id);
+    if (node == null || node.disabled || node.children.isEmpty) return;
     final next = {...widget.expandedIds};
     if (!next.add(id)) next.remove(id);
     widget.onExpandedChanged(next);
@@ -626,22 +651,33 @@ class _NgTreeViewState<T> extends State<NgTreeView<T>> {
               if (key == LogicalKeyboardKey.arrowRight) {
                 if (!row.expanded &&
                     row.node.children.isNotEmpty &&
-                    search.isEmpty) {
+                    search.trim().isEmpty) {
                   toggle(row.node.id);
                 } else if (row.expanded && index < enabled.length - 1) {
-                  target = enabled[index + 1].node.id;
+                  target = enabled
+                      .skip(index + 1)
+                      .where((r) => r.parentId == row.node.id)
+                      .firstOrNull
+                      ?.node
+                      .id;
                 }
               }
               if (key == LogicalKeyboardKey.arrowLeft) {
-                if (row.expanded && search.isEmpty) {
+                if (row.expanded &&
+                    row.node.children.isNotEmpty &&
+                    search.trim().isEmpty) {
                   toggle(row.node.id);
                 } else {
-                  target = row.parentId;
+                  target = enabled
+                      .where((r) => r.node.id == row.parentId)
+                      .firstOrNull
+                      ?.node
+                      .id;
                 }
               }
               if (key == LogicalKeyboardKey.enter ||
                   key == LogicalKeyboardKey.space)
-                widget.onSelected?.call(row.node.id);
+                select(row.node.id);
               if (target != null) nodes[target]?.requestFocus();
               return [
                     LogicalKeyboardKey.arrowDown,
@@ -672,7 +708,7 @@ class _NgTreeViewState<T> extends State<NgTreeView<T>> {
                         ? null
                         : () {
                             nodes[row.node.id]?.requestFocus();
-                            widget.onSelected?.call(row.node.id);
+                            select(row.node.id);
                           },
                     child: Container(
                       decoration: BoxDecoration(
@@ -690,7 +726,10 @@ class _NgTreeViewState<T> extends State<NgTreeView<T>> {
                             IconButton(
                               tooltip:
                                   '${row.expanded ? 'Collapse' : 'Expand'} ${widget.text(row.node.item)}',
-                              onPressed: row.node.disabled || search.isNotEmpty
+                              onPressed:
+                                  row.node.disabled ||
+                                      widget.expansionReadOnly ||
+                                      search.trim().isNotEmpty
                                   ? null
                                   : () => toggle(row.node.id),
                               icon: Icon(
@@ -702,14 +741,23 @@ class _NgTreeViewState<T> extends State<NgTreeView<T>> {
                           else
                             const SizedBox(width: 40),
                           Expanded(
-                            child: Text(
-                              widget.text(row.node.item),
-                              style: TextStyle(
-                                color: row.node.disabled
-                                    ? Theme.of(context).disabledColor
-                                    : null,
-                              ),
-                            ),
+                            child: widget.itemBuilder == null
+                                ? Text(
+                                    widget.text(row.node.item),
+                                    style: TextStyle(
+                                      color: row.node.disabled
+                                          ? Theme.of(context).disabledColor
+                                          : null,
+                                    ),
+                                  )
+                                : Semantics(
+                                    label: widget.text(row.node.item),
+                                    excludeSemantics: true,
+                                    child: widget.itemBuilder!(
+                                      context,
+                                      row.node.item,
+                                    ),
+                                  ),
                           ),
                         ],
                       ),
@@ -720,9 +768,9 @@ class _NgTreeViewState<T> extends State<NgTreeView<T>> {
             ),
           ),
         if (visible.isEmpty)
-          const Padding(
-            padding: EdgeInsets.all(16),
-            child: Text('No matching items.'),
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: widget.emptyBuilder ?? Text(widget.emptyText),
           ),
       ],
     );
@@ -736,7 +784,9 @@ class NgTreeList<T> extends StatefulWidget {
   final ValueChanged<Set<String>> onExpandedChanged;
   final ValueChanged<String>? onSelected;
   final String? selectedId;
-  final String label;
+  final String label, emptyText;
+  final bool selectionReadOnly, expansionReadOnly;
+  final Widget? emptyBuilder;
   const NgTreeList({
     super.key,
     required this.items,
@@ -746,6 +796,10 @@ class NgTreeList<T> extends StatefulWidget {
     this.onSelected,
     this.selectedId,
     this.label = 'Hierarchy',
+    this.selectionReadOnly = false,
+    this.expansionReadOnly = false,
+    this.emptyBuilder,
+    this.emptyText = 'No matching items.',
   });
   @override
   State<NgTreeList<T>> createState() => _NgTreeListState<T>();
@@ -755,7 +809,24 @@ class _NgTreeListState<T> extends State<NgTreeList<T>> {
   String search = '';
   String? sortKey;
   bool descending = false;
+  NgTreeNode<T>? currentNode(String id) => NgDataOperations.flatten(
+    widget.items,
+    widget.expandedIds,
+    (item) => widget.columns.map((c) => c.text(item)).join(' '),
+    search: search,
+  ).where((r) => r.node.id == id).firstOrNull?.node;
+  void select(String id) {
+    if (!mounted || widget.selectionReadOnly) return;
+    final node = currentNode(id);
+    if (node == null || node.disabled) return;
+    widget.onSelected?.call(id);
+  }
+
   void toggle(String id) {
+    if (!mounted || widget.expansionReadOnly || search.trim().isNotEmpty)
+      return;
+    final node = currentNode(id);
+    if (node == null || node.disabled || node.children.isEmpty) return;
     final next = {...widget.expandedIds};
     if (!next.add(id)) next.remove(id);
     widget.onExpandedChanged(next);
@@ -763,6 +834,15 @@ class _NgTreeListState<T> extends State<NgTreeList<T>> {
 
   @override
   Widget build(BuildContext context) {
+    if (widget.columns.isEmpty ||
+        widget.columns.any((c) => c.key.trim().isEmpty) ||
+        widget.columns.map((c) => c.key).toSet().length !=
+            widget.columns.length)
+      throw ArgumentError(
+        'TreeList needs nonempty unique column keys and at least one column.',
+      );
+    if (!widget.columns.any((c) => c.key == sortKey && c.sortable))
+      sortKey = null;
     final column = widget.columns
         .where((c) => c.key == sortKey && c.sortable)
         .firstOrNull;
@@ -833,7 +913,8 @@ class _NgTreeListState<T> extends State<NgTreeList<T>> {
                                               '${row.expanded ? 'Collapse' : 'Expand'} ${widget.columns[i].text(row.node.item)}',
                                           onPressed:
                                               row.node.disabled ||
-                                                  search.isNotEmpty
+                                                  widget.expansionReadOnly ||
+                                                  search.trim().isNotEmpty
                                               ? null
                                               : () => toggle(row.node.id),
                                           icon: Icon(
@@ -845,13 +926,28 @@ class _NgTreeListState<T> extends State<NgTreeList<T>> {
                                       else
                                         const SizedBox(width: 40),
                                       TextButton(
-                                        onPressed: row.node.disabled
+                                        onPressed:
+                                            row.node.disabled ||
+                                                widget.selectionReadOnly ||
+                                                widget.onSelected == null
                                             ? null
-                                            : () => widget.onSelected?.call(
-                                                row.node.id,
+                                            : () => select(row.node.id),
+                                        child: Semantics(
+                                          label: widget.columns[i].text(
+                                            row.node.item,
+                                          ),
+                                          excludeSemantics: true,
+                                          child:
+                                              widget.columns[i].cellBuilder
+                                                  ?.call(
+                                                    context,
+                                                    row.node.item,
+                                                  ) ??
+                                              Text(
+                                                widget.columns[i].text(
+                                                  row.node.item,
+                                                ),
                                               ),
-                                        child: Text(
-                                          widget.columns[i].text(row.node.item),
                                         ),
                                       ),
                                     ],
@@ -872,9 +968,9 @@ class _NgTreeListState<T> extends State<NgTreeList<T>> {
           ),
         ),
         if (rows.isEmpty)
-          const Padding(
-            padding: EdgeInsets.all(24),
-            child: Text('No matching items.'),
+          Padding(
+            padding: const EdgeInsets.all(24),
+            child: widget.emptyBuilder ?? Text(widget.emptyText),
           ),
       ],
     );
