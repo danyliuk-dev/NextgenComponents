@@ -457,12 +457,18 @@ NgDocument document = NgDocument(blocks: const [
   NgDocumentBlock(text: 'Agree on requirements', kind: NgBlockKind.bullet),
   NgDocumentBlock(text: 'Review the result', kind: NgBlockKind.bullet, bold: true),
 ]);
+bool accept = true, readOnly = false;
 String saved = '';
-Widget build(BuildContext context) => Column(children: [
-  NgEditor(label: 'Project description', value: document,
-    onChanged: (v) => setState(() => document = v)),
-  NgButton(onPressed: () => setState(() => saved = document.toJson()),
-    child: const Text('Save JSON')),
+Widget build(BuildContext context) => Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+  Wrap(spacing: 8, runSpacing: 8, children: [
+    NgButton(onPressed: () => setState(() => accept = !accept), child: const Text('Toggle acceptance')),
+    NgButton(onPressed: () => setState(() => readOnly = !readOnly), child: const Text('Toggle read-only')),
+    NgButton(onPressed: () => setState(() => document = NgDocument(blocks: const [NgDocumentBlock(text: 'Imported brief'), NgDocumentBlock(text: 'Review imported content')])), child: const Text('Replace document')),
+    NgButton(onPressed: () => setState(() => saved = document.toJson()), child: const Text('Save JSON')),
+  ]),
+  Text('Acceptance: ${accept ? "enabled" : "rejected"} · Accepted first block: ${document.blocks.first.text}'),
+  NgEditor(label: 'Project description', value: document, readOnly: readOnly,
+    onChanged: (v) => setState(() { if (accept) document = v; })),
   Text(saved),
 ]);
 }

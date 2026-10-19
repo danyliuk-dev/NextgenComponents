@@ -1,31 +1,34 @@
+@implements IDisposable
+@{var renderedRevision=revision;}
 <section class="ng-editor" aria-label="@Label">
     <h3>@Label</h3>
     <div class="ng-editor-toolbar" role="group" aria-label="Document actions">
-        <NgButton Disabled="@(ReadOnly || undo.Count == 0)" OnClick="()=>History(false)">Undo</NgButton>
-        <NgButton Disabled="@(ReadOnly || redo.Count == 0)" OnClick="()=>History(true)">Redo</NgButton>
-        <NgButton Disabled="@(ReadOnly || current.Blocks.Count == 100)" OnClick="Add">Add block</NgButton>
-        <NgButton Disabled="@ReadOnly" OnClick="Remove">Delete block</NgButton>
-        <NgButton Disabled="@(ReadOnly || selected == 0)" OnClick="()=>Move(-1)">Move up</NgButton>
-        <NgButton Disabled="@(ReadOnly || selected == current.Blocks.Count-1)" OnClick="()=>Move(1)">Move down</NgButton>
+        <NgButton Disabled="@((!Writable) || undo.Count == 0)" OnClick="()=>History(false,renderedRevision)">Undo</NgButton>
+        <NgButton Disabled="@((!Writable) || redo.Count == 0)" OnClick="()=>History(true,renderedRevision)">Redo</NgButton>
+        <NgButton Disabled="@((!Writable) || current.Blocks.Count == 100)" OnClick="()=>Add(renderedRevision)">Add block</NgButton>
+        <NgButton Disabled="@(!Writable)" OnClick="()=>Remove(renderedRevision)">Delete block</NgButton>
+        <NgButton Disabled="@((!Writable) || selected == 0)" OnClick="()=>Move(-1,renderedRevision)">Move up</NgButton>
+        <NgButton Disabled="@((!Writable) || selected == current.Blocks.Count-1)" OnClick="()=>Move(1,renderedRevision)">Move down</NgButton>
     </div>
     <div class="ng-editor-layout">
         <nav class="ng-editor-outline" aria-label="Document blocks">
             @for (var i=0;i<current.Blocks.Count;i++) { var index=i; var b=current.Blocks[i];
-                <button type="button" class="ng-button" aria-current="@(selected==i ? "true" : "false")" @onclick="()=>Select(index)">@(i+1). @b.Kind: @(b.Text.Length==0 ? "Empty" : b.Text[..Math.Min(b.Text.Length,40)])</button>
+                <button type="button" class="ng-button" aria-current="@(selected==i ? "true" : "false")" @onclick="()=>Select(index,renderedRevision)">@(i+1). @b.Kind: @(b.Text.Length==0 ? "Empty" : b.Text[..Math.Min(b.Text.Length,40)])</button>
             }
         </nav>
         <div class="ng-editor-controls">
             <p>Block @(selected+1) of @current.Blocks.Count · Formatting applies to the whole block.</p>
             <div class="ng-editor-toolbar">
-                <label class="ng-field">Block type<select class="ng-input" aria-label="Block type" value="@current.Blocks[selected].Kind" @onchange="ChangeKind" disabled="@ReadOnly">@foreach(var kind in Enum.GetValues<NgBlockKind>()){<option value="@kind">@kind</option>}</select></label>
-                <label class="ng-field">Alignment<select class="ng-input" aria-label="Alignment" value="@current.Blocks[selected].Align" @onchange="ChangeAlign" disabled="@ReadOnly">@foreach(var align in Enum.GetValues<NgTextAlign>()){<option value="@align">@align</option>}</select></label>
-                <button type="button" class="ng-button" aria-pressed="@(current.Blocks[selected].Bold ? "true":"false")" disabled="@ReadOnly" @onclick="()=>Format(0)">Bold</button>
-                <button type="button" class="ng-button" aria-pressed="@(current.Blocks[selected].Italic ? "true":"false")" disabled="@ReadOnly" @onclick="()=>Format(1)">Italic</button>
-                <button type="button" class="ng-button" aria-pressed="@(current.Blocks[selected].Underline ? "true":"false")" disabled="@ReadOnly" @onclick="()=>Format(2)">Underline</button>
+                <label class="ng-field">Block type<select @key="(revision, 'k')" class="ng-input" aria-label="Block type" value="@current.Blocks[selected].Kind" @onchange="e=>ChangeKind(e,renderedRevision)" disabled="@(!Writable)">@foreach(var kind in Enum.GetValues<NgBlockKind>()){<option value="@kind">@kind</option>}</select></label>
+                <label class="ng-field">Alignment<select @key="(revision, 'a')" class="ng-input" aria-label="Alignment" value="@current.Blocks[selected].Align" @onchange="e=>ChangeAlign(e,renderedRevision)" disabled="@(!Writable)">@foreach(var align in Enum.GetValues<NgTextAlign>()){<option value="@align">@align</option>}</select></label>
+                <button type="button" class="ng-button" aria-pressed="@(current.Blocks[selected].Bold ? "true":"false")" disabled="@(!Writable)" @onclick="()=>Format(0,renderedRevision)">Bold</button>
+                <button type="button" class="ng-button" aria-pressed="@(current.Blocks[selected].Italic ? "true":"false")" disabled="@(!Writable)" @onclick="()=>Format(1,renderedRevision)">Italic</button>
+                <button type="button" class="ng-button" aria-pressed="@(current.Blocks[selected].Underline ? "true":"false")" disabled="@(!Writable)" @onclick="()=>Format(2,renderedRevision)">Underline</button>
             </div>
-            <label class="ng-field">Block text<textarea class="ng-input" aria-label="Block text" rows="5" @bind="draft" @bind:event="oninput" readonly="@ReadOnly" maxlength="10000"></textarea></label>
-            <NgButton Primary Disabled="@(ReadOnly || draft==current.Blocks[selected].Text)" OnClick="Apply">Apply text</NgButton>
-            <small>Apply text saves this block. Switching blocks or formatting also applies the draft.</small>
+            <label class="ng-field">Block text<textarea class="ng-input" aria-label="Block text" rows="5" value="@draft" @oninput="e=>Edit(e,renderedRevision)" readonly="@(!Writable)" maxlength="10000"></textarea></label>
+            <NgButton Primary Disabled="@((!Writable) || draft==current.Blocks[selected].Text)" OnClick="()=>Apply(renderedRevision)">Apply text</NgButton>
+            <NgButton Disabled="@(!dirty)" OnClick="()=>Discard(renderedRevision)">Discard draft</NgButton>
+            <small>Apply text requests an update to this block. Switching blocks or formatting also applies the draft.</small>
         </div>
     </div>
     <p role="status">@message</p>
@@ -38,46 +41,51 @@
     [Parameter, EditorRequired] public NgDocument Value { get; set; } = new();
     [Parameter] public EventCallback<NgDocument> ValueChanged { get; set; }
     [Parameter] public bool ReadOnly { get; set; }
-    private NgDocument current = new(), incoming = new();
+    private NgDocument current = new();
     private int selected;
     private string draft = "", message = "";
     private bool dirty => draft != current.Blocks[selected].Text;
+    private bool Writable => !ReadOnly && ValueChanged.HasDelegate;
     private readonly List<NgDocument> undo = [], redo = [];
+    private (NgDocument Next,int Action,int Selected)? pending;
+    private long revision;
+    private bool disposed;
+    public void Dispose()=>disposed=true;
+    private bool Active(long expected)=>!disposed && revision==expected;
     protected override void OnParametersSet()
     {
-        if (ReferenceEquals(Value,incoming)) return;
-        incoming=Value;
-        if (ReferenceEquals(Value,current)) return;
-        current=Value; selected=Math.Min(selected,current.Blocks.Count-1); draft=current.Blocks[selected].Text;
-        undo.Clear(); redo.Clear(); message="";
+        revision++;
+        if (!ReferenceEquals(Value,current)) {
+            if(pending is {} proposal && ReferenceEquals(Value,proposal.Next)) {
+                if(proposal.Action==0){undo.Add(current);if(undo.Count>50)undo.RemoveAt(0);redo.Clear();}
+                else {var from=proposal.Action==1?undo:redo;var to=proposal.Action==1?redo:undo;to.Add(current);from.RemoveAt(from.Count-1);}
+                selected=proposal.Selected;
+                message=proposal.Action==0?"Document updated.":proposal.Action==1?"Undone.":"Redone.";
+            } else {undo.Clear();redo.Clear();message="";}
+            current=Value; selected=Math.Clamp(selected,0,current.Blocks.Count-1);draft=current.Blocks[selected].Text;
+        } else if(pending is not null) message="Change not applied.";
+        pending=null;
     }
-    private async Task<bool> Commit(Func<NgDocument,NgDocument> update)
+    private async Task Commit(Func<NgDocument,NgDocument> update,long expected,int? selection=null,int action=0)
     {
-        if (ReadOnly) return false;
-        try {
-            var next=update(current);
-            if(next.ToJson()==current.ToJson()) return true;
-            undo.Add(current); if(undo.Count>50)undo.RemoveAt(0); redo.Clear();
-            current=next; selected=Math.Min(selected,current.Blocks.Count-1); draft=current.Blocks[selected].Text;
-            message="Document updated."; await ValueChanged.InvokeAsync(current); return true;
-        } catch(ArgumentException e) { message=e.Message; return false; }
+        if (!Active(expected)||!Writable) return;
+        NgDocument next;
+        try {next=update(current);}catch(ArgumentException e){message=e.Message;return;}
+        if(next.ToJson()==current.ToJson()) {SetSelection(selection??selected);return;}
+        pending=(next,action,selection??selected);message="Change requested.";
+        await ValueChanged.InvokeAsync(next);
     }
-    private NgDocument Draft(NgDocument doc) => doc.Replace(selected,doc.Blocks[selected] with { Text=draft });
-    private async Task Apply() => await Commit(Draft);
-    private async Task Select(int index) { if (dirty && !ReadOnly && !await Commit(Draft)) return; selected=index; draft=current.Blocks[selected].Text; }
-    private async Task Add() { var index=selected+1; if(await Commit(doc=>Draft(doc).InsertAfter(selected))) {selected=index;draft=current.Blocks[selected].Text;} }
-    private async Task Remove() { if(await Commit(doc=>doc.Remove(selected)))draft=current.Blocks[selected].Text; }
-    private async Task Move(int delta) {var target=selected+delta; if(await Commit(doc=>Draft(doc).Move(selected,target))){selected=target;draft=current.Blocks[selected].Text;} }
-    private async Task ChangeKind(ChangeEventArgs e) {if(Enum.TryParse<NgBlockKind>(e.Value?.ToString(),out var kind))await Commit(doc=>Draft(doc).Replace(selected,doc.Blocks[selected] with {Text=draft,Kind=kind}));}
-    private async Task ChangeAlign(ChangeEventArgs e) {if(Enum.TryParse<NgTextAlign>(e.Value?.ToString(),out var align))await Commit(doc=>Draft(doc).Replace(selected,doc.Blocks[selected] with {Text=draft,Align=align}));}
-    private async Task Format(int flag) => await Commit(doc=> {var b=doc.Blocks[selected] with {Text=draft}; return doc.Replace(selected,flag switch {0=>b with {Bold=!b.Bold},1=>b with {Italic=!b.Italic},_=>b with {Underline=!b.Underline}});});
-    private async Task History(bool forward)
-    {
-        if(ReadOnly)return;
-        var source=forward?redo:undo;var target=forward?undo:redo;
-        if(source.Count==0)return;
-        target.Add(current);current=source[^1];source.RemoveAt(source.Count-1);
-        selected=Math.Min(selected,current.Blocks.Count-1);draft=current.Blocks[selected].Text;
-        message=forward?"Redone.":"Undone.";await ValueChanged.InvokeAsync(current);
-    }
+    private void SetSelection(int index){revision++;selected=Math.Clamp(index,0,current.Blocks.Count-1);draft=current.Blocks[selected].Text;}
+    private void Edit(ChangeEventArgs e,long expected){if(Active(expected)&&Writable)draft=e.Value?.ToString()??"";}
+    private void Discard(long expected){if(!Active(expected))return;revision++;draft=current.Blocks[selected].Text;message="Draft discarded.";}
+    private NgDocument Draft(NgDocument doc)=>doc.Replace(selected,doc.Blocks[selected] with {Text=draft});
+    private Task Apply(long expected)=>Commit(Draft,expected);
+    private async Task Select(int index,long expected){if(!Active(expected))return;if(dirty&&Writable){await Commit(Draft,expected,index);return;}SetSelection(index);}
+    private Task Add(long expected)=>Commit(doc=>Draft(doc).InsertAfter(selected),expected,selected+1);
+    private Task Remove(long expected)=>Commit(doc=>doc.Remove(selected),expected);
+    private Task Move(int delta,long expected)=>Commit(doc=>Draft(doc).Move(selected,selected+delta),expected,selected+delta);
+    private Task ChangeKind(ChangeEventArgs e,long expected)=>Enum.TryParse<NgBlockKind>(e.Value?.ToString(),out var kind)?Commit(doc=>Draft(doc).Replace(selected,doc.Blocks[selected] with {Text=draft,Kind=kind}),expected):Task.CompletedTask;
+    private Task ChangeAlign(ChangeEventArgs e,long expected)=>Enum.TryParse<NgTextAlign>(e.Value?.ToString(),out var align)?Commit(doc=>Draft(doc).Replace(selected,doc.Blocks[selected] with {Text=draft,Align=align}),expected):Task.CompletedTask;
+    private Task Format(int flag,long expected)=>Commit(doc=>{var b=doc.Blocks[selected] with {Text=draft};return doc.Replace(selected,flag switch{0=>b with{Bold=!b.Bold},1=>b with{Italic=!b.Italic},_=>b with{Underline=!b.Underline}});},expected);
+    private Task History(bool forward,long expected){var source=forward?redo:undo;return source.Count>0?Commit(_=>source[^1],expected,action:forward?2:1):Task.CompletedTask;}
 }

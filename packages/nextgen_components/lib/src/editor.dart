@@ -179,13 +179,13 @@ class NgDocument {
 class NgEditor extends StatefulWidget {
   final String label;
   final NgDocument value;
-  final ValueChanged<NgDocument> onChanged;
+  final ValueChanged<NgDocument>? onChanged;
   final bool readOnly;
   const NgEditor({
     super.key,
     this.label = 'Document editor',
     required this.value,
-    required this.onChanged,
+    this.onChanged,
     this.readOnly = false,
   });
   @override
@@ -206,18 +206,44 @@ class _NgEditorState extends State<NgEditor> {
     controller = TextEditingController(text: current.blocks.first.text);
   }
 
+  NgDocument? pending;
+  int pendingAction = 0, pendingSelection = 0, revision = 0;
+  bool get writable => !widget.readOnly && widget.onChanged != null;
+  bool active(int expected) => mounted && revision == expected;
   @override
   void didUpdateWidget(covariant NgEditor oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (!identical(oldWidget.value, widget.value) &&
-        !identical(current, widget.value)) {
+    revision++;
+    if (!identical(current, widget.value)) {
+      if (identical(pending, widget.value)) {
+        if (pendingAction == 0) {
+          undo.add(current);
+          if (undo.length > 50) undo.removeAt(0);
+          redo.clear();
+        } else {
+          final from = pendingAction == 1 ? undo : redo,
+              to = pendingAction == 1 ? redo : undo;
+          to.add(current);
+          from.removeLast();
+        }
+        selected = pendingSelection;
+        message = pendingAction == 0
+            ? 'Document updated.'
+            : pendingAction == 1
+            ? 'Undone.'
+            : 'Redone.';
+      } else {
+        undo.clear();
+        redo.clear();
+        message = '';
+      }
       current = widget.value;
       selected = selected.clamp(0, current.blocks.length - 1);
       controller.text = current.blocks[selected].text;
-      undo.clear();
-      redo.clear();
-      message = '';
+    } else if (pending != null) {
+      message = 'Change not applied.';
     }
+    pending = null;
   }
 
   @override
@@ -230,72 +256,90 @@ class _NgEditorState extends State<NgEditor> {
     selected,
     doc.blocks[selected].copyWith(text: controller.text),
   );
-  bool commit(NgDocument Function(NgDocument) update, {int? select}) {
-    if (widget.readOnly) return false;
+  void commit(
+    NgDocument Function(NgDocument) update,
+    int expected, {
+    int? select,
+    int action = 0,
+  }) {
+    if (!active(expected) || !writable) return;
+    NgDocument next;
     try {
-      final next = update(current);
-      if (next.toJson() == current.toJson()) return true;
-      setState(() {
-        undo.add(current);
-        if (undo.length > 50) undo.removeAt(0);
-        redo.clear();
-        current = next;
-        selected = (select ?? selected).clamp(0, current.blocks.length - 1);
-        controller.text = current.blocks[selected].text;
-        message = 'Document updated.';
-      });
-      widget.onChanged(current);
-      return true;
+      next = update(current);
     } on ArgumentError catch (e) {
       setState(() => message = e.message.toString());
-      return false;
+      return;
     }
-  }
-
-  void select(int index) {
-    if (dirty && !widget.readOnly && !commit(draft)) return;
+    if (next.toJson() == current.toJson()) {
+      setSelection(select ?? selected);
+      return;
+    }
     setState(() {
-      selected = index;
-      controller.text = current.blocks[index].text;
+      pending = next;
+      pendingAction = action;
+      pendingSelection = select ?? selected;
+      message = 'Change requested.';
     });
+    widget.onChanged?.call(next);
   }
 
-  void history(bool forward) {
-    if (widget.readOnly) return;
-    final source = forward ? redo : undo, target = forward ? undo : redo;
-    if (source.isEmpty) return;
+  void setSelection(int index) {
     setState(() {
-      target.add(current);
-      current = source.removeLast();
-      selected = selected.clamp(0, current.blocks.length - 1);
+      revision++;
+      selected = index.clamp(0, current.blocks.length - 1);
       controller.text = current.blocks[selected].text;
-      message = forward ? 'Redone.' : 'Undone.';
     });
-    widget.onChanged(current);
+  }
+
+  void select(int index, int expected) {
+    if (!active(expected)) return;
+    if (dirty && writable) {
+      commit(draft, expected, select: index);
+      return;
+    }
+    setSelection(index);
+  }
+
+  void discard(int expected) {
+    if (!active(expected)) return;
+    setState(() {
+      revision++;
+      controller.text = current.blocks[selected].text;
+      message = 'Draft discarded.';
+    });
+  }
+
+  void history(bool forward, int expected) {
+    final source = forward ? redo : undo;
+    if (source.isNotEmpty)
+      commit((_) => source.last, expected, action: forward ? 2 : 1);
   }
 
   Widget toggle(
     String label,
-    bool active,
+    bool toggled,
+    int expected,
     NgDocumentBlock Function(NgDocumentBlock) change,
   ) => Semantics(
-    toggled: active,
+    toggled: toggled,
     child: NgButton(
-      onPressed: widget.readOnly
+      onPressed: !writable
           ? null
           : () => commit(
               (d) => d.replace(
                 selected,
                 change(d.blocks[selected].copyWith(text: controller.text)),
               ),
+              expected,
             ),
-      primary: active,
+      primary: toggled,
       child: Text(label),
     ),
   );
   @override
   Widget build(BuildContext context) {
-    final b = current.blocks[selected], ro = widget.readOnly;
+    final b = current.blocks[selected], ro = !writable;
+    final expected = revision;
     final outline = ConstrainedBox(
       constraints: const BoxConstraints(maxHeight: 200),
       child: SingleChildScrollView(
@@ -309,7 +353,7 @@ class _NgEditorState extends State<NgEditor> {
                 selected: selected == i,
                 child: NgButton(
                   primary: selected == i,
-                  onPressed: () => select(i),
+                  onPressed: () => select(i, expected),
                   child: Text(
                     '${i + 1}. ${block.kind.name}: ${block.text.isEmpty ? 'Empty' : block.text}',
                     maxLines: 2,
@@ -338,7 +382,7 @@ class _NgEditorState extends State<NgEditor> {
               width: 170,
               child: DropdownButtonFormField<NgBlockKind>(
                 isExpanded: true,
-                key: ValueKey('kind-$selected-${b.kind}'),
+                key: ValueKey(('kind', current, selected, expected, b.kind)),
                 initialValue: b.kind,
                 decoration: const InputDecoration(labelText: 'Block type'),
                 items: NgBlockKind.values
@@ -353,6 +397,7 @@ class _NgEditorState extends State<NgEditor> {
                               selected,
                               b.copyWith(text: controller.text, kind: v),
                             ),
+                            expected,
                           );
                       },
               ),
@@ -361,7 +406,7 @@ class _NgEditorState extends State<NgEditor> {
               width: 140,
               child: DropdownButtonFormField<NgTextAlign>(
                 isExpanded: true,
-                key: ValueKey('align-$selected-${b.align}'),
+                key: ValueKey(('align', current, selected, expected, b.align)),
                 initialValue: b.align,
                 decoration: const InputDecoration(labelText: 'Alignment'),
                 items: NgTextAlign.values
@@ -376,38 +421,63 @@ class _NgEditorState extends State<NgEditor> {
                               selected,
                               b.copyWith(text: controller.text, align: v),
                             ),
+                            expected,
                           );
                       },
               ),
             ),
-            toggle('Bold', b.bold, (b) => b.copyWith(bold: !b.bold)),
-            toggle('Italic', b.italic, (b) => b.copyWith(italic: !b.italic)),
+            toggle('Bold', b.bold, expected, (b) => b.copyWith(bold: !b.bold)),
+            toggle(
+              'Italic',
+              b.italic,
+              expected,
+              (b) => b.copyWith(italic: !b.italic),
+            ),
             toggle(
               'Underline',
               b.underline,
+              expected,
               (b) => b.copyWith(underline: !b.underline),
             ),
           ],
         ),
         const SizedBox(height: 12),
-        TextField(
-          controller: controller,
-          readOnly: ro,
-          maxLines: 5,
-          maxLength: 10000,
-          decoration: const InputDecoration(labelText: 'Block text'),
-          onChanged: (_) => setState(() {}),
-        ),
+        if (ro)
+          InputDecorator(
+            decoration: const InputDecoration(
+              labelText: 'Block text, read-only',
+            ),
+            child: Semantics(
+              label: 'Block text, read-only',
+              child: Text(controller.text.isEmpty ? ' ' : controller.text),
+            ),
+          )
+        else
+          TextField(
+            key: ValueKey((current, selected)),
+            controller: controller,
+            readOnly: ro,
+            maxLines: 5,
+            maxLength: 10000,
+            decoration: const InputDecoration(labelText: 'Block text'),
+            onChanged: (_) {
+              if (active(expected) && writable) setState(() {});
+            },
+          ),
         Align(
           alignment: Alignment.centerLeft,
           child: NgButton(
             primary: true,
-            onPressed: ro || !dirty ? null : () => commit(draft),
+            onPressed: ro || !dirty ? null : () => commit(draft, expected),
             child: const Text('Apply text'),
           ),
         ),
+        NgButton(
+          onPressed: dirty ? () => discard(expected) : null,
+          child: const Text('Discard draft'),
+        ),
         const Text(
-          'Apply text saves this block. Switching blocks or formatting also applies the draft.',
+          'Apply text requests an update to this block. Switching blocks or formatting also applies the draft.',
         ),
       ],
     );
@@ -464,11 +534,15 @@ class _NgEditorState extends State<NgEditor> {
           runSpacing: 8,
           children: [
             NgButton(
-              onPressed: ro || undo.isEmpty ? null : () => history(false),
+              onPressed: ro || undo.isEmpty
+                  ? null
+                  : () => history(false, expected),
               child: const Text('Undo'),
             ),
             NgButton(
-              onPressed: ro || redo.isEmpty ? null : () => history(true),
+              onPressed: ro || redo.isEmpty
+                  ? null
+                  : () => history(true, expected),
               child: const Text('Redo'),
             ),
             NgButton(
@@ -476,12 +550,15 @@ class _NgEditorState extends State<NgEditor> {
                   ? null
                   : () => commit(
                       (d) => draft(d).insertAfter(selected),
+                      expected,
                       select: selected + 1,
                     ),
               child: const Text('Add block'),
             ),
             NgButton(
-              onPressed: ro ? null : () => commit((d) => d.remove(selected)),
+              onPressed: ro
+                  ? null
+                  : () => commit((d) => d.remove(selected), expected),
               child: const Text('Delete block'),
             ),
             NgButton(
@@ -489,6 +566,7 @@ class _NgEditorState extends State<NgEditor> {
                   ? null
                   : () => commit(
                       (d) => draft(d).move(selected, selected - 1),
+                      expected,
                       select: selected - 1,
                     ),
               child: const Text('Move up'),
@@ -498,6 +576,7 @@ class _NgEditorState extends State<NgEditor> {
                   ? null
                   : () => commit(
                       (d) => draft(d).move(selected, selected + 1),
+                      expected,
                       select: selected + 1,
                     ),
               child: const Text('Move down'),

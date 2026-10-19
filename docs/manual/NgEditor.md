@@ -17,10 +17,10 @@ The documentation launcher embeds these running examples here. Choose a framewor
 ### Editing
 Select a block, change Block text and press Apply text. Until applied, the local draft is not included in callbacks, preview or export. Block type supports paragraphs, level 1/2 headings, bullet/numbered items and quotes. Bold, Italic, Underline and Alignment apply to the entire block, not a selected text range.
 
-Changing selection/type/alignment/formatting, Add block and Move automatically applies the draft; one action creates one history entry. Add inserts a paragraph after the current block. Move preserves selection. Delete discards the selected draft; deleting the final block leaves one empty paragraph. Undo/Redo stores the last 50 applied operations and discards an unapplied draft.
+Changing selection/type/alignment/formatting, Add block and Move automatically applies the draft; one accepted action creates one history entry. Add inserts a paragraph after the current block. Move preserves selection. Delete discards the selected draft; deleting the final block leaves one empty paragraph. Undo/Redo stores the last 50 accepted operations and discards an unapplied draft only when the history proposal is accepted.
 
 ### State and storage
-Value is an immutable NgDocument. Save the new instance from ValueChanged/onChanged and pass it back. An independent replacement (import or another file) resets history and draft; do not manufacture an equivalent new instance on every render. ReadOnly preserves selection/preview but does not auto-save a pending draft. NgEditor is not an InputBase/FormField: the host validates document business rules.
+Value is an immutable NgDocument controlled by the parent. ValueChanged/onChanged proposes a new instance: return that exact instance to accept the operation. Until accepted, the preview, export, selection and history retain the accepted document. Keeping the old Value rejects the proposal and retains the draft. Flutter hosts must rebuild after acceptance or rejection (as in this example). A different returned instance is an independent replacement, even if its JSON is equivalent. Accept or reject within the event-driven update; late asynchronous responses are parent-owned replacements and must be guarded by the host against newer documents. An independent replacement (import or another file) resets history and draft; do not manufacture an equivalent new instance on every render. ReadOnly or an absent callback disables edits and history while preserving block inspection. Switching blocks in this mode discards the unsaved draft without a callback. Discard draft restores the selected accepted text without changing the document or history, and is also available while read-only. Flutter presents read-only text explicitly instead of a disabled editor input. Captured actions from an earlier parent update, selection or disposed editor are ignored. NgEditor is not an InputBase/FormField: the host validates document business rules.
 
 ToJson/toJson produces the shared version-1 format. Restore with NgDocument.FromJson/fromJson, catch ArgumentException/ArgumentError and preserve the current document on failure. ToHtml/toHtml exports applied blocks only, escapes text, groups adjacent list items and converts newlines to br. It returns a fragment without theme/container. Store JSON as the editable source; HTML import is not supported. The component does not upload or write files. The Editor gallery demonstrates Save/Restore.
 
@@ -32,17 +32,27 @@ Limits: 1–100 blocks, 10,000 UTF-16 units per block, 100,000 total, 1,000,000 
 ## Blazor example
 
 ```razor
-<NgEditor Label="Project description" @bind-Value="document"/>
+<div class="row">
+<NgButton OnClick="()=>accept=!accept">Toggle acceptance</NgButton>
+<NgButton OnClick="()=>readOnly=!readOnly">Toggle read-only</NgButton>
+<NgButton OnClick="Reset">Replace document</NgButton>
 <NgButton OnClick="Save">Save JSON</NgButton>
+</div>
+<p>Acceptance: @(accept ? "enabled" : "rejected") · Accepted first block: @document.Blocks[0].Text</p>
+<NgEditor Label="Project description" Value="document" ValueChanged="Change" ReadOnly="readOnly"/>
 <pre>@saved</pre>
 @code {
-    private NgDocument document = new([
+    private NgDocument document = Sample();
+    private bool accept = true, readOnly;
+    private string saved = "";
+    private static NgDocument Sample() => new([
         new("Project plan", NgBlockKind.Heading1),
         new("Agree on requirements", NgBlockKind.Bullet),
         new("Review the result", NgBlockKind.Bullet, Bold: true)
     ]);
-    private string saved = "";
-    private void Save() => saved = document.ToJson();
+    private void Change(NgDocument next) { if(accept) document=next; }
+    private void Reset() => document=new([new("Imported brief"),new("Review imported content")]);
+    private void Save() => saved=document.ToJson();
 }
 ```
 
@@ -54,12 +64,18 @@ NgDocument document = NgDocument(blocks: const [
   NgDocumentBlock(text: 'Agree on requirements', kind: NgBlockKind.bullet),
   NgDocumentBlock(text: 'Review the result', kind: NgBlockKind.bullet, bold: true),
 ]);
+bool accept = true, readOnly = false;
 String saved = '';
-Widget build(BuildContext context) => Column(children: [
-  NgEditor(label: 'Project description', value: document,
-    onChanged: (v) => setState(() => document = v)),
-  NgButton(onPressed: () => setState(() => saved = document.toJson()),
-    child: const Text('Save JSON')),
+Widget build(BuildContext context) => Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+  Wrap(spacing: 8, runSpacing: 8, children: [
+    NgButton(onPressed: () => setState(() => accept = !accept), child: const Text('Toggle acceptance')),
+    NgButton(onPressed: () => setState(() => readOnly = !readOnly), child: const Text('Toggle read-only')),
+    NgButton(onPressed: () => setState(() => document = NgDocument(blocks: const [NgDocumentBlock(text: 'Imported brief'), NgDocumentBlock(text: 'Review imported content')])), child: const Text('Replace document')),
+    NgButton(onPressed: () => setState(() => saved = document.toJson()), child: const Text('Save JSON')),
+  ]),
+  Text('Acceptance: ${accept ? "enabled" : "rejected"} · Accepted first block: ${document.blocks.first.text}'),
+  NgEditor(label: 'Project description', value: document, readOnly: readOnly,
+    onChanged: (v) => setState(() { if (accept) document = v; })),
   Text(saved),
 ]);
 ```
@@ -83,7 +99,7 @@ Names are case-sensitive. `?` permits null. `EditorRequired` parameters are mark
 |---|---|---|
 | `label` | `String` | Visible label or accessible name. |
 | `value` | `NgDocument` | Current value; see state ownership and model rules above. |
-| `onChanged` | `ValueChanged<NgDocument>` | Store the new value using setState or your state manager. |
+| `onChanged` | `ValueChanged<NgDocument>?` | Store the new value using setState or your state manager. |
 | `readOnly` | `bool` | Prevent changes while retaining supported viewing actions. |
 
 ```dart
@@ -91,7 +107,7 @@ const NgEditor({
     super.key,
     this.label = 'Document editor',
     required this.value,
-    required this.onChanged,
+    this.onChanged,
     this.readOnly = false,
   });
 ```

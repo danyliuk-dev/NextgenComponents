@@ -1,13 +1,23 @@
 @* Generated from scripts/manual_content.py *@
-<NgEditor Label="Project description" @bind-Value="document"/>
+<div class="row">
+<NgButton OnClick="()=>accept=!accept">Toggle acceptance</NgButton>
+<NgButton OnClick="()=>readOnly=!readOnly">Toggle read-only</NgButton>
+<NgButton OnClick="Reset">Replace document</NgButton>
 <NgButton OnClick="Save">Save JSON</NgButton>
+</div>
+<p>Acceptance: @(accept ? "enabled" : "rejected") · Accepted first block: @document.Blocks[0].Text</p>
+<NgEditor Label="Project description" Value="document" ValueChanged="Change" ReadOnly="readOnly"/>
 <pre>@saved</pre>
 @code {
-    private NgDocument document = new([
+    private NgDocument document = Sample();
+    private bool accept = true, readOnly;
+    private string saved = "";
+    private static NgDocument Sample() => new([
         new("Project plan", NgBlockKind.Heading1),
         new("Agree on requirements", NgBlockKind.Bullet),
         new("Review the result", NgBlockKind.Bullet, Bold: true)
     ]);
-    private string saved = "";
-    private void Save() => saved = document.ToJson();
+    private void Change(NgDocument next) { if(accept) document=next; }
+    private void Reset() => document=new([new("Imported brief"),new("Review imported content")]);
+    private void Save() => saved=document.ToJson();
 }

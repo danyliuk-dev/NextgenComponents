@@ -142,7 +142,8 @@ void main() {
       );
       parent(() => readOnly = true);
       await tester.pumpAndSettle();
-      expect(tester.widget<TextField>(find.byType(TextField)).readOnly, true);
+      expect(find.byType(TextField), findsNothing);
+      expect(find.text('Block text, read-only'), findsOneWidget);
       expect(
         tester
             .widget<NgButton>(

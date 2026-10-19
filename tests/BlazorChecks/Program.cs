@@ -143,6 +143,8 @@ Reject(()=>NgDocument.FromJson("{\"version\":1,\"blocks\":[{\"kind\":99}]}"),"do
 Reject(()=>NgDocument.FromJson("{\"version\":1,\"blocks\":[{\"html\":\"unsafe\"}]}"),"document rejects raw HTML property");
 Reject(()=>NgDocument.FromJson("null"),"document rejects null JSON");
 await Check<NgEditor>(new(){["Value"]=doc,["ReadOnly"]=true},"Document preview","readonly","&lt;script&gt;","disabled","Block text");
+await Check<NgEditor>(new(){["Value"]=doc},"readonly","disabled","Discard draft","Document preview");
+await Check<NgEditor>(new(){["Value"]=doc,["ValueChanged"]=EventCallback.Factory.Create<NgDocument>(new object(),_=>{})},"Discard draft","Apply text","Document blocks");
 var graph = new NgDiagramModel([new("a","Start",10,10),new("b","End",400,10,Shape:NgDiagramShape.Ellipse)],[new("e","a","b","Next")]);
 Rule(NgDiagramModel.FromJson(graph.ToJson()).ToJson()==graph.ToJson(),"diagram JSON roundtrip");
 var moved=graph.Move("a",-100,900);Rule(moved.Nodes[0].X==0&&moved.Nodes[0].Y==520&&graph.Nodes[0].X==10,"diagram immutable move clamps canvas");
