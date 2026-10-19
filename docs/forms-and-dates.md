@@ -91,7 +91,7 @@ TextBox/TextArea offer OnDebouncedChange/onDebouncedChange with DebounceDelay/de
 
 ## Responsive forms (0.50)
 
-NgForm accepts an explicit Fields/fields list instead of legacy content, with Columns/columns (1–4), MinColumnWidth/minColumnWidth (120–1200, default 240) and Gap/gap (0–64, default 16). Columns adapt to container width while preserving values and validation. Actions/actionsBuilder places save controls below the grid; Flutter supplies a guarded nullable submit callback. Legacy content and the default Flutter Save button remain supported. Automatic schema generation, spans and nested groups remain open. See [Form manual](manual/NgForm.md).
+NgForm accepts an explicit Fields/fields list instead of legacy content, with Columns/columns (1–4), MinColumnWidth/minColumnWidth (120–1200, default 240) and Gap/gap (0–64, default 16). Columns adapt to container width while preserving values and validation. Actions/actionsBuilder places save controls below the grid; Flutter supplies a guarded nullable submit callback. Legacy content and the default Flutter Save button remain supported. Spans arrived in 0.52 and nested sections in 0.55; automatic schema generation remains open. See [Form manual](manual/NgForm.md).
 
 
 ## Validation summaries (0.51)
@@ -111,4 +111,9 @@ TextBox and TextArea support theme/none/small/medium/large/full corners and flat
 
 ## Named form sections (0.54)
 
-Sections/sections is an alternative to flat fields or legacy content. NgFormSection carries a stable ID, title, optional description and its own fields/columns/gap/spans. All sections share one form, summary and submit action. Reordering whole sections preserves editor state; recursive nesting and generated/conditional schemas remain open. See the Form manual for removal and content-mode lifecycle rules.
+Sections/sections is an alternative to flat fields or legacy content. NgFormSection carries a stable ID, title, optional description and its own fields/columns/gap/spans. All sections share one form, summary and submit action. Reordering whole sections preserves editor state; recursive nesting arrived in 0.55; generated/conditional schemas remain open. See the Form manual for removal and content-mode lifecycle rules.
+
+
+## Nested form sections (0.55)
+
+NgFormSection now accepts either leaf Fields/fields or child Sections/sections. Each node requires exactly one list. The entire tree is checked for invalid descriptors, duplicate sibling IDs and excessive/cyclic nesting before rendering (maximum eight levels). Descendants share one form and summary; sibling reordering preserves state. Moving nodes across parents or wrapping/unwrapping changes identity paths and can recreate editor state. Collapse/expand and generated/conditional schemas remain open.

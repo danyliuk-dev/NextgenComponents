@@ -761,53 +761,7 @@ class _NgFormState extends State<NgForm> {
             child: ExcludeFocus(
               excluding: busy || !widget.enabled,
               child: widget.sections != null
-                  ? Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        for (final section in widget.sections!)
-                          Padding(
-                            key: ValueKey(section.id),
-                            padding: const EdgeInsets.only(bottom: 24),
-                            child: Container(
-                              padding: const EdgeInsets.all(16),
-                              decoration: BoxDecoration(
-                                border: Border.all(
-                                  color: Theme.of(context).dividerColor,
-                                ),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.stretch,
-                                children: [
-                                  Semantics(
-                                    header: true,
-                                    child: Text(
-                                      section.title,
-                                      style: Theme.of(
-                                        context,
-                                      ).textTheme.titleMedium,
-                                    ),
-                                  ),
-                                  if (section.description?.trim().isNotEmpty ??
-                                      false)
-                                    Padding(
-                                      padding: const EdgeInsets.only(top: 8),
-                                      child: Text(section.description!),
-                                    ),
-                                  const SizedBox(height: 16),
-                                  _FormFields(
-                                    fields: section.fields,
-                                    fieldSpans: section.fieldSpans,
-                                    columns: section.columns,
-                                    minColumnWidth: section.minColumnWidth,
-                                    gap: section.gap,
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                      ],
-                    )
+                  ? _FormSections(sections: widget.sections!)
                   : widget.fields == null
                   ? widget.child!
                   : _FormFields(
@@ -859,20 +813,28 @@ class _NgFormState extends State<NgForm> {
 class NgFormSection {
   final String id, title;
   final String? description;
-  final List<Widget> fields;
+  final List<Widget>? fields;
+  final List<NgFormSection>? sections;
   final List<int>? fieldSpans;
   final int columns, minColumnWidth, gap;
   const NgFormSection({
     required this.id,
     required this.title,
-    required this.fields,
+    this.fields,
+    this.sections,
     this.description,
     this.fieldSpans,
     this.columns = 1,
     this.minColumnWidth = 240,
     this.gap = 16,
   });
-  void validate() {
+  void validate([int depth = 1]) {
+    if (depth > 8)
+      throw ArgumentError(
+        "Sections must be acyclic and at most eight levels deep.",
+      );
+    if ((fields == null) == (sections == null))
+      throw ArgumentError("Supply either fields or sections for each section.");
     if (id.trim().isEmpty || title.trim().isEmpty)
       throw ArgumentError('A section needs a nonempty ID and title.');
     if (columns < 1 ||
@@ -883,9 +845,18 @@ class NgFormSection {
         gap > 64)
       throw ArgumentError('Invalid section layout limits.');
     if (fieldSpans != null &&
-        (fieldSpans!.length != fields.length ||
+        (fields == null ||
+            fieldSpans!.length != fields!.length ||
             fieldSpans!.any((span) => span < 0 || span > 4)))
       throw ArgumentError('Supply one span (0–4) per section field.');
+    if (sections != null) {
+      if (sections!.map((section) => section.id).toSet().length !=
+          sections!.length)
+        throw ArgumentError('Sibling sections need unique IDs.');
+      for (final section in sections!) {
+        section.validate(depth + 1);
+      }
+    }
   }
 }
 
@@ -945,5 +916,57 @@ class _FormFields extends StatelessWidget {
         ],
       );
     },
+  );
+}
+
+class _FormSections extends StatelessWidget {
+  final List<NgFormSection> sections;
+  final int depth;
+  const _FormSections({required this.sections, this.depth = 1});
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      for (final section in sections)
+        Padding(
+          key: ValueKey(section.id),
+          padding: const EdgeInsets.only(bottom: 24),
+          child: Container(
+            padding: EdgeInsets.all(depth == 1 ? 16 : 12),
+            decoration: BoxDecoration(
+              border: Border.all(color: Theme.of(context).dividerColor),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Semantics(
+                  header: true,
+                  child: Text(
+                    section.title,
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                ),
+                if (section.description?.trim().isNotEmpty ?? false)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8),
+                    child: Text(section.description!),
+                  ),
+                const SizedBox(height: 16),
+                if (section.fields != null)
+                  _FormFields(
+                    fields: section.fields!,
+                    fieldSpans: section.fieldSpans,
+                    columns: section.columns,
+                    minColumnWidth: section.minColumnWidth,
+                    gap: section.gap,
+                  )
+                else
+                  _FormSections(sections: section.sections!, depth: depth + 1),
+              ],
+            ),
+          ),
+        ),
+    ],
   );
 }

@@ -1,0 +1,14 @@
+ <div class="ng-form-sections">
+ @foreach(var group in Sections){
+  <fieldset @key="group.Id" class="ng-form-section">
+   <legend>@group.Title</legend>
+   @if(!string.IsNullOrWhiteSpace(group.Description)){<p class="ng-form-section-description">@group.Description</p>}
+   @if(group.Fields is not null){
+   <div class="ng-form-container"><FormFieldsLayout Fields="group.Fields" FieldSpans="group.FieldSpans" Columns="group.Columns" MinColumnWidth="group.MinColumnWidth" Gap="group.Gap" /></div>
+   }else{<FormSectionsLayout Sections="group.Sections!" />}
+  </fieldset>
+ }
+ </div>
+@code {
+ [Parameter,EditorRequired] public IReadOnlyList<NgFormSection> Sections {get;set;}=Array.Empty<NgFormSection>();
+}

@@ -250,11 +250,12 @@ Widget build(BuildContext context) => NgDateRangePicker(label: 'Period', value: 
 }
 class NgFormExample extends StatefulWidget { const NgFormExample({super.key}); @override State<NgFormExample> createState()=>_NgFormExampleState(); }
 class _NgFormExampleState extends State<NgFormExample> {
-bool sectioned=false,reverseSections=false;
+bool nested=false,sectioned=false,reverseSections=false;
 int notesSpan=0;
 bool customSummary=true,showSummary=true;
 int revision=0,columns=2,gap=16; bool fail=false,disabled=false; String name='',owner='',notes='',reference='',status='Not saved';
 Widget build(BuildContext context)=>Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
+ Wrap(children:[NgButton(onPressed:()=>setState((){nested=!nested;sectioned=true;}),child:const Text('Nest sections'))]),
  Wrap(spacing:8,children:[NgButton(onPressed:()=>setState(()=>sectioned=!sectioned),child:const Text('Toggle sections')),NgButton(onPressed:()=>setState(()=>reverseSections=!reverseSections),child:const Text('Reverse sections'))]),
  Wrap(spacing:8,children:[NgButton(onPressed:()=>setState(()=>notesSpan=notesSpan==0?2:notesSpan==2?1:0),child:const Text('Change notes span')),NgButton(onPressed:()=>setState(()=>columns=3),child:const Text('Use three columns'))]),
  Wrap(spacing:8,children:[NgButton(onPressed:()=>setState(()=>customSummary=!customSummary),child:const Text('Toggle custom summary')),NgButton(onPressed:()=>setState(()=>showSummary=!showSummary),child:const Text('Toggle summary visibility'))]),
@@ -276,7 +277,7 @@ List<Widget> formFields()=>[
   NgTextArea(label:'Notes',initialValue:notes,rows:2,onChanged:(v)=>notes=v),
   NgTextBox(label:'Reference',initialValue:reference,onChanged:(v)=>reference=v),
  ];
-List<NgFormSection> formSections(){final fields=formFields();final sections=[NgFormSection(id:'identity',title:'Application details',description:'Name and owner are required.',fields:fields.sublist(0,2),columns:columns,gap:gap),NgFormSection(id:'delivery',title:'Delivery instructions',description:'Add notes and a reference for the team.',fields:fields.sublist(2),columns:columns,gap:gap,fieldSpans:[notesSpan,1])];return reverseSections?sections.reversed.toList():sections;}
+List<NgFormSection> formSections(){final fields=formFields();final sections=[NgFormSection(id:'identity',title:'Application details',description:'Name and owner are required.',fields:fields.sublist(0,2),columns:columns,gap:gap),NgFormSection(id:'delivery',title:'Delivery instructions',description:'Add notes and a reference for the team.',fields:fields.sublist(2),columns:columns,gap:gap,fieldSpans:[notesSpan,1])];final ordered=reverseSections?sections.reversed.toList():sections;return nested?[NgFormSection(id:'workspace',title:'Application workspace',description:'One form validates every nested section.',sections:ordered)]:ordered;}
 
 }
 class NgTabsExample extends StatefulWidget { const NgTabsExample({super.key}); @override State<NgTabsExample> createState()=>_NgTabsExampleState(); }

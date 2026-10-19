@@ -11,15 +11,7 @@
 @if(Fields is not null){
  <FormFieldsLayout Fields="Fields" FieldSpans="FieldSpans" Columns="Columns" MinColumnWidth="MinColumnWidth" Gap="Gap" />
 }else if(Sections is not null){
- <div class="ng-form-sections">
- @foreach(var group in Sections){
-  <fieldset @key="group.Id" class="ng-form-section">
-   <legend>@group.Title</legend>
-   @if(!string.IsNullOrWhiteSpace(group.Description)){<p class="ng-form-section-description">@group.Description</p>}
-   <div class="ng-form-container"><FormFieldsLayout Fields="group.Fields" FieldSpans="group.FieldSpans" Columns="group.Columns" MinColumnWidth="group.MinColumnWidth" Gap="group.Gap" /></div>
-  </fieldset>
- }
- </div>
+ <FormSectionsLayout Sections="Sections" />
 }else{@ChildContent}
 @if(Actions is not null){<div class="ng-form-actions">@Actions</div>}
 </fieldset>

@@ -27,7 +27,7 @@ Automatic model-driven editor generation, conditional schemas, full Telerik even
 ### Responsive fields and actions (0.50)
 Fields/fields is an explicit ordered list of field fragments/widgets. Supply it instead of ChildContent/child; combining them throws. An empty list is allowed. Legacy content keeps its existing layout. The library does not inspect the model or generate editors.
 
-Columns/columns is the maximum number of columns (1–4, default 1). MinColumnWidth/minColumnWidth is the preferred minimum width (120–1200 CSS/logical pixels, default 240); Gap/gap is spacing in both directions (0–64, default 16). Width comes from the form's container, not the screen. Columns reduce as space narrows; one column can shrink below the preferred minimum to fit. Flutter requires bounded horizontal constraints; use Expanded when placing the form in a Row. Custom field content must itself support shrinking. Fields occupy one cell unless FieldSpans/fieldSpans is supplied; nested groups are not supplied.
+Columns/columns is the maximum number of columns (1–4, default 1). MinColumnWidth/minColumnWidth is the preferred minimum width (120–1200 CSS/logical pixels, default 240); Gap/gap is spacing in both directions (0–64, default 16). Width comes from the form's container, not the screen. Columns reduce as space narrows; one column can shrink below the preferred minimum to fit. Flutter requires bounded horizontal constraints; use Expanded when placing the form in a Row. Custom field content must itself support shrinking. Fields occupy one cell unless FieldSpans/fieldSpans is supplied; nested groups use Sections/sections (0.55).
 
 Changing width, columns or gaps preserves the existing field widgets, values and validation. Keep the field list order stable for positional identity; use a replacement form key when replacing the entire schema. Flutter keyed fields support reordering; do not reuse keys. Tab/focus order follows source order. Flutter Wrap and CSS Grid use each row's tallest cell without forcing editors to equal heights.
 
@@ -47,22 +47,33 @@ FieldSpans/fieldSpans is an optional integer list matching Fields/fields exactly
 
 Fields retain source order and flow to the next row when the remaining space is insufficient; gaps are not filled by moving later fields backwards. A full-row field starts a new row and subsequent fields follow it. Row height follows the tallest field; vertical row spans are not supported. Changing spans does not reset values, focus or validation. Keep the field order stable, or use the previously documented keyed-field/reset rules.
 
-Blazor uses per-instance container-query rules with validated numeric widths and a single-column fallback in browsers without container-query support. Flutter uses Wrap with the same available-column and span rules. Field fragments must support shrinking. This is explicit layout, not automatic model/schema generation or nested field groups.
+Blazor uses per-instance container-query rules with validated numeric widths and a single-column fallback in browsers without container-query support. Flutter uses Wrap with the same available-column and span rules. Field fragments must support shrinking. This is explicit layout; nested groups use section trees. Automatic model/schema generation is not supplied.
 
 
 ### Named sections (0.54)
-Sections/sections accepts an ordered list of NgFormSection descriptors instead of Fields/fields or legacy content. These three content modes are mutually exclusive. A section requires a nonblank Id/id, Title/title and Fields/fields; IDs must be unique within the form and stable across rebuilds. Description/description is optional plain text. Empty lists are allowed. Each section owns Columns/columns (default 1), MinColumnWidth/minColumnWidth (240), Gap/gap (16) and optional FieldSpans/fieldSpans with the same bounds as flat fields. Form-level layout values do not override section settings; form-level spans require flat fields and cannot accompany sections.
+Sections/sections accepts an ordered list of NgFormSection descriptors instead of Fields/fields or legacy content. These three content modes are mutually exclusive. A section requires a nonblank Id/id and Title/title plus either Fields/fields or child Sections/sections; sibling IDs must be unique and stable across rebuilds. Description/description is optional plain text. Empty lists are allowed. Each section owns Columns/columns (default 1), MinColumnWidth/minColumnWidth (240), Gap/gap (16) and optional FieldSpans/fieldSpans with the same bounds as flat fields. Form-level layout values do not override section settings; form-level spans require flat fields and cannot accompany sections.
 
 Sections share one form, model, validation summary and guarded submit action. An error in any mounted section prevents saving. Disabled/busy behavior applies to every section. Blazor uses fieldset/legend headings and Flutter exposes semantic headings; no nested HTML forms or independent Flutter Forms are created. IDs are reconciliation keys, not DOM IDs. Titles/descriptions render as text.
 
 Reordering whole sections with stable IDs preserves field state, focus and validation. Changing headings or section layout also retains fields. Keep field order stable inside each section or apply the earlier keyed-field rules. Removing a section unmounts its editors; persistence is the application's responsibility. Blazor model validation may still report required properties of removed sections; Flutter validates currently mounted fields. Changing between legacy, flat and section modes rebuilds editors and can reset local editor/validation state, so choose a mode when constructing the form. The demo retains values in its model while switching modes.
 
-This release supplies one level of named sections. Recursive groups, collapse/expand behavior, automatic model fields and conditional schemas remain open. Sections are a form data contract, not additional catalog components.
+Named sections support recursive groups from 0.55. Collapse/expand behavior, automatic model fields and conditional schemas remain open. Sections are a form data contract, not additional catalog components.
+
+
+### Nested sections (0.55)
+NgFormSection accepts child Sections/sections instead of Fields/fields. Supply exactly one of these lists, even when empty; Fields/fields is now nullable for branch nodes. Existing leaf constructors continue to work. Supplying both lists or neither throws. FieldSpans/fieldSpans belongs only to leaves. Column/minimum-width/gap settings remain validated on all nodes, but only leaf settings lay out fields. Child sections stack vertically; their layout is not inherited from ancestors.
+
+The complete tree is validated before rendering. The maximum depth is eight section levels, counting the top-level section as level one. Deeper or cyclic descriptions throw; duplicate IDs are rejected within each sibling list. The same ID can be used under different parents. Never mutate the tree during rendering. Deeply nested groups need sufficient container width; custom field content must support shrinking.
+
+Every descendant participates in the same form, validation summary, busy/disabled guard and submit callback. Parent sections add semantic structure, not another form or validation context. Reordering siblings under the same parent with stable IDs retains editor state, focus and errors, including descendants. Moving a section to a different parent, wrapping/unwrapping it, or changing a node between fields and child sections changes its identity path and can recreate editor state. Keep application data outside the tree when restructuring; use a new form key/model when a pristine reset is required. The Nest sections demo action deliberately restructures the tree and retains values in its model.
+
+Collapsing groups, automatic schemas, conditional visibility and screen-reader certification remain separate work.
 
 
 ## Blazor example
 
 ```razor
+<div class="ng-prompt-actions"><NgButton OnClick="ToggleNesting">Nest sections</NgButton></div>
 <div class="ng-prompt-actions"><NgButton OnClick="()=>sectioned=!sectioned">Toggle sections</NgButton><NgButton OnClick="()=>reverseSections=!reverseSections">Reverse sections</NgButton></div>
 <div class="ng-prompt-actions"><NgButton OnClick="()=>notesSpan=notesSpan==0?2:notesSpan==2?1:0">Change notes span</NgButton><NgButton OnClick="()=>columns=3">Use three columns</NgButton></div>
 <div class="ng-prompt-actions"><NgButton OnClick="()=>customSummary=!customSummary">Toggle custom summary</NgButton><NgButton OnClick="()=>showSummary=!showSummary">Toggle summary visibility</NgButton></div>
@@ -76,9 +87,10 @@ This release supplies one level of named sections. Recursive groups, collapse/ex
 <NgButton OnClick="Reset">Reset application</NgButton>
 <p role="status">@status</p>
 @code {
- private bool sectioned,reverseSections;
+ private bool nested,sectioned,reverseSections;
+ private void ToggleNesting(){nested=!nested;sectioned=true;}
  private IReadOnlyList<NgFormSection> FormSections {
-  get {var sections=new[]{new NgFormSection("identity","Application details",new[]{NameField,OwnerField},Description:"Name and owner are required.",Columns:columns,Gap:gap),new NgFormSection("delivery","Delivery instructions",new[]{NotesField,ReferenceField},Description:"Add notes and a reference for the team.",Columns:columns,Gap:gap,FieldSpans:new[]{notesSpan,1})};return reverseSections?sections.Reverse().ToArray():sections;}
+  get {var sections=new[]{new NgFormSection("identity","Application details",new[]{NameField,OwnerField},Description:"Name and owner are required.",Columns:columns,Gap:gap),new NgFormSection("delivery","Delivery instructions",new[]{NotesField,ReferenceField},Description:"Add notes and a reference for the team.",Columns:columns,Gap:gap,FieldSpans:new[]{notesSpan,1})};var ordered=reverseSections?sections.Reverse().ToArray():sections;return nested?new[]{new NgFormSection("workspace","Application workspace",Description:"One form validates every nested section.",Sections:ordered)}:ordered;}
  }
 
  private int notesSpan;
@@ -100,11 +112,12 @@ This release supplies one level of named sections. Recursive groups, collapse/ex
 ## Flutter example
 
 ```dart
-bool sectioned=false,reverseSections=false;
+bool nested=false,sectioned=false,reverseSections=false;
 int notesSpan=0;
 bool customSummary=true,showSummary=true;
 int revision=0,columns=2,gap=16; bool fail=false,disabled=false; String name='',owner='',notes='',reference='',status='Not saved';
 Widget build(BuildContext context)=>Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
+ Wrap(children:[NgButton(onPressed:()=>setState((){nested=!nested;sectioned=true;}),child:const Text('Nest sections'))]),
  Wrap(spacing:8,children:[NgButton(onPressed:()=>setState(()=>sectioned=!sectioned),child:const Text('Toggle sections')),NgButton(onPressed:()=>setState(()=>reverseSections=!reverseSections),child:const Text('Reverse sections'))]),
  Wrap(spacing:8,children:[NgButton(onPressed:()=>setState(()=>notesSpan=notesSpan==0?2:notesSpan==2?1:0),child:const Text('Change notes span')),NgButton(onPressed:()=>setState(()=>columns=3),child:const Text('Use three columns'))]),
  Wrap(spacing:8,children:[NgButton(onPressed:()=>setState(()=>customSummary=!customSummary),child:const Text('Toggle custom summary')),NgButton(onPressed:()=>setState(()=>showSummary=!showSummary),child:const Text('Toggle summary visibility'))]),
@@ -126,7 +139,7 @@ List<Widget> formFields()=>[
   NgTextArea(label:'Notes',initialValue:notes,rows:2,onChanged:(v)=>notes=v),
   NgTextBox(label:'Reference',initialValue:reference,onChanged:(v)=>reference=v),
  ];
-List<NgFormSection> formSections(){final fields=formFields();final sections=[NgFormSection(id:'identity',title:'Application details',description:'Name and owner are required.',fields:fields.sublist(0,2),columns:columns,gap:gap),NgFormSection(id:'delivery',title:'Delivery instructions',description:'Add notes and a reference for the team.',fields:fields.sublist(2),columns:columns,gap:gap,fieldSpans:[notesSpan,1])];return reverseSections?sections.reversed.toList():sections;}
+List<NgFormSection> formSections(){final fields=formFields();final sections=[NgFormSection(id:'identity',title:'Application details',description:'Name and owner are required.',fields:fields.sublist(0,2),columns:columns,gap:gap),NgFormSection(id:'delivery',title:'Delivery instructions',description:'Add notes and a reference for the team.',fields:fields.sublist(2),columns:columns,gap:gap,fieldSpans:[notesSpan,1])];final ordered=reverseSections?sections.reversed.toList():sections;return nested?[NgFormSection(id:'workspace',title:'Application workspace',description:'One form validates every nested section.',sections:ordered)]:ordered;}
 
 ```
 

@@ -749,3 +749,20 @@ Validation completed:
 Evidence: [Blazor reordered sections](screenshots/form054-blazor-sections.png), [Flutter narrow sections](screenshots/form054-flutter-narrow.png), [desktop manual](screenshots/form054-desktop-manual.png).
 
 This stage provides one section level. Recursive groups, collapse/expand, automatic editors, conditional schemas and native/full screen-reader certification remain open. Removing sections and switching content modes have documented lifecycle and validation differences; the application owns persistence. Full Telerik API/pixel parity is not claimed.
+
+## Nested form sections — 0.55 (2026-10-19, Linux on iMac)
+
+NgFormSection can contain either fields or child sections. All descendants share the containing form's validation and submission. The complete tree is validated before rendering: exactly one content list, leaf-only spans, unique sibling IDs and a maximum depth of eight (cyclic trees also fail this bound). Existing leaf constructors remain usable; Fields/fields is now nullable for branches.
+
+Validation completed:
+
+- 398 Blazor checks: eight-level rendering, rejection at nine levels, cycles, mixed/missing node content, parent spans, duplicate child IDs, invalid descendants and reuse of IDs under different parents. Gallery build passed with zero warnings/errors.
+- 234 Flutter tests and clean Dart analysis. New tests cover the same tree boundaries, one shared Form, parent/child sibling reorder with retained draft/focus/errors, responsive width and disabled descendants.
+- 47 Razor and 47 Dart manual examples compiled/analyzed; 94 lossless highlighting checks. Flutter Web build passed with the existing CupertinoIcons font warning.
+- Foreground local Chrome: 22 Blazor and 18 Flutter nested-section assertions. Parent headings/descriptions, descendant ordering, retained drafts/errors, leaf column spans, 390 px stacking without horizontal overflow and successful shared submit passed. Blazor additionally verifies a single form, all three legends, retained DOM focus and disabled descendant inputs.
+- Previous one-level section scenarios passed again: 19 Blazor and 16 Flutter assertions. Total browser assertions: 75.
+- Desktop shell opened the updated Form manual and activated the nested live example with one parent and two child sections. Code/category navigation remained available. Screenshots were inspected directly.
+
+Evidence: [Blazor nested groups](screenshots/form055-blazor-nested.png), [Flutter narrow groups](screenshots/form055-flutter-narrow.png), [desktop manual](screenshots/form055-desktop-manual.png).
+
+Moving nodes between parents or wrapping/unwrapping changes identity paths and may recreate editor state; persistence remains application-owned. Deep trees require enough width for custom field content. Collapse/expand, generated/conditional schemas and full native/screen-reader certification remain open. Full Telerik API/pixel parity is not claimed.

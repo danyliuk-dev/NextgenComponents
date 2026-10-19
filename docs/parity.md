@@ -11,7 +11,7 @@ A component can be marked complete only after every reference feature is recorde
 ## Current work order
 
 1. Chip/ChipList remaining gaps stay tracked below; do not mark full parity or silently accept them. Work is delivered in component blocks, not one release per parameter.
-2. ToggleButton/ButtonGroup and Menu/Drawer implementation blocks are delivered with explicit remaining gaps below. Stepper/Wizard is also delivered below; TextBox/TextArea/Form is delivered in 0.29; AutoComplete/ComboBox/MultiSelect is delivered in 0.30; numeric/time editing is delivered in 0.31; Calendar, DateInput, DatePicker and DateRangePicker are delivered in 0.32; RadioGroup and DropDownList are delivered in 0.33; Grid protected/read-only selection is delivered in 0.34; TreeView/TreeList controlled state and templates are delivered in 0.35; Chart interaction and presentation are delivered in 0.36; gauge ranges and presentation are delivered in 0.37; Scheduler day/week navigation and guarded actions are delivered in 0.38; Spreadsheet controlled edits and cell protection are delivered in 0.39; PivotGrid presentation and guarded drilldown are delivered in 0.40; Editor controlled changes and history are delivered in 0.41; Diagram guarded interaction and presentation are delivered in 0.42; Map controlled state and interaction locks are delivered in 0.43; PDF lazy thumbnails and synchronized navigation are delivered in 0.44; AI Prompt independent permissions and PromptBox length recovery are delivered in 0.45; text-field clear actions and password presentation are delivered in 0.46; bounded TextArea autosizing is delivered in 0.47; 0.48 text editor appearance and 0.49 debounced notifications delivered; responsive form fields/actions are delivered in 0.50; live customizable validation summaries are delivered in 0.51; responsive field spans are delivered in 0.52; rounded editors and flat fill are delivered in 0.53; named form sections are delivered in 0.54; next work continues with remaining editor/form gaps. No block is a full-parity verdict.
+2. ToggleButton/ButtonGroup and Menu/Drawer implementation blocks are delivered with explicit remaining gaps below. Stepper/Wizard is also delivered below; TextBox/TextArea/Form is delivered in 0.29; AutoComplete/ComboBox/MultiSelect is delivered in 0.30; numeric/time editing is delivered in 0.31; Calendar, DateInput, DatePicker and DateRangePicker are delivered in 0.32; RadioGroup and DropDownList are delivered in 0.33; Grid protected/read-only selection is delivered in 0.34; TreeView/TreeList controlled state and templates are delivered in 0.35; Chart interaction and presentation are delivered in 0.36; gauge ranges and presentation are delivered in 0.37; Scheduler day/week navigation and guarded actions are delivered in 0.38; Spreadsheet controlled edits and cell protection are delivered in 0.39; PivotGrid presentation and guarded drilldown are delivered in 0.40; Editor controlled changes and history are delivered in 0.41; Diagram guarded interaction and presentation are delivered in 0.42; Map controlled state and interaction locks are delivered in 0.43; PDF lazy thumbnails and synchronized navigation are delivered in 0.44; AI Prompt independent permissions and PromptBox length recovery are delivered in 0.45; text-field clear actions and password presentation are delivered in 0.46; bounded TextArea autosizing is delivered in 0.47; 0.48 text editor appearance and 0.49 debounced notifications delivered; responsive form fields/actions are delivered in 0.50; live customizable validation summaries are delivered in 0.51; responsive field spans are delivered in 0.52; rounded editors and flat fill are delivered in 0.53; named form sections are delivered in 0.54; nested form sections are delivered in 0.55; next work continues with remaining editor/form gaps. No block is a full-parity verdict.
 3. Continue through existing editors/forms, data management, visualization and complex editors. Add new component names only after closing the active group or recording a user-approved exception.
 
 ## Chip and ChipList feature matrix
@@ -444,19 +444,19 @@ IME-specific suppression, application request cancellation, arbitrary border sty
 
 Explicit field lists support up to four columns, a preferred minimum cell width and configurable gaps. Layout follows available container width and preserves field/form state on resize. Custom action slots stay outside the grid; validation and busy/disabled guards remain active.
 
-Automatic model editor generation, conditional schemas, nested groups and native/accessibility certification remain open. See [Form manual](manual/NgForm.md).
+Automatic model editor generation, conditional schemas and native/accessibility certification remain open. See [Form manual](manual/NgForm.md).
 
 ## Live validation summaries (0.51)
 
 Localized default headings and message lists, custom summary templates with read-only message snapshots, visibility controls and live error updates. Presentation changes preserve field state; hiding a summary never disables validation. Blazor follows EditContext notifications, while Flutter refreshes after field changes following a submit attempt.
 
-Automatic editor generation, conditional schemas, nested groups, error-to-field focus mapping and native/accessibility certification remain open. See [Form manual](manual/NgForm.md).
+Automatic editor generation, conditional schemas, error-to-field focus mapping and native/accessibility certification remain open. See [Form manual](manual/NgForm.md).
 
 ## Responsive form field spans (0.52)
 
 Explicit per-field spans (1–4) and full-row fields (0), clamped to available columns. Fields flow in source order without dense reordering, retain state across span changes and collapse safely on narrow screens. Blazor uses container queries with a one-column fallback; Flutter uses Wrap.
 
-Automatic model/schema generation, conditional schemas, nested groups, vertical spans and native/accessibility certification remain open. See [Form manual](manual/NgForm.md).
+Automatic model/schema generation, conditional schemas, vertical spans and native/accessibility certification remain open. See [Form manual](manual/NgForm.md).
 
 ## Rounded text editors and flat fill (0.53)
 
@@ -468,4 +468,10 @@ Reference: [TextBox appearance](https://www.telerik.com/blazor-ui/documentation/
 
 NgForm accepts explicitly defined sections with stable IDs, plain-text titles/descriptions and independent responsive columns, gaps and field spans. All sections share one validation context, summary and guarded submit. Whole-section reordering retains state and focus. Blazor uses fieldset/legend; Flutter uses semantic headings. No new catalog component is counted.
 
-One level only: recursive nesting, collapse/expand, automatic editors and conditional schemas remain open. Removing sections has platform-specific validation semantics; switching content modes can rebuild editor state. See [Form manual](manual/NgForm.md).
+Recursive nesting is available in 0.55; collapse/expand, automatic editors and conditional schemas remain open. Removing sections has platform-specific validation semantics; switching content modes can rebuild editor state. See [Form manual](manual/NgForm.md).
+
+## Nested form sections (0.55)
+
+Section branches accept child sections instead of fields. One form owns validation and submission for all descendants. Stable sibling IDs preserve descendant state during reorder; IDs can repeat under different parents. The tree is validated before rendering: exactly one content list per node, leaf-only spans, unique sibling IDs, no cycles and at most eight levels.
+
+Wrapping/unwrapping or moving a node across parents can recreate editor state. Collapse/expand, automatic schemas, conditional visibility and full accessibility/native certification remain open. See [Form manual](manual/NgForm.md).

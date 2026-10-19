@@ -1,4 +1,5 @@
 @* Generated from scripts/manual_content.py *@
+<div class="ng-prompt-actions"><NgButton OnClick="ToggleNesting">Nest sections</NgButton></div>
 <div class="ng-prompt-actions"><NgButton OnClick="()=>sectioned=!sectioned">Toggle sections</NgButton><NgButton OnClick="()=>reverseSections=!reverseSections">Reverse sections</NgButton></div>
 <div class="ng-prompt-actions"><NgButton OnClick="()=>notesSpan=notesSpan==0?2:notesSpan==2?1:0">Change notes span</NgButton><NgButton OnClick="()=>columns=3">Use three columns</NgButton></div>
 <div class="ng-prompt-actions"><NgButton OnClick="()=>customSummary=!customSummary">Toggle custom summary</NgButton><NgButton OnClick="()=>showSummary=!showSummary">Toggle summary visibility</NgButton></div>
@@ -12,9 +13,10 @@
 <NgButton OnClick="Reset">Reset application</NgButton>
 <p role="status">@status</p>
 @code {
- private bool sectioned,reverseSections;
+ private bool nested,sectioned,reverseSections;
+ private void ToggleNesting(){nested=!nested;sectioned=true;}
  private IReadOnlyList<NgFormSection> FormSections {
-  get {var sections=new[]{new NgFormSection("identity","Application details",new[]{NameField,OwnerField},Description:"Name and owner are required.",Columns:columns,Gap:gap),new NgFormSection("delivery","Delivery instructions",new[]{NotesField,ReferenceField},Description:"Add notes and a reference for the team.",Columns:columns,Gap:gap,FieldSpans:new[]{notesSpan,1})};return reverseSections?sections.Reverse().ToArray():sections;}
+  get {var sections=new[]{new NgFormSection("identity","Application details",new[]{NameField,OwnerField},Description:"Name and owner are required.",Columns:columns,Gap:gap),new NgFormSection("delivery","Delivery instructions",new[]{NotesField,ReferenceField},Description:"Add notes and a reference for the team.",Columns:columns,Gap:gap,FieldSpans:new[]{notesSpan,1})};var ordered=reverseSections?sections.Reverse().ToArray():sections;return nested?new[]{new NgFormSection("workspace","Application workspace",Description:"One form validates every nested section.",Sections:ordered)}:ordered;}
  }
 
  private int notesSpan;

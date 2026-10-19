@@ -3192,3 +3192,21 @@ Reordering whole sections with stable IDs preserves field state, focus and valid
 
 This release supplies one level of named sections. Recursive groups, collapse/expand behavior, automatic model fields and conditional schemas remain open. Sections are a form data contract, not additional catalog components.
 '''
+
+# Nested section trees, 0.55.
+D['NgForm']['blazor'] = '<div class="ng-prompt-actions"><NgButton OnClick="ToggleNesting">Nest sections</NgButton></div>\n' + D['NgForm']['blazor'].replace(' private bool sectioned,reverseSections;', ' private bool nested,sectioned,reverseSections;\n private void ToggleNesting(){nested=!nested;sectioned=true;}').replace('return reverseSections?sections.Reverse().ToArray():sections;', 'var ordered=reverseSections?sections.Reverse().ToArray():sections;return nested?new[]{new NgFormSection("workspace","Application workspace",Description:"One form validates every nested section.",Sections:ordered)}:ordered;')
+D['NgForm']['dart'] = D['NgForm']['dart'].replace('bool sectioned=false,reverseSections=false;', 'bool nested=false,sectioned=false,reverseSections=false;').replace('children:[', "children:[\n Wrap(children:[NgButton(onPressed:()=>setState((){nested=!nested;sectioned=true;}),child:const Text('Nest sections'))]),",1).replace('return reverseSections?sections.reversed.toList():sections;', "final ordered=reverseSections?sections.reversed.toList():sections;return nested?[NgFormSection(id:'workspace',title:'Application workspace',description:'One form validates every nested section.',sections:ordered)]:ordered;")
+D['NgForm']['notes'] = D['NgForm']['notes'].replace('A section requires a nonblank Id/id, Title/title and Fields/fields; IDs must be unique within the form and stable across rebuilds.', 'A section requires a nonblank Id/id and Title/title plus either Fields/fields or child Sections/sections; sibling IDs must be unique and stable across rebuilds.').replace('This release supplies one level of named sections. Recursive groups, collapse/expand behavior, automatic model fields and conditional schemas remain open.', 'Named sections support recursive groups from 0.55. Collapse/expand behavior, automatic model fields and conditional schemas remain open.').replace('nested groups are not supplied.', 'nested groups use Sections/sections (0.55).')
+D['NgForm']['notes'] += '''
+
+### Nested sections (0.55)
+NgFormSection accepts child Sections/sections instead of Fields/fields. Supply exactly one of these lists, even when empty; Fields/fields is now nullable for branch nodes. Existing leaf constructors continue to work. Supplying both lists or neither throws. FieldSpans/fieldSpans belongs only to leaves. Column/minimum-width/gap settings remain validated on all nodes, but only leaf settings lay out fields. Child sections stack vertically; their layout is not inherited from ancestors.
+
+The complete tree is validated before rendering. The maximum depth is eight section levels, counting the top-level section as level one. Deeper or cyclic descriptions throw; duplicate IDs are rejected within each sibling list. The same ID can be used under different parents. Never mutate the tree during rendering. Deeply nested groups need sufficient container width; custom field content must support shrinking.
+
+Every descendant participates in the same form, validation summary, busy/disabled guard and submit callback. Parent sections add semantic structure, not another form or validation context. Reordering siblings under the same parent with stable IDs retains editor state, focus and errors, including descendants. Moving a section to a different parent, wrapping/unwrapping it, or changing a node between fields and child sections changes its identity path and can recreate editor state. Keep application data outside the tree when restructuring; use a new form key/model when a pristine reset is required. The Nest sections demo action deliberately restructures the tree and retains values in its model.
+
+Collapsing groups, automatic schemas, conditional visibility and screen-reader certification remain separate work.
+'''
+
+D['NgForm']['notes'] = D['NgForm']['notes'].replace('This is explicit layout, not automatic model/schema generation or nested field groups.', 'This is explicit layout; nested groups use section trees. Automatic model/schema generation is not supplied.')
