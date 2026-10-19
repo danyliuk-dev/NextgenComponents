@@ -302,36 +302,54 @@ class NgDiagramModel {
 class NgDiagram extends StatefulWidget {
   final String label;
   final NgDiagramModel value;
-  final ValueChanged<NgDiagramModel> onChanged;
+  final ValueChanged<NgDiagramModel>? onChanged;
   final String? selectedNodeId, selectedEdgeId;
   final ValueChanged<String?>? onSelectedNodeIdChanged, onSelectedEdgeIdChanged;
-  final bool readOnly;
+  final bool readOnly, selectionReadOnly;
+  final String Function(NgDiagramNode)? nodeLabel;
+  final String Function(NgDiagramEdge)? edgeLabel;
+  final String emptyText;
   const NgDiagram({
     super.key,
     this.label = 'Diagram',
     required this.value,
-    required this.onChanged,
+    this.onChanged,
     this.selectedNodeId,
     this.selectedEdgeId,
     this.onSelectedNodeIdChanged,
     this.onSelectedEdgeIdChanged,
     this.readOnly = false,
+    this.selectionReadOnly = false,
+    this.nodeLabel,
+    this.edgeLabel,
+    this.emptyText = 'No nodes yet.',
   });
   @override
   State<NgDiagram> createState() => _NgDiagramState();
 }
 
 class _NgDiagramState extends State<NgDiagram> {
+  int revision = 0;
+  bool get writable => !widget.readOnly && widget.onChanged != null;
+  bool get canSelectNode =>
+      !widget.selectionReadOnly && widget.onSelectedNodeIdChanged != null;
+  bool get canSelectEdge =>
+      !widget.selectionReadOnly && widget.onSelectedEdgeIdChanged != null;
+  bool active(int expected) => mounted && revision == expected;
+  String nodeText(NgDiagramNode n) => widget.nodeLabel?.call(n) ?? n.text;
+  String edgeText(NgDiagramEdge e) => widget.edgeLabel?.call(e) ?? e.text;
   double zoom = 1;
-  void fitDiagram(double width) {
+  void fitDiagram(double width, int requested) {
+    if (!active(requested)) return;
     final view = widget.value.fitView(width, 418);
+    final expected = ++revision;
     setState(() {
       zoom = view.zoom;
       dragging = null;
       ghost = null;
     });
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
+      if (!active(expected)) return;
       if (horizontal.hasClients)
         horizontal.jumpTo(
           view.scrollX.clamp(0.0, horizontal.position.maxScrollExtent),
@@ -352,7 +370,9 @@ class _NgDiagramState extends State<NgDiagram> {
   @override
   void didUpdateWidget(covariant NgDiagram oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (!identical(oldWidget.value, widget.value) || widget.readOnly) {
+    revision++;
+    message = '';
+    {
       dragging = null;
       ghost = null;
     }
@@ -373,28 +393,42 @@ class _NgDiagramState extends State<NgDiagram> {
     super.dispose();
   }
 
-  void selectNode(String id) {
+  void selectNode(String id, int expected) {
+    if (!active(expected) ||
+        !canSelectNode ||
+        !widget.value.nodes.any((n) => n.id == id))
+      return;
     widget.onSelectedEdgeIdChanged?.call(null);
     widget.onSelectedNodeIdChanged?.call(id);
     focus[id]?.requestFocus();
   }
 
-  void selectEdge(String id) {
+  void selectEdge(String id, int expected) {
+    if (!active(expected) ||
+        !canSelectEdge ||
+        !widget.value.edges.any((e) => e.id == id))
+      return;
     widget.onSelectedNodeIdChanged?.call(null);
     widget.onSelectedEdgeIdChanged?.call(id);
   }
 
-  void move(String id, double x, double y) {
-    if (widget.readOnly) return;
+  void move(String id, double x, double y, int expected) {
+    if (!active(expected) ||
+        !writable ||
+        !x.isFinite ||
+        !y.isFinite ||
+        !widget.value.nodes.any((n) => n.id == id))
+      return;
     final n = widget.value.nodes.firstWhere((n) => n.id == id);
     final next = widget.value.move(id, x, y);
     final m = next.nodes.firstWhere((n) => n.id == id);
-    selectNode(id);
-    if (n.x != m.x || n.y != m.y) widget.onChanged(next);
-    setState(() => message = 'Moved $id.');
+    selectNode(id, expected);
+    if (n.x != m.x || n.y != m.y) widget.onChanged?.call(next);
+    setState(() => message = 'Move requested for $id.');
   }
 
-  KeyEventResult key(KeyEvent e, NgDiagramNode n) {
+  KeyEventResult key(KeyEvent e, NgDiagramNode n, int expected) {
+    if (!active(expected)) return KeyEventResult.ignored;
     if (e is! KeyDownEvent && e is! KeyRepeatEvent)
       return KeyEventResult.ignored;
     if (e.logicalKey == LogicalKeyboardKey.escape) {
@@ -406,10 +440,10 @@ class _NgDiagramState extends State<NgDiagram> {
     }
     if (e.logicalKey == LogicalKeyboardKey.enter ||
         e.logicalKey == LogicalKeyboardKey.space) {
-      selectNode(n.id);
+      selectNode(n.id, expected);
       return KeyEventResult.handled;
     }
-    if (widget.readOnly) return KeyEventResult.ignored;
+    if (!writable) return KeyEventResult.ignored;
     final step = HardwareKeyboard.instance.isShiftPressed ? 1.0 : 10.0;
     final delta = switch (e.logicalKey) {
       LogicalKeyboardKey.arrowLeft => Offset(-step, 0),
@@ -419,11 +453,27 @@ class _NgDiagramState extends State<NgDiagram> {
       _ => Offset.zero,
     };
     if (delta == Offset.zero) return KeyEventResult.ignored;
-    move(n.id, n.x + delta.dx, n.y + delta.dy);
+    move(n.id, n.x + delta.dx, n.y + delta.dy, expected);
     return KeyEventResult.handled;
   }
 
+  Offset dragPosition(NgDiagramNode n, Offset pointer) {
+    final delta =
+        (pointer -
+            (startPointer ?? pointer) +
+            Offset(
+              horizontal.offset - startScrollX,
+              vertical.offset - startScrollY,
+            )) /
+        zoom;
+    return Offset(
+      (n.x + delta.dx).clamp(0, widget.value.width - n.width),
+      (n.y + delta.dy).clamp(0, widget.value.height - n.height),
+    );
+  }
+
   Widget node(NgDiagramNode n) {
+    final expected = revision, text = nodeText(n);
     final selected = n.id == widget.selectedNodeId;
     final f = focus.putIfAbsent(n.id, () => FocusNode());
     return Positioned(
@@ -433,70 +483,63 @@ class _NgDiagramState extends State<NgDiagram> {
       height: n.height * zoom,
       child: Focus(
         focusNode: f,
-        onFocusChange: (_) => setState(() {}),
-        onKeyEvent: (_, e) => key(e, n),
+        onFocusChange: (_) {
+          if (mounted) setState(() {});
+        },
+        onKeyEvent: (_, e) => key(e, n, expected),
         child: Semantics(
           button: true,
           selected: selected,
-          label: 'Node ${n.text}',
+          label: 'Node $text',
+          enabled: canSelectNode || writable,
           child: Tooltip(
-            message: '${n.text} · ${n.x.round()}, ${n.y.round()}',
+            message: '$text · ${n.x.round()}, ${n.y.round()}',
             child: GestureDetector(
               behavior: HitTestBehavior.opaque,
-              onTap: () => selectNode(n.id),
-              onPanDown: widget.readOnly
+              onTap: canSelectNode ? () => selectNode(n.id, expected) : null,
+              onPanDown: !writable
                   ? null
                   : (d) {
+                      if (!active(expected) || !writable) return;
                       startPointer = d.globalPosition;
                       startScrollX = horizontal.offset;
                       startScrollY = vertical.offset;
                     },
-              onPanStart: widget.readOnly
+              onPanStart: !writable
                   ? null
-                  : (_) {
+                  : (d) {
+                      if (!active(expected) || !writable) return;
                       f.requestFocus();
                       setState(() {
                         dragging = n.id;
-                        ghost = Offset(n.x, n.y);
+                        ghost = dragPosition(n, d.globalPosition);
                       });
                     },
-              onPanUpdate: widget.readOnly
+              onPanUpdate: !writable
                   ? null
                   : (d) {
-                      if (dragging != n.id || startPointer == null) return;
-                      final delta =
-                          (d.globalPosition -
-                              startPointer! +
-                              Offset(
-                                horizontal.offset - startScrollX,
-                                vertical.offset - startScrollY,
-                              )) /
-                          zoom;
-                      setState(
-                        () => ghost = Offset(
-                          (n.x + delta.dx).clamp(
-                            0,
-                            widget.value.width - n.width,
-                          ),
-                          (n.y + delta.dy).clamp(
-                            0,
-                            widget.value.height - n.height,
-                          ),
-                        ),
-                      );
+                      if (!active(expected) ||
+                          !writable ||
+                          dragging != n.id ||
+                          startPointer == null)
+                        return;
+                      setState(() => ghost = dragPosition(n, d.globalPosition));
                     },
-              onPanEnd: widget.readOnly
+              onPanEnd: !writable
                   ? null
                   : (_) {
+                      if (!active(expected) || !writable) return;
                       final g = ghost;
                       final id = dragging;
                       setState(() {
                         dragging = null;
                         ghost = null;
                       });
-                      if (id == n.id && g != null) move(id!, g.dx, g.dy);
+                      if (id == n.id && g != null)
+                        move(id!, g.dx, g.dy, expected);
                     },
               onPanCancel: () {
+                if (!active(expected)) return;
                 setState(() {
                   dragging = null;
                   ghost = null;
@@ -522,7 +565,7 @@ class _NgDiagramState extends State<NgDiagram> {
                             zoom,
                       ),
                       child: Text(
-                        n.text,
+                        text,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(fontSize: 14 * zoom),
@@ -538,7 +581,8 @@ class _NgDiagramState extends State<NgDiagram> {
     );
   }
 
-  void canvasTap(TapUpDetails d) {
+  void canvasTap(TapUpDetails d, int expected) {
+    if (!active(expected) || !canSelectEdge) return;
     final p = d.localPosition / zoom;
     for (final e in widget.value.edges.reversed) {
       final l = widget.value.line(e), v = l.end - l.start;
@@ -548,15 +592,26 @@ class _NgDiagramState extends State<NgDiagram> {
                 v.distanceSquared;
       final nearest = l.start + v * t.clamp(0, 1);
       if ((p - nearest).distance <= 8 / zoom) {
-        selectEdge(e.id);
+        selectEdge(e.id, expected);
         return;
       }
     }
   }
 
+  void navigate(int expected, VoidCallback action) {
+    if (!active(expected)) return;
+    setState(() {
+      revision++;
+      dragging = null;
+      ghost = null;
+      action();
+    });
+  }
+
   @override
   Widget build(BuildContext context) => LayoutBuilder(
     builder: (context, c) {
+      final expected = revision;
       final colors = Theme.of(context).colorScheme;
       final d = widget.value;
       return Column(
@@ -572,7 +627,7 @@ class _NgDiagramState extends State<NgDiagram> {
               NgButton(
                 onPressed: zoom <= .25
                     ? null
-                    : () => setState(() {
+                    : () => navigate(expected, () {
                         zoom = (zoom - .25).clamp(.25, 2);
                         dragging = null;
                         ghost = null;
@@ -583,7 +638,7 @@ class _NgDiagramState extends State<NgDiagram> {
               NgButton(
                 onPressed: zoom >= 2
                     ? null
-                    : () => setState(() {
+                    : () => navigate(expected, () {
                         zoom = (zoom + .25).clamp(.25, 2);
                         dragging = null;
                         ghost = null;
@@ -591,7 +646,7 @@ class _NgDiagramState extends State<NgDiagram> {
                 child: const Text('Zoom in'),
               ),
               NgButton(
-                onPressed: () => setState(() {
+                onPressed: () => navigate(expected, () {
                   zoom = ((c.maxWidth - 2) / d.width).clamp(.25, 2);
                   dragging = null;
                   ghost = null;
@@ -601,11 +656,11 @@ class _NgDiagramState extends State<NgDiagram> {
               NgButton(
                 onPressed: d.nodes.isEmpty
                     ? null
-                    : () => fitDiagram(c.maxWidth - 2),
+                    : () => fitDiagram(c.maxWidth - 2, expected),
                 child: const Text('Fit diagram'),
               ),
               NgButton(
-                onPressed: () => setState(() {
+                onPressed: () => navigate(expected, () {
                   zoom = 1;
                   dragging = null;
                   ghost = null;
@@ -644,7 +699,7 @@ class _NgDiagramState extends State<NgDiagram> {
                       child: SizedBox(
                         height: d.height * zoom,
                         child: GestureDetector(
-                          onTapUp: canvasTap,
+                          onTapUp: (details) => canvasTap(details, expected),
                           child: Stack(
                             children: [
                               Positioned.fill(
@@ -654,6 +709,7 @@ class _NgDiagramState extends State<NgDiagram> {
                                     zoom,
                                     colors,
                                     widget.selectedEdgeId,
+                                    edgeText,
                                   ),
                                 ),
                               ),
@@ -696,7 +752,7 @@ class _NgDiagramState extends State<NgDiagram> {
               ),
             ),
           ),
-          if (d.nodes.isEmpty) const Text('No nodes yet.'),
+          if (d.nodes.isEmpty) Text(widget.emptyText),
           Semantics(
             liveRegion: true,
             child: Text(
@@ -710,10 +766,13 @@ class _NgDiagramState extends State<NgDiagram> {
                   .map(
                     (e) => ListTile(
                       title: Text(
-                        '${e.text.isEmpty ? e.id : e.text}: ${e.from} → ${e.to}',
+                        '${edgeText(e).isEmpty ? e.id : edgeText(e)}: ${e.from} → ${e.to}',
                       ),
                       selected: e.id == widget.selectedEdgeId,
-                      onTap: () => selectEdge(e.id),
+                      enabled: canSelectEdge,
+                      onTap: canSelectEdge
+                          ? () => selectEdge(e.id, expected)
+                          : null,
                     ),
                   )
                   .toList(),
@@ -766,7 +825,8 @@ class _EdgePainter extends CustomPainter {
   final double zoom;
   final ColorScheme colors;
   final String? selected;
-  _EdgePainter(this.model, this.zoom, this.colors, this.selected);
+  final String Function(NgDiagramEdge) label;
+  _EdgePainter(this.model, this.zoom, this.colors, this.selected, this.label);
   @override
   void paint(Canvas canvas, Size size) {
     canvas.save();
@@ -794,10 +854,11 @@ class _EdgePainter extends CustomPainter {
           Paint()..color = color,
         );
       }
-      if (e.text.isNotEmpty) {
-        final text = e.text.length > 24
-            ? '${e.text.substring(0, 23)}…'
-            : e.text;
+      final display = label(e);
+      if (display.isNotEmpty) {
+        final text = display.length > 24
+            ? '${display.substring(0, 23)}…'
+            : display;
         final painter = TextPainter(
           text: TextSpan(
             text: text,

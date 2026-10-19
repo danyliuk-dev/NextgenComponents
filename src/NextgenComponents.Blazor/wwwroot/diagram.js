@@ -24,7 +24,7 @@ export function attach(svg, reference) {
     ghost.setAttribute('x', x); ghost.setAttribute('y', y);
     ghost.setAttribute('width', w); ghost.setAttribute('height', h);
     svg.append(ghost);
-    drag = {id: node.dataset.node, pointer:e.pointerId, ghost, x, y, nextX:x, nextY:y, w, h, cx:e.clientX, cy:e.clientY, scale:box.width/svg.viewBox.baseVal.width, rectX:box.x, rectY:box.y};
+    drag = {revision:+svg.dataset.revision, id: node.dataset.node, pointer:e.pointerId, ghost, x, y, nextX:x, nextY:y, w, h, cx:e.clientX, cy:e.clientY, scale:box.width/svg.viewBox.baseVal.width, rectX:box.x, rectY:box.y};
     node.focus(); svg.setPointerCapture(e.pointerId); e.preventDefault();
   };
   const move = e => {
@@ -34,14 +34,14 @@ export function attach(svg, reference) {
     drag.nextY = Math.max(0, Math.min(svg.viewBox.baseVal.height-drag.h, drag.y+(e.clientY-drag.cy+drag.rectY-box.y)/drag.scale));
     drag.ghost.setAttribute('x', drag.nextX); drag.ghost.setAttribute('y', drag.nextY);
   };
-  const up = e => {if (!drag || drag.pointer!==e.pointerId) return;move(e);const d=drag;stop();reference.invokeMethodAsync('MoveNode',d.id,d.nextX,d.nextY).catch(()=>{});};
+  const up = e => {if (!drag || drag.pointer!==e.pointerId) return;move(e);const d=drag;stop();reference.invokeMethodAsync('MoveNode',d.id,d.nextX,d.nextY,d.revision).catch(()=>{});};
   const key = e => {
     if (e.key==='Escape') stop();
     if ((e.target.closest('[data-node]') && ['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.key)) || (e.key === ' ' && e.target.closest('[data-node],.ng-diagram-edge'))) e.preventDefault();
   };
   const lost = () => stop();
   svg.addEventListener('pointerdown',down);svg.addEventListener('pointermove',move);svg.addEventListener('pointerup',up);svg.addEventListener('pointercancel',lost);svg.addEventListener('lostpointercapture',lost);svg.addEventListener('keydown',key);
-  const observer=new MutationObserver(stop);observer.observe(svg,{attributes:true,attributeFilter:['data-readonly','width','height']});
+  const observer=new MutationObserver(stop);observer.observe(svg,{attributes:true,attributeFilter:['data-readonly','data-revision','width','height']});
   states.set(svg,{cancel:stop,detach:()=>{stop();observer.disconnect();svg.removeEventListener('pointerdown',down);svg.removeEventListener('pointermove',move);svg.removeEventListener('pointerup',up);svg.removeEventListener('pointercancel',lost);svg.removeEventListener('lostpointercapture',lost);svg.removeEventListener('keydown',key);}});
 }
 export function detach(svg) { states.get(svg)?.detach(); states.delete(svg); }

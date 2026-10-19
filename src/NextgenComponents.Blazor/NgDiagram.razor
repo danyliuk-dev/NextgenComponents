@@ -1,21 +1,22 @@
 @implements IAsyncDisposable
 @inject IJSRuntime JS
 @using System.Globalization
+@{var renderedRevision=revision;}
 <section class="ng-diagram" aria-label="@Label">
 <h3>@Label</h3>
 <div class="ng-diagram-toolbar" role="group" aria-label="Diagram navigation">
-<NgButton OnClick="()=>ZoomBy(-.25)" Disabled="@(zoom<=.25)">Zoom out</NgButton><strong>@($"{zoom:P0}")</strong><NgButton OnClick="()=>ZoomBy(.25)" Disabled="@(zoom>=2)">Zoom in</NgButton><NgButton OnClick="Fit">Fit width</NgButton><NgButton OnClick="FitDiagram" Disabled="@(Value.Nodes.Count==0)">Fit diagram</NgButton><NgButton OnClick="()=>zoom=1">100%</NgButton>
+<NgButton OnClick="()=>ZoomBy(-.25)" Disabled="@(zoom<=.25)">Zoom out</NgButton><strong>@($"{zoom:P0}")</strong><NgButton OnClick="()=>ZoomBy(.25)" Disabled="@(zoom>=2)">Zoom in</NgButton><NgButton OnClick="Fit">Fit width</NgButton><NgButton OnClick="FitDiagram" Disabled="@(Value.Nodes.Count==0)">Fit diagram</NgButton><NgButton OnClick="()=>ZoomBy(1-zoom)">100%</NgButton>
 </div>
 <p>Choose a node or connection. Drag a node to move it; Escape cancels. Arrow keys move a focused node by 10 (Shift: 1). Scroll to explore.</p>
 <div class="ng-diagram-viewport" @ref="viewport" tabindex="0" aria-label="Diagram scroll area">
-<svg @ref="svg" xmlns="http://www.w3.org/2000/svg" width="@F(Value.Width*zoom)" height="@F(Value.Height*zoom)" viewBox="@($"0 0 {F(Value.Width)} {F(Value.Height)}")" role="group" aria-label="@Label" data-readonly="@(ReadOnly?"true":"false")">
+<svg @ref="svg" xmlns="http://www.w3.org/2000/svg" width="@F(Value.Width*zoom)" height="@F(Value.Height*zoom)" viewBox="@($"0 0 {F(Value.Width)} {F(Value.Height)}")" role="group" aria-label="@Label" data-readonly="@(!Writable?"true":"false")" data-revision="@revision">
 <defs><marker id="@marker" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L10,4 L0,8 Z" class="ng-diagram-arrow"/></marker></defs>
-@foreach(var e in Value.Edges){var line=Value.Line(e);<g class="ng-diagram-edge @(SelectedEdgeId==e.Id?"ng-selected":"")" role="button" tabindex="0" aria-label="@($"Connection {e.Text}: {e.From} to {e.To}")" aria-pressed="@(SelectedEdgeId==e.Id?"true":"false")" @onclick="()=>SelectEdge(e.Id)" @onkeydown="k=>EdgeKey(k,e.Id)"><title>@e.Text: @e.From → @e.To</title><line x1="@F(line.Start.X)" y1="@F(line.Start.Y)" x2="@F(line.End.X)" y2="@F(line.End.Y)" class="ng-diagram-hit"/><line x1="@F(line.Start.X)" y1="@F(line.Start.Y)" x2="@F(line.End.X)" y2="@F(line.End.Y)" marker-end="@(e.Directed?$"url(#{marker})":null)"/>@if(e.Text.Length>0){<g><text x="@F((line.Start.X+line.End.X)/2)" y="@F((line.Start.Y+line.End.Y)/2-8)" text-anchor="middle">@Short(e.Text,24)</text></g>}</g>}
-@foreach(var n in Value.Nodes){<g @key="n.Id" data-node="@n.Id" data-x="@F(n.X)" data-y="@F(n.Y)" data-width="@F(n.Width)" data-height="@F(n.Height)" transform="@($"translate({F(n.X)} {F(n.Y)})")" class="ng-diagram-node @(SelectedNodeId==n.Id?"ng-selected":"")" role="button" tabindex="0" aria-label="@($"Node {n.Text}")" aria-pressed="@(SelectedNodeId==n.Id?"true":"false")" @onclick="()=>SelectNode(n.Id)" @onkeydown="e=>NodeKey(e,n.Id)"><title>@n.Text · @F(n.X), @F(n.Y)</title>
+@foreach(var e in Value.Edges){var line=Value.Line(e);var text=EdgeText(e);<g class="ng-diagram-edge @(SelectedEdgeId==e.Id?"ng-selected":"")" role="button" tabindex="0" aria-disabled="@(!CanSelectEdge?"true":"false")" aria-label="@($"Connection {text}: {e.From} to {e.To}")" aria-pressed="@(SelectedEdgeId==e.Id?"true":"false")" @onclick="()=>SelectEdge(e.Id,renderedRevision)" @onkeydown="k=>EdgeKey(k,e.Id,renderedRevision)"><title>@text: @e.From → @e.To</title><line x1="@F(line.Start.X)" y1="@F(line.Start.Y)" x2="@F(line.End.X)" y2="@F(line.End.Y)" class="ng-diagram-hit"/><line x1="@F(line.Start.X)" y1="@F(line.Start.Y)" x2="@F(line.End.X)" y2="@F(line.End.Y)" marker-end="@(e.Directed?$"url(#{marker})":null)"/>@if(text.Length>0){<g><text x="@F((line.Start.X+line.End.X)/2)" y="@F((line.Start.Y+line.End.Y)/2-8)" text-anchor="middle">@Short(text,24)</text></g>}</g>}
+@foreach(var n in Value.Nodes){var text=NodeText(n);<g @key="n.Id" data-node="@n.Id" data-x="@F(n.X)" data-y="@F(n.Y)" data-width="@F(n.Width)" data-height="@F(n.Height)" transform="@($"translate({F(n.X)} {F(n.Y)})")" class="ng-diagram-node @(SelectedNodeId==n.Id?"ng-selected":"")" role="button" tabindex="0" aria-disabled="@(!CanSelectNode&&!Writable?"true":"false")" aria-label="@($"Node {text}")" aria-pressed="@(SelectedNodeId==n.Id?"true":"false")" @onclick="()=>SelectNode(n.Id,renderedRevision)" @onkeydown="e=>NodeKey(e,n.Id,renderedRevision)"><title>@text · @F(n.X), @F(n.Y)</title>
 @if(n.Shape==NgDiagramShape.Ellipse){<ellipse cx="@F(n.Width/2)" cy="@F(n.Height/2)" rx="@F(n.Width/2-2)" ry="@F(n.Height/2-2)"/>}else if(n.Shape==NgDiagramShape.Diamond){<polygon points="@($"{F(n.Width/2)},2 {F(n.Width-2)},{F(n.Height/2)} {F(n.Width/2)},{F(n.Height-2)} 2,{F(n.Height/2)}")"/>}else{<rect x="2" y="2" width="@F(n.Width-4)" height="@F(n.Height-4)" rx="6"/>}
-<text x="@F(n.Width/2)" y="@F(n.Height/2)" text-anchor="middle" dominant-baseline="middle">@Short(n.Text,Math.Max(3,(int)(n.Width/(n.Shape==NgDiagramShape.Diamond?15:9))))</text></g>}
+<text x="@F(n.Width/2)" y="@F(n.Height/2)" text-anchor="middle" dominant-baseline="middle">@Short(text,Math.Max(3,(int)(n.Width/(n.Shape==NgDiagramShape.Diamond?15:9))))</text></g>}
 </svg></div>
-@if(Value.Nodes.Count==0){<p>No nodes yet.</p>}
+@if(Value.Nodes.Count==0){<p>@EmptyText</p>}
 <p role="status">@Value.Nodes.Count nodes · @Value.Edges.Count connections · @message</p>
 </section>
 @code {
@@ -27,6 +28,19 @@
  [Parameter] public string? SelectedEdgeId { get; set; }
  [Parameter] public EventCallback<string?> SelectedEdgeIdChanged { get; set; }
  [Parameter] public bool ReadOnly { get; set; }
+ [Parameter] public bool SelectionReadOnly {get;set;}
+ [Parameter] public Func<NgDiagramNode,string>? NodeLabel {get;set;}
+ [Parameter] public Func<NgDiagramEdge,string>? EdgeLabel {get;set;}
+ [Parameter] public string EmptyText {get;set;}="No nodes yet.";
+ private string NodeText(NgDiagramNode n)=>NodeLabel?.Invoke(n)??n.Text;
+ private string EdgeText(NgDiagramEdge e)=>EdgeLabel?.Invoke(e)??e.Text;
+ private bool Writable=>!ReadOnly&&ValueChanged.HasDelegate;
+ private bool CanSelectNode=>!SelectionReadOnly&&SelectedNodeIdChanged.HasDelegate;
+ private bool CanSelectEdge=>!SelectionReadOnly&&SelectedEdgeIdChanged.HasDelegate;
+ private long revision;
+ private bool disposed;
+ private bool Active(long expected)=>!disposed&&revision==expected;
+ protected override void OnParametersSet(){revision++;message="";}
  private double zoom=1;
  private NgDiagramView? pendingView;
  private string message="";
@@ -36,19 +50,33 @@
  private DotNetObjectReference<NgDiagram>? reference;
  private NgDiagramModel? previous;
  protected override async Task OnAfterRenderAsync(bool firstRender) {
-  if(firstRender){module=await JS.InvokeAsync<IJSObjectReference>("import","./_content/NextgenComponents.Blazor/diagram.js");reference=DotNetObjectReference.Create(this);await module.InvokeVoidAsync("attach",svg,reference);}
+  if(firstRender){module=await JS.InvokeAsync<IJSObjectReference>("import","./_content/NextgenComponents.Blazor/diagram.js");if(disposed){await module.DisposeAsync();return;}reference=DotNetObjectReference.Create(this);await module.InvokeVoidAsync("attach",svg,reference);}
   if(module is not null && pendingView is {} view){pendingView=null;await module.InvokeVoidAsync("scroll",viewport,view.ScrollX,view.ScrollY);}
   if(module is not null && !ReferenceEquals(previous,Value)){previous=Value;await module.InvokeVoidAsync("cancel",svg);}
  }
  private static string F(double n)=>n.ToString("0.###",CultureInfo.InvariantCulture);
  private static string Short(string s,int count)=>s.Length>count?s[..(count-1)]+"…":s;
- private void ZoomBy(double step)=>zoom=Math.Clamp(zoom+step,.25,2);
- private async Task Fit(){if(module is not null)zoom=Math.Clamp(await module.InvokeAsync<double>("width",viewport)/Value.Width,.25,2);}
- private async Task FitDiagram(){if(module is null||Value.Nodes.Count==0)return;var size=await module.InvokeAsync<double[]>("size",viewport);pendingView=Value.FitView(size[0],size[1]);zoom=pendingView.Zoom;await module.InvokeVoidAsync("cancel",svg);}
- private async Task SelectNode(string id){await SelectedEdgeIdChanged.InvokeAsync(null);await SelectedNodeIdChanged.InvokeAsync(id);}
- private async Task SelectEdge(string id){await SelectedNodeIdChanged.InvokeAsync(null);await SelectedEdgeIdChanged.InvokeAsync(id);}
- [JSInvokable] public async Task MoveNode(string id,double x,double y){if(ReadOnly||!Value.Nodes.Any(n=>n.Id==id))return;var next=Value.Move(id,x,y);await SelectNode(id);if(next.Nodes.First(n=>n.Id==id)!=Value.Nodes.First(n=>n.Id==id))await ValueChanged.InvokeAsync(next);message=$"Moved {id}.";StateHasChanged();}
- private async Task NodeKey(KeyboardEventArgs e,string id){if(e.Key is "Enter" or " "){await SelectNode(id);return;}if(ReadOnly)return;var n=Value.Nodes.First(n=>n.Id==id);var step=e.ShiftKey?1:10;var delta=e.Key switch{"ArrowLeft"=>(-step,0),"ArrowRight"=>(step,0),"ArrowUp"=>(0,-step),"ArrowDown"=>(0,step),_=>(0,0)};if(delta!=(0,0))await MoveNode(id,n.X+delta.Item1,n.Y+delta.Item2);}
- private async Task EdgeKey(KeyboardEventArgs e,string id){if(e.Key is "Enter" or " ")await SelectEdge(id);}
- public async ValueTask DisposeAsync(){if(module is not null){try{await module.InvokeVoidAsync("detach",svg);await module.DisposeAsync();}catch(JSDisconnectedException){}}reference?.Dispose();}
+ private void ZoomBy(double step){if(disposed)return;revision++;zoom=Math.Clamp(zoom+step,.25,2);}
+ private async Task Fit(){if(module is null||disposed)return;var expected=revision;var width=await module.InvokeAsync<double>("width",viewport);if(Active(expected))ZoomBy(Math.Clamp(width/Value.Width,.25,2)-zoom);}
+ private async Task FitDiagram(){if(module is null||Value.Nodes.Count==0||disposed)return;var expected=revision;var size=await module.InvokeAsync<double[]>("size",viewport);if(!Active(expected))return;pendingView=Value.FitView(size[0],size[1]);ZoomBy(pendingView.Zoom-zoom);await module.InvokeVoidAsync("cancel",svg);}
+ private async Task SelectNode(string id,long expected){
+  if(!Active(expected)||!CanSelectNode||!Value.Nodes.Any(n=>n.Id==id))return;
+  var source=Value;await SelectedEdgeIdChanged.InvokeAsync(null);
+  if(!disposed&&ReferenceEquals(source,Value)&&CanSelectNode)await SelectedNodeIdChanged.InvokeAsync(id);
+ }
+ private async Task SelectEdge(string id,long expected){
+  if(!Active(expected)||!CanSelectEdge||!Value.Edges.Any(e=>e.Id==id))return;
+  var source=Value;await SelectedNodeIdChanged.InvokeAsync(null);
+  if(!disposed&&ReferenceEquals(source,Value)&&CanSelectEdge)await SelectedEdgeIdChanged.InvokeAsync(id);
+ }
+ [JSInvokable] public async Task MoveNode(string id,double x,double y,long expected){
+  if(!Active(expected)||!Writable||!double.IsFinite(x)||!double.IsFinite(y)||!Value.Nodes.Any(n=>n.Id==id))return;
+  var source=Value;var next=source.Move(id,x,y);await SelectNode(id,expected);
+  if(disposed||!Writable||!ReferenceEquals(source,Value))return;
+  if(next.Nodes.First(n=>n.Id==id)!=source.Nodes.First(n=>n.Id==id)){message=$"Move requested for {id}.";await ValueChanged.InvokeAsync(next);}
+  if(!disposed)StateHasChanged();
+ }
+ private async Task NodeKey(KeyboardEventArgs e,string id,long expected){if(!Active(expected))return;if(e.Key is "Enter" or " "){await SelectNode(id,expected);return;}if(!Writable)return;var n=Value.Nodes.FirstOrDefault(n=>n.Id==id);if(n is null)return;var step=e.ShiftKey?1:10;var delta=e.Key switch{"ArrowLeft"=>(-step,0),"ArrowRight"=>(step,0),"ArrowUp"=>(0,-step),"ArrowDown"=>(0,step),_=>(0,0)};if(delta!=(0,0))await MoveNode(id,n.X+delta.Item1,n.Y+delta.Item2,expected);}
+ private Task EdgeKey(KeyboardEventArgs e,string id,long expected)=>e.Key is "Enter" or " "?SelectEdge(id,expected):Task.CompletedTask;
+ public async ValueTask DisposeAsync(){disposed=true;revision++;if(module is not null){try{await module.InvokeVoidAsync("detach",svg);await module.DisposeAsync();}catch(JSDisconnectedException){}}reference?.Dispose();}
 }

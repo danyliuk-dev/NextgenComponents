@@ -164,6 +164,9 @@ Reject(()=>NgDiagramModel.FromJson("{\"version\":2,\"width\":1000,\"height\":600
 Reject(()=>NgDiagramModel.FromJson("{\"version\":1,\"width\":1000,\"height\":600,\"nodes\":[{\"id\":\"a\",\"text\":\"A\"}],\"edges\":[]}"),"diagram required coordinates");
 await Check<NgDiagram>(new(){["Value"]=graph,["ReadOnly"]=true,["SelectedNodeId"]="a"},"Node Start","Connection Next: a to b","data-readonly=\"true\"","ng-selected","Fit width");
 await Check<NgDiagram>(new(),"No nodes yet.");
+await Check<NgDiagram>(new(){["Value"]=graph,["SelectionReadOnly"]=true,["NodeLabel"]=(Func<NgDiagramNode,string>)(n=>"Task <"+n.Text+">"),["EdgeLabel"]=(Func<NgDiagramEdge,string>)(e=>"Flow "+e.Text)},"Task &lt;Start&gt;","Flow Next","aria-disabled=\"true\"","data-readonly=\"true\"");
+await Check<NgDiagram>(new(){["EmptyText"]="Nothing to connect"},"Nothing to connect");
+await Check<NgDiagram>(new(){["Value"]=graph,["SelectionReadOnly"]=true,["ValueChanged"]=EventCallback.Factory.Create<NgDiagramModel>(new object(),_=>{})},"data-readonly=\"false\"","Node Start");
 var largeNodes=Enumerable.Range(0,100).Select(i=>new NgDiagramNode("n"+i.ToString().PadLeft(63,'x'),new string('漢',100),0,0)).ToArray();
 var largeEdges=Enumerable.Range(0,200).Select(i=>new NgDiagramEdge("e"+i.ToString().PadLeft(63,'x'),largeNodes[i%100].Id,largeNodes[(i+1)%100].Id,new string('漢',100))).ToArray();
 var largeGraph=new NgDiagramModel(largeNodes,largeEdges);Rule(largeGraph.ToJson().Length>200000&&NgDiagramModel.FromJson(largeGraph.ToJson()).Edges.Count==200,"maximum Unicode diagram roundtrips within JSON limit");

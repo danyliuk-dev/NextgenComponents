@@ -474,16 +474,32 @@ Widget build(BuildContext context) => Column(crossAxisAlignment: CrossAxisAlignm
 }
 class NgDiagramExample extends StatefulWidget { const NgDiagramExample({super.key}); @override State<NgDiagramExample> createState()=>_NgDiagramExampleState(); }
 class _NgDiagramExampleState extends State<NgDiagramExample> {
-NgDiagramModel graph = NgDiagramModel(nodes: const [
-  NgDiagramNode('start', 'Start', 40, 100, shape: NgDiagramShape.ellipse),
-  NgDiagramNode('work', 'Processing', 360, 100),
+NgDiagramModel sample([double x=40,double y=100]) => NgDiagramModel(nodes: [
+  NgDiagramNode('start', 'Start', x, y, shape: NgDiagramShape.ellipse),
+  const NgDiagramNode('work', 'Processing', 360, 100),
 ], edges: const [NgDiagramEdge('next', 'start', 'work', text: 'Continue')]);
+late NgDiagramModel graph=sample();
 String? selectedNode, selectedEdge;
-Widget build(BuildContext context) => NgDiagram(label: 'Process', value: graph,
-  onChanged: (v) => setState(() => graph = v),
-  selectedNodeId: selectedNode, selectedEdgeId: selectedEdge,
-  onSelectedNodeIdChanged: (v) => setState(() => selectedNode = v),
-  onSelectedEdgeIdChanged: (v) => setState(() => selectedEdge = v));
+bool readOnly=false, selectionReadOnly=false, accept=true;
+int moves=0;
+Widget build(BuildContext context) => Column(crossAxisAlignment:CrossAxisAlignment.stretch, children:[
+  Wrap(spacing:8,runSpacing:8,children:[
+    NgButton(onPressed:()=>setState(()=>readOnly=!readOnly),child:const Text('Toggle move lock')),
+    NgButton(onPressed:()=>setState(()=>selectionReadOnly=!selectionReadOnly),child:const Text('Toggle selection lock')),
+    NgButton(onPressed:()=>setState(()=>accept=!accept),child:const Text('Toggle acceptance')),
+    NgButton(onPressed:()=>setState(()=>graph=sample(120,140)),child:const Text('Replace graph')),
+    NgButton(onPressed:()=>setState(()=>graph=graph.nodes.isEmpty?sample():NgDiagramModel()),child:const Text('Toggle empty graph')),
+  ]),
+  Text('Movement: ${readOnly?"locked":"enabled"} · Selection: ${selectionReadOnly?"locked":"enabled"} · Acceptance: ${accept?"enabled":"rejected"}'),
+  Text('Start position: ${graph.nodes.isEmpty?"none":"${graph.nodes.first.x.round()}, ${graph.nodes.first.y.round()}"} · Move proposals: $moves'),
+  NgDiagram(label: 'Process', value: graph, readOnly:readOnly, selectionReadOnly:selectionReadOnly,
+    nodeLabel:(n)=>'Task ${n.text}',edgeLabel:(e)=>'Flow ${e.text}',emptyText:'Nothing to connect',
+    onChanged: (v) => setState(() {moves++;if(accept)graph=v;}),
+    selectedNodeId: selectedNode, selectedEdgeId: selectedEdge,
+    onSelectedNodeIdChanged: (v) => setState(() => selectedNode = v),
+    onSelectedEdgeIdChanged: (v) => setState(() => selectedEdge = v)),
+  Text('Node: ${selectedNode??"none"} · Connection: ${selectedEdge??"none"}'),
+]);
 }
 class NgPdfViewerExample extends StatefulWidget { const NgPdfViewerExample({super.key}); @override State<NgPdfViewerExample> createState()=>_NgPdfViewerExampleState(); }
 class _NgPdfViewerExampleState extends State<NgPdfViewerExample> {
