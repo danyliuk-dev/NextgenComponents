@@ -4,7 +4,7 @@
 <PageTitle>Nextgen • Data workspace</PageTitle>
 <div class="ng-scope gallery" data-ng-theme="@(dark?"dark":"light")" data-ng-density="@(compact?"compact":"normal")"><main>
 <nav><a href="/code-examples">Code examples</a><strong><span class="brand-icon">N</span> NEXTGEN COMPONENTS</strong><div class="row"><a href="/">Foundation</a><a href="/forms">Forms and dates</a><NgSwitch Label="Dark theme" @bind-Value="dark"/><NgCheckBox Label="Compact" @bind-Value="compact"/></div></nav>
-<section class="hero"><p class="eyebrow">BLAZOR / DATA WORKSPACE 0.37</p><h1>Find the detail.<br/>Keep the context.</h1><p>Explore projects by team, sort budgets, select across pages and edit a project. All changes stay in this example.</p></section>
+<section class="hero"><p class="eyebrow">BLAZOR / DATA WORKSPACE 0.38</p><h1>Find the detail.<br/>Keep the context.</h1><p>Explore projects by team, sort budgets, select across pages and edit a project. All changes stay in this example.</p></section>
 <NgBreadcrumb Items="Crumbs" OnNavigate="ChooseFolder" />
 <div class="workspace-layout"><aside class="panel"><h2>Teams</h2><NgTreeView TItem="string" Items="folders" Text="x=>x" SelectedId="folder" SelectedIdChanged="ChooseFolder" @bind-ExpandedIds="folderExpanded" /></aside>
 <section class="panel workspace-main"><div class="panel-heading"><h2>@FolderName</h2><span class="tag">@Projects.Count PROJECTS</span></div>

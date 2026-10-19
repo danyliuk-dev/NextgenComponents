@@ -169,3 +169,5 @@ textarea.ng-input { resize:vertical; min-height:80px; }
 .ng-data-table input[aria-checked="mixed"] { appearance:none; border:1px solid var(--ng-primary);border-radius:2px;background:linear-gradient(currentColor,currentColor) center / 9px 2px no-repeat var(--ng-primary);color:var(--ng-on-primary,white); }
 
 .ng-gauge-ranges{position:relative;height:5px;margin:-8px 0 8px}.ng-gauge-ranges:empty{display:none}.ng-gauge-ranges span{position:absolute;height:100%}.ng-gauge-legend{display:flex;flex-wrap:wrap;gap:8px 16px;margin-top:12px;font-size:12px}.ng-gauge-legend span{display:inline-flex;gap:6px;align-items:center}.ng-gauge-legend i{width:10px;height:10px;flex-shrink:0;border-radius:2px}.ng-gauge-status{margin:8px 0;font-weight:600}.ng-gauge-heading{flex-wrap:wrap;overflow-wrap:anywhere}
+
+.ng-schedule-event:disabled{cursor:default;color:inherit;opacity:.75}.ng-schedule-single{display:grid;grid-template-columns:1fr}.ng-schedule-event strong{overflow-wrap:anywhere}

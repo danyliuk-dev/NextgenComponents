@@ -19,6 +19,7 @@ class AnalyticsGallery extends StatefulWidget {
 
 class _AnalyticsGalleryState extends State<AnalyticsGallery> {
   bool chartReadOnly = false, legendReadOnly = false;
+  NgScheduleView scheduleView = NgScheduleView.week;
   NgChartKind kind = NgChartKind.column;
   bool empty = false;
   String? selected, message;
@@ -317,6 +318,8 @@ class _AnalyticsGalleryState extends State<AnalyticsGallery> {
                   children: [
                     NgScheduler(
                       label: 'Team schedule',
+                      view: scheduleView,
+                      onViewChanged: (v) => setState(() => scheduleView = v),
                       date: week,
                       items: events,
                       onDateChanged: (v) => setState(() => week = v),

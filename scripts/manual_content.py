@@ -698,28 +698,108 @@ D = {'NgButton': {'title': 'Button',
                          'fractional values. Replace lists when updating Flutter inputs. This is a '
                          'read-only single-scale indicator; pointers, ticks, animation and export '
                          'are not implemented.'},
- 'NgScheduler': {'title': 'Weekly scheduler',
-                 'use': 'Show a week of application events and request create/edit actions.',
-                 'blazor': '<NgScheduler @bind-Date="week" Items="events" '
-                           'OnCreate="day=>message=day.ToShortDateString()" '
-                           'OnEdit="item=>message=item.Title"/>\n'
-                           '<p>@message</p>\n'
-                           '@code { private DateTime week=new(2026,10,19); private string? message; private '
-                           'NgScheduleEvent[] '
-                           'events=[new("a","Meeting",new(2026,10,19,10,0,0),new(2026,10,19,11,0,0))]; }',
-                 'dart': 'DateTime week = DateTime(2026,10,19);\n'
-                         'Widget build(BuildContext context) => NgScheduler(date: week,\n'
-                         '  items: '
-                         "[NgScheduleEvent('a','Meeting',DateTime(2026,10,19,10),DateTime(2026,10,19,11))],\n"
-                         '  onDateChanged: (v) => setState(() => week = v),\n'
-                         "  onCreate: (day) => debugPrint('Add $day'),\n"
-                         '  onEdit: (item) => debugPrint(item.title));',
-                 'notes': 'NgScheduleEvent requires a unique ID, nonempty title and End > Start. Date '
-                          'chooses the displayed week. Store DateChanged/onDateChanged; OnCreate/onCreate '
-                          'identifies a day, while OnEdit/onEdit identifies an event. The application opens '
-                          'its editor and replaces the event collection after saving. Times are local '
-                          'wall-clock values; timezone conversion belongs to the host. Recurrence, '
-                          'drag/resize, resources and multiple calendar views are not implemented.'},
+ 'NgScheduler': {'title': 'Day and week scheduler',
+                 'use': 'Browse daily or weekly agendas with controlled navigation and guarded '
+                        'edit requests.',
+                 'blazor': '<div class="toolbar">\n'
+                           '<NgButton OnClick="()=>readOnly=!readOnly">Toggle editing '
+                           'lock</NgButton>\n'
+                           '<NgButton OnClick="()=>navigationReadOnly=!navigationReadOnly">Toggle '
+                           'navigation lock</NgButton>\n'
+                           '<NgButton OnClick="()=>accept=!accept">Toggle acceptance</NgButton>\n'
+                           '<NgButton OnClick="()=>firstDay=firstDay==1?7:1">Toggle week '
+                           'start</NgButton>\n'
+                           '<NgButton OnClick="()=>empty=!empty">Toggle events</NgButton>\n'
+                           '<NgButton OnClick="Reset">Reset date</NgButton>\n'
+                           '</div>\n'
+                           '<p>Editing @(readOnly?"locked":"enabled") · Navigation '
+                           '@(navigationReadOnly?"locked":"enabled") · Proposals '
+                           '@(accept?"accepted":"rejected") · Week starts '
+                           '@(firstDay==1?"Monday":"Sunday")</p>\n'
+                           '<NgScheduler Date="date" DateChanged="d=>{if(accept)date=d;}" '
+                           'View="view" ViewChanged="v=>{if(accept)view=v;}" '
+                           'FirstDayOfWeek="firstDay" ReadOnly="readOnly" '
+                           'NavigationReadOnly="navigationReadOnly" Items="@(empty?[]:events)" '
+                           'EventLabel="EventText" EmptyText="No shifts planned" OnCreate="Create" '
+                           'OnEdit="Edit"/>\n'
+                           '<p role="status">Last action: @message</p>\n'
+                           '@code {\n'
+                           ' private DateTime date=new(2026,10,19);\n'
+                           ' private NgScheduleView view=NgScheduleView.Week;\n'
+                           ' private bool readOnly,navigationReadOnly,empty,accept=true;\n'
+                           ' private int firstDay=1;\n'
+                           ' private string message="none";\n'
+                           ' private NgScheduleEvent[] '
+                           'events=[new("review","Review",new(2026,10,19,10,0,0),new(2026,10,19,11,0,0)),new("night","Overnight",new(2026,10,19,23,0,0),new(2026,10,20,1,0,0))];\n'
+                           ' private string EventText(NgScheduleEvent e)=>$"Shift: {e.Title}";\n'
+                           ' private void Create(DateTime d)=>message=$"Create: {d:yyyy-MM-dd}";\n'
+                           ' private void Edit(NgScheduleEvent e)=>message=$"Edit: {e.Title}";\n'
+                           ' private void Reset(){date=new(2026,10,19);view=NgScheduleView.Week;}\n'
+                           '}',
+                 'dart': 'DateTime date=DateTime(2026,10,19);\n'
+                         'NgScheduleView view=NgScheduleView.week;\n'
+                         'bool readOnly=false,navigationReadOnly=false,empty=false,accept=true;\n'
+                         'int firstDay=1;\n'
+                         "String message='none';\n"
+                         'final '
+                         "events=[NgScheduleEvent('review','Review',DateTime(2026,10,19,10),DateTime(2026,10,19,11)),NgScheduleEvent('night','Overnight',DateTime(2026,10,19,23),DateTime(2026,10,20,1))];\n"
+                         'Widget build(BuildContext '
+                         'context)=>Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[\n'
+                         ' Wrap(spacing:8,runSpacing:8,children:[\n'
+                         '  NgButton(onPressed:()=>setState(()=>readOnly=!readOnly),child:const '
+                         "Text('Toggle editing lock')),\n"
+                         '  '
+                         'NgButton(onPressed:()=>setState(()=>navigationReadOnly=!navigationReadOnly),child:const '
+                         "Text('Toggle navigation lock')),\n"
+                         '  NgButton(onPressed:()=>setState(()=>accept=!accept),child:const '
+                         "Text('Toggle acceptance')),\n"
+                         '  '
+                         'NgButton(onPressed:()=>setState(()=>firstDay=firstDay==1?7:1),child:const '
+                         "Text('Toggle week start')),\n"
+                         '  NgButton(onPressed:()=>setState(()=>empty=!empty),child:const '
+                         "Text('Toggle events')),\n"
+                         '  '
+                         'NgButton(onPressed:()=>setState((){date=DateTime(2026,10,19);view=NgScheduleView.week;}),child:const '
+                         "Text('Reset date')),\n"
+                         ' ]),\n'
+                         ' Text(\'Editing ${readOnly?"locked":"enabled"} · Navigation '
+                         '${navigationReadOnly?"locked":"enabled"} · Proposals '
+                         '${accept?"accepted":"rejected"} · Week starts '
+                         '${firstDay==1?"Monday":"Sunday"}\'),\n'
+                         ' '
+                         'NgScheduler(date:date,view:view,firstDayOfWeek:firstDay,readOnly:readOnly,navigationReadOnly:navigationReadOnly,items:empty?const '
+                         '[]:events,\n'
+                         '  '
+                         'onDateChanged:(d){if(accept)setState(()=>date=d);},onViewChanged:(v){if(accept)setState(()=>view=v);},\n'
+                         "  eventLabel:(e)=>'Shift: ${e.title}',emptyText:'No shifts planned',\n"
+                         "  onCreate:(d)=>setState(()=>message='Create: "
+                         "${NgScheduler.dayText(d)}'),onEdit:(e)=>setState(()=>message='Edit: "
+                         "${e.title}')),\n"
+                         " Text('Last action: $message'),\n"
+                         ']);',
+                 'notes': 'Date/date and View/view are controlled; accept '
+                          'DateChanged/onDateChanged and ViewChanged/onViewChanged to apply '
+                          'proposals. Week is the default, Day shows one agenda. Previous/Next '
+                          'move by seven or one calendar days; Today proposes local midnight. A '
+                          'rejected proposal keeps the current display. '
+                          'FirstDayOfWeek/firstDayOfWeek uses ISO 1–7 (Monday–Sunday), default 1, '
+                          'and only changes weekly alignment. All displayed days must fall in '
+                          'years 2–9998; invalid configuration is rejected and navigation across '
+                          'the boundary is disabled. ReadOnly/readOnly disables create/edit; '
+                          'NavigationReadOnly/navigationReadOnly independently disables date/view '
+                          'actions. Programmatic date/view updates still work. Missing callbacks '
+                          'disable the related actions. Stale callbacks after date/view changes, '
+                          'editing locks, event removal/change or disposal cannot edit old data. '
+                          'NgScheduleEvent requires a unique nonblank ID, nonblank title and End > '
+                          'Start. Events intersect days using [Start, End), so an event ending at '
+                          'midnight is excluded from the next day; overnight events appear on '
+                          'every intersected day. EventLabel/eventLabel formats plain text without '
+                          'changing callback data; EmptyText/emptyText replaces the empty-day '
+                          'message. Replace input lists instead of mutating them. Times are local '
+                          'wall-clock values; callers normalize zones before passing data. The '
+                          'application owns the editor and persistence. This is an agenda layout, '
+                          'not a time-slot grid; month/year views, recurrence, resources, '
+                          'drag/resize and timezone conversion remain open.'},
  'NgSpreadsheet': {'title': 'Spreadsheet',
                    'use': 'Edit a small local worksheet with formulas and undo/redo.',
                    'blazor': '<NgSpreadsheet @bind-Value="sheet"/>\n'

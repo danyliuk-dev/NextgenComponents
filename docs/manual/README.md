@@ -1,6 +1,6 @@
 # Nextgen Components manual
 
-Version 0.37.0. Detailed guidance for every public Blazor and Flutter Web component. This documents the implemented API, not full Telerik feature parity.
+Version 0.38.0. Detailed guidance for every public Blazor and Flutter Web component. This documents the implemented API, not full Telerik feature parity.
 
 Start with [Getting started](getting-started.md) and [Code examples](code-examples.md). See [data models and formulas](models.md) for shared model contracts and [verification](../verification.md) for tested behavior.
 
@@ -42,7 +42,7 @@ Each page includes a live appearance preview with Blazor / Flutter Web switching
 | [NgPivotGrid](NgPivotGrid.md) | Pivot grid |
 | [NgPromptBox](NgPromptBox.md) | Prompt input |
 | [NgRadioGroup](NgRadioGroup.md) | Radio group |
-| [NgScheduler](NgScheduler.md) | Weekly scheduler |
+| [NgScheduler](NgScheduler.md) | Day and week scheduler |
 | [NgSpreadsheet](NgSpreadsheet.md) | Spreadsheet |
 | [NgStepper](NgStepper.md) | Step progress |
 | [NgSwitch](NgSwitch.md) | Switch |

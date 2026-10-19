@@ -1,15 +1,63 @@
-<section class="ng-scheduler" aria-label="@Label"><div class="ng-schedule-toolbar"><h3>@Label</h3><div class="row"><NgButton OnClick="()=>Move(-7)" aria-label="Previous week">‹</NgButton><strong>@week.ToString("MMM d") – @week.AddDays(6).ToString("MMM d, yyyy")</strong><NgButton OnClick="()=>Move(7)" aria-label="Next week">›</NgButton><NgButton OnClick="()=>DateChanged.InvokeAsync(DateTime.Today)">Today</NgButton></div></div>
-<div class="ng-week">@for(var i=0;i<7;i++){var day=week.AddDays(i);var events=NgScheduleRules.ForDay(Items,day);<section class="ng-schedule-day" aria-label="@day.ToString("yyyy-MM-dd")"><h4>@day.ToString("ddd dd")</h4><NgButton aria-label="@($"Add event {day:yyyy-MM-dd}")" OnClick="()=>OnCreate.InvokeAsync(day)">+ Add</NgButton>
-@foreach(var item in events){<button type="button" class="ng-schedule-event" @onclick="()=>OnEdit.InvokeAsync(item)"><strong>@item.Title</strong><span>@item.Start.ToString("MMM d HH:mm") – @item.End.ToString("MMM d HH:mm")</span></button>}
-@if(events.Count==0){<small class="ng-empty">No events</small>}</section>}</div></section>
+@implements IDisposable
+@{var renderedRevision=revision;}
+<section class="ng-scheduler" aria-label="@Label">
+ <div class="ng-schedule-toolbar">
+  <h3>@Label</h3>
+  <div class="row">
+   <NgButton Disabled="@(!CanNavigate(previous))" OnClick="()=>Navigate(previous,renderedRevision)" aria-label="@($"Previous {Period}")">Previous @Period</NgButton>
+   <strong>@(days==1?start.ToString("MMM d, yyyy"):$"{start:MMM d} – {end:MMM d, yyyy}")</strong>
+   <NgButton Disabled="@(!CanNavigate(next))" OnClick="()=>Navigate(next,renderedRevision)" aria-label="@($"Next {Period}")">Next @Period</NgButton>
+   <NgButton Disabled="@(!CanNavigate(DateTime.Today))" OnClick="()=>Navigate(DateTime.Today,renderedRevision)">Today</NgButton>
+   @foreach(var mode in Enum.GetValues<NgScheduleView>()){
+    <NgButton Primary="@(View==mode)" Disabled="@(NavigationReadOnly || !ViewChanged.HasDelegate || !NgScheduleRules.CanDisplay(Date,mode,FirstDayOfWeek))" aria-pressed="@(View==mode?"true":"false")" OnClick="()=>ChangeView(mode,renderedRevision)">@mode</NgButton>
+   }
+  </div>
+ </div>
+ <div class="@(View==NgScheduleView.Day?"ng-schedule-single":"ng-week")">
+ @for(var i=0;i<days;i++){
+  var day=start.AddDays(i); var events=NgScheduleRules.ForDay(Items,day);
+  <section class="ng-schedule-day" aria-label="@day.ToString("yyyy-MM-dd")">
+   <h4>@day.ToString("ddd dd")</h4>
+   <NgButton Disabled="@(ReadOnly || !OnCreate.HasDelegate)" aria-label="@($"Add event {day:yyyy-MM-dd}")" OnClick="()=>Create(day,renderedRevision)">+ Add</NgButton>
+   @foreach(var item in events){
+    <button type="button" class="ng-schedule-event" disabled="@(ReadOnly || !OnEdit.HasDelegate)" @onclick="()=>Edit(item,day,renderedRevision)"><strong>@(EventLabel?.Invoke(item)??item.Title)</strong><span>@item.Start.ToString("MMM d HH:mm") – @item.End.ToString("MMM d HH:mm")</span></button>
+   }
+   @if(events.Count==0){<small class="ng-empty">@EmptyText</small>}
+  </section>
+ }
+ </div>
+</section>
 @code {
  [Parameter] public string Label{get;set;}="Schedule";
  [Parameter] public DateTime Date{get;set;}=DateTime.Today;
  [Parameter] public EventCallback<DateTime> DateChanged{get;set;}
+ [Parameter] public NgScheduleView View{get;set;}=NgScheduleView.Week;
+ [Parameter] public EventCallback<NgScheduleView> ViewChanged{get;set;}
+ [Parameter] public int FirstDayOfWeek{get;set;}=1;
+ [Parameter] public bool ReadOnly{get;set;}
+ [Parameter] public bool NavigationReadOnly{get;set;}
+ [Parameter] public string EmptyText{get;set;}="No events";
+ [Parameter] public Func<NgScheduleEvent,string>? EventLabel{get;set;}
  [Parameter] public IReadOnlyList<NgScheduleEvent> Items{get;set;}=[];
  [Parameter] public EventCallback<DateTime> OnCreate{get;set;}
  [Parameter] public EventCallback<NgScheduleEvent> OnEdit{get;set;}
- private DateTime week;
- protected override void OnParametersSet(){week=NgScheduleRules.WeekStart(Date);if(week.Year<=1||week.Year>=9999)throw new ArgumentException("Scheduler supports years 2–9998.");if(Items.Select(x=>x.Id).Distinct().Count()!=Items.Count||Items.Any(e=>NgScheduleRules.Validate(e)!=null))throw new ArgumentException("Events require unique IDs, a title and End > Start.");}
- private Task Move(int days)=>DateChanged.InvokeAsync(week.AddDays(days));
+ private DateTime start,end,previous,next;
+ private int days;
+ private long revision;
+ private bool disposed;
+ public void Dispose()=>disposed=true;
+ private string Period=>View==NgScheduleView.Day?"day":"week";
+ protected override void OnParametersSet(){
+  revision++;
+  if(!NgScheduleRules.CanDisplay(Date,View,FirstDayOfWeek))throw new ArgumentException("Scheduler requires a complete display in years 2–9998, a valid view and FirstDayOfWeek 1–7 (Monday–Sunday).");
+  if(Items.Select(x=>x.Id).Distinct().Count()!=Items.Count||Items.Any(e=>NgScheduleRules.Validate(e)!=null))throw new ArgumentException("Events require unique nonblank IDs, a title and End > Start.");
+  start=NgScheduleRules.DisplayStart(Date,View,FirstDayOfWeek);days=View==NgScheduleView.Day?1:7;end=start.AddDays(days-1);
+  previous=start.AddDays(-days);next=start.AddDays(days);
+ }
+ private bool CanNavigate(DateTime target)=>!NavigationReadOnly&&DateChanged.HasDelegate&&NgScheduleRules.CanDisplay(target,View,FirstDayOfWeek);
+ private Task Navigate(DateTime target,long expected)=>!disposed&&expected==revision&&CanNavigate(target)?DateChanged.InvokeAsync(target.Date):Task.CompletedTask;
+ private Task ChangeView(NgScheduleView mode,long expected)=>!disposed&&expected==revision&&!NavigationReadOnly&&ViewChanged.HasDelegate&&NgScheduleRules.CanDisplay(Date,mode,FirstDayOfWeek)?ViewChanged.InvokeAsync(mode):Task.CompletedTask;
+ private bool Visible(DateTime day)=>day>=start&&day<=end;
+ private Task Create(DateTime day,long expected)=>!disposed&&expected==revision&&!ReadOnly&&Visible(day)?OnCreate.InvokeAsync(day):Task.CompletedTask;
+ private Task Edit(NgScheduleEvent item,DateTime day,long expected)=>!disposed&&expected==revision&&!ReadOnly&&Visible(day)&&Items.Any(e=>e==item)&&NgScheduleRules.ForDay(Items,day).Contains(item)?OnEdit.InvokeAsync(item):Task.CompletedTask;
 }

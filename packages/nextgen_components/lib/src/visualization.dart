@@ -896,6 +896,8 @@ class _ArcPainter extends CustomPainter {
   bool shouldRepaint(covariant _ArcPainter old) => true;
 }
 
+enum NgScheduleView { week, day }
+
 class NgScheduleEvent {
   final String id, title;
   final DateTime start, end;
@@ -903,9 +905,38 @@ class NgScheduleEvent {
 }
 
 abstract final class NgScheduleRules {
-  static DateTime weekStart(DateTime d) =>
-      DateTime(d.year, d.month, d.day - (d.weekday - 1));
-  static String? validate(NgScheduleEvent e) => e.title.trim().isEmpty
+  static DateTime weekStart(DateTime d, [int firstDayOfWeek = 1]) {
+    if (firstDayOfWeek < 1 || firstDayOfWeek > 7)
+      throw ArgumentError('First day must be 1–7.');
+    return DateTime(
+      d.year,
+      d.month,
+      d.day - (d.weekday - firstDayOfWeek + 7) % 7,
+    );
+  }
+
+  static DateTime displayStart(
+    DateTime d,
+    NgScheduleView view,
+    int firstDayOfWeek,
+  ) => view == NgScheduleView.day
+      ? DateTime(d.year, d.month, d.day)
+      : weekStart(d, firstDayOfWeek);
+  static bool canDisplay(DateTime d, NgScheduleView view, int firstDayOfWeek) {
+    if (d.year < 2 || d.year > 9998 || firstDayOfWeek < 1 || firstDayOfWeek > 7)
+      return false;
+    final start = displayStart(d, view, firstDayOfWeek);
+    final end = DateTime(
+      start.year,
+      start.month,
+      start.day + (view == NgScheduleView.day ? 0 : 6),
+    );
+    return start.year >= 2 && end.year <= 9998;
+  }
+
+  static String? validate(NgScheduleEvent e) => e.id.trim().isEmpty
+      ? 'ID is required.'
+      : e.title.trim().isEmpty
       ? 'Title is required.'
       : !e.end.isAfter(e.start)
       ? 'End must be after start.'
@@ -926,35 +957,101 @@ abstract final class NgScheduleRules {
   }
 }
 
-class NgScheduler extends StatelessWidget {
+class NgScheduler extends StatefulWidget {
   final String label;
   final DateTime date;
   final List<NgScheduleEvent> items;
-  final ValueChanged<DateTime> onDateChanged, onCreate;
-  final ValueChanged<NgScheduleEvent> onEdit;
+  final ValueChanged<DateTime>? onDateChanged, onCreate;
+  final ValueChanged<NgScheduleEvent>? onEdit;
+  final NgScheduleView view;
+  final ValueChanged<NgScheduleView>? onViewChanged;
+  final int firstDayOfWeek;
+  final bool readOnly, navigationReadOnly;
+  final String emptyText;
+  final String Function(NgScheduleEvent)? eventLabel;
   const NgScheduler({
     super.key,
     this.label = 'Schedule',
     required this.date,
     required this.items,
-    required this.onDateChanged,
-    required this.onCreate,
-    required this.onEdit,
+    this.onDateChanged,
+    this.onCreate,
+    this.onEdit,
+    this.view = NgScheduleView.week,
+    this.onViewChanged,
+    this.firstDayOfWeek = 1,
+    this.readOnly = false,
+    this.navigationReadOnly = false,
+    this.emptyText = 'No events',
+    this.eventLabel,
   });
   static String dayText(DateTime d) =>
       '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
   static String stamp(DateTime d) =>
       '${d.month}/${d.day} ${d.hour.toString().padLeft(2, '0')}:${d.minute.toString().padLeft(2, '0')}';
   @override
+  State<NgScheduler> createState() => _NgSchedulerState();
+}
+
+class _NgSchedulerState extends State<NgScheduler> {
+  bool current(NgScheduler source) =>
+      mounted &&
+      widget.date == source.date &&
+      widget.view == source.view &&
+      widget.firstDayOfWeek == source.firstDayOfWeek;
+  bool canNavigate(DateTime target) =>
+      !widget.navigationReadOnly &&
+      widget.onDateChanged != null &&
+      NgScheduleRules.canDisplay(target, widget.view, widget.firstDayOfWeek);
+  void navigate(NgScheduler source, DateTime target) {
+    if (current(source) && canNavigate(target))
+      widget.onDateChanged?.call(
+        DateTime(target.year, target.month, target.day),
+      );
+  }
+
+  void changeView(NgScheduler source, NgScheduleView view) {
+    if (current(source) &&
+        !widget.navigationReadOnly &&
+        NgScheduleRules.canDisplay(widget.date, view, widget.firstDayOfWeek))
+      widget.onViewChanged?.call(view);
+  }
+
+  void create(NgScheduler source, DateTime day) {
+    if (current(source) && !widget.readOnly) widget.onCreate?.call(day);
+  }
+
+  void edit(NgScheduler source, NgScheduleEvent event) {
+    if (!current(source) || widget.readOnly) return;
+    if (widget.items.any(
+      (e) =>
+          e.id == event.id &&
+          e.title == event.title &&
+          e.start == event.start &&
+          e.end == event.end,
+    ))
+      widget.onEdit?.call(event);
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final week = NgScheduleRules.weekStart(date);
-    if (week.year <= 1 ||
-        week.year >= 9999 ||
+    final source = widget;
+    final date = widget.date, items = widget.items;
+    if (!NgScheduleRules.canDisplay(date, widget.view, widget.firstDayOfWeek) ||
         items.map((e) => e.id).toSet().length != items.length ||
         items.any((e) => NgScheduleRules.validate(e) != null))
       throw ArgumentError(
-        'Events require unique IDs, a title and End > Start; supported years 2–9998.',
+        'Events require unique nonblank IDs, a title and End > Start; display years 2–9998 and first day 1–7.',
       );
+    final week = NgScheduleRules.displayStart(
+      date,
+      widget.view,
+      widget.firstDayOfWeek,
+    );
+    final count = widget.view == NgScheduleView.day ? 1 : 7;
+    final period = widget.view == NgScheduleView.day ? 'day' : 'week';
+    final previous = DateTime(week.year, week.month, week.day - count);
+    final next = DateTime(week.year, week.month, week.day + count);
     Widget day(int i) {
       final day = DateTime(week.year, week.month, week.day + i);
       final events = NgScheduleRules.forDay(items, day);
@@ -968,14 +1065,16 @@ class NgScheduler extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(
-              '${['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][i]} ${day.day}',
+              '${['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][day.weekday - 1]} ${day.day}',
               style: const TextStyle(fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 8),
             Tooltip(
-              message: 'Add event ${dayText(day)}',
+              message: 'Add event ${NgScheduler.dayText(day)}',
               child: NgButton(
-                onPressed: () => onCreate(day),
+                onPressed: widget.readOnly || widget.onCreate == null
+                    ? null
+                    : () => create(source, day),
                 child: const Text('+ Add'),
               ),
             ),
@@ -989,13 +1088,15 @@ class NgScheduler extends StatelessWidget {
                     ).colorScheme.primary.withValues(alpha: .1),
                     padding: const EdgeInsets.all(10),
                   ),
-                  onPressed: () => onEdit(e),
+                  onPressed: widget.readOnly || widget.onEdit == null
+                      ? null
+                      : () => edit(source, e),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(e.title),
+                      Text(widget.eventLabel?.call(e) ?? e.title),
                       Text(
-                        '${stamp(e.start)} – ${stamp(e.end)}',
+                        '${NgScheduler.stamp(e.start)} – ${NgScheduler.stamp(e.end)}',
                         style: const TextStyle(fontSize: 11),
                       ),
                     ],
@@ -1003,9 +1104,12 @@ class NgScheduler extends StatelessWidget {
                 ),
               ),
             if (events.isEmpty)
-              const Padding(
-                padding: EdgeInsets.only(top: 16),
-                child: Text('No events', style: TextStyle(fontSize: 12)),
+              Padding(
+                padding: const EdgeInsets.only(top: 16),
+                child: Text(
+                  widget.emptyText,
+                  style: const TextStyle(fontSize: 12),
+                ),
               ),
           ],
         ),
@@ -1016,7 +1120,7 @@ class NgScheduler extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(
-          label,
+          widget.label,
           style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
         ),
         const SizedBox(height: 16),
@@ -1026,30 +1130,54 @@ class NgScheduler extends StatelessWidget {
           crossAxisAlignment: WrapCrossAlignment.center,
           children: [
             NgButton(
-              onPressed: () =>
-                  onDateChanged(DateTime(week.year, week.month, week.day - 7)),
-              child: const Text('Previous week'),
+              onPressed: canNavigate(previous)
+                  ? () => navigate(source, previous)
+                  : null,
+              child: Text('Previous $period'),
             ),
             Text(
-              '${dayText(week)} – ${dayText(DateTime(week.year, week.month, week.day + 6))}',
+              count == 1
+                  ? NgScheduler.dayText(week)
+                  : '${NgScheduler.dayText(week)} – ${NgScheduler.dayText(DateTime(week.year, week.month, week.day + count - 1))}',
             ),
             NgButton(
-              onPressed: () =>
-                  onDateChanged(DateTime(week.year, week.month, week.day + 7)),
-              child: const Text('Next week'),
+              onPressed: canNavigate(next)
+                  ? () => navigate(source, next)
+                  : null,
+              child: Text('Next $period'),
             ),
             NgButton(
-              onPressed: () => onDateChanged(DateTime.now()),
+              onPressed: canNavigate(DateTime.now())
+                  ? () => navigate(source, DateTime.now())
+                  : null,
               child: const Text('Today'),
             ),
+            for (final view in NgScheduleView.values)
+              Semantics(
+                selected: widget.view == view,
+                child: NgButton(
+                  primary: widget.view == view,
+                  onPressed:
+                      widget.navigationReadOnly ||
+                          widget.onViewChanged == null ||
+                          !NgScheduleRules.canDisplay(
+                            date,
+                            view,
+                            widget.firstDayOfWeek,
+                          )
+                      ? null
+                      : () => changeView(source, view),
+                  child: Text(view == NgScheduleView.day ? 'Day' : 'Week'),
+                ),
+              ),
           ],
         ),
         const SizedBox(height: 16),
         LayoutBuilder(
-          builder: (context, c) => c.maxWidth < 600
+          builder: (context, c) => count == 1 || c.maxWidth < 600
               ? Column(
                   children: [
-                    for (var i = 0; i < 7; i++)
+                    for (var i = 0; i < count; i++)
                       Padding(
                         padding: const EdgeInsets.only(bottom: 8),
                         child: day(i),
@@ -1061,7 +1189,7 @@ class NgScheduler extends StatelessWidget {
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      for (var i = 0; i < 7; i++)
+                      for (var i = 0; i < count; i++)
                         Padding(
                           padding: const EdgeInsets.only(right: 8),
                           child: SizedBox(

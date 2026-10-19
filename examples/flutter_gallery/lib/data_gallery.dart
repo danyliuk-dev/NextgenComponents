@@ -338,7 +338,7 @@ class _DataGalleryState extends State<DataGallery> {
                 ),
                 const SizedBox(height: 40),
                 Text(
-                  'FLUTTER / DATA WORKSPACE 0.37',
+                  'FLUTTER / DATA WORKSPACE 0.38',
                   style: TextStyle(
                     color: Theme.of(context).colorScheme.primary,
                   ),

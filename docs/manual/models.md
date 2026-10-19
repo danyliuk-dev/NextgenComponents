@@ -23,6 +23,7 @@ C# properties generally use PascalCase; Dart uses lowerCamelCase. Replace input 
 | NgGaugeRange | From, To, Color, Label (lowercase in Dart); finite ordered bounds inside the gauge, no overlap, nonblank label and #RRGGBB color. Gaps are allowed; shared endpoints belong to the next range, Max is inclusive. |
 | NgChartSeries | Name and nullable numbers matching category count; null breaks a line. |
 | NgChartSelection | Zero-based series/point indices, names, numeric value and display label. |
+| NgScheduleView | Week/Day in C#, week/day in Dart. Controlled agenda mode; default Week. |
 | NgScheduleEvent | Unique Id, nonempty Title, Start and End with End > Start. |
 | NgSheet | Immutable single-sheet dimensions and address-to-raw-text dictionary. |
 | NgCellValue | Text, nullable Number and nullable Error code. |

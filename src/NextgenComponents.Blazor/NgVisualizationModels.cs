@@ -43,9 +43,12 @@ public static class NgChartMath {
   return new(marks.OrderBy(m=>m.Point is null?0:1).ToArray(),labels);
  }
 }
+public enum NgScheduleView { Week, Day }
 public sealed record NgScheduleEvent(string Id,string Title,DateTime Start,DateTime End);
 public static class NgScheduleRules {
- public static DateTime WeekStart(DateTime day)=>day.Date.AddDays(-((int)day.DayOfWeek+6)%7);
- public static string? Validate(NgScheduleEvent item)=>string.IsNullOrWhiteSpace(item.Title)?"Title is required.":item.End<=item.Start?"End must be after start.":null;
+ public static DateTime WeekStart(DateTime day,int firstDayOfWeek=1){if(firstDayOfWeek<1||firstDayOfWeek>7)throw new ArgumentException("First day must be 1–7.");return day.Date.AddDays(-(((int)day.DayOfWeek+6)%7+1-firstDayOfWeek+7)%7);}
+ public static DateTime DisplayStart(DateTime day,NgScheduleView view,int firstDayOfWeek=1)=>view==NgScheduleView.Day?day.Date:WeekStart(day,firstDayOfWeek);
+ public static bool CanDisplay(DateTime day,NgScheduleView view,int firstDayOfWeek=1){if(day.Year<2||day.Year>9998||!Enum.IsDefined(view)||firstDayOfWeek<1||firstDayOfWeek>7)return false;var start=DisplayStart(day,view,firstDayOfWeek);return start.Year>=2&&start.AddDays(view==NgScheduleView.Day?0:6).Year<=9998;}
+ public static string? Validate(NgScheduleEvent item)=>string.IsNullOrWhiteSpace(item.Id)?"ID is required.":string.IsNullOrWhiteSpace(item.Title)?"Title is required.":item.End<=item.Start?"End must be after start.":null;
  public static IReadOnlyList<NgScheduleEvent> ForDay(IEnumerable<NgScheduleEvent> items,DateTime day)=>items.Where(e=>e.Start<day.Date.AddDays(1)&&e.End>day.Date).OrderBy(e=>e.Start).ThenBy(e=>e.Id,StringComparer.Ordinal).ToArray();
 }

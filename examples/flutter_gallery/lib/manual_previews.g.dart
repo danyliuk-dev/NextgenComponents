@@ -384,12 +384,28 @@ Widget build(BuildContext context) => Column(crossAxisAlignment: CrossAxisAlignm
 }
 class NgSchedulerExample extends StatefulWidget { const NgSchedulerExample({super.key}); @override State<NgSchedulerExample> createState()=>_NgSchedulerExampleState(); }
 class _NgSchedulerExampleState extends State<NgSchedulerExample> {
-DateTime week = DateTime(2026,10,19);
-Widget build(BuildContext context) => NgScheduler(date: week,
-  items: [NgScheduleEvent('a','Meeting',DateTime(2026,10,19,10),DateTime(2026,10,19,11))],
-  onDateChanged: (v) => setState(() => week = v),
-  onCreate: (day) => debugPrint('Add $day'),
-  onEdit: (item) => debugPrint(item.title));
+DateTime date=DateTime(2026,10,19);
+NgScheduleView view=NgScheduleView.week;
+bool readOnly=false,navigationReadOnly=false,empty=false,accept=true;
+int firstDay=1;
+String message='none';
+final events=[NgScheduleEvent('review','Review',DateTime(2026,10,19,10),DateTime(2026,10,19,11)),NgScheduleEvent('night','Overnight',DateTime(2026,10,19,23),DateTime(2026,10,20,1))];
+Widget build(BuildContext context)=>Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
+ Wrap(spacing:8,runSpacing:8,children:[
+  NgButton(onPressed:()=>setState(()=>readOnly=!readOnly),child:const Text('Toggle editing lock')),
+  NgButton(onPressed:()=>setState(()=>navigationReadOnly=!navigationReadOnly),child:const Text('Toggle navigation lock')),
+  NgButton(onPressed:()=>setState(()=>accept=!accept),child:const Text('Toggle acceptance')),
+  NgButton(onPressed:()=>setState(()=>firstDay=firstDay==1?7:1),child:const Text('Toggle week start')),
+  NgButton(onPressed:()=>setState(()=>empty=!empty),child:const Text('Toggle events')),
+  NgButton(onPressed:()=>setState((){date=DateTime(2026,10,19);view=NgScheduleView.week;}),child:const Text('Reset date')),
+ ]),
+ Text('Editing ${readOnly?"locked":"enabled"} · Navigation ${navigationReadOnly?"locked":"enabled"} · Proposals ${accept?"accepted":"rejected"} · Week starts ${firstDay==1?"Monday":"Sunday"}'),
+ NgScheduler(date:date,view:view,firstDayOfWeek:firstDay,readOnly:readOnly,navigationReadOnly:navigationReadOnly,items:empty?const []:events,
+  onDateChanged:(d){if(accept)setState(()=>date=d);},onViewChanged:(v){if(accept)setState(()=>view=v);},
+  eventLabel:(e)=>'Shift: ${e.title}',emptyText:'No shifts planned',
+  onCreate:(d)=>setState(()=>message='Create: ${NgScheduler.dayText(d)}'),onEdit:(e)=>setState(()=>message='Edit: ${e.title}')),
+ Text('Last action: $message'),
+]);
 }
 class NgSpreadsheetExample extends StatefulWidget { const NgSpreadsheetExample({super.key}); @override State<NgSpreadsheetExample> createState()=>_NgSpreadsheetExampleState(); }
 class _NgSpreadsheetExampleState extends State<NgSpreadsheetExample> {

@@ -359,6 +359,15 @@ await Check<NgLinearGauge>(new(){["Value"]=125d,["Ranges"]=gaugeRanges,["ValueFo
 await Check<NgArcGauge>(new(){["Value"]=-10d,["Ranges"]=gaugeRanges},"-10 %","Below minimum","#187444","ng-gauge-legend");
 await Check<NgLinearGauge>(new(){["Value"]=72.5},"72.5 %","aria-valuenow=\"72.5\"");
 await Check<NgArcGauge>(new(){["Value"]=0d,["Min"]=-1.7e308,["Max"]=1.7e308},"aria-valuemax=\"1.7E&#x2B;308\"");
+Rule(NgScheduleRules.WeekStart(new(2026,10,19),7)==new DateTime(2026,10,18),"Sunday schedule start");
+Rule(NgScheduleRules.WeekStart(new(2026,10,19),3)==new DateTime(2026,10,14),"Wednesday schedule start");
+Reject(()=>NgScheduleRules.WeekStart(new(2026,10,19),0),"invalid first weekday");
+Rule(NgScheduleRules.CanDisplay(new(2,1,1),NgScheduleView.Day)&&!NgScheduleRules.CanDisplay(new(1,12,31),NgScheduleView.Day),"schedule lower boundary");
+Rule(NgScheduleRules.CanDisplay(new(9998,12,31),NgScheduleView.Day)&&!NgScheduleRules.CanDisplay(new(9998,12,31),NgScheduleView.Week),"schedule full week upper boundary");
+Rule(NgScheduleRules.Validate(new(" ","Title",new(2026,10,19),new(2026,10,20)))!=null,"schedule requires nonblank ID");
+await Check<NgScheduler>(new(){["Date"]=new DateTime(2026,10,19),["View"]=NgScheduleView.Day,["EmptyText"]="No shifts"},"ng-schedule-single","Next day","No shifts","disabled");
+await Check<NgScheduler>(new(){["Date"]=new DateTime(2026,10,19),["FirstDayOfWeek"]=7},"2026-10-18","2026-10-24");
+await Check<NgScheduler>(new(){["Date"]=new DateTime(2026,10,19),["ReadOnly"]=true,["Items"]=new NgScheduleEvent[]{new("shift","Night",new(2026,10,18,23,0,0),new(2026,10,19,1,0,0))},["EventLabel"]=(Func<NgScheduleEvent,string>)(e=>"Shift: "+e.Title)},"Shift: Night","disabled");
 Console.WriteLine($"{count} rendering and data/date-rule checks passed. Browser interaction requires the separate visual run.");
 sealed class NoBrowserJS : IJSRuntime {
  public ValueTask<TValue> InvokeAsync<TValue>(string identifier, object?[]? args) => throw new InvalidOperationException("JS must not execute in SSR");

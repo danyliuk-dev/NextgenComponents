@@ -1,4 +1,24 @@
 @* Generated from scripts/manual_content.py *@
-<NgScheduler @bind-Date="week" Items="events" OnCreate="day=>message=day.ToShortDateString()" OnEdit="item=>message=item.Title"/>
-<p>@message</p>
-@code { private DateTime week=new(2026,10,19); private string? message; private NgScheduleEvent[] events=[new("a","Meeting",new(2026,10,19,10,0,0),new(2026,10,19,11,0,0))]; }
+<div class="toolbar">
+<NgButton OnClick="()=>readOnly=!readOnly">Toggle editing lock</NgButton>
+<NgButton OnClick="()=>navigationReadOnly=!navigationReadOnly">Toggle navigation lock</NgButton>
+<NgButton OnClick="()=>accept=!accept">Toggle acceptance</NgButton>
+<NgButton OnClick="()=>firstDay=firstDay==1?7:1">Toggle week start</NgButton>
+<NgButton OnClick="()=>empty=!empty">Toggle events</NgButton>
+<NgButton OnClick="Reset">Reset date</NgButton>
+</div>
+<p>Editing @(readOnly?"locked":"enabled") · Navigation @(navigationReadOnly?"locked":"enabled") · Proposals @(accept?"accepted":"rejected") · Week starts @(firstDay==1?"Monday":"Sunday")</p>
+<NgScheduler Date="date" DateChanged="d=>{if(accept)date=d;}" View="view" ViewChanged="v=>{if(accept)view=v;}" FirstDayOfWeek="firstDay" ReadOnly="readOnly" NavigationReadOnly="navigationReadOnly" Items="@(empty?[]:events)" EventLabel="EventText" EmptyText="No shifts planned" OnCreate="Create" OnEdit="Edit"/>
+<p role="status">Last action: @message</p>
+@code {
+ private DateTime date=new(2026,10,19);
+ private NgScheduleView view=NgScheduleView.Week;
+ private bool readOnly,navigationReadOnly,empty,accept=true;
+ private int firstDay=1;
+ private string message="none";
+ private NgScheduleEvent[] events=[new("review","Review",new(2026,10,19,10,0,0),new(2026,10,19,11,0,0)),new("night","Overnight",new(2026,10,19,23,0,0),new(2026,10,20,1,0,0))];
+ private string EventText(NgScheduleEvent e)=>$"Shift: {e.Title}";
+ private void Create(DateTime d)=>message=$"Create: {d:yyyy-MM-dd}";
+ private void Edit(NgScheduleEvent e)=>message=$"Edit: {e.Title}";
+ private void Reset(){date=new(2026,10,19);view=NgScheduleView.Week;}
+}
