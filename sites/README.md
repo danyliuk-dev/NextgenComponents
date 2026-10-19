@@ -1,6 +1,6 @@
 # Nextgen public websites
 
-**Publication status: unpublished at the owner's request.** Both custom-domain bindings were removed from Cloudflare. Workers.dev and preview URLs remain disabled. Workers, assets, server secrets and saved enquiries are preserved. Configuration contains no public routes; restoring publication requires explicitly adding the intended custom-domain routes again.
+**Publication status: deleted from Cloudflare at the owner's request.** Both site Workers (including hosted assets, secrets and schedules) and custom-domain bindings are removed. Source files remain in this repository and the separate D1 enquiry database is preserved. Configuration contains no public routes. Redeployment requires an explicit new publication request, fresh server secrets and intended custom-domain routes.
 
 Two Cloudflare Workers serve curated English documentation, landing pages and real application screenshots:
 
