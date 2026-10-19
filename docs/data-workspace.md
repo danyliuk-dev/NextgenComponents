@@ -54,3 +54,9 @@ IDs must be nonempty and unique across the tree. TreeList requires at least one 
 ## Async adapters (0.60)
 
 See the [Grid manual](manual/NgDataGrid.md), [TreeView manual](manual/NgTreeView.md) and [TreeList manual](manual/NgTreeList.md) for runnable loading/error/retry examples and source identity rules. Grid returns only the current server page; trees cache fetched children without mutating input roots. Changing DataVersion invalidates pending results. The examples use delayed local adapters, ready to replace with application HTTP/database calls. Native/mobile and full accessibility certification remain separate.
+
+## Independent tree checkboxes (0.61)
+
+TreeView and TreeList expose opt-in, controlled checked-ID sets on both Web platforms. Checking is independent of row selection and expansion. Read-only state, a node predicate, disabled nodes and absent callbacks protect changes. Each accepted request supplies a fresh set without pruning hidden, collapsed or unknown IDs. Localized accessible labels and keyboard Space are supported. Checking unloaded parents never fetches or checks children.
+
+Remaining: cascading/partial parent checks, check-all, tree virtualization, drag/drop, remote filtering/sorting, native targets and full accessibility certification. Grid virtualization, grouping and built-in CRUD remain open. See both tree manuals.

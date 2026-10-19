@@ -783,6 +783,11 @@ class NgTreeView<T> extends StatefulWidget {
   final String Function(T) text;
   final String label, emptyText;
   final bool selectionReadOnly, expansionReadOnly;
+  final bool checkboxes, checkingReadOnly;
+  final Set<String> checkedIds;
+  final ValueChanged<Set<String>>? onCheckedChanged;
+  final bool Function(NgTreeNode<T>)? canCheck;
+  final String Function(T)? checkLabel;
   final Widget? emptyBuilder;
   final String? selectedId;
   final Set<String> expandedIds;
@@ -801,6 +806,12 @@ class NgTreeView<T> extends StatefulWidget {
     this.onSelected,
     this.selectedId,
     this.label = 'Folders',
+    this.checkboxes = false,
+    this.checkingReadOnly = false,
+    this.checkedIds = const {},
+    this.onCheckedChanged,
+    this.canCheck,
+    this.checkLabel,
     this.selectionReadOnly = false,
     this.expansionReadOnly = false,
     this.emptyBuilder,
@@ -844,6 +855,22 @@ class _NgTreeViewState<T> extends State<NgTreeView<T>> {
     final node = currentNode(id);
     if (node == null || node.disabled) return;
     widget.onSelected?.call(id);
+  }
+
+  bool canToggleCheck(NgTreeNode<T> node) =>
+      mounted &&
+      widget.checkboxes &&
+      !widget.checkingReadOnly &&
+      widget.onCheckedChanged != null &&
+      !node.disabled &&
+      (widget.canCheck?.call(node) ?? true);
+  void toggleCheck(String id) {
+    if (!mounted) return;
+    final node = currentNode(id);
+    if (node == null || !canToggleCheck(node)) return;
+    final next = {...widget.checkedIds};
+    if (!next.add(id)) next.remove(id);
+    widget.onCheckedChanged!(next);
   }
 
   Future<void> toggle(String id) async {
@@ -897,7 +924,9 @@ class _NgTreeViewState<T> extends State<NgTreeView<T>> {
             focusNode: nodes.putIfAbsent(row.node.id, () => FocusNode()),
             canRequestFocus: !row.node.disabled,
             onKeyEvent: (focus, e) {
-              if (e is! KeyDownEvent || row.node.disabled)
+              if (e is! KeyDownEvent ||
+                  row.node.disabled ||
+                  !focus.hasPrimaryFocus)
                 return KeyEventResult.ignored;
               final key = e.logicalKey;
               final enabled = visible.where((r) => !r.node.disabled).toList();
@@ -1005,6 +1034,19 @@ class _NgTreeViewState<T> extends State<NgTreeView<T>> {
                             )
                           else
                             const SizedBox(width: 40),
+                          if (widget.checkboxes)
+                            Semantics(
+                              container: true,
+                              label:
+                                  widget.checkLabel?.call(row.node.item) ??
+                                  'Check ${widget.text(row.node.item)}',
+                              child: Checkbox(
+                                value: widget.checkedIds.contains(row.node.id),
+                                onChanged: canToggleCheck(row.node)
+                                    ? (_) => toggleCheck(row.node.id)
+                                    : null,
+                              ),
+                            ),
                           if (lazy.loading.contains(row.node.id))
                             Text(widget.loadingText),
                           if (lazy.errors.contains(row.node.id))
@@ -1058,6 +1100,11 @@ class NgTreeList<T> extends StatefulWidget {
   final String? selectedId;
   final String label, emptyText;
   final bool selectionReadOnly, expansionReadOnly;
+  final bool checkboxes, checkingReadOnly;
+  final Set<String> checkedIds;
+  final ValueChanged<Set<String>>? onCheckedChanged;
+  final bool Function(NgTreeNode<T>)? canCheck;
+  final String Function(T)? checkLabel;
   final Widget? emptyBuilder;
   const NgTreeList({
     super.key,
@@ -1072,6 +1119,12 @@ class NgTreeList<T> extends StatefulWidget {
     this.onSelected,
     this.selectedId,
     this.label = 'Hierarchy',
+    this.checkboxes = false,
+    this.checkingReadOnly = false,
+    this.checkedIds = const {},
+    this.onCheckedChanged,
+    this.canCheck,
+    this.checkLabel,
     this.selectionReadOnly = false,
     this.expansionReadOnly = false,
     this.emptyBuilder,
@@ -1109,6 +1162,22 @@ class _NgTreeListState<T> extends State<NgTreeList<T>> {
     final node = currentNode(id);
     if (node == null || node.disabled) return;
     widget.onSelected?.call(id);
+  }
+
+  bool canToggleCheck(NgTreeNode<T> node) =>
+      mounted &&
+      widget.checkboxes &&
+      !widget.checkingReadOnly &&
+      widget.onCheckedChanged != null &&
+      !node.disabled &&
+      (widget.canCheck?.call(node) ?? true);
+  void toggleCheck(String id) {
+    if (!mounted) return;
+    final node = currentNode(id);
+    if (node == null || !canToggleCheck(node)) return;
+    final next = {...widget.checkedIds};
+    if (!next.add(id)) next.remove(id);
+    widget.onCheckedChanged!(next);
   }
 
   Future<void> toggle(String id) async {
@@ -1239,6 +1308,24 @@ class _NgTreeListState<T> extends State<NgTreeList<T>> {
                                         )
                                       else
                                         const SizedBox(width: 40),
+                                      if (widget.checkboxes)
+                                        Semantics(
+                                          container: true,
+                                          label:
+                                              widget.checkLabel?.call(
+                                                row.node.item,
+                                              ) ??
+                                              'Check ${widget.columns.first.text(row.node.item)}',
+                                          child: Checkbox(
+                                            value: widget.checkedIds.contains(
+                                              row.node.id,
+                                            ),
+                                            onChanged: canToggleCheck(row.node)
+                                                ? (_) =>
+                                                      toggleCheck(row.node.id)
+                                                : null,
+                                          ),
+                                        ),
                                       if (lazy.loading.contains(row.node.id))
                                         Text(widget.loadingText),
                                       if (lazy.errors.contains(row.node.id))

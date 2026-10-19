@@ -14,6 +14,14 @@ async Task Check<T>(Dictionary<string, object?> parameters, params string[] expe
  foreach (var text in expected) if (!html.Contains(text)) throw new Exception($"{typeof(T).Name}: missing {text} in {html}");
  Console.WriteLine($"PASS {typeof(T).Name}"); count++;
 }
+var checkedTree=new[]{new NgTreeNode<string>("a","<Alpha>"),new NgTreeNode<string>("b","Beta",Disabled:true)};
+var checkHandler=EventCallback.Factory.Create<HashSet<string>>(new object(),(HashSet<string> ids)=>{});
+foreach(var locked in new[]{false,true}) {
+ await Check<NgTreeView<string>>(new(){["Items"]=checkedTree,["Text"]=(Func<string,string>)(s=>s),["Checkboxes"]=true,["CheckedIds"]=new HashSet<string>{"a","hidden"},["CheckedIdsChanged"]=checkHandler,["CheckingReadOnly"]=locked},"ng-tree-check","Check &lt;Alpha&gt;","checked","disabled");
+ await Check<NgTreeList<string>>(new(){["Items"]=checkedTree,["Columns"]=new[]{new NgDataColumn<string>("name","Name",s=>s)},["Checkboxes"]=true,["CheckedIds"]=new HashSet<string>{"a"},["CheckedIdsChanged"]=checkHandler,["CheckingReadOnly"]=locked,["CheckLabel"]=(Func<string,string>)(s=>"Choose "+s)},"Choose &lt;Alpha&gt;","checked","disabled");
+}
+await Check<NgTreeView<string>>(new(){["Items"]=new[]{new NgTreeNode<string>("a","Alpha")},["Text"]=(Func<string,string>)(s=>s),["Checkboxes"]=true,["CanCheck"]=(Func<NgTreeNode<string>,bool>)(_=>false),["CheckedIdsChanged"]=checkHandler},"ng-tree-check","disabled");
+await Check<NgTreeView<string>>(new(){["Items"]=new[]{new NgTreeNode<string>("a","Alpha")},["Text"]=(Func<string,string>)(s=>s),["Checkboxes"]=true},"ng-tree-check","disabled");
 var remoteColumns=new[]{new NgDataColumn<string>("name","Name",s=>s)};
 await Check<NgDataGrid<string>>(new(){["Columns"]=remoteColumns,["RowId"]=(Func<string,string>)(s=>s),["ReadData"]=(Func<NgDataRequest,CancellationToken,Task<NgDataResult<string>>>)((r,t)=>Task.FromResult(new NgDataResult<string>(["Server row"],42))),["MultiSort"]=true},"Server row","Clear sorting","42");
 await Check<NgDataGrid<string>>(new(){["Columns"]=remoteColumns,["RowId"]=(Func<string,string>)(s=>s),["ReadData"]=(Func<NgDataRequest,CancellationToken,Task<NgDataResult<string>>>)((r,t)=>Task.FromException<NgDataResult<string>>(new Exception("private")))},"Unable to load records.","Retry");

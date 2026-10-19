@@ -46,7 +46,7 @@ export function combo(root) {
 
 export function tree(root) {
  root.addEventListener('keydown', e => {
-  const item=e.target.closest('[role=treeitem]');if(!item)return;
+  const item=e.target.closest('[role=treeitem]');if(!item || e.target!==item)return;
   const items=[...root.querySelectorAll('[role=treeitem]')].filter(x=>x.getAttribute('aria-disabled')!=='true');
   const index=items.indexOf(item);let next;
   if(e.key==='ArrowDown')next=items[index+1];

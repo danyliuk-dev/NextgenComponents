@@ -843,3 +843,13 @@ Counter formatting receives counts rather than password text and must remain pur
 - All 94 manual examples compiled/analyzed; 94 highlighted examples passed. Web build passed (existing unused CupertinoIcons font warning).
 - Dedicated foreground Chrome review060 on local Linux/iMac: both Web platforms passed remote page/search/sort/retry and both lazy-tree nested/cache/error/selection/reset scenarios. Evidence: artifacts/browser/data060-*.png; repeat with scripts/remote-data-check.py and its flutter argument.
 - No full parity claim. Virtualization, grouping, built-in CRUD, drag/drop, checked tree selection and native/screen-reader validation remain open. Demo adapters simulate network delay; application transport is caller-owned.
+
+## Independent tree checkboxes — 0.61 (2026-10-19, Linux on iMac)
+
+- Optional TreeView/TreeList checked IDs, independent checking locks, per-node protection and localized checkbox names in Blazor and Flutter Web. No mutation/pruning of caller sets; no cascade or implicit lazy load.
+- 422 .NET rendering/data checks; Blazor gallery build with zero warnings/errors. 258 Flutter tests passed, including controlled rejection/acceptance, hidden IDs, lazy caching, protected/disabled nodes, retained callbacks after collapse/hide/lock/disposal and keyboard Space without row selection.
+- All 94 manual examples compiled/analyzed; 94 highlighting checks passed. Flutter Web build passed with the existing unused CupertinoIcons font warning.
+- Visible local Chrome checks covered both tree controls and both Web frameworks: checking a lazy parent without loading/selecting, protected children, Space, preserved IDs and independent controls. Physical screen-reader/native certification remains unverified.
+- Blazor controlled binding was verified with rejected pointer/Space changes in both controls: the DOM checkbox returns to the parent-owned state; acceptance still updates without selecting/loading.
+- Browser review found merged checkbox/cell semantics in Flutter TreeList. Separate semantic containers fixed the issue; focused checkbox semantics and keyboard tests were rerun successfully.
+- Public marketing sites remain deleted from Cloudflare. Local documentation/demo updates do not publish them.

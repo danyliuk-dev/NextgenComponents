@@ -2,15 +2,23 @@
 <NgCheckBox Label="Selection read-only" @bind-Value="selectionReadOnly"/>
 <NgCheckBox Label="Expansion read-only" @bind-Value="expansionReadOnly"/>
 <NgCheckBox Label="Fail requests" @bind-Value="fail"/>
+<NgCheckBox Label="Checking read-only" @bind-Value="checkingReadOnly"/>
+<NgCheckBox Label="Protect Design" @bind-Value="protectDesign"/>
+<NgCheckBox Label="Reject check changes" @bind-Value="rejectChecks"/>
 <NgButton OnClick="Reset">Reset tree</NgButton>
-<NgTreeList TItem="string" Items="nodes" Columns="columns" LoadChildren="Load" DataVersion="version" @bind-ExpandedIds="expanded" @bind-SelectedId="selected" SelectionReadOnly="selectionReadOnly" ExpansionReadOnly="expansionReadOnly" EmptyText="No teams found."/>
+<NgTreeList TItem="string" Items="nodes" Columns="columns" LoadChildren="Load" Checkboxes="true" CheckedIds="checkedIds" CheckedIdsChanged="AcceptChecks" CheckingReadOnly="checkingReadOnly" CanCheck="CanCheckNode" DataVersion="version" @bind-ExpandedIds="expanded" @bind-SelectedId="selected" SelectionReadOnly="selectionReadOnly" ExpansionReadOnly="expansionReadOnly" EmptyText="No teams found."/>
+<p>Checked IDs: @string.Join(", ",checkedIds.Order())</p>
 <p>Selected team: @(selected??"none") · Child requests: @requests</p>
 @code {
+ private bool rejectChecks;
+ private void AcceptChecks(HashSet<string> next){if(!rejectChecks)checkedIds=next;}
+ private bool CanCheckNode(NgTreeNode<string> n)=>!protectDesign || n.Id!="a";
+ private bool checkingReadOnly,protectDesign=true; private HashSet<string> checkedIds=["offscreen"];
  private bool selectionReadOnly,expansionReadOnly,fail; private int version,requests;
  private string? selected; private HashSet<string> expanded=[];
  private static readonly NgTreeNode<string>[] nodes=[new("root","Projects",HasChildren:true)];
  private static readonly NgDataColumn<string>[] columns=[new("name","Name",s=>s)];
- private void Reset(){version++;expanded=[];selected=null;}
+ private void Reset(){version++;expanded=[];selected=null;checkedIds=["offscreen"];}
  private async Task<IReadOnlyList<NgTreeNode<string>>> Load(NgTreeNode<string> node,CancellationToken token){
    requests++;await Task.Delay(350,token);await InvokeAsync(StateHasChanged);if(fail)throw new InvalidOperationException("Demo failure");
    return node.Id=="root"?[new("a","Design"),new("b","Engineering",HasChildren:true)]:[new("api","API"),new("web","Web")];

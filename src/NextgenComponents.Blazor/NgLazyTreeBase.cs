@@ -9,6 +9,19 @@ public abstract class NgLazyTreeBase<T> : ComponentBase, IDisposable
     [Parameter] public object? DataVersion { get; set; }
     [Parameter] public string LoadingText { get; set; }="Loading children…";
     [Parameter] public string ErrorText { get; set; }="Unable to load children. Expand to retry.";
+    [Parameter] public bool Checkboxes { get; set; }
+    [Parameter] public HashSet<string> CheckedIds { get; set; }=[];
+    [Parameter] public EventCallback<HashSet<string>> CheckedIdsChanged { get; set; }
+    [Parameter] public bool CheckingReadOnly { get; set; }
+    [Parameter] public Func<NgTreeNode<T>,bool>? CanCheck { get; set; }
+    [Parameter] public Func<T,string>? CheckLabel { get; set; }
+    protected bool CanToggleCheck(NgTreeNode<T> node)=>!disposed && Checkboxes && !CheckingReadOnly && CheckedIdsChanged.HasDelegate && !node.Disabled && (CanCheck?.Invoke(node)??true);
+    protected async Task ToggleCheck(string id,IReadOnlyList<NgTreeRow<T>> visible){
+        var node=visible.FirstOrDefault(r=>r.Node.Id==id)?.Node;
+        if(node is null || !CanToggleCheck(node))return;
+        var next=new HashSet<string>(CheckedIds);if(!next.Add(id))next.Remove(id);
+        await CheckedIdsChanged.InvokeAsync(next);
+    }
     private readonly Dictionary<string,IReadOnlyList<NgTreeNode<T>>> cache=[];
     private readonly HashSet<string> loading=[],errors=[];
     private IReadOnlyList<NgTreeNode<T>>? source;
