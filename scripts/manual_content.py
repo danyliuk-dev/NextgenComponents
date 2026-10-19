@@ -3238,3 +3238,39 @@ While an input method is composing text, debounced notifications are suppressed,
 
 Locks, external replacement, handler removal and disposal still cancel pending work. Clear is a new empty edit. Composition does not delay form submission or OnCommit/onSubmitted. Blazor uses a native composition observer loaded after interactive rendering; Flutter observes the editing composition range and native Web composition events (including semantics mode), while retaining TextFormField controller/reset ownership. Initial rendering does not notify. Browser automation checks native Chromium composition events and Flutter tests cover editing ranges; physical OS input methods, mobile keyboards and assistive technology certification remain separate verification.
 """
+
+# Date range presets, 0.58.
+D['NgDateRangePicker']['blazor'] = """<NgForm Model="model" OnValidSubmit="()=>saved=true">
+<NgDateRangePicker Label="Delivery period" Value="range" ValueChanged="Changed" ValueExpression="()=>range" Presets="presets" ShowClearButton="true" Min="min" Max="@(restricted?new DateOnly(2026,10,21):max)" DisabledDate="d=>d.DayOfWeek==DayOfWeek.Sunday" ReadOnly="readOnly" Disabled="disabled" />
+<button type="submit" class="ng-button">Validate range</button>
+</NgForm>
+<div class="ng-prompt-actions"><NgButton OnClick="()=>readOnly=!readOnly">Toggle read only</NgButton><NgButton OnClick="()=>disabled=!disabled">Toggle disabled</NgButton><NgButton OnClick="()=>restricted=!restricted">Toggle bounds</NgButton></div>
+<p>Changes: @changes · Range: @(range?.Start?.ToString("yyyy-MM-dd")??"empty") / @(range?.End?.ToString("yyyy-MM-dd")??"empty")</p>
+<p>Validated: @saved</p>
+@code {
+ private object model=new(); private NgDateRange? range=new(new(2026,10,20),new(2026,10,23));
+ private int changes; private bool readOnly,disabled,restricted,saved;
+ private DateOnly min=new(2026,10,1),max=new(2026,10,31);
+ private NgDateRangePreset[] presets=[new("week","Work week",new(2026,10,19),new(2026,10,23)),new("weekend","Across weekend",new(2026,10,23),new(2026,10,26)),new("sunday","Sunday start",new(2026,10,25),new(2026,10,26)),new("outside","Outside bounds",new(2026,10,30),new(2026,11,2)),new("locked","Unavailable preset",new(2026,10,20),new(2026,10,23),true)];
+ private void Changed(NgDateRange? next){range=next;changes++;saved=false;}
+}"""
+D['NgDateRangePicker']['dart'] = """NgDateRange? range=NgDateRange(DateTime(2026,10,20),DateTime(2026,10,23));
+int changes=0; bool readOnly=false,disabled=false,restricted=false,saved=false;
+final presets=[NgDateRangePreset(id:'week',label:'Work week',start:DateTime(2026,10,19),end:DateTime(2026,10,23)),NgDateRangePreset(id:'weekend',label:'Across weekend',start:DateTime(2026,10,23),end:DateTime(2026,10,26)),NgDateRangePreset(id:'sunday',label:'Sunday start',start:DateTime(2026,10,25),end:DateTime(2026,10,26)),NgDateRangePreset(id:'outside',label:'Outside bounds',start:DateTime(2026,10,30),end:DateTime(2026,11,2)),NgDateRangePreset(id:'locked',label:'Unavailable preset',start:DateTime(2026,10,20),end:DateTime(2026,10,23),disabled:true)];
+Widget build(BuildContext context)=>Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
+NgForm(submitLabel:'Validate range',onValidSubmit:()async{setState(()=>saved=true);},child:NgDateRangePicker(label:'Delivery period',value:range,presets:presets,showClearButton:true,min:DateTime(2026,10,1),max:DateTime(2026,10,restricted?21:31),readOnly:readOnly,enabled:!disabled,disabledDate:(d)=>d.weekday==DateTime.sunday,onChanged:(v)=>setState((){range=v;changes++;saved=false;}))),
+Wrap(spacing:8,children:[NgButton(onPressed:()=>setState(()=>readOnly=!readOnly),child:const Text('Toggle read only')),NgButton(onPressed:()=>setState(()=>disabled=!disabled),child:const Text('Toggle disabled')),NgButton(onPressed:()=>setState(()=>restricted=!restricted),child:const Text('Toggle bounds'))]),
+Text('Changes: $changes · Range: ${range?.start==null?'empty':NgDateRules.dateText(range!.start)} / ${range?.end==null?'empty':NgDateRules.dateText(range!.end)}'),Text('Validated: $saved')]);"""
+D['NgDateRangePicker']['notes'] += """
+
+### Presets and clearing (0.58)
+Presets/presets is an optional ordered list of NgDateRangePreset descriptors. Each has a nonblank unique Id/id, nonblank Label/label, Start/start, End/end and optional Disabled/disabled (false). Dates must be ordered; malformed descriptors fail early. Flutter uses the calendar-date portions and accepts years 1–9999. Compute relative periods in the application using its chosen clock/time zone; the component never evaluates labels such as Today automatically.
+
+A preset is unavailable if explicitly disabled or either endpoint violates Min/Max/DisabledDate. Interior days are not checked: Across weekend remains valid even though Sunday is unavailable as an endpoint. Read-only, disabled and missing change callbacks block preset/clear actions. Current descriptors and constraints are checked again at activation; removed/replaced preset callbacks cannot apply a stale range.
+
+Applying a preset emits one complete range through ValueChanged/onChanged, with no intermediate half-range. Selecting the same preset again still emits once and repairs invalid drafts in both date editors. The parent should store the emitted value. The accepted dates determine selected presentation; this does not mean that an uncommitted manual draft is valid.
+
+ShowClearButton/showClearButton (default false) adds an atomic clear action; ClearText/clearText defaults to Clear range and can be localized. Clear emits null once and resets both drafts even when the accepted value is already empty. Required validation remains application-owned (Flutter also supports required). Preset/clear reset recreates the two inner editors, closes open pickers and drops their local focus/selection state. It never submits the form. External assignments and manual typing retain their existing behavior.
+
+Shared dual-calendar highlighting, relative-date engines and native/screen-reader certification remain open. These original preset contracts do not claim Telerik API compatibility.
+"""

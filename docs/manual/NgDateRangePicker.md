@@ -22,19 +22,47 @@ DisabledDate/disabledDate applies to typing and calendar selection. In a range i
 
 Flutter calendars use Material locale/week-start and default bounds 1900–2100; Blazor uses Culture/FirstDayOfWeek and DateOnly bounds. Supply explicit bounds for matching domains. Calendar selection is single-date only. Shared range highlighting, multiple calendar views, cell templates, week numbers, segmented/custom-format input and complete keyboard/screen-reader parity remain open. Flutter popup results are ignored after a parent rebuild, edit or disposal.
 
+### Presets and clearing (0.58)
+Presets/presets is an optional ordered list of NgDateRangePreset descriptors. Each has a nonblank unique Id/id, nonblank Label/label, Start/start, End/end and optional Disabled/disabled (false). Dates must be ordered; malformed descriptors fail early. Flutter uses the calendar-date portions and accepts years 1–9999. Compute relative periods in the application using its chosen clock/time zone; the component never evaluates labels such as Today automatically.
+
+A preset is unavailable if explicitly disabled or either endpoint violates Min/Max/DisabledDate. Interior days are not checked: Across weekend remains valid even though Sunday is unavailable as an endpoint. Read-only, disabled and missing change callbacks block preset/clear actions. Current descriptors and constraints are checked again at activation; removed/replaced preset callbacks cannot apply a stale range.
+
+Applying a preset emits one complete range through ValueChanged/onChanged, with no intermediate half-range. Selecting the same preset again still emits once and repairs invalid drafts in both date editors. The parent should store the emitted value. The accepted dates determine selected presentation; this does not mean that an uncommitted manual draft is valid.
+
+ShowClearButton/showClearButton (default false) adds an atomic clear action; ClearText/clearText defaults to Clear range and can be localized. Clear emits null once and resets both drafts even when the accepted value is already empty. Required validation remains application-owned (Flutter also supports required). Preset/clear reset recreates the two inner editors, closes open pickers and drops their local focus/selection state. It never submits the form. External assignments and manual typing retain their existing behavior.
+
+Shared dual-calendar highlighting, relative-date engines and native/screen-reader certification remain open. These original preset contracts do not claim Telerik API compatibility.
+
+
 ## Blazor example
 
 ```razor
-<NgDateRangePicker Label="Period" DisabledDate="d => d.DayOfWeek == DayOfWeek.Sunday" @bind-Value="range"/>
-@code { private NgDateRange? range=new(new(2026,10,20),new(2026,10,23)); }
+<NgForm Model="model" OnValidSubmit="()=>saved=true">
+<NgDateRangePicker Label="Delivery period" Value="range" ValueChanged="Changed" ValueExpression="()=>range" Presets="presets" ShowClearButton="true" Min="min" Max="@(restricted?new DateOnly(2026,10,21):max)" DisabledDate="d=>d.DayOfWeek==DayOfWeek.Sunday" ReadOnly="readOnly" Disabled="disabled" />
+<button type="submit" class="ng-button">Validate range</button>
+</NgForm>
+<div class="ng-prompt-actions"><NgButton OnClick="()=>readOnly=!readOnly">Toggle read only</NgButton><NgButton OnClick="()=>disabled=!disabled">Toggle disabled</NgButton><NgButton OnClick="()=>restricted=!restricted">Toggle bounds</NgButton></div>
+<p>Changes: @changes · Range: @(range?.Start?.ToString("yyyy-MM-dd")??"empty") / @(range?.End?.ToString("yyyy-MM-dd")??"empty")</p>
+<p>Validated: @saved</p>
+@code {
+ private object model=new(); private NgDateRange? range=new(new(2026,10,20),new(2026,10,23));
+ private int changes; private bool readOnly,disabled,restricted,saved;
+ private DateOnly min=new(2026,10,1),max=new(2026,10,31);
+ private NgDateRangePreset[] presets=[new("week","Work week",new(2026,10,19),new(2026,10,23)),new("weekend","Across weekend",new(2026,10,23),new(2026,10,26)),new("sunday","Sunday start",new(2026,10,25),new(2026,10,26)),new("outside","Outside bounds",new(2026,10,30),new(2026,11,2)),new("locked","Unavailable preset",new(2026,10,20),new(2026,10,23),true)];
+ private void Changed(NgDateRange? next){range=next;changes++;saved=false;}
+}
 ```
 
 ## Flutter example
 
 ```dart
-NgDateRange? range = NgDateRange(DateTime(2026,10,20), DateTime(2026,10,23));
-Widget build(BuildContext context) => NgDateRangePicker(label: 'Period', value: range,
-  disabledDate: (d) => d.weekday == DateTime.sunday, required: true, onChanged: (v) => setState(() => range = v));
+NgDateRange? range=NgDateRange(DateTime(2026,10,20),DateTime(2026,10,23));
+int changes=0; bool readOnly=false,disabled=false,restricted=false,saved=false;
+final presets=[NgDateRangePreset(id:'week',label:'Work week',start:DateTime(2026,10,19),end:DateTime(2026,10,23)),NgDateRangePreset(id:'weekend',label:'Across weekend',start:DateTime(2026,10,23),end:DateTime(2026,10,26)),NgDateRangePreset(id:'sunday',label:'Sunday start',start:DateTime(2026,10,25),end:DateTime(2026,10,26)),NgDateRangePreset(id:'outside',label:'Outside bounds',start:DateTime(2026,10,30),end:DateTime(2026,11,2)),NgDateRangePreset(id:'locked',label:'Unavailable preset',start:DateTime(2026,10,20),end:DateTime(2026,10,23),disabled:true)];
+Widget build(BuildContext context)=>Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
+NgForm(submitLabel:'Validate range',onValidSubmit:()async{setState(()=>saved=true);},child:NgDateRangePicker(label:'Delivery period',value:range,presets:presets,showClearButton:true,min:DateTime(2026,10,1),max:DateTime(2026,10,restricted?21:31),readOnly:readOnly,enabled:!disabled,disabledDate:(d)=>d.weekday==DateTime.sunday,onChanged:(v)=>setState((){range=v;changes++;saved=false;}))),
+Wrap(spacing:8,children:[NgButton(onPressed:()=>setState(()=>readOnly=!readOnly),child:const Text('Toggle read only')),NgButton(onPressed:()=>setState(()=>disabled=!disabled),child:const Text('Toggle disabled')),NgButton(onPressed:()=>setState(()=>restricted=!restricted),child:const Text('Toggle bounds'))]),
+Text('Changes: $changes · Range: ${range?.start==null?'empty':NgDateRules.dateText(range!.start)} / ${range?.end==null?'empty':NgDateRules.dateText(range!.end)}'),Text('Validated: $saved')]);
 ```
 
 ## Blazor parameters and events
@@ -52,6 +80,9 @@ Names are case-sensitive. `?` permits null. `EditorRequired` parameters are mark
 | `ReadOnly` | `bool` | false | Prevent changes while retaining supported viewing actions. |
 | `DisabledDate` | `Func<DateOnly,bool>?` | not set | See the behavior rules and model contract above. |
 | `Disabled` | `bool` | false | Disable user interaction. |
+| `Presets` | `IReadOnlyList<NgDateRangePreset>` | Array.Empty<NgDateRangePreset>() | Ordered named date ranges with unique IDs; unavailable endpoints disable the action. |
+| `ShowClearButton` | `bool` | false | Show an atomic clear action that resets both drafts and emits null. |
+| `ClearText` | `string` | "Clear range" | Nonblank localized clear-action label; default Clear range. |
 
 ## Flutter parameters and events
 
@@ -68,6 +99,9 @@ Names are case-sensitive. `?` permits null. `EditorRequired` parameters are mark
 | `readOnly` | `bool` | Prevent changes while retaining supported viewing actions. |
 | `disabledDate` | `bool Function(DateTime)?` | See the behavior rules and model contract above. |
 | `onChanged` | `ValueChanged<NgDateRange?>?` | Store the new value using setState or your state manager. |
+| `presets` | `List<NgDateRangePreset>` | Ordered named date ranges with unique IDs; unavailable endpoints disable the action. |
+| `showClearButton` | `bool` | Show an atomic clear action that resets both drafts and emits null. |
+| `clearText` | `String` | Nonblank localized clear-action label; default Clear range. |
 
 ```dart
 const NgDateRangePicker({
@@ -81,6 +115,9 @@ const NgDateRangePicker({
     this.required = false,
     this.readOnly = false,
     this.disabledDate,
+    this.presets = const [],
+    this.showClearButton = false,
+    this.clearText = 'Clear range',
   });
 ```
 

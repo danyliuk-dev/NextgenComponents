@@ -555,13 +555,29 @@ class _NgRangeFieldState extends FormFieldState<NgDateRange> {
   }
 }
 
-class NgDateRangePicker extends StatelessWidget {
+class NgDateRangePreset {
+  final String id, label;
+  final DateTime start, end;
+  final bool disabled;
+  const NgDateRangePreset({
+    required this.id,
+    required this.label,
+    required this.start,
+    required this.end,
+    this.disabled = false,
+  });
+}
+
+class NgDateRangePicker extends StatefulWidget {
   final String label;
   final NgDateRange? value;
   final DateTime? min, max;
   final bool enabled, required, readOnly;
   final bool Function(DateTime)? disabledDate;
   final ValueChanged<NgDateRange?>? onChanged;
+  final List<NgDateRangePreset> presets;
+  final bool showClearButton;
+  final String clearText;
   const NgDateRangePicker({
     super.key,
     this.label = 'Date range',
@@ -573,9 +589,57 @@ class NgDateRangePicker extends StatelessWidget {
     this.required = false,
     this.readOnly = false,
     this.disabledDate,
+    this.presets = const [],
+    this.showClearButton = false,
+    this.clearText = 'Clear range',
   });
   @override
+  State<NgDateRangePicker> createState() => _NgDateRangePickerState();
+}
+
+class _NgDateRangePickerState extends State<NgDateRangePicker> {
+  int editorRevision = 0;
+  bool selected(NgDateRangePreset p) =>
+      NgDateRules.dateText(widget.value?.start) ==
+          NgDateRules.dateText(p.start) &&
+      NgDateRules.dateText(widget.value?.end) == NgDateRules.dateText(p.end);
+  bool allowed(NgDateRangePreset p) =>
+      !p.disabled &&
+      NgDateRules.allowed(
+        p.start,
+        min: widget.min,
+        max: widget.max,
+        disabledDate: widget.disabledDate,
+      ) &&
+      NgDateRules.allowed(
+        p.end,
+        min: widget.min,
+        max: widget.max,
+        disabledDate: widget.disabledDate,
+      );
+  @override
   Widget build(BuildContext context) {
+    final label = widget.label,
+        value = widget.value,
+        min = widget.min,
+        max = widget.max;
+    final enabled = widget.enabled,
+        required = widget.required,
+        readOnly = widget.readOnly;
+    final disabledDate = widget.disabledDate, onChanged = widget.onChanged;
+    final ids = <String>{};
+    for (final p in widget.presets) {
+      NgDateRules.checkBounds(p.start, p.end);
+      if (p.id.trim().isEmpty ||
+          p.label.trim().isEmpty ||
+          !ids.add(p.id) ||
+          DateUtils.dateOnly(p.start).isAfter(DateUtils.dateOnly(p.end)))
+        throw ArgumentError(
+          'Presets require unique IDs, labels and ordered dates.',
+        );
+    }
+    if (widget.clearText.trim().isEmpty)
+      throw ArgumentError('clearText cannot be blank.');
     NgDateRules.checkBounds(min, max);
     return _NgRangeField(
       controlledValue: value,
@@ -597,18 +661,78 @@ class NgDateRangePicker extends StatelessWidget {
                     ? "This date is not available."
                     : null),
       builder: (field) {
-        void update(NgDateRange next) {
-          if (!enabled || readOnly || onChanged == null) return;
+        void update(NgDateRange? next, {bool reset = false}) {
+          if (!mounted ||
+              !field.mounted ||
+              !widget.enabled ||
+              widget.readOnly ||
+              widget.onChanged == null)
+            return;
+          if (reset) setState(() => editorRevision++);
           field.didChange(next);
-          onChanged?.call(next);
+          widget.onChanged?.call(next);
         }
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(label),
+            if (widget.presets.isNotEmpty || widget.showClearButton)
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  for (final preset in widget.presets)
+                    Semantics(
+                      selected: selected(preset),
+                      child: OutlinedButton(
+                        key: ValueKey(preset.id),
+                        style: selected(preset)
+                            ? OutlinedButton.styleFrom(
+                                backgroundColor: Theme.of(
+                                  context,
+                                ).colorScheme.secondaryContainer,
+                              )
+                            : null,
+                        onPressed:
+                            !enabled ||
+                                readOnly ||
+                                onChanged == null ||
+                                !allowed(preset)
+                            ? null
+                            : () {
+                                if (!mounted ||
+                                    !widget.presets.any(
+                                      (p) => identical(p, preset),
+                                    ) ||
+                                    !allowed(preset))
+                                  return;
+                                update(
+                                  NgDateRange(
+                                    DateUtils.dateOnly(preset.start),
+                                    DateUtils.dateOnly(preset.end),
+                                  ),
+                                  reset: true,
+                                );
+                              },
+                        child: Text(preset.label),
+                      ),
+                    ),
+                  if (widget.showClearButton)
+                    OutlinedButton(
+                      onPressed: !enabled || readOnly || onChanged == null
+                          ? null
+                          : () {
+                              if (mounted && widget.showClearButton)
+                                update(null, reset: true);
+                            },
+                      child: Text(widget.clearText),
+                    ),
+                ],
+              ),
             const SizedBox(height: 12),
             LayoutBuilder(
+              key: ValueKey(editorRevision),
               builder: (context, c) => Wrap(
                 spacing: 16,
                 runSpacing: 16,

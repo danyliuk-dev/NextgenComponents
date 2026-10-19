@@ -7,7 +7,7 @@ Web-first implementation on Blazor and Flutter: eleven additional controls, brin
 | NgCalendar | Single date, month navigation, bounds, disabled days; Blazor culture/week start and day arrow keys; Flutter Material year selection | Multi-selection, multi-view calendar, configurable templates, parity of keyboard navigation/localization |
 | NgDateInput | Strict yyyy-mm-dd parsing, impossible-date rejection, bounds, disabled dates, form errors | Segmented editing, configurable date formats |
 | NgDatePicker | Text input plus calendar selection, disabled days, bounds; Blazor Clear/Close/Escape, Flutter modal dismissal | Unified popup behavior, templates, complete accessibility audit |
-| NgDateRangePicker | Two date pickers, complete-pair and start/end ordering validation, endpoint disabled-date rules and read-only | Shared dual-calendar range highlighting, presets |
+| NgDateRangePicker | Two date pickers, complete-pair and start/end ordering validation, endpoint disabled-date rules, read-only, named presets and atomic clear | Shared dual-calendar range highlighting |
 | NgTimePicker | Strict HH:mm, bounds, picker UI | Custom step intervals and time-list templates |
 | NgDateTimePicker | Strict yyyy-mm-dd HH:mm, bounds, picker UI | Time-zone conversion, custom formats and step intervals |
 | NgTextArea | Multiple rows, maximum length, disabled state, form integration | Auto-resizing and character-counter parity |
@@ -126,3 +126,7 @@ Expanded/expanded and OnExpandedChanged/onExpandedChanged provide controlled dis
 ## IME-aware notifications (0.57)
 
 TextBox and TextArea suppress delayed notifications while native text composition is active. Composition completion restarts the delay, even when the string itself is unchanged; zero delay also waits for completion. Draft binding and validation remain immediate. Existing cancellation and independent commit/submission behavior is retained. Manuals and live previews describe this contract. Physical OS IME keyboards and native mobile targets remain unverified.
+
+## Date range presets and clearing (0.58)
+
+DateRangePicker accepts ordered NgDateRangePreset descriptors with stable unique IDs, labels, complete dates and optional disabled flags. Preset activation applies both endpoints with one callback and repairs invalid drafts, including when the accepted dates are unchanged. Endpoint bounds/disabled rules and read-only/disabled state guard actions. Optional ShowClearButton/showClearButton emits null and resets both editors. Presets wrap on narrow screens. Relative periods, interior-day rules and shared calendar range highlighting remain application-owned or open; see the detailed manual.

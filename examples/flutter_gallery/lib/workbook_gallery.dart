@@ -146,7 +146,7 @@ class _WorkbookGalleryState extends State<WorkbookGallery> {
                 ),
                 const SizedBox(height: 48),
                 Text(
-                  'FLUTTER / WORKBOOK 0.57',
+                  'FLUTTER / WORKBOOK 0.58',
                   style: TextStyle(color: colors.primary),
                 ),
                 const SizedBox(height: 20),

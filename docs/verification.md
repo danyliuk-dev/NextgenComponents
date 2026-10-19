@@ -800,3 +800,20 @@ Validation completed:
 Evidence: [Blazor editor](screenshots/text057-blazor.png), [Flutter editor](screenshots/text057-flutter.png), [desktop manual](screenshots/text057-desktop-manual.png).
 
 Physical OS IME keyboards, native mobile targets and assistive technology certification remain unverified. Commit/submission stays independent; already-started asynchronous application requests need their own stale-result protection. Full Telerik API/pixel parity is not claimed.
+
+## Date range presets and atomic clearing — 0.58 (2026-10-19, Linux on iMac)
+
+DateRangePicker adds named NgDateRangePreset descriptors, endpoint availability checks and optional localized clearing. A preset produces one complete range callback; clear produces null. Both actions reset the inner editors, repairing invalid drafts even when the accepted dates are unchanged. Actions honor current locks, bounds, disabled endpoints and descriptor membership. Flutter normalizes preset times to calendar dates; relative periods stay application-owned.
+
+Validation completed:
+
+- 405 Blazor rendering/data checks; gallery build passed with zero warnings/errors. New checks cover selected/disabled rendering, escaped labels and malformed descriptors (empty IDs/labels, duplicate IDs and reversed dates).
+- 243 Flutter tests and clean Dart analysis. New tests cover atomic callback counts, date normalization, endpoint bounds/predicates, explicitly disabled periods, same-value draft repair, required clearing, malformed descriptors and retained callbacks after locking, disabling, descriptor removal, clear-action removal and disposal.
+- 47 Razor and 47 Dart manual examples compiled/analyzed; 94 highlighting checks. Flutter Web build passed with the existing CupertinoIcons font warning.
+- Foreground local Chrome: 21 assertions per platform (42 total). Checked initial state, unavailable periods, atomic selection, invalid/partial draft repair, validation recovery, weekend interiors, readonly/disabled guards, dynamic bounds, repeated clear and 390 px layout without horizontal overflow.
+- Flutter semantics input values were read after native focus because inactive DOM text fields initially had empty value properties while the canvas displayed the dates. Both canvas screenshots and focused input values were inspected.
+- Desktop shell verified the 0.58 badge, updated manual and a working preset in the embedded Blazor example. Both narrow layouts and the desktop screenshot were inspected directly.
+
+Evidence: [Blazor narrow](screenshots/range058-blazor-narrow.png), [Flutter narrow](screenshots/range058-flutter-narrow.png), [desktop manual](screenshots/range058-desktop-manual.png).
+
+Preset/clear resets close pickers and discard inner editor focus/selection. Date restrictions apply to endpoints, not interior days. Shared dual-calendar highlighting, relative-date engines, physical native targets and full accessibility certification remain open. Full Telerik API/pixel parity is not claimed.

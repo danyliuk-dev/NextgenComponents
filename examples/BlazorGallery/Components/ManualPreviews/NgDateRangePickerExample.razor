@@ -1,3 +1,15 @@
 @* Generated from scripts/manual_content.py *@
-<NgDateRangePicker Label="Period" DisabledDate="d => d.DayOfWeek == DayOfWeek.Sunday" @bind-Value="range"/>
-@code { private NgDateRange? range=new(new(2026,10,20),new(2026,10,23)); }
+<NgForm Model="model" OnValidSubmit="()=>saved=true">
+<NgDateRangePicker Label="Delivery period" Value="range" ValueChanged="Changed" ValueExpression="()=>range" Presets="presets" ShowClearButton="true" Min="min" Max="@(restricted?new DateOnly(2026,10,21):max)" DisabledDate="d=>d.DayOfWeek==DayOfWeek.Sunday" ReadOnly="readOnly" Disabled="disabled" />
+<button type="submit" class="ng-button">Validate range</button>
+</NgForm>
+<div class="ng-prompt-actions"><NgButton OnClick="()=>readOnly=!readOnly">Toggle read only</NgButton><NgButton OnClick="()=>disabled=!disabled">Toggle disabled</NgButton><NgButton OnClick="()=>restricted=!restricted">Toggle bounds</NgButton></div>
+<p>Changes: @changes · Range: @(range?.Start?.ToString("yyyy-MM-dd")??"empty") / @(range?.End?.ToString("yyyy-MM-dd")??"empty")</p>
+<p>Validated: @saved</p>
+@code {
+ private object model=new(); private NgDateRange? range=new(new(2026,10,20),new(2026,10,23));
+ private int changes; private bool readOnly,disabled,restricted,saved;
+ private DateOnly min=new(2026,10,1),max=new(2026,10,31);
+ private NgDateRangePreset[] presets=[new("week","Work week",new(2026,10,19),new(2026,10,23)),new("weekend","Across weekend",new(2026,10,23),new(2026,10,26)),new("sunday","Sunday start",new(2026,10,25),new(2026,10,26)),new("outside","Outside bounds",new(2026,10,30),new(2026,11,2)),new("locked","Unavailable preset",new(2026,10,20),new(2026,10,23),true)];
+ private void Changed(NgDateRange? next){range=next;changes++;saved=false;}
+}

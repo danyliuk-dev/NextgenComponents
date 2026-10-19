@@ -16,6 +16,7 @@ C# properties generally use PascalCase; Dart uses lowerCamelCase. Replace input 
 | NgPromptSession | Request state and the latest 20 responses; cancellation rejects late results. See [AI Prompt](NgAIPrompt.md). |
 | NgOption | Unique key, label, disabled flag. C#: new NgOption(value,label,disabled); Dart: NgOption(value,label,disabled:true). |
 | NgTab | Label and RenderFragment (Blazor) or Widget (Flutter) content. |
+| NgDateRangePreset | Id/id, Label/label, ordered Start/start and End/end dates, optional Disabled/disabled. Unique IDs per picker. Bounds and disabled-date rules apply to endpoints. |
 | NgDateRange | Nullable start/end: DateOnly in Blazor, DateTime in Flutter. Form rules determine whether a partial range can be submitted. |
 | NgDataColumn<T> | Key, Title, typed Value accessor, Format and Template/cellBuilder. Sort underlying values, not formatted text. |
 | NgTreeNode<T> | Unique Id, Item, Children, Disabled; no cycles. |

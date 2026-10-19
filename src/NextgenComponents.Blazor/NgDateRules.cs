@@ -10,3 +10,5 @@ public static class NgDateRules
     public static string? RangeError(NgDateRange? value) => value is null || (value.Start is null && value.End is null) ? null : value.Start is null || value.End is null ? "Enter both start and end dates." : value.End < value.Start ? "End date must not precede start date." : null;
 }
 public sealed record NgDateRange(DateOnly? Start, DateOnly? End);
+
+public sealed record NgDateRangePreset(string Id, string Label, DateOnly Start, DateOnly End, bool Disabled = false);

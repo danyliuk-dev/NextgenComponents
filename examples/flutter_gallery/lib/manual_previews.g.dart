@@ -244,9 +244,13 @@ Widget build(BuildContext context) => NgTimePicker(label: 'Appointment', minuteS
 }
 class NgDateRangePickerExample extends StatefulWidget { const NgDateRangePickerExample({super.key}); @override State<NgDateRangePickerExample> createState()=>_NgDateRangePickerExampleState(); }
 class _NgDateRangePickerExampleState extends State<NgDateRangePickerExample> {
-NgDateRange? range = NgDateRange(DateTime(2026,10,20), DateTime(2026,10,23));
-Widget build(BuildContext context) => NgDateRangePicker(label: 'Period', value: range,
-  disabledDate: (d) => d.weekday == DateTime.sunday, required: true, onChanged: (v) => setState(() => range = v));
+NgDateRange? range=NgDateRange(DateTime(2026,10,20),DateTime(2026,10,23));
+int changes=0; bool readOnly=false,disabled=false,restricted=false,saved=false;
+final presets=[NgDateRangePreset(id:'week',label:'Work week',start:DateTime(2026,10,19),end:DateTime(2026,10,23)),NgDateRangePreset(id:'weekend',label:'Across weekend',start:DateTime(2026,10,23),end:DateTime(2026,10,26)),NgDateRangePreset(id:'sunday',label:'Sunday start',start:DateTime(2026,10,25),end:DateTime(2026,10,26)),NgDateRangePreset(id:'outside',label:'Outside bounds',start:DateTime(2026,10,30),end:DateTime(2026,11,2)),NgDateRangePreset(id:'locked',label:'Unavailable preset',start:DateTime(2026,10,20),end:DateTime(2026,10,23),disabled:true)];
+Widget build(BuildContext context)=>Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
+NgForm(submitLabel:'Validate range',onValidSubmit:()async{setState(()=>saved=true);},child:NgDateRangePicker(label:'Delivery period',value:range,presets:presets,showClearButton:true,min:DateTime(2026,10,1),max:DateTime(2026,10,restricted?21:31),readOnly:readOnly,enabled:!disabled,disabledDate:(d)=>d.weekday==DateTime.sunday,onChanged:(v)=>setState((){range=v;changes++;saved=false;}))),
+Wrap(spacing:8,children:[NgButton(onPressed:()=>setState(()=>readOnly=!readOnly),child:const Text('Toggle read only')),NgButton(onPressed:()=>setState(()=>disabled=!disabled),child:const Text('Toggle disabled')),NgButton(onPressed:()=>setState(()=>restricted=!restricted),child:const Text('Toggle bounds'))]),
+Text('Changes: $changes · Range: ${range?.start==null?'empty':NgDateRules.dateText(range!.start)} / ${range?.end==null?'empty':NgDateRules.dateText(range!.end)}'),Text('Validated: $saved')]);
 }
 class NgFormExample extends StatefulWidget { const NgFormExample({super.key}); @override State<NgFormExample> createState()=>_NgFormExampleState(); }
 class _NgFormExampleState extends State<NgFormExample> {

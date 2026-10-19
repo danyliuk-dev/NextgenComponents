@@ -14,6 +14,10 @@ async Task Check<T>(Dictionary<string, object?> parameters, params string[] expe
  foreach (var text in expected) if (!html.Contains(text)) throw new Exception($"{typeof(T).Name}: missing {text} in {html}");
  Console.WriteLine($"PASS {typeof(T).Name}"); count++;
 }
+await Check<NgDateRangePicker>(new(){["Presets"]=new[]{new NgDateRangePreset("week","<Week>",new(2026,10,20),new(2026,10,23))},["Value"]=new NgDateRange(new(2026,10,20),new(2026,10,23)),["ShowClearButton"]=true},"&lt;Week&gt;","aria-pressed=\"true\"","Clear range","disabled");
+foreach(var presets in new[]{new[]{new NgDateRangePreset("","Empty",new(2026,10,1),new(2026,10,2))},new[]{new NgDateRangePreset("id"," ",new(2026,10,1),new(2026,10,2))},new[]{new NgDateRangePreset("id","Reverse",new(2026,10,2),new(2026,10,1))},new[]{new NgDateRangePreset("id","One",new(2026,10,1),new(2026,10,2)),new NgDateRangePreset("id","Two",new(2026,10,2),new(2026,10,3))}}){
+ try{await Check<NgDateRangePicker>(new(){["Presets"]=presets});throw new Exception("Malformed presets accepted");}catch(ArgumentException){count++;}
+}
 RenderFragment Text(string value) => b => b.AddContent(0, value);
 string? name = "<script>unsafe</script>";
 decimal? number = 5;
