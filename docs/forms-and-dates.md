@@ -107,3 +107,8 @@ FieldSpans/fieldSpans optionally supplies one value per explicit field: 1–4 co
 ## Rounded text editors and flat fill (0.53)
 
 TextBox and TextArea support theme/none/small/medium/large/full corners and flat fill. Theme retains existing decoration; explicit presets request 0/4/8/16/9999 logical-pixel radii. Flat hides the idle border while retaining focus/error indicators in the supplied theme. Appearance switches retain editing, selection and validation; original pixel values and platform border behavior remain distinct. See the detailed editor manuals for custom Flutter theme rules and multiline guidance.
+
+
+## Named form sections (0.54)
+
+Sections/sections is an alternative to flat fields or legacy content. NgFormSection carries a stable ID, title, optional description and its own fields/columns/gap/spans. All sections share one form, summary and submit action. Reordering whole sections preserves editor state; recursive nesting and generated/conditional schemas remain open. See the Form manual for removal and content-mode lifecycle rules.

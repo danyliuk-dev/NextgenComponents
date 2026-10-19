@@ -606,6 +606,7 @@ class _NgMultiSelectState extends State<NgMultiSelect> {
 class NgForm extends StatefulWidget {
   final Widget? child;
   final List<Widget>? fields;
+  final List<NgFormSection>? sections;
   final List<int>? fieldSpans;
   final int columns, minColumnWidth, gap;
   final Widget Function(BuildContext, VoidCallback?)? actionsBuilder;
@@ -621,6 +622,7 @@ class NgForm extends StatefulWidget {
     super.key,
     this.child,
     this.fields,
+    this.sections,
     this.fieldSpans,
     this.columns = 1,
     this.minColumnWidth = 240,
@@ -696,15 +698,23 @@ class _NgFormState extends State<NgForm> {
     }
   }
 
-  int effectiveSpan(int index, int columns) {
-    final span = widget.fieldSpans?[index] ?? 1;
-    return span == 0 ? columns : span.clamp(1, columns);
-  }
-
   @override
   Widget build(BuildContext context) {
-    if ((widget.child == null) == (widget.fields == null))
-      throw ArgumentError('Supply child or fields, not both.');
+    if ([
+          widget.child,
+          widget.fields,
+          widget.sections,
+        ].where((value) => value != null).length !=
+        1)
+      throw ArgumentError('Supply exactly one of child, fields or sections.');
+    if (widget.sections != null) {
+      if (widget.sections!.map((section) => section.id).toSet().length !=
+          widget.sections!.length)
+        throw ArgumentError('Section IDs must be unique.');
+      for (final section in widget.sections!) {
+        section.validate();
+      }
+    }
     if (widget.fieldSpans != null &&
         (widget.fields == null ||
             widget.fieldSpans!.length != widget.fields!.length ||
@@ -750,55 +760,62 @@ class _NgFormState extends State<NgForm> {
             absorbing: busy || !widget.enabled,
             child: ExcludeFocus(
               excluding: busy || !widget.enabled,
-              child: widget.fields == null
-                  ? widget.child!
-                  : LayoutBuilder(
-                      builder: (context, constraints) {
-                        // Keep the same Wrap/SizedBox tree across column changes so fields retain state.
-                        final width = constraints.maxWidth;
-                        final count = !width.isFinite
-                            ? 1
-                            : ((width + widget.gap) /
-                                      (widget.minColumnWidth + widget.gap))
-                                  .floor()
-                                  .clamp(1, widget.columns)
-                                  .clamp(
-                                    1,
-                                    widget.fields!.isEmpty
-                                        ? 1
-                                        : List.generate(
-                                            widget.fields!.length,
-                                            (i) => widget.fieldSpans?[i] ?? 1,
-                                          ).fold<int>(
-                                            0,
-                                            (sum, span) =>
-                                                sum +
-                                                (span == 0
-                                                    ? widget.columns
-                                                    : span),
-                                          ),
-                                  );
-                        final cellWidth = width.isFinite
-                            ? ((width - (count - 1) * widget.gap) / count)
-                                  .clamp(0.0, double.infinity)
-                            : widget.minColumnWidth.toDouble();
-                        return Wrap(
-                          spacing: widget.gap.toDouble(),
-                          runSpacing: widget.gap.toDouble(),
-                          children: [
-                            for (var i = 0; i < widget.fields!.length; i++)
-                              SizedBox(
-                                key: widget.fields![i].key == null
-                                    ? null
-                                    : ValueKey(widget.fields![i].key),
-                                width:
-                                    cellWidth * effectiveSpan(i, count) +
-                                    widget.gap * (effectiveSpan(i, count) - 1),
-                                child: widget.fields![i],
+              child: widget.sections != null
+                  ? Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        for (final section in widget.sections!)
+                          Padding(
+                            key: ValueKey(section.id),
+                            padding: const EdgeInsets.only(bottom: 24),
+                            child: Container(
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                border: Border.all(
+                                  color: Theme.of(context).dividerColor,
+                                ),
+                                borderRadius: BorderRadius.circular(8),
                               ),
-                          ],
-                        );
-                      },
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  Semantics(
+                                    header: true,
+                                    child: Text(
+                                      section.title,
+                                      style: Theme.of(
+                                        context,
+                                      ).textTheme.titleMedium,
+                                    ),
+                                  ),
+                                  if (section.description?.trim().isNotEmpty ??
+                                      false)
+                                    Padding(
+                                      padding: const EdgeInsets.only(top: 8),
+                                      child: Text(section.description!),
+                                    ),
+                                  const SizedBox(height: 16),
+                                  _FormFields(
+                                    fields: section.fields,
+                                    fieldSpans: section.fieldSpans,
+                                    columns: section.columns,
+                                    minColumnWidth: section.minColumnWidth,
+                                    gap: section.gap,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                      ],
+                    )
+                  : widget.fields == null
+                  ? widget.child!
+                  : _FormFields(
+                      fields: widget.fields!,
+                      fieldSpans: widget.fieldSpans,
+                      columns: widget.columns,
+                      minColumnWidth: widget.minColumnWidth,
+                      gap: widget.gap,
                     ),
             ),
           ),
@@ -836,4 +853,97 @@ class _NgFormState extends State<NgForm> {
       ),
     );
   }
+}
+
+/// Explicit section data; all sections share the containing NgForm.
+class NgFormSection {
+  final String id, title;
+  final String? description;
+  final List<Widget> fields;
+  final List<int>? fieldSpans;
+  final int columns, minColumnWidth, gap;
+  const NgFormSection({
+    required this.id,
+    required this.title,
+    required this.fields,
+    this.description,
+    this.fieldSpans,
+    this.columns = 1,
+    this.minColumnWidth = 240,
+    this.gap = 16,
+  });
+  void validate() {
+    if (id.trim().isEmpty || title.trim().isEmpty)
+      throw ArgumentError('A section needs a nonempty ID and title.');
+    if (columns < 1 ||
+        columns > 4 ||
+        minColumnWidth < 120 ||
+        minColumnWidth > 1200 ||
+        gap < 0 ||
+        gap > 64)
+      throw ArgumentError('Invalid section layout limits.');
+    if (fieldSpans != null &&
+        (fieldSpans!.length != fields.length ||
+            fieldSpans!.any((span) => span < 0 || span > 4)))
+      throw ArgumentError('Supply one span (0–4) per section field.');
+  }
+}
+
+class _FormFields extends StatelessWidget {
+  final List<Widget> fields;
+  final List<int>? fieldSpans;
+  final int columns, minColumnWidth, gap;
+  const _FormFields({
+    required this.fields,
+    this.fieldSpans,
+    required this.columns,
+    required this.minColumnWidth,
+    required this.gap,
+  });
+  int effectiveSpan(int index, int columns) {
+    final span = fieldSpans?[index] ?? 1;
+    return span == 0 ? columns : span.clamp(1, columns);
+  }
+
+  @override
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (context, constraints) {
+      // Keep the same Wrap/SizedBox tree across column changes so fields retain state.
+      final width = constraints.maxWidth;
+      final count = !width.isFinite
+          ? 1
+          : ((width + gap) / (minColumnWidth + gap))
+                .floor()
+                .clamp(1, columns)
+                .clamp(
+                  1,
+                  fields.isEmpty
+                      ? 1
+                      : List.generate(
+                          fields.length,
+                          (i) => fieldSpans?[i] ?? 1,
+                        ).fold<int>(
+                          0,
+                          (sum, span) => sum + (span == 0 ? columns : span),
+                        ),
+                );
+      final cellWidth = width.isFinite
+          ? ((width - (count - 1) * gap) / count).clamp(0.0, double.infinity)
+          : minColumnWidth.toDouble();
+      return Wrap(
+        spacing: gap.toDouble(),
+        runSpacing: gap.toDouble(),
+        children: [
+          for (var i = 0; i < fields.length; i++)
+            SizedBox(
+              key: fields[i].key == null ? null : ValueKey(fields[i].key),
+              width:
+                  cellWidth * effectiveSpan(i, count) +
+                  gap * (effectiveSpan(i, count) - 1),
+              child: fields[i],
+            ),
+        ],
+      );
+    },
+  );
 }

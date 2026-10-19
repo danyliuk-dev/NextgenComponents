@@ -732,3 +732,20 @@ Validation completed:
 Evidence: [Blazor flat editor](screenshots/text053-blazor-flat.png), [Flutter narrow TextArea](screenshots/text053-flutter-narrow.png), [desktop manual](screenshots/text053-desktop-manual.png).
 
 Full corner rounding is best suited to short single-line editors. Custom InputBorder subclasses, arbitrary border styling, IME-specific debounce handling and full accessibility/native certification remain outside this stage. Pixel/API compatibility with Telerik is not claimed.
+
+## Named form sections — 0.54 (2026-10-19, Linux on iMac)
+
+NgForm accepts explicit NgFormSection descriptors with unique stable IDs, plain-text headings/descriptions and independent responsive layout settings. Section fields use the same layout implementation as flat fields. A single form owns validation, summary, disabled/busy behavior and submit actions. Whole-section reordering preserves editor state.
+
+Validation completed:
+
+- 389 Blazor checks: section rendering, escaped headings, independent layout settings, invalid IDs/titles/layout/spans and mutually exclusive content modes. Gallery build passed with zero warnings/errors.
+- 231 Flutter tests and clean Dart analysis. New tests verify single-Form validation across sections, retained draft/focus/errors through reorder and resizing, guarded disabled content, semantic headings and rejected invalid descriptors.
+- 47 Razor and 47 Dart manual examples compiled/analyzed; 94 lossless highlighting checks. Flutter Web build passed with the existing CupertinoIcons font warning.
+- Foreground local Chrome: 19 Blazor and 16 Flutter section assertions. Headings/descriptions, independent span layout, section reorder, preserved drafts/errors, 390 px stacking without overflow and shared successful submit passed. Blazor also verifies one HTML form, legends and retained DOM focus; Flutter focus retention is covered by widget tests.
+- Flat-field regression scenarios passed on both platforms: 18 assertions each via `scripts/form-spans-check.py`, including resize/span changes, retained values/errors and save. Total browser assertions: 71.
+- Desktop shell opened the updated Form manual and switched its embedded live example to two named sections. Code and category navigation remained available. Screenshots were inspected directly.
+
+Evidence: [Blazor reordered sections](screenshots/form054-blazor-sections.png), [Flutter narrow sections](screenshots/form054-flutter-narrow.png), [desktop manual](screenshots/form054-desktop-manual.png).
+
+This stage provides one section level. Recursive groups, collapse/expand, automatic editors, conditional schemas and native/full screen-reader certification remain open. Removing sections and switching content modes have documented lifecycle and validation differences; the application owns persistence. Full Telerik API/pixel parity is not claimed.

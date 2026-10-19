@@ -3166,3 +3166,29 @@ Flat uses the same theme-aware surface as filled and hides the idle/disabled bor
 
 Changing these options retains text, selection, focus and validation and does not emit editing events. It also retains TextArea autosizing, read-only/disabled permissions and clear/password actions. Original design values are used; this is not Telerik API, theme or pixel compatibility.
 '''
+
+# Explicit form sections, 0.54.
+D['NgForm']['blazor'] = '<div class="ng-prompt-actions"><NgButton OnClick="()=>sectioned=!sectioned">Toggle sections</NgButton><NgButton OnClick="()=>reverseSections=!reverseSections">Reverse sections</NgButton></div>\n' + D['NgForm']['blazor'].replace('Fields="FormFields" FieldSpans="@(new[]{1,1,notesSpan,1})"', 'Sections="@(sectioned?FormSections:null)" Fields="@(sectioned?null:FormFields)" FieldSpans="@(sectioned?null:new[]{1,1,notesSpan,1})"').replace('@code {', '''@code {
+ private bool sectioned,reverseSections;
+ private IReadOnlyList<NgFormSection> FormSections {
+  get {var sections=new[]{new NgFormSection("identity","Application details",new[]{NameField,OwnerField},Description:"Name and owner are required.",Columns:columns,Gap:gap),new NgFormSection("delivery","Delivery instructions",new[]{NotesField,ReferenceField},Description:"Add notes and a reference for the team.",Columns:columns,Gap:gap,FieldSpans:new[]{notesSpan,1})};return reverseSections?sections.Reverse().ToArray():sections;}
+ }
+''')
+D['NgForm']['dart'] = "bool sectioned=false,reverseSections=false;\n" + D['NgForm']['dart'].replace('children:[', "children:[\n Wrap(spacing:8,children:[NgButton(onPressed:()=>setState(()=>sectioned=!sectioned),child:const Text('Toggle sections')),NgButton(onPressed:()=>setState(()=>reverseSections=!reverseSections),child:const Text('Reverse sections'))]),",1).replace('fieldSpans:[1,1,notesSpan,1]', 'fieldSpans:sectioned?null:[1,1,notesSpan,1]')
+# Extract the same field expressions into a method used by both layouts.
+_s = D['NgForm']['dart'];_a=_s.index('},fields:[')+len('},fields:');_b=_s.index('],actionsBuilder:',_a)+1
+_fields=_s[_a:_b]
+_s=_s[:_a]+"sectioned?null:formFields(),sections:sectioned?formSections():null"+_s[_b:]
+_s += "\nList<Widget> formFields()=>"+_fields+";\nList<NgFormSection> formSections(){final fields=formFields();final sections=[NgFormSection(id:'identity',title:'Application details',description:'Name and owner are required.',fields:fields.sublist(0,2),columns:columns,gap:gap),NgFormSection(id:'delivery',title:'Delivery instructions',description:'Add notes and a reference for the team.',fields:fields.sublist(2),columns:columns,gap:gap,fieldSpans:[notesSpan,1])];return reverseSections?sections.reversed.toList():sections;}\n"
+D['NgForm']['dart']=_s
+D['NgForm']['notes'] += '''
+
+### Named sections (0.54)
+Sections/sections accepts an ordered list of NgFormSection descriptors instead of Fields/fields or legacy content. These three content modes are mutually exclusive. A section requires a nonblank Id/id, Title/title and Fields/fields; IDs must be unique within the form and stable across rebuilds. Description/description is optional plain text. Empty lists are allowed. Each section owns Columns/columns (default 1), MinColumnWidth/minColumnWidth (240), Gap/gap (16) and optional FieldSpans/fieldSpans with the same bounds as flat fields. Form-level layout values do not override section settings; form-level spans require flat fields and cannot accompany sections.
+
+Sections share one form, model, validation summary and guarded submit action. An error in any mounted section prevents saving. Disabled/busy behavior applies to every section. Blazor uses fieldset/legend headings and Flutter exposes semantic headings; no nested HTML forms or independent Flutter Forms are created. IDs are reconciliation keys, not DOM IDs. Titles/descriptions render as text.
+
+Reordering whole sections with stable IDs preserves field state, focus and validation. Changing headings or section layout also retains fields. Keep field order stable inside each section or apply the earlier keyed-field rules. Removing a section unmounts its editors; persistence is the application's responsibility. Blazor model validation may still report required properties of removed sections; Flutter validates currently mounted fields. Changing between legacy, flat and section modes rebuilds editors and can reset local editor/validation state, so choose a mode when constructing the form. The demo retains values in its model while switching modes.
+
+This release supplies one level of named sections. Recursive groups, collapse/expand behavior, automatic model fields and conditional schemas remain open. Sections are a form data contract, not additional catalog components.
+'''

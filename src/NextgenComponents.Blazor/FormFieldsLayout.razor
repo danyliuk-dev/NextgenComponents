@@ -1,0 +1,24 @@
+@* Shared layout only: never creates an EditForm or validation context. *@
+<style>@((MarkupString)LayoutRules)</style>
+<div class="ng-form-layout @layoutId" style="@LayoutStyle">
+ @for(var i=0;i<Fields.Count;i++){<div class="ng-form-cell" style="@SpanStyle(i)">@Fields[i]</div>}
+</div>
+@code {
+ private string LayoutStyle=>$"--ng-form-columns:{Columns};--ng-form-min:{MinColumnWidth}px;--ng-form-gap:{Gap}px";
+ [Parameter,EditorRequired] public IReadOnlyList<RenderFragment> Fields {get;set;}=Array.Empty<RenderFragment>();
+ [Parameter] public IReadOnlyList<int>? FieldSpans {get;set;}
+ [Parameter] public int Columns {get;set;}=1;
+ [Parameter] public int MinColumnWidth {get;set;}=240;
+ [Parameter] public int Gap {get;set;}=16;
+ private readonly string layoutId="ng-form-layout-"+Guid.NewGuid().ToString("N");
+ private int SpanAt(int index)=>FieldSpans?[index]??1;
+ private string SpanStyle(int index)=>$"grid-column:span {(SpanAt(index)==0?"var(--ng-form-count)":$"min({SpanAt(index)},var(--ng-form-count))")}";
+ private int MaximumColumns=>Math.Min(Columns,Math.Max(1,Fields is null?1:Enumerable.Range(0,Fields.Count).Sum(i=>SpanAt(i)==0?Columns:SpanAt(i))));
+ private string LayoutRules {
+  get {
+   var rules="."+layoutId+"{--ng-form-count:1}";
+   for(var c=2;c<=MaximumColumns;c++)rules+="@container ng-form-columns (min-width:"+(c*MinColumnWidth+(c-1)*Gap)+"px){."+layoutId+"{--ng-form-count:"+c+"}}";
+   return rules;
+  }
+ }
+}

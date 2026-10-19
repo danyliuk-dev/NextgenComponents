@@ -9,9 +9,16 @@
 }
 <fieldset class="@(Fields is null?"ng-form-fields":"ng-form-fields ng-form-container")" disabled="@(Disabled||busy)" aria-busy="@(busy?"true":"false")">
 @if(Fields is not null){
- <style>@((MarkupString)LayoutRules)</style>
- <div class="ng-form-layout @layoutId" style="@LayoutStyle">
- @for(var i=0;i<Fields.Count;i++){<div class="ng-form-cell" style="@SpanStyle(i)">@Fields[i]</div>}
+ <FormFieldsLayout Fields="Fields" FieldSpans="FieldSpans" Columns="Columns" MinColumnWidth="MinColumnWidth" Gap="Gap" />
+}else if(Sections is not null){
+ <div class="ng-form-sections">
+ @foreach(var group in Sections){
+  <fieldset @key="group.Id" class="ng-form-section">
+   <legend>@group.Title</legend>
+   @if(!string.IsNullOrWhiteSpace(group.Description)){<p class="ng-form-section-description">@group.Description</p>}
+   <div class="ng-form-container"><FormFieldsLayout Fields="group.Fields" FieldSpans="group.FieldSpans" Columns="group.Columns" MinColumnWidth="group.MinColumnWidth" Gap="group.Gap" /></div>
+  </fieldset>
+ }
  </div>
 }else{@ChildContent}
 @if(Actions is not null){<div class="ng-form-actions">@Actions</div>}
@@ -37,22 +44,11 @@
  [Parameter] public string ErrorText {get;set;}="Unable to save. Try again.";
  [Parameter] public IReadOnlyList<RenderFragment>? Fields {get;set;}
  [Parameter] public IReadOnlyList<int>? FieldSpans {get;set;}
- private readonly string layoutId="ng-form-layout-"+Guid.NewGuid().ToString("N");
- private int SpanAt(int index)=>FieldSpans?[index]??1;
- private string SpanStyle(int index)=>$"grid-column:span {(SpanAt(index)==0?"var(--ng-form-count)":$"min({SpanAt(index)},var(--ng-form-count))")}";
- private int MaximumColumns=>Math.Min(Columns,Math.Max(1,Fields is null?1:Enumerable.Range(0,Fields.Count).Sum(i=>SpanAt(i)==0?Columns:SpanAt(i))));
- private string LayoutRules {
-  get {
-   var rules="."+layoutId+"{--ng-form-count:1}";
-   for(var c=2;c<=MaximumColumns;c++)rules+="@container ng-form-columns (min-width:"+(c*MinColumnWidth+(c-1)*Gap)+"px){."+layoutId+"{--ng-form-count:"+c+"}}";
-   return rules;
-  }
- }
+ [Parameter] public IReadOnlyList<NgFormSection>? Sections {get;set;}
  [Parameter] public int Columns {get;set;}=1;
  [Parameter] public int MinColumnWidth {get;set;}=240;
  [Parameter] public int Gap {get;set;}=16;
  [Parameter] public RenderFragment? Actions {get;set;}
- private string LayoutStyle=>$"--ng-form-columns:{Columns};--ng-form-min:{MinColumnWidth}px;--ng-form-gap:{Gap}px";
  [Parameter] public RenderFragment? ChildContent {get;set;}
  [Parameter] public EventCallback<EditContext> OnValidSubmit {get;set;}
  [Parameter] public EventCallback<EditContext> OnInvalidSubmit {get;set;}
@@ -61,9 +57,13 @@
   if(Columns is <1 or >4)throw new ArgumentOutOfRangeException(nameof(Columns));
   if(MinColumnWidth is <120 or >1200)throw new ArgumentOutOfRangeException(nameof(MinColumnWidth));
   if(Gap is <0 or >64)throw new ArgumentOutOfRangeException(nameof(Gap));
-  if(Fields is not null&&ChildContent is not null)throw new ArgumentException("Use Fields or ChildContent, not both.");
+  if(new object?[]{Fields,Sections,ChildContent}.Count(value=>value is not null)>1)throw new ArgumentException("Use Fields, Sections or ChildContent, not more than one.");
   if(FieldSpans is not null&&(Fields is null||FieldSpans.Count!=Fields.Count||FieldSpans.Any(span=>span is <0 or >4)))throw new ArgumentException("Supply one span (0–4) per field; zero fills the row.",nameof(FieldSpans));
   if(Fields?.Any(f=>f is null)==true)throw new ArgumentException("Fields cannot contain null entries.",nameof(Fields));
+  if(Sections is not null){
+   if(Sections.Any(section=>section is null)||Sections.Select(section=>section.Id).Distinct(StringComparer.Ordinal).Count()!=Sections.Count)throw new ArgumentException("Sections need unique nonempty IDs.",nameof(Sections));
+   foreach(var group in Sections)group.Validate();
+  }
 if(!ReferenceEquals(previous,Model)||editContext is null){
   if(editContext is not null)editContext.OnValidationStateChanged-=ValidationChanged;
   editContext=new EditContext(Model);editContext.OnValidationStateChanged+=ValidationChanged;

@@ -205,3 +205,8 @@ textarea.ng-textarea-auto{box-sizing:border-box;line-height:1.5;resize:none}
 .ng-text-rounded-full>.ng-input{border-radius:9999px}
 .ng-text-fill-flat>.ng-input{background:var(--ng-subtle)}
 .ng-text-fill-flat>.ng-input:not(:focus):not(.invalid){border-color:transparent}
+
+.ng-form-sections{display:flex;flex-direction:column;gap:24px;min-width:0}
+.ng-form-section{margin:0;padding:16px;min-width:0;border:1px solid var(--ng-border);border-radius:8px}
+.ng-form-section>legend{padding:0 8px;font-weight:700}
+.ng-form-section-description{margin:0 0 16px;color:var(--ng-muted)}
