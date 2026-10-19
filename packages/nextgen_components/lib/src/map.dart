@@ -107,7 +107,7 @@ class NgMapModel {
 }
 
 /// Interactive map for Web. Native platforms show an explicit placeholder.
-class NgMap extends StatelessWidget {
+class NgMap extends StatefulWidget {
   final String label;
   final NgMapModel value;
   final NgMapView? view;
@@ -115,6 +115,8 @@ class NgMap extends StatelessWidget {
   final String attribution;
   final double height;
   final bool clusterMarkers;
+  final bool navigationReadOnly, selectionReadOnly, mapClickReadOnly;
+  final String emptyText;
   final int clusterRadius;
   final ValueChanged<NgMapView>? onViewChanged;
   final ValueChanged<String?>? onSelectedIdChanged;
@@ -130,13 +132,40 @@ class NgMap extends StatelessWidget {
     this.attributionUrl,
     this.height = 520,
     this.clusterMarkers = false,
+    this.navigationReadOnly = false,
+    this.selectionReadOnly = false,
+    this.mapClickReadOnly = false,
+    this.emptyText = 'No objects',
     this.clusterRadius = 60,
     this.onViewChanged,
     this.onSelectedIdChanged,
     this.onMapClick,
   });
   @override
+  State<NgMap> createState() => _NgMapState();
+}
+
+class _NgMapState extends State<NgMap> {
+  int revision = 0;
+  @override
+  void didUpdateWidget(covariant NgMap oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    revision++;
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final clusterRadius = widget.clusterRadius,
+        height = widget.height,
+        tileUrlTemplate = widget.tileUrlTemplate,
+        attributionUrl = widget.attributionUrl,
+        attribution = widget.attribution,
+        value = widget.value,
+        view = widget.view,
+        selectedId = widget.selectedId,
+        clusterMarkers = widget.clusterMarkers,
+        label = widget.label;
+    final expected = revision;
     if (clusterRadius < 20 || clusterRadius > 120)
       throw ArgumentError('Cluster radius must be 20–120 pixels.');
     if (!height.isFinite || height < 400 || height > 1200)
@@ -149,13 +178,20 @@ class NgMap extends StatelessWidget {
       }
     }
     if (tileUrlTemplate != null &&
-        tileUrlTemplate!.trim().isNotEmpty &&
-        (!['{z}', '{x}', '{y}'].every(tileUrlTemplate!.contains) ||
+        tileUrlTemplate.trim().isNotEmpty &&
+        (!['{z}', '{x}', '{y}'].every(tileUrlTemplate.contains) ||
             attribution.trim().isEmpty))
       throw ArgumentError(
         'Tile URL needs {z}, {x}, {y} and visible attribution.',
       );
     final config = jsonEncode({
+      'revision': revision,
+      'navigationReadOnly': widget.navigationReadOnly,
+      'selectionEnabled':
+          !widget.selectionReadOnly && widget.onSelectedIdChanged != null,
+      'clickEnabled': !widget.mapClickReadOnly && widget.onMapClick != null,
+      'controlledView': widget.onViewChanged != null,
+      'emptyText': widget.emptyText,
       'model': value.toJson(),
       'clusterMarkers': clusterMarkers,
       'clusterRadius': clusterRadius,
@@ -174,30 +210,49 @@ class NgMap extends StatelessWidget {
         SizedBox(
           height: height,
           child: platform.mapFrame(config, label, (json) {
-            final e = jsonDecode(json) as Map<String, dynamic>;
-            switch (e['kind']) {
+            if (!mounted || expected != revision) return;
+            String? kind, id;
+            NgMapPoint? point;
+            NgMapView? nextView;
+            try {
+              final e = jsonDecode(json) as Map<String, dynamic>;
+              if (e['revision'] is! int || e['revision'] != revision) return;
+              kind = e['kind'] as String?;
+              if (kind == 'selection' && !e.containsKey('id')) return;
+              if (kind == 'selection')
+                id = e['id'] as String?;
+              else if (kind == 'view')
+                nextView = NgMapView(
+                  latitude: (e['latitude'] as num).toDouble(),
+                  longitude: (e['longitude'] as num).toDouble(),
+                  zoom: e['zoom'] as int,
+                );
+              else if (kind == 'click')
+                point = NgMapPoint(
+                  (e['latitude'] as num).toDouble(),
+                  (e['longitude'] as num).toDouble(),
+                );
+            } on FormatException {
+              return;
+            } on ArgumentError {
+              return;
+            } on TypeError {
+              return;
+            }
+            switch (kind) {
               case 'selection':
-                final id = e['id'] as String?;
-                if (id == null ||
-                    value.markers.any((m) => m.id == id) ||
-                    value.paths.any((p) => p.id == id))
-                  onSelectedIdChanged?.call(id);
+                if (!widget.selectionReadOnly &&
+                    (id == null ||
+                        value.markers.any((m) => m.id == id) ||
+                        value.paths.any((p) => p.id == id)))
+                  widget.onSelectedIdChanged?.call(id);
                 break;
               case 'view':
-                onViewChanged?.call(
-                  NgMapView(
-                    latitude: (e['latitude'] as num).toDouble(),
-                    longitude: (e['longitude'] as num).toDouble(),
-                    zoom: e['zoom'] as int,
-                  ),
-                );
+                if (!widget.navigationReadOnly)
+                  widget.onViewChanged?.call(nextView!);
                 break;
               case 'click':
-                final lat = (e['latitude'] as num).toDouble();
-                if (lat.abs() <= 85.05112878)
-                  onMapClick?.call(
-                    NgMapPoint(lat, (e['longitude'] as num).toDouble()),
-                  );
+                if (!widget.mapClickReadOnly) widget.onMapClick?.call(point!);
                 break;
             }
           }),

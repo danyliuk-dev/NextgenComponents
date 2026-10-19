@@ -508,23 +508,34 @@ Widget build(BuildContext context) => const NgPdfViewer(
 }
 class NgMapExample extends StatefulWidget { const NgMapExample({super.key}); @override State<NgMapExample> createState()=>_NgMapExampleState(); }
 class _NgMapExampleState extends State<NgMapExample> {
+NgMapModel sample([bool updated=false]) => NgMapModel(markers:[
+  NgMapMarker('office',updated?'Office updated':'Office',NgMapPoint(50.4501,30.5234)),
+  NgMapMarker('depot','Depot',NgMapPoint(50.4501,30.5234)),
+  NgMapMarker('park','Park',NgMapPoint(50.4466,30.5410)),
+],paths:[NgMapPath('line','Delivery line',[NgMapPoint(50.4501,30.5234),NgMapPoint(50.4466,30.5410)])]);
+late NgMapModel map=sample();
+NgMapView view=NgMapView(latitude:50.4501,longitude:30.5234,zoom:13);
 String? selected;
-String last = '';
-NgMapView view = NgMapView(latitude: 50.4501, longitude: 30.5234, zoom: 13);
-final map = NgMapModel(markers: [
-  NgMapMarker('office', 'Office', NgMapPoint(50.4501, 30.5234)),
-  NgMapMarker('park', 'Park', NgMapPoint(50.4466, 30.5410)),
-], paths: [NgMapPath('line', 'Line', [
-  NgMapPoint(50.4501, 30.5234), NgMapPoint(50.4466, 30.5410),
-])]);
-Widget build(BuildContext context) => NgMap(label: 'Objects', value: map,
-  view: view, selectedId: selected, clusterMarkers: true, clusterRadius: 60,
-  onViewChanged: (v) => setState(() => view = v),
-  onSelectedIdChanged: (id) => setState(() => selected = id),
-  onMapClick: (p) => setState(() => last = '${p.latitude}, ${p.longitude}'),
-  tileUrlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-  attribution: '© OpenStreetMap contributors',
-  attributionUrl: 'https://www.openstreetmap.org/copyright');
+bool navigationLocked=false,selectionLocked=false,clickLocked=false,accept=true;
+int selections=0,views=0,clicks=0;
+Widget build(BuildContext context)=>Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
+  Wrap(spacing:8,runSpacing:8,children:[
+    NgButton(onPressed:()=>setState(()=>navigationLocked=!navigationLocked),child:const Text('Toggle navigation lock')),
+    NgButton(onPressed:()=>setState(()=>selectionLocked=!selectionLocked),child:const Text('Toggle selection lock')),
+    NgButton(onPressed:()=>setState(()=>clickLocked=!clickLocked),child:const Text('Toggle click lock')),
+    NgButton(onPressed:()=>setState(()=>accept=!accept),child:const Text('Toggle acceptance')),
+    NgButton(onPressed:()=>setState(()=>map=sample(true)),child:const Text('Replace objects')),
+    NgButton(onPressed:()=>setState(()=>map=map.markers.isEmpty?sample():NgMapModel()),child:const Text('Toggle empty map')),
+    NgButton(onPressed:()=>setState(()=>view=NgMapView(latitude:50.4501,longitude:30.5234,zoom:10)),child:const Text('Reset view')),
+  ]),
+  Text('Selected: ${selected??"none"} · View zoom: ${view.zoom} · Selection requests: $selections · View requests: $views · Map clicks: $clicks'),
+  Text('Acceptance: ${accept?"enabled":"rejected"}'),
+  NgMap(label:'Delivery map',value:map,view:view,selectedId:selected,clusterMarkers:true,
+    navigationReadOnly:navigationLocked,selectionReadOnly:selectionLocked,mapClickReadOnly:clickLocked,emptyText:'No delivery points',
+    onSelectedIdChanged:(id)=>setState((){selections++;if(accept)selected=id;}),
+    onViewChanged:(next)=>setState((){views++;if(accept)view=next;}),
+    onMapClick:(point)=>setState(()=>clicks++)),
+]);
 }
 class NgPromptBoxExample extends StatefulWidget { const NgPromptBoxExample({super.key}); @override State<NgPromptBoxExample> createState()=>_NgPromptBoxExampleState(); }
 class _NgPromptBoxExampleState extends State<NgPromptBoxExample> {

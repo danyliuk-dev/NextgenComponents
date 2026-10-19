@@ -1,4 +1,4 @@
-# Map capabilities — 0.9.1
+# Map capabilities — 0.43
 
 Reference audit: [Telerik Map overview](https://www.telerik.com/blazor-ui/documentation/components/map/overview), 2026-10-18. The reference includes tile, marker, shape and bubble layers. Nextgen implements the bounded subset below with its own API; this is not full parity.
 
@@ -18,7 +18,7 @@ Reference audit: [Telerik Map overview](https://www.telerik.com/blazor-ui/docume
 
 Limits: 500 markers, 100 paths, 5000 path points; Web Mercator latitude ±85.05112878, longitude ±180, zoom 0–19. Simple lines do not calculate routes or handle dateline crossings. One provider per map. Theme changes affect interface chrome; map imagery stays as supplied by the provider.
 
-[Detailed Russian manual with runnable code and API](manual/NgMap.md). Gallery: Blazor `/map`; Flutter home → Map. The demo offers data reset, empty data, missing tiles, no basemap and background-click marker creation.
+[Detailed English manual with runnable code and API](manual/NgMap.md). Gallery: Blazor `/map`; Flutter home → Map. The demo offers data reset, empty data, missing tiles, no basemap and background-click marker creation.
 
 Leaflet 1.9.4 is vendored locally under BSD-2-Clause; see `shared/map-viewer/vendor/LICENSE` and `PROVENANCE.md`. Synchronize with `python3 scripts/sync_map_assets.py`; `--check` compares both package copies byte for byte. No third-party component source from Telerik is included.
 
@@ -29,3 +29,9 @@ Tile providers are configured by the application. The gallery uses OpenStreetMap
 Opt in with `ClusterMarkers` / `clusterMarkers`; radius defaults to 60 CSS pixels (20–120). Groups are deterministic by ID, use projected world pixels and are stable while panning. Selected markers remain individual. A group click zooms toward its members; coincident points or zoom 19 open a scrollable member chooser. Group activation supports Enter and Space. Paths are unaffected; the model limit remains 500 markers. No new external dependency.
 
 Regression checks: `node tests/map/clusters.test.mjs`. With the galleries running and the coordinated visible Chrome task session on port 9341, run `node scripts/chrome-review.mjs tests/map/blazor-browser-regression.json` and the corresponding `flutter-browser-regression.json`. These verify keyboard activation, narrow layout and that the chooser stays visibly open after automatic panning and the parent view callback. They are not headless tests.
+
+## Controlled state and permissions (0.43)
+
+NavigationReadOnly, SelectionReadOnly and MapClickReadOnly are independent. Parent updates still apply under locks. Selection is accepted only when the parent returns the ID; no handler disables selection. ViewChanged makes navigation controlled: accepting returns the proposed view, rejecting returns the prior one. Programmatic reconciliation does not emit feedback events. With no view handler, navigation remains local. Object-list selection opens the accepted popup without automatic panning; Fit data brings distant objects into view.
+
+Configuration revisions protect the host from stale iframe events; invalid IDs and malformed/out-of-range coordinates are ignored. EmptyText customizes the empty list. The manual example uses no tile provider for deterministic interaction checks. Flutter remains Web-only. Late host-side async responses still require ordering.

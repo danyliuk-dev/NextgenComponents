@@ -29,9 +29,15 @@ NgMapModel copies collections and exposes read-only data. IDs are unique across 
 ### View and events
 View defines center and integer zoom 0–19 (initial 0,0,2). Drag pans; wheel/double-click/+/- zoom. Focused maps accept arrows and +/-. Fit data fits all objects with padding and zoom at most 14; empty models disable it. Data changes do not auto-fit. The center is limited to world bounds.
 
-Store ViewChanged/onViewChanged after movement, zoom, fit or programmatic changes. SelectedId is one object ID or null; selection callbacks report marker/path IDs or null after Clear selection. Unknown IDs appear unselected without correcting parent state. Objects buttons are keyboard accessible and open object popups; objects are also clickable directly. OnMapClick reports a coordinate only for free background, not object clicks. To add a marker, build a new NgMapModel with the old items and a uniquely identified marker. No address/geocoding is returned.
+When ViewChanged/onViewChanged is supplied, View is controlled: return the proposed view to accept navigation, or rebuild with the previous View to reject it. A rejected view is restored without a feedback callback. With no view callback, navigation is local; changing the supplied View still resets it. Parent-driven view updates do not emit view events. Flutter hosts must rebuild after acceptance or rejection. Async host responses need ordering against newer state. SelectedId is one object ID or null; selection callbacks report marker/path IDs or null after Clear selection. Unknown IDs appear unselected without correcting parent state. Selection requires SelectedIdChanged/onSelectedIdChanged and is parent-controlled: a rejected proposal leaves highlighting and popup unchanged. Objects buttons are keyboard accessible and open accepted object popups without automatic panning; use Fit data to bring distant objects into view; objects are also clickable directly. OnMapClick reports a coordinate only for free background, not object clicks. To add a marker, build a new NgMapModel with the old items and a uniquely identified marker. No address/geocoding is returned.
 
-Height: 400–1200, default 520. Below 540 px the Objects list moves under the map and scrolls horizontally. Label also names the iframe. Blazor Dark is explicit; Flutter reads Theme. Theme/model updates preserve the iframe/view when View is unchanged; provider imagery is not inverted.
+Height: 400–1200, default 520. Below 540 px the Objects list moves under the map and scrolls horizontally. Label also names the iframe. Blazor Dark is explicit; Flutter reads Theme. Theme/model updates preserve the iframe; controlled views reconcile to the supplied View on each update, while local navigation keeps its view when the supplied View is unchanged; provider imagery is not inverted.
+
+### Independent interaction locks
+
+NavigationReadOnly/navigationReadOnly disables user pan, wheel/touch/double-click/keyboard zoom, zoom controls and Fit data. Parent view updates still apply. SelectionReadOnly/selectionReadOnly disables object selection, cluster member selection and Clear selection; missing selection callbacks have the same effect. MapClickReadOnly/mapClickReadOnly independently suppresses background-click callbacks; missing click callbacks also suppress events. All locks default to false.
+
+An updated configuration cancels active navigation. Events carry a configuration revision: old iframe messages cannot select reused IDs or change a replacement view. Invalid message shapes, out-of-range coordinates and messages after disposal are ignored. EmptyText/emptyText customizes the object-list empty message. Cluster zoom respects navigation locks; coincident points or locked navigation can still show the chooser when selection is enabled. The example uses no basemap and makes no tile requests.
 
 ### Clustering
 ClusterMarkers defaults to false. ClusterRadius is an integer 20–120 CSS px, default 60, validated even when clustering is off. Distance is screen distance at the current zoom, not meters. Markers sort by ID and group around the first point; neighbor chains do not merge indefinitely. Input ordering and panning do not change membership; zoom recalculates groups. Date-line points are not clustered together.
@@ -46,40 +52,68 @@ No objects, No basemap configured, Loading tiles, Tiles loaded and Some map tile
 ## Blazor example
 
 ```razor
-<NgMap Label="Objects" Value="map" ClusterMarkers="true" ClusterRadius="60" @bind-View="view" @bind-SelectedId="selected"
-    OnMapClick="Clicked" TileUrlTemplate="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
-    Attribution="© OpenStreetMap contributors" AttributionUrl="https://www.openstreetmap.org/copyright"/>
-<p>Selected: @selected; last point: @last</p>
+<div class="row">
+<NgButton OnClick="()=>navigationLocked=!navigationLocked">Toggle navigation lock</NgButton>
+<NgButton OnClick="()=>selectionLocked=!selectionLocked">Toggle selection lock</NgButton>
+<NgButton OnClick="()=>clickLocked=!clickLocked">Toggle click lock</NgButton>
+<NgButton OnClick="()=>accept=!accept">Toggle acceptance</NgButton>
+<NgButton OnClick="()=>map=Sample(true)">Replace objects</NgButton>
+<NgButton OnClick="()=>map=map.Markers.Count==0?Sample():new()">Toggle empty map</NgButton>
+<NgButton OnClick="()=>view=new(50.4501,30.5234,10)">Reset view</NgButton>
+</div>
+<p>Selected: @(selected??"none") · View zoom: @view.Zoom · Selection requests: @selections · View requests: @views · Map clicks: @clicks</p>
+<p>Acceptance: @(accept?"enabled":"rejected")</p>
+<NgMap Label="Delivery map" Value="map" View="view" ViewChanged="ViewChanged" SelectedId="@selected" SelectedIdChanged="Select"
+    OnMapClick="Clicked" ClusterMarkers="true" NavigationReadOnly="navigationLocked" SelectionReadOnly="selectionLocked"
+    MapClickReadOnly="clickLocked" EmptyText="No delivery points"/>
 @code {
- private string? selected; private string last="";
+ private string? selected;
+ private bool navigationLocked,selectionLocked,clickLocked;
+ private bool accept=true;
+ private int selections,views,clicks;
  private NgMapView view=new(50.4501,30.5234,13);
- private NgMapModel map=new(
-   [new("office","Office",new(50.4501,30.5234)),new("park","Park",new(50.4466,30.5410))],
-   [new("line","Line",[new(50.4501,30.5234),new(50.4466,30.5410)])]);
- private void Clicked(NgMapPoint p){last=$"{p.Latitude:F4}, {p.Longitude:F4}";}
+ private NgMapModel map=Sample();
+ private static NgMapModel Sample(bool updated=false)=>new([
+   new("office",updated?"Office updated":"Office",new(50.4501,30.5234)),
+   new("depot","Depot",new(50.4501,30.5234)),new("park","Park",new(50.4466,30.5410))
+ ],[new("line","Delivery line",[new(50.4501,30.5234),new(50.4466,30.5410)])]);
+ private void Select(string? id){selections++;if(accept)selected=id;}
+ private void ViewChanged(NgMapView next){views++;if(accept)view=next;}
+ private void Clicked(NgMapPoint point){clicks++;}
 }
 ```
 
 ## Flutter example
 
 ```dart
+NgMapModel sample([bool updated=false]) => NgMapModel(markers:[
+  NgMapMarker('office',updated?'Office updated':'Office',NgMapPoint(50.4501,30.5234)),
+  NgMapMarker('depot','Depot',NgMapPoint(50.4501,30.5234)),
+  NgMapMarker('park','Park',NgMapPoint(50.4466,30.5410)),
+],paths:[NgMapPath('line','Delivery line',[NgMapPoint(50.4501,30.5234),NgMapPoint(50.4466,30.5410)])]);
+late NgMapModel map=sample();
+NgMapView view=NgMapView(latitude:50.4501,longitude:30.5234,zoom:13);
 String? selected;
-String last = '';
-NgMapView view = NgMapView(latitude: 50.4501, longitude: 30.5234, zoom: 13);
-final map = NgMapModel(markers: [
-  NgMapMarker('office', 'Office', NgMapPoint(50.4501, 30.5234)),
-  NgMapMarker('park', 'Park', NgMapPoint(50.4466, 30.5410)),
-], paths: [NgMapPath('line', 'Line', [
-  NgMapPoint(50.4501, 30.5234), NgMapPoint(50.4466, 30.5410),
-])]);
-Widget build(BuildContext context) => NgMap(label: 'Objects', value: map,
-  view: view, selectedId: selected, clusterMarkers: true, clusterRadius: 60,
-  onViewChanged: (v) => setState(() => view = v),
-  onSelectedIdChanged: (id) => setState(() => selected = id),
-  onMapClick: (p) => setState(() => last = '${p.latitude}, ${p.longitude}'),
-  tileUrlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-  attribution: '© OpenStreetMap contributors',
-  attributionUrl: 'https://www.openstreetmap.org/copyright');
+bool navigationLocked=false,selectionLocked=false,clickLocked=false,accept=true;
+int selections=0,views=0,clicks=0;
+Widget build(BuildContext context)=>Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
+  Wrap(spacing:8,runSpacing:8,children:[
+    NgButton(onPressed:()=>setState(()=>navigationLocked=!navigationLocked),child:const Text('Toggle navigation lock')),
+    NgButton(onPressed:()=>setState(()=>selectionLocked=!selectionLocked),child:const Text('Toggle selection lock')),
+    NgButton(onPressed:()=>setState(()=>clickLocked=!clickLocked),child:const Text('Toggle click lock')),
+    NgButton(onPressed:()=>setState(()=>accept=!accept),child:const Text('Toggle acceptance')),
+    NgButton(onPressed:()=>setState(()=>map=sample(true)),child:const Text('Replace objects')),
+    NgButton(onPressed:()=>setState(()=>map=map.markers.isEmpty?sample():NgMapModel()),child:const Text('Toggle empty map')),
+    NgButton(onPressed:()=>setState(()=>view=NgMapView(latitude:50.4501,longitude:30.5234,zoom:10)),child:const Text('Reset view')),
+  ]),
+  Text('Selected: ${selected??"none"} · View zoom: ${view.zoom} · Selection requests: $selections · View requests: $views · Map clicks: $clicks'),
+  Text('Acceptance: ${accept?"enabled":"rejected"}'),
+  NgMap(label:'Delivery map',value:map,view:view,selectedId:selected,clusterMarkers:true,
+    navigationReadOnly:navigationLocked,selectionReadOnly:selectionLocked,mapClickReadOnly:clickLocked,emptyText:'No delivery points',
+    onSelectedIdChanged:(id)=>setState((){selections++;if(accept)selected=id;}),
+    onViewChanged:(next)=>setState((){views++;if(accept)view=next;}),
+    onMapClick:(point)=>setState(()=>clicks++)),
+]);
 ```
 
 ## Blazor parameters and events
@@ -101,6 +135,10 @@ Names are case-sensitive. `?` permits null. `EditorRequired` parameters are mark
 | `ClusterMarkers` | `bool` | false | See the behavior rules and model contract above. |
 | `ClusterRadius` | `int` | 60 | See the behavior rules and model contract above. |
 | `Dark` | `bool` | false | See the behavior rules and model contract above. |
+| `NavigationReadOnly` | `bool` | false | See the behavior rules and model contract above. |
+| `SelectionReadOnly` | `bool` | false | See the behavior rules and model contract above. |
+| `MapClickReadOnly` | `bool` | false | See the behavior rules and model contract above. |
+| `EmptyText` | `string` | "No objects" | See the behavior rules and model contract above. |
 | `Height` | `int` | 520 | See the behavior rules and model contract above. |
 
 ## Flutter parameters and events
@@ -118,6 +156,10 @@ Names are case-sensitive. `?` permits null. `EditorRequired` parameters are mark
 | `attribution` | `String` | See the behavior rules and model contract above. |
 | `height` | `double` | See the behavior rules and model contract above. |
 | `clusterMarkers` | `bool` | See the behavior rules and model contract above. |
+| `navigationReadOnly` | `bool` | See the behavior rules and model contract above. |
+| `selectionReadOnly` | `bool` | See the behavior rules and model contract above. |
+| `mapClickReadOnly` | `bool` | See the behavior rules and model contract above. |
+| `emptyText` | `String` | See the behavior rules and model contract above. |
 | `clusterRadius` | `int` | See the behavior rules and model contract above. |
 | `onViewChanged` | `ValueChanged<NgMapView>?` | See the behavior rules and model contract above. |
 | `onSelectedIdChanged` | `ValueChanged<String?>?` | Selected item ID for the parent to store. |
@@ -135,6 +177,10 @@ const NgMap({
     this.attributionUrl,
     this.height = 520,
     this.clusterMarkers = false,
+    this.navigationReadOnly = false,
+    this.selectionReadOnly = false,
+    this.mapClickReadOnly = false,
+    this.emptyText = 'No objects',
     this.clusterRadius = 60,
     this.onViewChanged,
     this.onSelectedIdChanged,

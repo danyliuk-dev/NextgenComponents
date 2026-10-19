@@ -1,13 +1,30 @@
 @* Generated from scripts/manual_content.py *@
-<NgMap Label="Objects" Value="map" ClusterMarkers="true" ClusterRadius="60" @bind-View="view" @bind-SelectedId="selected"
-    OnMapClick="Clicked" TileUrlTemplate="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
-    Attribution="© OpenStreetMap contributors" AttributionUrl="https://www.openstreetmap.org/copyright"/>
-<p>Selected: @selected; last point: @last</p>
+<div class="row">
+<NgButton OnClick="()=>navigationLocked=!navigationLocked">Toggle navigation lock</NgButton>
+<NgButton OnClick="()=>selectionLocked=!selectionLocked">Toggle selection lock</NgButton>
+<NgButton OnClick="()=>clickLocked=!clickLocked">Toggle click lock</NgButton>
+<NgButton OnClick="()=>accept=!accept">Toggle acceptance</NgButton>
+<NgButton OnClick="()=>map=Sample(true)">Replace objects</NgButton>
+<NgButton OnClick="()=>map=map.Markers.Count==0?Sample():new()">Toggle empty map</NgButton>
+<NgButton OnClick="()=>view=new(50.4501,30.5234,10)">Reset view</NgButton>
+</div>
+<p>Selected: @(selected??"none") · View zoom: @view.Zoom · Selection requests: @selections · View requests: @views · Map clicks: @clicks</p>
+<p>Acceptance: @(accept?"enabled":"rejected")</p>
+<NgMap Label="Delivery map" Value="map" View="view" ViewChanged="ViewChanged" SelectedId="@selected" SelectedIdChanged="Select"
+    OnMapClick="Clicked" ClusterMarkers="true" NavigationReadOnly="navigationLocked" SelectionReadOnly="selectionLocked"
+    MapClickReadOnly="clickLocked" EmptyText="No delivery points"/>
 @code {
- private string? selected; private string last="";
+ private string? selected;
+ private bool navigationLocked,selectionLocked,clickLocked;
+ private bool accept=true;
+ private int selections,views,clicks;
  private NgMapView view=new(50.4501,30.5234,13);
- private NgMapModel map=new(
-   [new("office","Office",new(50.4501,30.5234)),new("park","Park",new(50.4466,30.5410))],
-   [new("line","Line",[new(50.4501,30.5234),new(50.4466,30.5410)])]);
- private void Clicked(NgMapPoint p){last=$"{p.Latitude:F4}, {p.Longitude:F4}";}
+ private NgMapModel map=Sample();
+ private static NgMapModel Sample(bool updated=false)=>new([
+   new("office",updated?"Office updated":"Office",new(50.4501,30.5234)),
+   new("depot","Depot",new(50.4501,30.5234)),new("park","Park",new(50.4466,30.5410))
+ ],[new("line","Delivery line",[new(50.4501,30.5234),new(50.4466,30.5410)])]);
+ private void Select(string? id){selections++;if(accept)selected=id;}
+ private void ViewChanged(NgMapView next){views++;if(accept)view=next;}
+ private void Clicked(NgMapPoint point){clicks++;}
 }

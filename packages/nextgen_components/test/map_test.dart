@@ -27,6 +27,29 @@ void main() {
     );
     expect(tester.takeException(), isNull);
   });
+  testWidgets(
+    'Map locks and external updates preserve explicit native placeholder',
+    (tester) async {
+      for (final locked in [false, true, false]) {
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: NgMap(
+                value: NgMapModel(),
+                view: NgMapView(zoom: 4),
+                navigationReadOnly: locked,
+                selectionReadOnly: locked,
+                mapClickReadOnly: locked,
+                emptyText: 'No delivery points',
+              ),
+            ),
+          ),
+        );
+        expect(find.textContaining('available on Web only'), findsOneWidget);
+        expect(tester.takeException(), isNull);
+      }
+    },
+  );
   test('Map coordinates and zoom reject unsupported values', () {
     for (final p in [
       () => NgMapPoint(double.nan, 0),

@@ -192,6 +192,23 @@ Reject(()=>new NgMapModel([new("area","Duplicate",new(0,0))],[mapPath]),"map rej
 Reject(()=>new NgMapModel(Enumerable.Range(0,501).Select(i=>new NgMapMarker("m"+i,"Marker",new(0,0)))),"map marker limit");
 Reject(()=>new NgMapMarker("bad id","Marker",new(0,0)),"map rejects invalid IDs");
 await Check<NgMap>(new(){["Label"]="Places <safe>"},"Places &lt;safe&gt;","map-viewer/index.html","height:520px");
+#pragma warning disable BL0005
+var selectionEvents=0;var viewEvents=0;var clickEvents=0;
+var eventMap=new NgMap{Value=new NgMapModel([new("office","Office",new(0,0))]),SelectedIdChanged=EventCallback.Factory.Create<string?>(new object(),_=>selectionEvents++),ViewChanged=EventCallback.Factory.Create<NgMapView>(new object(),_=>viewEvents++),OnMapClick=EventCallback.Factory.Create<NgMapPoint>(new object(),_=>clickEvents++)};
+await eventMap.MapEvent("{\"kind\":\"selection\",\"revision\":0,\"id\":\"office\"}");Rule(selectionEvents==1,"map valid selection event");
+await eventMap.MapEvent("{\"kind\":\"selection\",\"revision\":1,\"id\":\"office\"}");Rule(selectionEvents==1,"map stale event rejected");
+await eventMap.MapEvent("{\"kind\":\"selection\",\"revision\":0,\"id\":\"missing\"}");Rule(selectionEvents==1,"map unknown selection rejected");
+eventMap.SelectionReadOnly=true;await eventMap.MapEvent("{\"kind\":\"selection\",\"revision\":0,\"id\":null}");Rule(selectionEvents==1,"map selection lock enforced");
+await eventMap.MapEvent("{\"kind\":\"view\",\"revision\":0,\"latitude\":10,\"longitude\":20,\"zoom\":5}");Rule(viewEvents==1,"map view remains independently enabled");
+eventMap.NavigationReadOnly=true;await eventMap.MapEvent("{\"kind\":\"view\",\"revision\":0,\"latitude\":10,\"longitude\":20,\"zoom\":5}");Rule(viewEvents==1,"map navigation lock enforced");
+await eventMap.MapEvent("{\"kind\":\"click\",\"revision\":0,\"latitude\":10,\"longitude\":20}");Rule(clickEvents==1,"map background click remains independent");
+eventMap.MapClickReadOnly=true;await eventMap.MapEvent("{\"kind\":\"click\",\"revision\":0,\"latitude\":10,\"longitude\":20}");Rule(clickEvents==1,"map click lock enforced");
+eventMap.NavigationReadOnly=false;eventMap.MapClickReadOnly=false;
+foreach(var invalidEvent in new[]{"not json","[]","{}","{\"kind\":\"view\",\"revision\":0,\"latitude\":90,\"longitude\":20,\"zoom\":5}","{\"kind\":\"view\",\"revision\":0,\"latitude\":10,\"longitude\":20,\"zoom\":25}","{\"kind\":\"click\",\"revision\":0,\"latitude\":10,\"longitude\":181}"})await eventMap.MapEvent(invalidEvent);
+Rule(viewEvents==1&&clickEvents==1,"map malformed and out of range events ignored");
+await eventMap.DisposeAsync();await eventMap.MapEvent("{\"kind\":\"click\",\"revision\":1,\"latitude\":10,\"longitude\":20}");Rule(clickEvents==1,"map disposed events ignored");
+#pragma warning restore BL0005
+
 foreach(var radius in new[]{19,121}) {
  try {await Check<NgMap>(new(){["ClusterRadius"]=radius});throw new Exception("Invalid cluster radius accepted");}
  catch(ArgumentOutOfRangeException){Rule(true,"map rejects cluster radius "+radius);}
