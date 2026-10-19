@@ -354,13 +354,33 @@ Widget build(BuildContext context) => Column(crossAxisAlignment: CrossAxisAlignm
 }
 class NgLinearGaugeExample extends StatefulWidget { const NgLinearGaugeExample({super.key}); @override State<NgLinearGaugeExample> createState()=>_NgLinearGaugeExampleState(); }
 class _NgLinearGaugeExampleState extends State<NgLinearGaugeExample> {
-Widget build(BuildContext context) => const NgLinearGauge(label: 'Load',
-  value: 72, min: 0, max: 100, unit: '%');
+double value = 72.5;
+bool showRanges = true;
+final ranges = const [NgGaugeRange(0,60,'#187444','Normal'), NgGaugeRange(60,85,'#b66d16','Elevated'), NgGaugeRange(85,100,'#b42318','High')];
+Widget build(BuildContext context) => Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+ Wrap(spacing: 8, runSpacing: 8, children: [
+  for (final entry in {'Normal':42.5, 'Elevated':72.5, 'High':95.0, 'Above maximum':125.0, 'Below minimum':-10.0}.entries)
+   NgButton(onPressed:()=>setState(()=>value=entry.value), child:Text(entry.key)),
+  NgButton(onPressed:()=>setState(()=>showRanges=!showRanges), child:const Text('Toggle ranges')),
+ ]),
+ const SizedBox(height:16),
+ NgLinearGauge(label:'Load',value:value,ranges:showRanges?ranges:const [],valueFormatter:(v)=>v.toStringAsFixed(1)),
+]);
 }
 class NgArcGaugeExample extends StatefulWidget { const NgArcGaugeExample({super.key}); @override State<NgArcGaugeExample> createState()=>_NgArcGaugeExampleState(); }
 class _NgArcGaugeExampleState extends State<NgArcGaugeExample> {
-Widget build(BuildContext context) => const NgArcGauge(label: 'Load',
-  value: 72, min: 0, max: 100, unit: '%');
+double value = 72.5;
+bool showRanges = true;
+final ranges = const [NgGaugeRange(0,60,'#187444','Normal'), NgGaugeRange(60,85,'#b66d16','Elevated'), NgGaugeRange(85,100,'#b42318','High')];
+Widget build(BuildContext context) => Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+ Wrap(spacing: 8, runSpacing: 8, children: [
+  for (final entry in {'Normal':42.5, 'Elevated':72.5, 'High':95.0, 'Above maximum':125.0, 'Below minimum':-10.0}.entries)
+   NgButton(onPressed:()=>setState(()=>value=entry.value), child:Text(entry.key)),
+  NgButton(onPressed:()=>setState(()=>showRanges=!showRanges), child:const Text('Toggle ranges')),
+ ]),
+ const SizedBox(height:16),
+ NgArcGauge(label:'Load',value:value,ranges:showRanges?ranges:const [],valueFormatter:(v)=>v.toStringAsFixed(1)),
+]);
 }
 class NgSchedulerExample extends StatefulWidget { const NgSchedulerExample({super.key}); @override State<NgSchedulerExample> createState()=>_NgSchedulerExampleState(); }
 class _NgSchedulerExampleState extends State<NgSchedulerExample> {

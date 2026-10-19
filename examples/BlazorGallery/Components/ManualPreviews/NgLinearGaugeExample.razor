@@ -1,2 +1,16 @@
 @* Generated from scripts/manual_content.py *@
-<NgLinearGauge Label="Load" Value="72" Min="0" Max="100" Unit="%"/>
+<div class="toolbar">
+<NgButton OnClick="()=>value=42.5">Normal</NgButton>
+<NgButton OnClick="()=>value=72.5">Elevated</NgButton>
+<NgButton OnClick="()=>value=95">High</NgButton>
+<NgButton OnClick="()=>value=125">Above maximum</NgButton>
+<NgButton OnClick="()=>value=-10">Below minimum</NgButton>
+<NgButton OnClick="()=>showRanges=!showRanges">Toggle ranges</NgButton>
+</div>
+<NgLinearGauge Label="Load" Value="value" Ranges="@(showRanges?ranges:[])" ValueFormatter="Format"/>
+@code {
+ private double value=72.5;
+ private bool showRanges=true;
+ private string Format(double v)=>v.ToString("F1",System.Globalization.CultureInfo.InvariantCulture);
+ private NgGaugeRange[] ranges=[new(0,60,"#187444","Normal"),new(60,85,"#b66d16","Elevated"),new(85,100,"#b42318","High")];
+}

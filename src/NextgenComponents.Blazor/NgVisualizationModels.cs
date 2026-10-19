@@ -10,7 +10,7 @@ public static class NgChartMath {
  public static readonly string[] Colors=["#c73e32","#2878b8","#218468","#8b5bb6","#b66d16","#55717d"];
  public static string F(double n)=>n.ToString("0.###",CultureInfo.InvariantCulture);
  public static string Points(double[] p)=>string.Join(" ",Enumerable.Range(0,p.Length/2).Select(i=>$"{F(p[i*2])},{F(p[i*2+1])}"));
- public static double Fraction(double value,double min,double max){if(!double.IsFinite(value)||!double.IsFinite(min)||!double.IsFinite(max)||max<=min||!double.IsFinite(max-min))throw new ArgumentException("Gauge requires finite values and Min < Max.");return Math.Clamp((value-min)/(max-min),0,1);}
+ public static double Fraction(double value,double min,double max){if(!double.IsFinite(value)||!double.IsFinite(min)||!double.IsFinite(max)||max<=min)throw new ArgumentException("Gauge requires finite values and Min < Max.");if(value<=min)return 0;if(value>=max)return 1;var span=max-min;return double.IsFinite(span)?(value-min)/span:(value/2-min/2)/(max/2-min/2);}
  public static NgChartScene Build(NgChartKind kind,IReadOnlyList<string> categories,IReadOnlyList<NgChartSeries> series,ISet<int>? hidden=null){
   if(series.Any(s=>s.Values.Count!=categories.Count||s.Values.Any(v=>v.HasValue&&!double.IsFinite(v.Value))))throw new ArgumentException("Series must match categories and contain finite values or null.");
   var active=Enumerable.Range(0,series.Count).Where(i=>hidden?.Contains(i)!=true).ToArray();var marks=new List<NgChartMark>();var labels=new List<NgChartText>();

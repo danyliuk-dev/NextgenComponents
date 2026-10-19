@@ -283,7 +283,12 @@ class _AnalyticsGalleryState extends State<AnalyticsGallery> {
                       child: panel(
                         const NgLinearGauge(
                           label: 'Delivery target',
-                          value: 72,
+                          value: 72.5,
+                          ranges: [
+                            NgGaugeRange(0, 60, "#187444", "Normal"),
+                            NgGaugeRange(60, 85, "#b66d16", "Elevated"),
+                            NgGaugeRange(85, 100, "#b42318", "High"),
+                          ],
                         ),
                       ),
                     ),
@@ -292,7 +297,15 @@ class _AnalyticsGalleryState extends State<AnalyticsGallery> {
                           ? (c.maxWidth - 20) / 2
                           : c.maxWidth,
                       child: panel(
-                        const NgArcGauge(label: 'Team capacity', value: 84),
+                        const NgArcGauge(
+                          label: 'Team capacity',
+                          value: 84.5,
+                          ranges: [
+                            NgGaugeRange(0, 60, '#187444', 'Normal'),
+                            NgGaugeRange(60, 85, '#b66d16', 'Elevated'),
+                            NgGaugeRange(85, 100, '#b42318', 'High'),
+                          ],
+                        ),
                       ),
                     ),
                   ],

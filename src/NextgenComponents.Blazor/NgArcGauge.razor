@@ -1,11 +1,21 @@
-<div class="ng-gauge" role="meter" aria-label="@Label" aria-valuemin="@Min" aria-valuemax="@Max" aria-valuenow="@Math.Clamp(Value,Min,Max)" aria-valuetext="@($"{Value:G6} {Unit}")"><strong>@Label</strong>
-<svg viewBox="0 0 240 150" class="ng-arc-gauge" aria-hidden="true"><path d="M 20 125 A 100 100 0 0 1 220 125" fill="none" stroke="var(--ng-border)" stroke-width="14" stroke-linecap="round"/><path d="M 20 125 A 100 100 0 0 1 220 125" fill="none" stroke="var(--ng-primary)" visibility="@(fraction>0?"visible":"hidden")" stroke-width="14" stroke-linecap="round" pathLength="100" stroke-dasharray="@($"{NgChartMath.F(fraction*100)} 100")"/><text x="120" y="112" text-anchor="middle" fill="currentColor" font-size="26">@Value.ToString("G6") @Unit</text></svg><div class="ng-gauge-heading"><small>@Min</small><small>@Max</small></div></div>
+<div class="ng-gauge" role="meter" aria-label="@Label" aria-valuemin="@(Min.ToString("R",System.Globalization.CultureInfo.InvariantCulture))" aria-valuemax="@(Max.ToString("R",System.Globalization.CultureInfo.InvariantCulture))" aria-valuenow="@(Math.Clamp(Value,Min,Max).ToString("R",System.Globalization.CultureInfo.InvariantCulture))" aria-valuetext="@AccessibleValue"><strong>@Label</strong>
+<svg viewBox="0 0 240 150" class="ng-arc-gauge" aria-hidden="true">@foreach(var range in ordered){<path d="@NgGaugeRules.Arc(NgChartMath.Fraction(range.From,Min,Max),NgChartMath.Fraction(range.To,Min,Max))" fill="none" stroke="@range.Color" stroke-width="5"/>}<path d="M 20 125 A 100 100 0 0 1 220 125" fill="none" stroke="var(--ng-border)" stroke-width="14" stroke-linecap="round"/><path d="M 20 125 A 100 100 0 0 1 220 125" fill="none" stroke="@(active?.Color??"var(--ng-primary)")" visibility="@(fraction>0?"visible":"hidden")" stroke-width="14" stroke-linecap="round" pathLength="100" stroke-dasharray="@($"{NgChartMath.F(fraction*100)} 100")"/><text x="120" y="112" text-anchor="middle" fill="currentColor" font-size="26">@ValueLabel</text></svg><div class="ng-gauge-heading"><small>@Format(Min)</small><small>@Format(Max)</small></div>@if(!string.IsNullOrEmpty(status)){<p class="ng-gauge-status">@status</p>}
+@if(ordered.Count>0){<div class="ng-gauge-legend">@foreach(var range in ordered){<span><i aria-hidden="true" style="background:@range.Color"></i>@range.Label: @Format(range.From)–@Format(range.To)</span>}</div>}
+</div>
 @code {
+ [Parameter] public IReadOnlyList<NgGaugeRange> Ranges{get;set;}=[];
+ [Parameter] public Func<double,string>? ValueFormatter{get;set;}
  [Parameter] public string Label{get;set;}="Progress";
  [Parameter] public double Value{get;set;}
  [Parameter] public double Min{get;set;}=0;
  [Parameter] public double Max{get;set;}=100;
  [Parameter] public string Unit{get;set;}="%";
  private double fraction;
- protected override void OnParametersSet()=>fraction=NgChartMath.Fraction(Value,Min,Max);
+ private IReadOnlyList<NgGaugeRange> ordered=[];
+ private NgGaugeRange? active;
+ private string status="";
+ private string Format(double value)=>ValueFormatter?.Invoke(value)??value.ToString("G6");
+ private string ValueLabel=>string.Join(" ",new[]{Format(Value),Unit}.Where(x=>!string.IsNullOrWhiteSpace(x)));
+ private string AccessibleValue=>string.Join(" · ",new[]{ValueLabel,status}.Where(x=>!string.IsNullOrEmpty(x)));
+ protected override void OnParametersSet(){fraction=NgChartMath.Fraction(Value,Min,Max);ordered=NgGaugeRules.Validate(Ranges,Min,Max);active=NgGaugeRules.Active(ordered,Value,Min,Max);status=NgGaugeRules.Status(active,Value,Min,Max);}
 }

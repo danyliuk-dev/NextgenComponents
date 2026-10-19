@@ -11,7 +11,7 @@ A component can be marked complete only after every reference feature is recorde
 ## Current work order
 
 1. Chip/ChipList remaining gaps stay tracked below; do not mark full parity or silently accept them. Work is delivered in component blocks, not one release per parameter.
-2. ToggleButton/ButtonGroup and Menu/Drawer implementation blocks are delivered with explicit remaining gaps below. Stepper/Wizard is also delivered below; TextBox/TextArea/Form is delivered in 0.29; AutoComplete/ComboBox/MultiSelect is delivered in 0.30; numeric/time editing is delivered in 0.31; Calendar, DateInput, DatePicker and DateRangePicker are delivered in 0.32; RadioGroup and DropDownList are delivered in 0.33; Grid protected/read-only selection is delivered in 0.34; TreeView/TreeList controlled state and templates are delivered in 0.35; Chart interaction and presentation are delivered in 0.36; next work continues with gauges. No block is a full-parity verdict.
+2. ToggleButton/ButtonGroup and Menu/Drawer implementation blocks are delivered with explicit remaining gaps below. Stepper/Wizard is also delivered below; TextBox/TextArea/Form is delivered in 0.29; AutoComplete/ComboBox/MultiSelect is delivered in 0.30; numeric/time editing is delivered in 0.31; Calendar, DateInput, DatePicker and DateRangePicker are delivered in 0.32; RadioGroup and DropDownList are delivered in 0.33; Grid protected/read-only selection is delivered in 0.34; TreeView/TreeList controlled state and templates are delivered in 0.35; Chart interaction and presentation are delivered in 0.36; gauge ranges and presentation are delivered in 0.37; next work continues with Scheduler. No block is a full-parity verdict.
 3. Continue through existing editors/forms, data management, visualization and complex editors. Add new component names only after closing the active group or recording a user-approved exception.
 
 ## Chip and ChipList feature matrix
@@ -361,3 +361,9 @@ Reference: [Telerik TreeView expansion](https://www.telerik.com/blazor-ui/docume
 | Scope | Column, bar, line, area, pie and donut | Zoom/pan, stacking, mixed axes, export and full Telerik parity remain open |
 
 Reference: [Telerik Chart legend](https://www.telerik.com/blazor-ui/documentation/components/chart/legend) and [tooltips](https://www.telerik.com/blazor-ui/documentation/components/chart/tooltip/overview). Nextgen uses its own state and formatter API.
+
+## Gauge ranges and readings (0.37)
+
+Both gauges support validated nonoverlapping color ranges, text legends, active status, formatted readings and bounds, and explicit out-of-scale status. Finite extreme bounds are normalized without overflow. Pointers, advanced ticks/scales, animation and export remain open. See [contracts](analytics-and-schedule.md#gauge-ranges-and-formatted-readings-037).
+
+Reference: [Telerik Linear Gauge ranges](https://www.telerik.com/blazor-ui/documentation/components/gauges/linear/ranges). Nextgen uses its own shared range and formatter API.

@@ -587,24 +587,117 @@ D = {'NgButton': {'title': 'Button',
           'selection, not a controlled selection API.'},
  'NgLinearGauge': {'title': 'Linear gauge',
                    'use': 'Display a value within a numeric range.',
-                   'blazor': '<NgLinearGauge Label="Load" Value="72" Min="0" Max="100" Unit="%"/>',
-                   'dart': "Widget build(BuildContext context) => const NgLinearGauge(label: 'Load',\n"
-                           "  value: 72, min: 0, max: 100, unit: '%');",
-                   'notes': 'Min must be less than Max and values must be finite. The gauge projects the '
-                            'configured value into the range; keep the original business value in the '
-                            'parent. Label and Unit explain the number without relying on color. This is a '
-                            'read-only display, not an input or a multi-scale gauge. Use the shared theme '
-                            'for light/dark contrast.'},
+                   'blazor': '<div class="toolbar">\n'
+                             '<NgButton OnClick="()=>value=42.5">Normal</NgButton>\n'
+                             '<NgButton OnClick="()=>value=72.5">Elevated</NgButton>\n'
+                             '<NgButton OnClick="()=>value=95">High</NgButton>\n'
+                             '<NgButton OnClick="()=>value=125">Above maximum</NgButton>\n'
+                             '<NgButton OnClick="()=>value=-10">Below minimum</NgButton>\n'
+                             '<NgButton OnClick="()=>showRanges=!showRanges">Toggle '
+                             'ranges</NgButton>\n'
+                             '</div>\n'
+                             '<NgLinearGauge Label="Load" Value="value" '
+                             'Ranges="@(showRanges?ranges:[])" ValueFormatter="Format"/>\n'
+                             '@code {\n'
+                             ' private double value=72.5;\n'
+                             ' private bool showRanges=true;\n'
+                             ' private string Format(double '
+                             'v)=>v.ToString("F1",System.Globalization.CultureInfo.InvariantCulture);\n'
+                             ' private NgGaugeRange[] '
+                             'ranges=[new(0,60,"#187444","Normal"),new(60,85,"#b66d16","Elevated"),new(85,100,"#b42318","High")];\n'
+                             '}',
+                   'dart': 'double value = 72.5;\n'
+                           'bool showRanges = true;\n'
+                           "final ranges = const [NgGaugeRange(0,60,'#187444','Normal'), "
+                           "NgGaugeRange(60,85,'#b66d16','Elevated'), "
+                           "NgGaugeRange(85,100,'#b42318','High')];\n"
+                           'Widget build(BuildContext context) => Column(crossAxisAlignment: '
+                           'CrossAxisAlignment.stretch, children: [\n'
+                           ' Wrap(spacing: 8, runSpacing: 8, children: [\n'
+                           "  for (final entry in {'Normal':42.5, 'Elevated':72.5, 'High':95.0, "
+                           "'Above maximum':125.0, 'Below minimum':-10.0}.entries)\n"
+                           '   NgButton(onPressed:()=>setState(()=>value=entry.value), '
+                           'child:Text(entry.key)),\n'
+                           '  NgButton(onPressed:()=>setState(()=>showRanges=!showRanges), '
+                           "child:const Text('Toggle ranges')),\n"
+                           ' ]),\n'
+                           ' const SizedBox(height:16),\n'
+                           " NgLinearGauge(label:'Load',value:value,ranges:showRanges?ranges:const "
+                           '[],valueFormatter:(v)=>v.toStringAsFixed(1)),\n'
+                           ']);',
+                   'notes': 'Min must be less than Max; all numbers must be finite. Even finite '
+                            'bounds whose difference overflows are supported. Drawing clamps '
+                            'outside values; the displayed original value and Above maximum/Below '
+                            'minimum status preserve the supplied reading. Ranges/ranges accepts '
+                            'NgGaugeRange(From, To, Color, Label), lowercase fields in Flutter. '
+                            'Colors must be six-digit hex (#RRGGBB), labels nonblank, ranges '
+                            'inside the scale with From < To and no overlap. Input order is '
+                            'immaterial; validation sorts a copy. Gaps are allowed and use the '
+                            'theme primary color. Shared endpoints belong to the next range; Max '
+                            'belongs to the range ending at Max. Active color uses the clamped '
+                            'value. Stripes/arcs and a text legend show all ranges. '
+                            'ValueFormatter/valueFormatter formats current value, bounds and '
+                            'legend as plain text; Unit is appended only to the current value. '
+                            'Defaults preserve six significant digits, including fractional '
+                            'values. Replace lists when updating Flutter inputs. This is a '
+                            'read-only single-scale indicator; pointers, ticks, animation and '
+                            'export are not implemented.'},
  'NgArcGauge': {'title': 'Arc gauge',
                 'use': 'Display a value within a numeric range.',
-                'blazor': '<NgArcGauge Label="Load" Value="72" Min="0" Max="100" Unit="%"/>',
-                'dart': "Widget build(BuildContext context) => const NgArcGauge(label: 'Load',\n"
-                        "  value: 72, min: 0, max: 100, unit: '%');",
-                'notes': 'Min must be less than Max and values must be finite. The gauge projects the '
-                         'configured value into the range; keep the original business value in the parent. '
-                         'Label and Unit explain the number without relying on color. This is a read-only '
-                         'display, not an input or a multi-scale gauge. Use the shared theme for light/dark '
-                         'contrast.'},
+                'blazor': '<div class="toolbar">\n'
+                          '<NgButton OnClick="()=>value=42.5">Normal</NgButton>\n'
+                          '<NgButton OnClick="()=>value=72.5">Elevated</NgButton>\n'
+                          '<NgButton OnClick="()=>value=95">High</NgButton>\n'
+                          '<NgButton OnClick="()=>value=125">Above maximum</NgButton>\n'
+                          '<NgButton OnClick="()=>value=-10">Below minimum</NgButton>\n'
+                          '<NgButton OnClick="()=>showRanges=!showRanges">Toggle '
+                          'ranges</NgButton>\n'
+                          '</div>\n'
+                          '<NgArcGauge Label="Load" Value="value" Ranges="@(showRanges?ranges:[])" '
+                          'ValueFormatter="Format"/>\n'
+                          '@code {\n'
+                          ' private double value=72.5;\n'
+                          ' private bool showRanges=true;\n'
+                          ' private string Format(double '
+                          'v)=>v.ToString("F1",System.Globalization.CultureInfo.InvariantCulture);\n'
+                          ' private NgGaugeRange[] '
+                          'ranges=[new(0,60,"#187444","Normal"),new(60,85,"#b66d16","Elevated"),new(85,100,"#b42318","High")];\n'
+                          '}',
+                'dart': 'double value = 72.5;\n'
+                        'bool showRanges = true;\n'
+                        "final ranges = const [NgGaugeRange(0,60,'#187444','Normal'), "
+                        "NgGaugeRange(60,85,'#b66d16','Elevated'), "
+                        "NgGaugeRange(85,100,'#b42318','High')];\n"
+                        'Widget build(BuildContext context) => Column(crossAxisAlignment: '
+                        'CrossAxisAlignment.stretch, children: [\n'
+                        ' Wrap(spacing: 8, runSpacing: 8, children: [\n'
+                        "  for (final entry in {'Normal':42.5, 'Elevated':72.5, 'High':95.0, "
+                        "'Above maximum':125.0, 'Below minimum':-10.0}.entries)\n"
+                        '   NgButton(onPressed:()=>setState(()=>value=entry.value), '
+                        'child:Text(entry.key)),\n'
+                        '  NgButton(onPressed:()=>setState(()=>showRanges=!showRanges), '
+                        "child:const Text('Toggle ranges')),\n"
+                        ' ]),\n'
+                        ' const SizedBox(height:16),\n'
+                        " NgArcGauge(label:'Load',value:value,ranges:showRanges?ranges:const "
+                        '[],valueFormatter:(v)=>v.toStringAsFixed(1)),\n'
+                        ']);',
+                'notes': 'Min must be less than Max; all numbers must be finite. Even finite '
+                         'bounds whose difference overflows are supported. Drawing clamps outside '
+                         'values; the displayed original value and Above maximum/Below minimum '
+                         'status preserve the supplied reading. Ranges/ranges accepts '
+                         'NgGaugeRange(From, To, Color, Label), lowercase fields in Flutter. '
+                         'Colors must be six-digit hex (#RRGGBB), labels nonblank, ranges inside '
+                         'the scale with From < To and no overlap. Input order is immaterial; '
+                         'validation sorts a copy. Gaps are allowed and use the theme primary '
+                         'color. Shared endpoints belong to the next range; Max belongs to the '
+                         'range ending at Max. Active color uses the clamped value. Stripes/arcs '
+                         'and a text legend show all ranges. ValueFormatter/valueFormatter formats '
+                         'current value, bounds and legend as plain text; Unit is appended only to '
+                         'the current value. Defaults preserve six significant digits, including '
+                         'fractional values. Replace lists when updating Flutter inputs. This is a '
+                         'read-only single-scale indicator; pointers, ticks, animation and export '
+                         'are not implemented.'},
  'NgScheduler': {'title': 'Weekly scheduler',
                  'use': 'Show a week of application events and request create/edit actions.',
                  'blazor': '<NgScheduler @bind-Date="week" Items="events" '

@@ -348,6 +348,17 @@ Rule(!dateProbe.Parse("2026-02-29",out _),"date input rejects invalid leap day")
 Rule(dateProbe.Parse("2024-02-29",out _),"date input accepts leap day");
 await Check<NgDropDownList>(new(){["Value"]="missing",["ValueExpression"]=(Expression<Func<string>>)(()=>team),["Items"]=options,["HelperText"]="Choose your team",["ReadOnly"]=true},"Unavailable selection: missing","Choose an available option.","Choose your team","disabled");
 await Check<NgRadioGroup>(new(){["Value"]="a",["ValueExpression"]=(Expression<Func<string>>)(()=>team),["Items"]=options,["Orientation"]="vertical",["ItemTemplate"]=(RenderFragment<NgOption>)(o=>Text("Custom "+o.Label)),["ReadOnly"]=true},"flex-direction:column","Custom Alpha","aria-label=\"Alpha\"","disabled");
+NgGaugeRange[] gaugeRanges=[new(60,100,"#b42318","High"),new(0,60,"#187444","Normal")];
+var orderedRanges=NgGaugeRules.Validate(gaugeRanges,0,100);
+Rule(orderedRanges[0].Label=="Normal"&&gaugeRanges[0].Label=="High","gauge sorts without mutating caller");
+Rule(new[]{60d,100d,125d}.All(v=>NgGaugeRules.Active(orderedRanges,v,0,100)?.Label=="High"),"gauge adjacent and maximum boundaries");
+Rule(NgGaugeRules.Active(orderedRanges,-10,0,100)?.Label=="Normal"&&NgGaugeRules.Active([gaugeRanges[0]],30,0,100)==null,"gauge clamps active range and permits gaps");
+Rule(NgChartMath.Fraction(0,-1.7e308,1.7e308)==0.5,"gauge extreme finite span");
+foreach(var bad in new NgGaugeRange[][]{[new(50,70,"#123456","Overlap"),..gaugeRanges],[new(-1,50,"#123456","Outside")],[new(10,10,"#123456","Empty")],[new(0,double.PositiveInfinity,"#123456","Infinite")],[new(0,50,"red","Color")],[new(0,50,"#123456\n","Trailing newline")],[new(0,50,"#123456"," ")]}) Reject(()=>NgGaugeRules.Validate(bad,0,100),"invalid gauge range");
+await Check<NgLinearGauge>(new(){["Value"]=125d,["Ranges"]=gaugeRanges,["ValueFormatter"]=(Func<double,string>)(v=>v.ToString("F1",System.Globalization.CultureInfo.InvariantCulture))},"125.0 %","Above maximum","#b42318","aria-valuenow=\"100\"");
+await Check<NgArcGauge>(new(){["Value"]=-10d,["Ranges"]=gaugeRanges},"-10 %","Below minimum","#187444","ng-gauge-legend");
+await Check<NgLinearGauge>(new(){["Value"]=72.5},"72.5 %","aria-valuenow=\"72.5\"");
+await Check<NgArcGauge>(new(){["Value"]=0d,["Min"]=-1.7e308,["Max"]=1.7e308},"aria-valuemax=\"1.7E&#x2B;308\"");
 Console.WriteLine($"{count} rendering and data/date-rule checks passed. Browser interaction requires the separate visual run.");
 sealed class NoBrowserJS : IJSRuntime {
  public ValueTask<TValue> InvokeAsync<TValue>(string identifier, object?[]? args) => throw new InvalidOperationException("JS must not execute in SSR");

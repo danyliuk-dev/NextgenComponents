@@ -55,13 +55,14 @@ abstract final class NgChartMath {
     Color(0xff55717d),
   ];
   static double fraction(double value, double min, double max) {
-    if (!value.isFinite ||
-        !min.isFinite ||
-        !max.isFinite ||
-        max <= min ||
-        !(max - min).isFinite)
+    if (!value.isFinite || !min.isFinite || !max.isFinite || max <= min)
       throw ArgumentError('Gauge requires finite values and Min < Max.');
-    return ((value - min) / (max - min)).clamp(0, 1);
+    if (value <= min) return 0;
+    if (value >= max) return 1;
+    final span = max - min;
+    return span.isFinite
+        ? (value - min) / span
+        : (value / 2 - min / 2) / (max / 2 - min / 2);
   }
 
   static NgChartScene build(
@@ -561,9 +562,85 @@ class _ChartPainter extends CustomPainter {
   bool shouldRepaint(covariant _ChartPainter old) => true;
 }
 
+class NgGaugeRange {
+  final double from, to;
+  final String color, label;
+  const NgGaugeRange(this.from, this.to, this.color, this.label);
+}
+
+abstract final class NgGaugeRules {
+  static List<NgGaugeRange> validate(
+    List<NgGaugeRange> ranges,
+    double min,
+    double max,
+  ) {
+    NgChartMath.fraction(min, min, max);
+    final ordered = [...ranges]..sort((a, b) => a.from.compareTo(b.from));
+    var end = min;
+    for (final range in ordered) {
+      if (!range.from.isFinite ||
+          !range.to.isFinite ||
+          range.from < min ||
+          range.to > max ||
+          range.from >= range.to ||
+          range.from < end)
+        throw ArgumentError(
+          'Gauge ranges must be finite, nonoverlapping and inside Min/Max with From < To.',
+        );
+      if (range.label.trim().isEmpty ||
+          !RegExp(r'^#[0-9a-fA-F]{6}$').hasMatch(range.color))
+        throw ArgumentError(
+          'Gauge ranges need a label and a six-digit hex color (#RRGGBB).',
+        );
+      end = range.to;
+    }
+    return ordered;
+  }
+
+  static NgGaugeRange? active(
+    List<NgGaugeRange> ranges,
+    double value,
+    double min,
+    double max,
+  ) {
+    final clamped = value.clamp(min, max);
+    return ranges
+        .where(
+          (r) =>
+              clamped >= r.from &&
+              (clamped < r.to || clamped == max && r.to == max),
+        )
+        .firstOrNull;
+  }
+
+  static String status(
+    NgGaugeRange? active,
+    double value,
+    double min,
+    double max,
+  ) => [
+    if (active != null) active.label,
+    if (value < min) 'Below minimum',
+    if (value > max) 'Above maximum',
+  ].join(' · ');
+  static Color color(NgGaugeRange range) =>
+      Color(0xff000000 | int.parse(range.color.substring(1), radix: 16));
+  static String number(double value) {
+    final parts = value.toStringAsPrecision(6).split('e');
+    if (parts[0].contains('.')) {
+      parts[0] = parts[0]
+          .replaceFirst(RegExp(r'0+$'), '')
+          .replaceFirst(RegExp(r'\.$'), '');
+    }
+    return parts.join('e');
+  }
+}
+
 class NgLinearGauge extends StatelessWidget {
   final String label, unit;
   final double value, min, max;
+  final List<NgGaugeRange> ranges;
+  final String Function(double)? valueFormatter;
   const NgLinearGauge({
     super.key,
     this.label = 'Progress',
@@ -571,37 +648,27 @@ class NgLinearGauge extends StatelessWidget {
     this.min = 0,
     this.max = 100,
     this.unit = '%',
+    this.ranges = const [],
+    this.valueFormatter,
   });
   @override
-  Widget build(BuildContext context) {
-    final fraction = NgChartMath.fraction(value, min, max);
-    return Semantics(
-      label: label,
-      value: '$value $unit',
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text('$label · ${value.toStringAsFixed(0)} $unit'),
-          const SizedBox(height: 16),
-          LinearProgressIndicator(
-            value: fraction,
-            minHeight: 16,
-            borderRadius: BorderRadius.circular(8),
-          ),
-          const SizedBox(height: 10),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [Text('$min'), Text('$max')],
-          ),
-        ],
-      ),
-    );
-  }
+  Widget build(BuildContext context) => _GaugeBody(
+    label: label,
+    unit: unit,
+    value: value,
+    min: min,
+    max: max,
+    ranges: ranges,
+    valueFormatter: valueFormatter,
+    arc: false,
+  );
 }
 
 class NgArcGauge extends StatelessWidget {
   final String label, unit;
   final double value, min, max;
+  final List<NgGaugeRange> ranges;
+  final String Function(double)? valueFormatter;
   const NgArcGauge({
     super.key,
     this.label = 'Progress',
@@ -609,52 +676,195 @@ class NgArcGauge extends StatelessWidget {
     this.min = 0,
     this.max = 100,
     this.unit = '%',
+    this.ranges = const [],
+    this.valueFormatter,
+  });
+  @override
+  Widget build(BuildContext context) => _GaugeBody(
+    label: label,
+    unit: unit,
+    value: value,
+    min: min,
+    max: max,
+    ranges: ranges,
+    valueFormatter: valueFormatter,
+    arc: true,
+  );
+}
+
+class _GaugeBody extends StatelessWidget {
+  final String label, unit;
+  final double value, min, max;
+  final List<NgGaugeRange> ranges;
+  final String Function(double)? valueFormatter;
+  final bool arc;
+  const _GaugeBody({
+    required this.label,
+    required this.unit,
+    required this.value,
+    required this.min,
+    required this.max,
+    required this.ranges,
+    required this.valueFormatter,
+    required this.arc,
   });
   @override
   Widget build(BuildContext context) {
     final fraction = NgChartMath.fraction(value, min, max);
-    return Semantics(
-      label: label,
-      value: '$value $unit',
-      child: Column(
-        children: [
-          Text(label),
-          SizedBox(
-            height: 160,
-            child: CustomPaint(
-              size: const Size(240, 150),
-              painter: _ArcPainter(fraction, Theme.of(context).colorScheme),
-              child: Center(
-                child: Padding(
-                  padding: const EdgeInsets.only(top: 45),
+    final ordered = NgGaugeRules.validate(ranges, min, max);
+    final active = NgGaugeRules.active(ordered, value, min, max);
+    final status = NgGaugeRules.status(active, value, min, max);
+    String format(double v) =>
+        valueFormatter?.call(v) ?? NgGaugeRules.number(v);
+    final valueLabel = [
+      format(value),
+      if (unit.trim().isNotEmpty) unit,
+    ].join(' ');
+    final colors = Theme.of(context).colorScheme;
+    final fill = active == null ? colors.primary : NgGaugeRules.color(active);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Semantics(
+          label: label,
+          value: [valueLabel, if (status.isNotEmpty) status].join(' · '),
+          excludeSemantics: true,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(arc ? label : '$label · $valueLabel'),
+              if (arc)
+                SizedBox(
+                  height: 160,
+                  child: CustomPaint(
+                    painter: _ArcPainter(
+                      fraction,
+                      colors,
+                      fill,
+                      ordered,
+                      min,
+                      max,
+                    ),
+                    child: Center(
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(30, 45, 30, 0),
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Text(
+                            valueLabel,
+                            style: const TextStyle(fontSize: 26),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                )
+              else ...[
+                const SizedBox(height: 16),
+                LinearProgressIndicator(
+                  value: fraction,
+                  color: fill,
+                  minHeight: 16,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                if (ordered.isNotEmpty) ...[
+                  const SizedBox(height: 6),
+                  SizedBox(
+                    height: 5,
+                    child: LayoutBuilder(
+                      builder: (c, b) => Stack(
+                        children: [
+                          for (final r in ordered)
+                            Positioned(
+                              left:
+                                  NgChartMath.fraction(r.from, min, max) *
+                                  b.maxWidth,
+                              width:
+                                  (NgChartMath.fraction(r.to, min, max) -
+                                      NgChartMath.fraction(r.from, min, max)) *
+                                  b.maxWidth,
+                              top: 0,
+                              bottom: 0,
+                              child: ColoredBox(color: NgGaugeRules.color(r)),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 10),
+              ],
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Flexible(child: Text(format(min))),
+                  Flexible(child: Text(format(max))),
+                ],
+              ),
+              if (status.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8),
                   child: Text(
-                    '${value.toStringAsFixed(0)} $unit',
-                    style: const TextStyle(fontSize: 26),
+                    status,
+                    style: const TextStyle(fontWeight: FontWeight.w600),
                   ),
                 ),
-              ),
+            ],
+          ),
+        ),
+        if (ordered.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.only(top: 12),
+            child: Wrap(
+              spacing: 16,
+              runSpacing: 8,
+              children: [
+                for (final r in ordered)
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      ExcludeSemantics(
+                        child: Icon(
+                          Icons.square,
+                          size: 10,
+                          color: NgGaugeRules.color(r),
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      Flexible(
+                        child: Text(
+                          '${r.label}: ${format(r.from)}–${format(r.to)}',
+                          style: const TextStyle(fontSize: 12),
+                        ),
+                      ),
+                    ],
+                  ),
+              ],
             ),
           ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [Text('$min'), Text('$max')],
-          ),
-        ],
-      ),
+      ],
     );
   }
 }
 
 class _ArcPainter extends CustomPainter {
-  final double fraction;
+  final double fraction, min, max;
   final ColorScheme colors;
-  _ArcPainter(this.fraction, this.colors);
+  final Color fill;
+  final List<NgGaugeRange> ranges;
+  _ArcPainter(
+    this.fraction,
+    this.colors,
+    this.fill,
+    this.ranges,
+    this.min,
+    this.max,
+  );
   @override
   void paint(Canvas c, Size s) {
-    final rect = Rect.fromCircle(
-      center: Offset(s.width / 2, s.height - 20),
-      radius: math.min(s.width / 2 - 10, s.height - 30),
-    );
+    final radius = math.max(0.0, math.min(s.width / 2 - 18, s.height - 35));
+    final center = Offset(s.width / 2, s.height - 20);
+    final rect = Rect.fromCircle(center: center, radius: radius);
     final p = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = 14
@@ -662,14 +872,28 @@ class _ArcPainter extends CustomPainter {
       ..color = colors.outline;
     c.drawArc(rect, math.pi, math.pi, false, p);
     if (fraction > 0) {
-      p.color = colors.primary;
+      p.color = fill;
       c.drawArc(rect, math.pi, math.pi * fraction, false, p);
+    }
+    p
+      ..strokeWidth = 5
+      ..strokeCap = StrokeCap.butt;
+    for (final r in ranges) {
+      final from = NgChartMath.fraction(r.from, min, max),
+          to = NgChartMath.fraction(r.to, min, max);
+      p.color = NgGaugeRules.color(r);
+      c.drawArc(
+        Rect.fromCircle(center: center, radius: radius + 10),
+        math.pi * (1 + from),
+        math.pi * (to - from),
+        false,
+        p,
+      );
     }
   }
 
   @override
-  bool shouldRepaint(covariant _ArcPainter old) =>
-      old.fraction != fraction || old.colors != colors;
+  bool shouldRepaint(covariant _ArcPainter old) => true;
 }
 
 class NgScheduleEvent {

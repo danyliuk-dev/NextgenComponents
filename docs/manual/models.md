@@ -20,6 +20,7 @@ C# properties generally use PascalCase; Dart uses lowerCamelCase. Replace input 
 | NgDataColumn<T> | Key, Title, typed Value accessor, Format and Template/cellBuilder. Sort underlying values, not formatted text. |
 | NgTreeNode<T> | Unique Id, Item, Children, Disabled; no cycles. |
 | NgBreadcrumbItem | ID and label; the final item is the current location. |
+| NgGaugeRange | From, To, Color, Label (lowercase in Dart); finite ordered bounds inside the gauge, no overlap, nonblank label and #RRGGBB color. Gaps are allowed; shared endpoints belong to the next range, Max is inclusive. |
 | NgChartSeries | Name and nullable numbers matching category count; null breaks a line. |
 | NgChartSelection | Zero-based series/point indices, names, numeric value and display label. |
 | NgScheduleEvent | Unique Id, nonempty Title, Start and End with End > Start. |

@@ -14,19 +14,43 @@ The documentation launcher embeds these running examples here. Choose a framewor
 
 ## Behavior and practical rules
 
-Min must be less than Max and values must be finite. The gauge projects the configured value into the range; keep the original business value in the parent. Label and Unit explain the number without relying on color. This is a read-only display, not an input or a multi-scale gauge. Use the shared theme for light/dark contrast.
+Min must be less than Max; all numbers must be finite. Even finite bounds whose difference overflows are supported. Drawing clamps outside values; the displayed original value and Above maximum/Below minimum status preserve the supplied reading. Ranges/ranges accepts NgGaugeRange(From, To, Color, Label), lowercase fields in Flutter. Colors must be six-digit hex (#RRGGBB), labels nonblank, ranges inside the scale with From < To and no overlap. Input order is immaterial; validation sorts a copy. Gaps are allowed and use the theme primary color. Shared endpoints belong to the next range; Max belongs to the range ending at Max. Active color uses the clamped value. Stripes/arcs and a text legend show all ranges. ValueFormatter/valueFormatter formats current value, bounds and legend as plain text; Unit is appended only to the current value. Defaults preserve six significant digits, including fractional values. Replace lists when updating Flutter inputs. This is a read-only single-scale indicator; pointers, ticks, animation and export are not implemented.
 
 ## Blazor example
 
 ```razor
-<NgLinearGauge Label="Load" Value="72" Min="0" Max="100" Unit="%"/>
+<div class="toolbar">
+<NgButton OnClick="()=>value=42.5">Normal</NgButton>
+<NgButton OnClick="()=>value=72.5">Elevated</NgButton>
+<NgButton OnClick="()=>value=95">High</NgButton>
+<NgButton OnClick="()=>value=125">Above maximum</NgButton>
+<NgButton OnClick="()=>value=-10">Below minimum</NgButton>
+<NgButton OnClick="()=>showRanges=!showRanges">Toggle ranges</NgButton>
+</div>
+<NgLinearGauge Label="Load" Value="value" Ranges="@(showRanges?ranges:[])" ValueFormatter="Format"/>
+@code {
+ private double value=72.5;
+ private bool showRanges=true;
+ private string Format(double v)=>v.ToString("F1",System.Globalization.CultureInfo.InvariantCulture);
+ private NgGaugeRange[] ranges=[new(0,60,"#187444","Normal"),new(60,85,"#b66d16","Elevated"),new(85,100,"#b42318","High")];
+}
 ```
 
 ## Flutter example
 
 ```dart
-Widget build(BuildContext context) => const NgLinearGauge(label: 'Load',
-  value: 72, min: 0, max: 100, unit: '%');
+double value = 72.5;
+bool showRanges = true;
+final ranges = const [NgGaugeRange(0,60,'#187444','Normal'), NgGaugeRange(60,85,'#b66d16','Elevated'), NgGaugeRange(85,100,'#b42318','High')];
+Widget build(BuildContext context) => Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+ Wrap(spacing: 8, runSpacing: 8, children: [
+  for (final entry in {'Normal':42.5, 'Elevated':72.5, 'High':95.0, 'Above maximum':125.0, 'Below minimum':-10.0}.entries)
+   NgButton(onPressed:()=>setState(()=>value=entry.value), child:Text(entry.key)),
+  NgButton(onPressed:()=>setState(()=>showRanges=!showRanges), child:const Text('Toggle ranges')),
+ ]),
+ const SizedBox(height:16),
+ NgLinearGauge(label:'Load',value:value,ranges:showRanges?ranges:const [],valueFormatter:(v)=>v.toStringAsFixed(1)),
+]);
 ```
 
 ## Blazor parameters and events
@@ -35,6 +59,8 @@ Names are case-sensitive. `?` permits null. `EditorRequired` parameters are mark
 
 | Parameter | Type | Default / requirement | Purpose |
 |---|---|---|---|
+| `Ranges` | `IReadOnlyList<NgGaugeRange>` | [] | See the behavior rules and model contract above. |
+| `ValueFormatter` | `Func<double,string>?` | not set | See the behavior rules and model contract above. |
 | `Label` | `string` | "Progress" | Visible label or accessible name. |
 | `Value` | `double` | 0 | Current value; see state ownership and model rules above. |
 | `Min` | `double` | 0 | Inclusive minimum. |
@@ -52,6 +78,8 @@ Names are case-sensitive. `?` permits null. `EditorRequired` parameters are mark
 | `value` | `double` | Current value; see state ownership and model rules above. |
 | `min` | `double` | Inclusive minimum. |
 | `max` | `double` | Inclusive maximum. |
+| `ranges` | `List<NgGaugeRange>` | See the behavior rules and model contract above. |
+| `valueFormatter` | `String Function(double)?` | See the behavior rules and model contract above. |
 
 ```dart
 const NgLinearGauge({
@@ -61,6 +89,8 @@ const NgLinearGauge({
     this.min = 0,
     this.max = 100,
     this.unit = '%',
+    this.ranges = const [],
+    this.valueFormatter,
   });
 ```
 
