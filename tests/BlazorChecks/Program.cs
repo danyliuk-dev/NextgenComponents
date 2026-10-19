@@ -492,10 +492,19 @@ var groupedRows=NgDataOperations.Group(new[]{"b1","a1","b2","A1",""},s=>s.Length
 Rule(groupedRows.Select(g=>g.Key).SequenceEqual(new[]{"b","a","A",""}),"group keys preserve first appearance and case");
 Rule(groupedRows[0].Items.SequenceEqual(new[]{"b1","b2"}),"group rows retain input order");
 Reject(()=>NgDataOperations.Group(new[]{"x"},s=>null!),"null group keys rejected");
-await Check<NgDataGrid<string>>(new(){["Items"]=new[]{"b1","a1","b2","b3","b4","b5"},["Columns"]=remoteColumns,["RowId"]=(Func<string,string>)(s=>s),["GroupBy"]=(Func<string,string>)(s=>s[..1]),["GroupText"]=(Func<string,int,string>)((k,n)=>$"<{k}: {n}>")},"scope=\"rowgroup\"","&lt;b: 5&gt;","b5");
+await Check<NgDataGrid<string>>(new(){["Items"]=new[]{"b1","a1","b2","b3","b4","b5"},["Columns"]=remoteColumns,["RowId"]=(Func<string,string>)(s=>s),["GroupBy"]=(Func<string,string>)(s=>s[..1]),["GroupText"]=(Func<string,int,string>)((k,n)=>$"<{k}: {n}>")},"ng-grid-group","&lt;b: 5&gt;","b5");
 var remoteGroupCalls=0;
 try{await Check<NgDataGrid<string>>(new(){["Columns"]=remoteColumns,["RowId"]=(Func<string,string>)(s=>s),["GroupBy"]=(Func<string,string>)(s=>s),["ReadData"]=(Func<NgDataRequest,CancellationToken,Task<NgDataResult<string>>>)((r,t)=>{remoteGroupCalls++;return Task.FromResult(new NgDataResult<string>([],0));})});throw new Exception("Remote grouping accepted");}catch(ArgumentException){count++;}
 Rule(remoteGroupCalls==0,"invalid grouping never invokes remote adapter");
+var deepGroups=NgDataOperations.GroupTree(new[]{"A/x/1","B/x/2","A/y/3","A/x/4"},new Func<string,string>[]{r=>r.Split('/')[0],r=>r.Split('/')[1]});
+Rule(deepGroups[0].Items.SequenceEqual(new[]{"A/x/1","A/x/4","A/y/3"}),"nested grouping order before paging");
+Rule(NgDataOperations.AllGroups(deepGroups).Select(g=>g.Id).Distinct().Count()==5,"nested sibling IDs are distinct");
+Rule(NgDataOperations.GroupId(["a:","b"])!=NgDataOperations.GroupId(["a",":b"]) && NgDataOperations.GroupId([""])=="0:","path encoding handles separators and empty keys");
+Reject(()=>NgDataOperations.GroupTree(new[]{"a"},Enumerable.Repeat<Func<string,string>>(s=>s,9).ToArray()),"group depth bound");
+foreach(var (op,expected) in new[]{("sum",18d),("average",6d),("min",2d),("max",12d),("count",3d)})Rule(new NgGroupAggregate<double?>("Value",v=>v,op).Calculate([2,4,null,double.NaN,double.PositiveInfinity,12])==expected,$"group aggregate {op}");
+Rule(new NgGroupAggregate<double?>("Mean",v=>v,"average").Calculate([null]) is null,"empty average is missing");
+Reject(()=>new NgGroupAggregate<int>("Bad",v=>v,"bad").Calculate([]),"unknown aggregate rejected");
+await Check<NgDataGrid<string>>(new(){["Items"]=new[]{"A/x/1","A/y/3"},["Columns"]=remoteColumns,["RowId"]=(Func<string,string>)(s=>s),["GroupSelectors"]=new Func<string,string>[]{s=>s.Split('/')[0],s=>s.Split('/')[1]},["GroupAggregates"]=new[]{new NgGroupAggregate<string>("<Sum>",s=>double.Parse(s.Split('/')[2]))},["CollapsibleGroups"]=true,["CollapsedGroups"]=new HashSet<string>{NgDataOperations.GroupId(["A"]) }},"aria-expanded=\"false\"","Expand A","&lt;Sum&gt;: 4","disabled");
 Console.WriteLine($"{count} rendering and data/date-rule checks passed. Browser interaction requires the separate visual run.");
 sealed class NoBrowserJS : IJSRuntime {
  public ValueTask<TValue> InvokeAsync<TValue>(string identifier, object?[]? args) => throw new InvalidOperationException("JS must not execute in SSR");

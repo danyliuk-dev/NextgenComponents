@@ -153,3 +153,11 @@ Drawer continues to use `NgOption`. `IsVisible/isVisible` and `IsSeparator/isSep
 ### Spreadsheet change and protection helpers (0.39)
 
 `NgSheet.Paste(origin, text, canEdit)` in C# / `paste(origin, text, canEdit: ...)` in Dart validates every supplied destination before returning a new sheet. The optional predicate receives uppercase addresses. A protected destination rejects the whole operation, even if the supplied value is unchanged. `ChangedCells(other)` / `changedCells(other)` returns changed raw-value addresses in row order and requires equal dimensions. Formula result changes alone do not count as raw edits.
+
+## Local Grid grouping models
+
+Use `GroupBy`/`groupBy` for a single string selector or `GroupSelectors`/`groupSelectors` for ordered nested selectors (maximum eight levels). They are mutually exclusive. `NgDataOperations.GroupTree` (Blazor) and `ngGroupTree` (Flutter) expose the same first-appearance grouping algorithm. Each `NgGridGroup<T>` contains its full `Path`/`path`, encoded `Id`/`id`, `Key`/`key`, zero-based `Depth`/`depth`, filtered `Items`/`items` and `Children`/`children`.
+
+`NgDataOperations.GroupId(new[]{"Chair","Available"})` and `ngGroupId(['Chair','Available'])` both produce `5:Chair9:Available`. Store these opaque full-path IDs in the controlled collapsed set. Empty keys and punctuation are supported. IDs remain stable across search, sorting and paging. Change the source version when changing grouping rules, and let the application decide whether to reset its collapsed set.
+
+`NgGroupAggregate<T>` takes a title, a nullable numeric selector, an operation (`sum`, `average`, `min`, `max`, `count`) and an optional formatter. Blazor uses positional record arguments; Flutter uses named `operation` and `format`. Each aggregate is computed over original filtered records at its group level, not over page rows or child averages. Null and nonfinite values are ignored. Count means the number of finite numeric values; group header counts mean records. This uses double precision and is not a decimal accounting engine. See the [Grid manual](NgDataGrid.md) for state and paging contracts.

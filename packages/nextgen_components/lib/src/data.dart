@@ -19,6 +19,91 @@ class NgDataColumn<T> {
   String text(T item) => format?.call(item) ?? value(item)?.toString() ?? '';
 }
 
+/// A full filtered group. IDs encode the complete path, including empty keys.
+class NgGridGroup<T> {
+  final List<String> path;
+  final List<T> items;
+  final List<NgGridGroup<T>> children;
+  NgGridGroup(List<String> path, List<T> items, List<NgGridGroup<T>> children)
+    : path = List.unmodifiable(path),
+      items = List.unmodifiable(items),
+      children = List.unmodifiable(children);
+  String get id => ngGroupId(path);
+  String get key => path.last;
+  int get depth => path.length - 1;
+}
+
+String ngGroupId(Iterable<String> path) =>
+    path.map((k) => '${k.length}:$k').join();
+List<NgGridGroup<T>> ngGroupTree<T>(
+  List<T> source,
+  List<String Function(T)> selectors,
+) {
+  if (selectors.length > 8)
+    throw ArgumentError('At most eight group levels are supported.');
+  List<NgGridGroup<T>> walk(List<T> rows, int depth, List<String> path) {
+    if (depth == selectors.length) return [];
+    final buckets = <String, List<T>>{};
+    for (final row in rows) {
+      buckets.putIfAbsent(selectors[depth](row), () => []).add(row);
+    }
+    return buckets.entries.map((entry) {
+      final next = [...path, entry.key];
+      final children = walk(entry.value, depth + 1, next);
+      return NgGridGroup<T>(
+        next,
+        children.isEmpty
+            ? entry.value
+            : children.expand((g) => g.items).toList(),
+        children,
+      );
+    }).toList();
+  }
+
+  return walk(source, 0, []);
+}
+
+Iterable<NgGridGroup<T>> ngAllGroups<T>(Iterable<NgGridGroup<T>> groups) sync* {
+  for (final group in groups) {
+    yield group;
+    yield* ngAllGroups(group.children);
+  }
+}
+
+class NgGroupAggregate<T> {
+  final String title, operation;
+  final double? Function(T) value;
+  final String Function(double?)? format;
+  const NgGroupAggregate(
+    this.title,
+    this.value, {
+    this.operation = 'sum',
+    this.format,
+  });
+  double? calculate(Iterable<T> rows) {
+    if (!['sum', 'average', 'min', 'max', 'count'].contains(operation))
+      throw ArgumentError('Unknown aggregate operation.');
+    final values = rows
+        .map(value)
+        .whereType<double>()
+        .where((v) => v.isFinite)
+        .toList();
+    if (operation == 'count') return values.length.toDouble();
+    if (operation == 'sum') return values.fold<double>(0, (a, b) => a + b);
+    if (values.isEmpty) return null;
+    if (operation == 'average')
+      return values.fold<double>(0, (a, b) => a + b) / values.length;
+    return values.reduce(
+      (a, b) => operation == 'min' ? (a < b ? a : b) : (a > b ? a : b),
+    );
+  }
+
+  String text(Iterable<T> rows) {
+    final result = calculate(rows);
+    return '$title: ${format?.call(result) ?? (result == null ? '—' : result.toStringAsFixed(2).replaceFirst(RegExp(r'\.?0+$'), ''))}';
+  }
+}
+
 class NgTreeNode<T> {
   final String id;
   final T item;
@@ -443,6 +528,13 @@ class NgDataGrid<T> extends StatefulWidget {
   final Object? dataVersion;
   final String Function(T)? groupBy;
   final String Function(String, int)? groupText;
+  final List<String Function(T)> groupSelectors;
+  final List<NgGroupAggregate<T>> groupAggregates;
+  final bool collapsibleGroups, groupExpansionReadOnly;
+  final Set<String> collapsedGroups;
+  final ValueChanged<Set<String>>? onCollapsedGroupsChanged;
+  final String Function(List<String>, bool)? groupToggleLabel;
+  final String expandGroupsText, collapseGroupsText;
   final bool multiSort;
   final String loadingText, errorText, retryText;
   final List<NgDataColumn<T>> columns;
@@ -463,6 +555,15 @@ class NgDataGrid<T> extends StatefulWidget {
     this.dataVersion,
     this.groupBy,
     this.groupText,
+    this.groupSelectors = const [],
+    this.groupAggregates = const [],
+    this.collapsibleGroups = false,
+    this.groupExpansionReadOnly = false,
+    this.collapsedGroups = const {},
+    this.onCollapsedGroupsChanged,
+    this.groupToggleLabel,
+    this.expandGroupsText = 'Expand all groups',
+    this.collapseGroupsText = 'Collapse all groups',
     this.multiSort = false,
     this.loadingText = 'Loading records…',
     this.errorText = 'Unable to load records.',
@@ -493,20 +594,108 @@ class _NgDataGridState<T> extends State<NgDataGrid<T>> {
   bool loading = false, error = false;
   int total = 0, revision = 0;
   List<T> remote = [];
-  List<T> get rows {
-    if (widget.readData != null) return remote;
-    final queried = NgDataOperations.queryMany(
-      widget.items,
-      widget.columns,
-      search,
-      sorts,
-    );
-    if (widget.groupBy == null) return queried;
-    final buckets = <String, List<T>>{};
-    for (final row in queried) {
-      buckets.putIfAbsent(widget.groupBy!(row), () => []).add(row);
+  List<String Function(T)> get selectors =>
+      widget.groupBy == null ? widget.groupSelectors : [widget.groupBy!];
+  List<T> get queried =>
+      NgDataOperations.queryMany(widget.items, widget.columns, search, sorts);
+  List<NgGridGroup<T>> get groups => ngGroupTree(queried, selectors);
+  List<T> get rows => widget.readData != null
+      ? remote
+      : selectors.isEmpty
+      ? queried
+      : groups.expand((g) => g.items).toList();
+  bool isCollapsed(String id) =>
+      widget.collapsibleGroups && widget.collapsedGroups.contains(id);
+  bool get canToggleGroups =>
+      mounted &&
+      !loading &&
+      !error &&
+      widget.collapsibleGroups &&
+      !widget.groupExpansionReadOnly &&
+      widget.onCollapsedGroupsChanged != null &&
+      selectors.isNotEmpty;
+  bool canBulk(bool collapse) =>
+      canToggleGroups &&
+      ngAllGroups(
+        groups,
+      ).any((g) => widget.collapsedGroups.contains(g.id) != collapse);
+  List<(NgGridGroup<T>?, List<T>)> get sections {
+    if (selectors.isEmpty) return [(null, visible)];
+    final ids = visible.map(widget.rowId).toSet();
+    final result = <(NgGridGroup<T>?, List<T>)>[];
+    void walk(List<NgGridGroup<T>> nodes) {
+      for (final g in nodes) {
+        final pageRows = g.items
+            .where((r) => ids.contains(widget.rowId(r)))
+            .toList();
+        if (pageRows.isEmpty) continue;
+        result.add((
+          g,
+          !isCollapsed(g.id) && g.children.isEmpty ? pageRows : <T>[],
+        ));
+        if (!isCollapsed(g.id)) walk(g.children);
+      }
     }
-    return buckets.values.expand((v) => v).toList();
+
+    walk(groups);
+    return result;
+  }
+
+  List<T> get displayRows => sections.expand((s) => s.$2).toList();
+  void toggleGroup(String id) {
+    if (!canToggleGroups || !sections.any((s) => s.$1?.id == id)) return;
+    final next = {...widget.collapsedGroups};
+    if (!next.add(id)) next.remove(id);
+    widget.onCollapsedGroupsChanged!(next);
+  }
+
+  void bulkGroups(bool collapse) {
+    if (!canBulk(collapse)) return;
+    final next = {...widget.collapsedGroups};
+    for (final g in ngAllGroups(groups)) {
+      if (collapse) {
+        next.add(g.id);
+      } else {
+        next.remove(g.id);
+      }
+    }
+    widget.onCollapsedGroupsChanged!(next);
+  }
+
+  Widget groupHeader(NgGridGroup<T> group) {
+    final expanded = !isCollapsed(group.id);
+    final caption = groupTitle(group.key, group.items.length);
+    final label =
+        widget.groupToggleLabel?.call(group.path, expanded) ??
+        '${expanded ? "Collapse" : "Expand"} ${group.path.map((k) => k.isEmpty ? "(empty)" : k).join(" / ")}';
+    return Padding(
+      padding: EdgeInsetsDirectional.only(start: group.depth * 20.0),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (widget.collapsibleGroups)
+            TextButton(
+              onPressed: canToggleGroups ? () => toggleGroup(group.id) : null,
+              child: Semantics(
+                label: label,
+                expanded: expanded,
+                excludeSemantics: true,
+                child: Text('${expanded ? "▾" : "▸"} $caption'),
+              ),
+            )
+          else
+            Semantics(
+              header: true,
+              child: Text(
+                caption,
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
+          for (final aggregate in widget.groupAggregates)
+            Text(' · ${aggregate.text(group.items)}'),
+        ],
+      ),
+    );
   }
 
   String groupTitle(String key, int count) {
@@ -598,7 +787,9 @@ class _NgDataGridState<T> extends State<NgDataGrid<T>> {
     );
     if (!widget.multiSort && sorts.length > 1)
       sorts.removeRange(1, sorts.length);
-    if ((oldWidget.groupBy == null) != (widget.groupBy == null)) page = 1;
+    if ((oldWidget.groupBy == null && oldWidget.groupSelectors.isEmpty) !=
+        (selectors.isEmpty))
+      page = 1;
     if (oldWidget.readData != widget.readData ||
         oldWidget.dataVersion != widget.dataVersion ||
         before != sorts.length) {
@@ -634,14 +825,24 @@ class _NgDataGridState<T> extends State<NgDataGrid<T>> {
     final matches = (widget.readData == null ? widget.items : remote).where(
       (item) => widget.rowId(item) == widget.rowId(row),
     );
-    if (matches.isEmpty || !canChange(matches.first)) return;
+    if (matches.isEmpty ||
+        !canChange(matches.first) ||
+        !displayRows.any((r) => widget.rowId(r) == widget.rowId(row)))
+      return;
     final next = {...widget.selectedIds};
     if (!next.add(widget.rowId(row))) next.remove(widget.rowId(row));
     widget.onSelectionChanged!(next);
   }
 
   void validateGrouping() {
-    if (widget.groupBy != null && widget.readData != null)
+    if (widget.groupBy != null && widget.groupSelectors.isNotEmpty)
+      throw ArgumentError('Use groupBy or groupSelectors, not both.');
+    if (selectors.length > 8)
+      throw ArgumentError('At most eight group levels are supported.');
+    for (final aggregate in widget.groupAggregates) {
+      aggregate.calculate(<T>[]);
+    }
+    if (selectors.isNotEmpty && widget.readData != null)
       throw ArgumentError('Local grouping requires items, not readData.');
   }
 
@@ -659,15 +860,9 @@ class _NgDataGridState<T> extends State<NgDataGrid<T>> {
         'Grid column keys must be nonempty and unique, with at least one column.',
       );
     if (!loading) page = NgDataOperations.clampPage(page, count, size);
-    final pageRows = visible;
-    final groupCounts = <String, int>{};
-    if (widget.groupBy != null) {
-      for (final row in rows) {
-        final key = widget.groupBy!(row);
-        groupCounts.update(key, (n) => n + 1, ifAbsent: () => 1);
-      }
-    }
-    final eligible = pageRows
+    final displaySections = sections;
+    final eligible = displaySections
+        .expand((s) => s.$2)
         .where((row) => widget.canSelect?.call(row) ?? true)
         .toList();
     final selectionVisible = widget.onSelectionChanged != null;
@@ -726,6 +921,20 @@ class _NgDataGridState<T> extends State<NgDataGrid<T>> {
           ],
         ),
         const SizedBox(height: 16),
+        if (widget.collapsibleGroups && selectors.isNotEmpty)
+          Wrap(
+            spacing: 8,
+            children: [
+              TextButton(
+                onPressed: canBulk(false) ? () => bulkGroups(false) : null,
+                child: Text(widget.expandGroupsText),
+              ),
+              TextButton(
+                onPressed: canBulk(true) ? () => bulkGroups(true) : null,
+                child: Text(widget.collapseGroupsText),
+              ),
+            ],
+          ),
         LayoutBuilder(
           builder: (context, c) => SingleChildScrollView(
             scrollDirection: Axis.horizontal,
@@ -770,7 +979,7 @@ class _NgDataGridState<T> extends State<NgDataGrid<T>> {
                                       widget.selectionReadOnly ||
                                       widget.onSelectionChanged == null)
                                     return;
-                                  final current = visible
+                                  final current = displayRows
                                       .where(canChange)
                                       .toList();
                                   if (current.isEmpty) return;
@@ -808,74 +1017,59 @@ class _NgDataGridState<T> extends State<NgDataGrid<T>> {
                     const DataColumn(label: Text('Actions')),
                 ],
                 rows: [
-                  for (final (index, row) in pageRows.indexed) ...[
-                    if (widget.groupBy != null &&
-                        (index == 0 ||
-                            widget.groupBy!(pageRows[index - 1]) !=
-                                widget.groupBy!(row)))
+                  for (final section in displaySections) ...[
+                    if (section.$1 case final group?)
                       DataRow(
-                        key: ValueKey(('group', widget.groupBy!(row))),
+                        key: ValueKey(('group', group.id)),
                         color: WidgetStatePropertyAll(
                           Theme.of(context).colorScheme.surfaceContainerHighest,
                         ),
                         cells: [
                           if (selectionVisible)
                             const DataCell(SizedBox.shrink()),
-                          for (
-                            var columnIndex = 0;
-                            columnIndex < widget.columns.length;
-                            columnIndex++
-                          )
+                          for (var i = 0; i < widget.columns.length; i++)
                             DataCell(
-                              columnIndex == 0
-                                  ? Semantics(
-                                      header: true,
-                                      child: Text(
-                                        groupTitle(
-                                          widget.groupBy!(row),
-                                          groupCounts[widget.groupBy!(row)]!,
-                                        ),
-                                        style: const TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    )
+                              i == 0
+                                  ? groupHeader(group)
                                   : const SizedBox.shrink(),
                             ),
                           if (widget.rowActions != null)
                             const DataCell(SizedBox.shrink()),
                         ],
                       ),
-                    DataRow(
-                      key: ValueKey(widget.rowId(row)),
-                      selected: widget.selectedIds.contains(widget.rowId(row)),
-                      onSelectChanged: canChange(row)
-                          ? (_) => selectRow(row)
-                          : null,
-                      cells: [
-                        if (selectionVisible)
-                          DataCell(
-                            Semantics(
-                              label: 'Select ${widget.rowId(row)}',
-                              child: Checkbox(
-                                value: widget.selectedIds.contains(
-                                  widget.rowId(row),
+                    for (final row in section.$2)
+                      DataRow(
+                        key: ValueKey(widget.rowId(row)),
+                        selected: widget.selectedIds.contains(
+                          widget.rowId(row),
+                        ),
+                        onSelectChanged: canChange(row)
+                            ? (_) => selectRow(row)
+                            : null,
+                        cells: [
+                          if (selectionVisible)
+                            DataCell(
+                              Semantics(
+                                label: 'Select ${widget.rowId(row)}',
+                                child: Checkbox(
+                                  value: widget.selectedIds.contains(
+                                    widget.rowId(row),
+                                  ),
+                                  onChanged: canChange(row)
+                                      ? (_) => selectRow(row)
+                                      : null,
                                 ),
-                                onChanged: canChange(row)
-                                    ? (_) => selectRow(row)
-                                    : null,
                               ),
                             ),
-                          ),
-                        for (final column in widget.columns)
-                          DataCell(
-                            column.cellBuilder?.call(context, row) ??
-                                Text(column.text(row)),
-                          ),
-                        if (widget.rowActions != null)
-                          DataCell(widget.rowActions!(context, row)),
-                      ],
-                    ),
+                          for (final column in widget.columns)
+                            DataCell(
+                              column.cellBuilder?.call(context, row) ??
+                                  Text(column.text(row)),
+                            ),
+                          if (widget.rowActions != null)
+                            DataCell(widget.rowActions!(context, row)),
+                        ],
+                      ),
                   ],
                 ],
               ),

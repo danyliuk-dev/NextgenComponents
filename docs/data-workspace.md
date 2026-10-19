@@ -80,3 +80,11 @@ Full-remote checking, upward ID normalization, virtualization, drag/drop and nat
 GroupBy/groupBy enables one local grouping level. Search and stable sorting run before grouping; groups follow first appearance and retain row order within each group. Paging counts data rows only. Headers repeat when a group crosses a page boundary and display the full filtered count, with a customizable plain-text caption. Group headers cannot be selected; page selection affects only eligible visible data rows and preserves off-page IDs.
 
 Enabling/disabling grouping resets the page; use DataVersion/dataVersion after changing a grouping rule. Empty string keys are valid and keys are case-sensitive. Selectors must be pure. Combining grouping with ReadData/readData is rejected before requests because server pages cannot supply whole-group counts. Collapse, multiple grouping levels, aggregates, remote grouping, virtualization and built-in CRUD remain open.
+
+## Local Grid grouping workspace (0.65)
+
+Local grouping now supports up to eight ordered levels, controlled per-path collapse/expand, filtered expand-all/collapse-all, localized actions and independent expansion locks. Full-path IDs distinguish repeated child labels and preserve hidden/unknown state. Changing rules uses DataVersion. Collapse happens after record paging, retaining page ranges and repeated ancestor headers. Selection includes eligible rendered data rows only and retains hidden selections. Rejected and stale actions do not bypass current state or permissions.
+
+Numeric group summaries support sum, average, min, max and count with custom formatting. Every level aggregates its full filtered records before paging/collapse; parent averages are record-weighted. Null and nonfinite values are excluded. Count counts finite numeric values; group headers count all records. Calculations use double precision. Demo controls switch grouping, nesting, totals and expansion locks on both platforms. See the Grid manual for complete contracts.
+
+Remote grouping requires a separate group-aware loading protocol and remains unsupported. Virtualization, built-in CRUD, drag-to-group UI, aggregate footers/templates and native/accessibility certification remain open. This is a complete bounded local grouping block, not a claim of full Telerik parity.

@@ -1,7 +1,10 @@
 @* Generated from scripts/manual_content.py *@
 <h3>Local grouped inventory</h3>
 <NgCheckBox Label="Group by product" @bind-Value="grouped"/>
-<NgDataGrid TItem="Product" Label="Grouped inventory" Items="rows" Columns="columns" RowId="r=>r.Id" GroupBy="@(grouped?ProductGroup:null)" GroupText="GroupCaption" MultiSort="true" @bind-SelectedIds="localSelected" CanSelect="r=>r.Count<100"/>
+<NgCheckBox Label="Also group by availability" @bind-Value="nested"/>
+<NgCheckBox Label="Show group totals" @bind-Value="totals"/>
+<NgCheckBox Label="Lock group expansion" @bind-Value="groupLocked"/>
+<NgDataGrid TItem="Product" Label="Grouped inventory" Items="rows" Columns="columns" RowId="r=>r.Id" GroupSelectors="Grouping" DataVersion="@($"{grouped}/{nested}")" CollapsibleGroups="true" @bind-CollapsedGroups="collapsed" GroupExpansionReadOnly="groupLocked" GroupAggregates="@(totals?aggregates:[])" GroupText="GroupCaption" MultiSort="true" @bind-SelectedIds="localSelected" CanSelect="r=>r.Count<100"/>
 <p>Local selection: @string.Join(", ",localSelected.Order())</p>
 <h3>Remote paging adapter</h3>
 <NgCheckBox Label="Fail requests" @bind-Value="fail"/>
@@ -10,7 +13,10 @@
 <p>Requests: @requests · Latest query: @query</p>
 @code {
  public record Product(string Id,string Name,int Count);
- private bool grouped=true; private HashSet<string> localSelected=[]; private string ProductGroup(Product row)=>row.Name; private string GroupCaption(string key,int count)=>$"{key}: {count} matching records";
+ private bool grouped=true,nested=true,totals=true,groupLocked;
+ private HashSet<string> collapsed=[];
+ private IReadOnlyList<Func<Product,string>> Grouping=>!grouped?[]:nested?[ProductGroup,r=>r.Count<100?"Available":"Protected"]:[ProductGroup];
+ private static readonly NgGroupAggregate<Product>[] aggregates=[new("Total quantity",r=>r.Count),new("Average",r=>r.Count,"average",v=>v?.ToString("0.0")??"—")]; private HashSet<string> localSelected=[]; private string ProductGroup(Product row)=>row.Name; private string GroupCaption(string key,int count)=>$"{key}: {count} matching records";
  private bool fail; private int version,requests; private string query="";
  private HashSet<string> selected=[];
  private static readonly Product[] rows=Enumerable.Range(1,40).Select(i=>new Product($"p{i}",i%2==0?"Desk":"Chair",i*4)).ToArray();

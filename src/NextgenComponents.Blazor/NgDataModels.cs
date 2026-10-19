@@ -13,6 +13,20 @@ public sealed record NgBreadcrumbItem(string Id,string Label);
 
 public sealed record NgDataGroup<T>(string Key,IReadOnlyList<T> Items);
 
+public sealed record NgGridGroup<T>(IReadOnlyList<string> Path,IReadOnlyList<T> Items,IReadOnlyList<NgGridGroup<T>> Children) {
+    public string Id=>NgDataOperations.GroupId(Path);
+    public string Key=>Path[^1];
+    public int Depth=>Path.Count-1;
+}
+public sealed record NgGroupAggregate<T>(string Title,Func<T,double?> Value,string Operation="sum",Func<double?,string>? Format=null) {
+    public double? Calculate(IEnumerable<T> rows) {
+        if(Operation is not ("sum" or "average" or "min" or "max" or "count"))throw new ArgumentException("Unknown aggregate operation.");
+        var values=rows.Select(Value).Where(v=>v.HasValue && double.IsFinite(v.Value)).Select(v=>v!.Value).ToArray();
+        return Operation switch {"count"=>values.Length,"sum"=>values.Sum(),"average"=>values.Length==0?null:values.Average(),"min"=>values.Length==0?null:values.Min(),_=>values.Length==0?null:values.Max()};
+    }
+    public string Text(IEnumerable<T> rows){var value=Calculate(rows);return Title+": "+(Format?.Invoke(value)??value?.ToString("0.##",CultureInfo.CurrentCulture)??"—");}
+}
+
 public sealed record NgSortDescriptor(string Key,bool Descending=false);
 public sealed record NgDataRequest(int Page,int PageSize,string Search,IReadOnlyList<NgSortDescriptor> Sorts);
 public sealed record NgDataResult<T>(IReadOnlyList<T> Items,int Total);
@@ -23,6 +37,17 @@ public static class NgDataOperations
         var buckets=new Dictionary<string,List<T>>(StringComparer.Ordinal);
         foreach(var row in source){var value=key(row)??throw new ArgumentException("Group keys cannot be null.");if(!buckets.TryGetValue(value,out var rows))buckets[value]=rows=[];rows.Add(row);}
         return buckets.Select(x=>new NgDataGroup<T>(x.Key,Array.AsReadOnly(x.Value.ToArray()))).ToArray();
+    }
+
+    public static string GroupId(IEnumerable<string> path)=>string.Concat(path.Select(k=>$"{k.Length}:{k}"));
+    public static IReadOnlyList<NgGridGroup<T>> GroupTree<T>(IEnumerable<T> source,IReadOnlyList<Func<T,string>> selectors) {
+        if(selectors.Count>8)throw new ArgumentException("At most eight group levels are supported.");
+        IReadOnlyList<NgGridGroup<T>> Walk(IEnumerable<T> rows,int depth,IReadOnlyList<string> path)=>depth==selectors.Count?[]:
+            Group(rows,selectors[depth]).Select(g=>{var next=path.Append(g.Key).ToArray();var children=Walk(g.Items,depth+1,next);return new NgGridGroup<T>(Array.AsReadOnly(next),children.Count==0?g.Items:children.SelectMany(c=>c.Items).ToArray(),children);}).ToArray();
+        return Walk(source,0,[]);
+    }
+    public static IEnumerable<NgGridGroup<T>> AllGroups<T>(IEnumerable<NgGridGroup<T>> groups) {
+        foreach(var group in groups){yield return group;foreach(var child in AllGroups(group.Children))yield return child;}
     }
 
     // A branch check represents its own record plus eligible, loaded descendants.

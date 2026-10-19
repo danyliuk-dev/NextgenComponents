@@ -331,7 +331,9 @@ class _NgDataGridExampleState extends State<NgDataGridExample> {
 final rows = List.generate(40, (i) => (id: 'p${i+1}', name: i.isOdd ? 'Desk' : 'Chair', count: (i+1)*4));
 final columns = <NgDataColumn<({String id, String name, int count})>>[
   NgDataColumn('name', 'Name', (r) => r.name), NgDataColumn('count', 'Quantity', (r) => r.count)];
-Set<String> localSelected = {}; bool grouped=true;
+Set<String> localSelected = {}; bool grouped=true,nested=true,totals=true,groupLocked=false;
+Set<String> collapsed={};
+final aggregates=<NgGroupAggregate<({String id,String name,int count})>>[NgGroupAggregate('Total quantity',(r)=>r.count.toDouble()),NgGroupAggregate('Average',(r)=>r.count.toDouble(),operation:'average',format:(v)=>v?.toStringAsFixed(1)??'—')];
 Set<String> selected = {};
 bool fail = false;
 int version = 0, requests = 0;
@@ -346,7 +348,10 @@ Future<NgDataResult<({String id, String name, int count})>> read(NgDataRequest r
 Widget build(BuildContext context) => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
   const Text('Local grouped inventory'),
   NgCheckBox(label:'Group by product',value:grouped,onChanged:(v)=>setState(()=>grouped=v)),
-  NgDataGrid<({String id,String name,int count})>(label:'Grouped inventory',items:rows,columns:columns,rowId:(r)=>r.id,groupBy:grouped?(r)=>r.name:null,groupText:(key,count)=>'$key: $count matching records',multiSort:true,selectedIds:localSelected,onSelectionChanged:(v)=>setState(()=>localSelected=v),canSelect:(r)=>r.count<100),
+  NgCheckBox(label:'Also group by availability',value:nested,onChanged:(v)=>setState(()=>nested=v)),
+  NgCheckBox(label:'Show group totals',value:totals,onChanged:(v)=>setState(()=>totals=v)),
+  NgCheckBox(label:'Lock group expansion',value:groupLocked,onChanged:(v)=>setState(()=>groupLocked=v)),
+  NgDataGrid<({String id,String name,int count})>(label:'Grouped inventory',items:rows,columns:columns,rowId:(r)=>r.id,groupSelectors:!grouped?[]:nested?[(r)=>r.name,(r)=>r.count<100?'Available':'Protected']:[(r)=>r.name],dataVersion:'$grouped/$nested',collapsibleGroups:true,collapsedGroups:collapsed,onCollapsedGroupsChanged:(v)=>setState(()=>collapsed=v),groupExpansionReadOnly:groupLocked,groupAggregates:totals?aggregates:[],groupText:(key,count)=>'$key: $count matching records',multiSort:true,selectedIds:localSelected,onSelectionChanged:(v)=>setState(()=>localSelected=v),canSelect:(r)=>r.count<100),
   Text('Local selection: ${(localSelected.toList()..sort()).join(", ")}'),
   const Text('Remote paging adapter'),
   NgCheckBox(label: 'Fail requests', value: fail, onChanged: (v) => setState(() => fail = v)),

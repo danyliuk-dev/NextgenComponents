@@ -4,6 +4,7 @@
 @if(loading){<p role="status">@LoadingText</p>}
 @if(error){<p role="alert">@ErrorText <button type="button" @onclick="ReloadAsync">@RetryText</button></p>}
 <div class="ng-data-toolbar"><label class="ng-field">Search @Label<input class="ng-input" aria-label="@($"Search {Label}")" value="@search" @oninput="Search" /></label><span role="status">@SelectedIds.Count selected</span>@Toolbar @if(MultiSort){<button type="button" disabled="@(sorts.Count==0)" @onclick="ClearSort">Clear sorting</button>}</div>
+@if(CollapsibleGroups && Selectors.Count>0){<div class="ng-data-toolbar"><button type="button" disabled="@(!CanBulk(false))" @onclick="()=>BulkGroups(false)">@ExpandGroupsText</button><button type="button" disabled="@(!CanBulk(true))" @onclick="()=>BulkGroups(true)">@CollapseGroupsText</button></div>}
 <div class="ng-table-scroll" tabindex="0" aria-label="@($"{Label} table scroll area")">
 <table class="ng-data-table"><caption class="ng-sr-only">@Label</caption><thead><tr>
 @if(Selectable){<th scope="col"><input type="checkbox" aria-label="Select page" checked="@(Eligible.Count>0 && Eligible.All(x=>SelectedIds.Contains(RowId(x))))" disabled="@(Eligible.Count==0 || SelectionReadOnly || !SelectedIdsChanged.HasDelegate)" aria-checked="@(Eligible.Any(x=>SelectedIds.Contains(RowId(x))) && !Eligible.All(x=>SelectedIds.Contains(RowId(x)))?"mixed":null)" @onchange="SelectPage" /></th>}
@@ -11,10 +12,13 @@
 @if(RowActions is not null){<th scope="col">Actions</th>}
 </tr></thead>
 @if(!loading && !error && Visible.Count==0){<tbody><tr><td colspan="@(Columns.Count+(Selectable?1:0)+(RowActions is null?0:1))" class="ng-empty">@if(EmptyTemplate is not null){@EmptyTemplate}else{@EmptyText}</td></tr></tbody>}
-@foreach(var section in VisibleSections){
+@foreach(var section in DisplaySections){
 <tbody>
-@if(GroupBy is not null){var key=GroupBy(section[0]);<tr class="ng-grid-group"><th scope="rowgroup" colspan="@(Columns.Count+(Selectable?1:0)+(RowActions is null?0:1))">@(GroupText?.Invoke(key,groupCounts[key])??$"{(key.Length==0?"(empty)":key)} ({groupCounts[key]})")</th></tr>}
-@foreach(var row in section){var id=RowId(row);
+@if(section.Group is {} group){<tr class="ng-grid-group"><th scope="rowgroup" colspan="@(Columns.Count+(Selectable?1:0)+(RowActions is null?0:1))" style="padding-inline-start:@(14+group.Depth*20)px">
+@if(CollapsibleGroups){<button type="button" aria-expanded="@(!IsCollapsed(group.Id)?"true":"false")" aria-label="@ToggleLabel(group)" disabled="@(!CanToggleGroups)" @onclick="()=>ToggleGroup(group.Id)"><span aria-hidden="true">@(IsCollapsed(group.Id)?"▸":"▾")</span> @Caption(group)</button>}else{@Caption(group)}
+@foreach(var aggregate in GroupAggregates){<span class="ng-group-summary"> · @aggregate.Text(group.Items)</span>}
+</th></tr>}
+@foreach(var row in section.Rows){var id=RowId(row);
 <tr @key="id" class="@(SelectedIds.Contains(id)?"ng-row-selected":"")">
 @if(Selectable){<td><input type="checkbox" aria-label="@($"Select {id}")" checked="@SelectedIds.Contains(id)" disabled="@(!CanChange(row))" @onchange="()=>Toggle(row)" /></td>}
 @foreach(var column in Columns){<td>@if(column.Template is not null){@column.Template(row)}else{@column.Text(row)}</td>}
@@ -28,7 +32,31 @@
  [Parameter] public Func<NgDataRequest,CancellationToken,Task<NgDataResult<TItem>>>? ReadData{get;set;}
  [Parameter] public Func<TItem,string>? GroupBy{get;set;}
  [Parameter] public Func<string,int,string>? GroupText{get;set;}
- private Dictionary<string,int> groupCounts=[];
+ [Parameter] public IReadOnlyList<Func<TItem,string>> GroupSelectors{get;set;}=[];
+ [Parameter] public IReadOnlyList<NgGroupAggregate<TItem>> GroupAggregates{get;set;}=[];
+ [Parameter] public bool CollapsibleGroups{get;set;}
+ [Parameter] public HashSet<string> CollapsedGroups{get;set;}=[];
+ [Parameter] public EventCallback<HashSet<string>> CollapsedGroupsChanged{get;set;}
+ [Parameter] public bool GroupExpansionReadOnly{get;set;}
+ [Parameter] public Func<IReadOnlyList<string>,bool,string>? GroupToggleLabel{get;set;}
+ [Parameter] public string ExpandGroupsText{get;set;}="Expand all groups";
+ [Parameter] public string CollapseGroupsText{get;set;}="Collapse all groups";
+ private IReadOnlyList<NgGridGroup<TItem>> groups=[];
+ private IReadOnlyList<Func<TItem,string>> Selectors=>GroupBy is null?GroupSelectors:[GroupBy];
+ private bool IsCollapsed(string id)=>CollapsibleGroups && CollapsedGroups.Contains(id);
+ private string Caption(NgGridGroup<TItem> g)=>GroupText?.Invoke(g.Key,g.Items.Count)??$"{(g.Key.Length==0?"(empty)":g.Key)} ({g.Items.Count})";
+ private string ToggleLabel(NgGridGroup<TItem> g)=>GroupToggleLabel?.Invoke(g.Path,!IsCollapsed(g.Id))??$"{(IsCollapsed(g.Id)?"Expand":"Collapse")} {string.Join(" / ",g.Path.Select(k=>k.Length==0?"(empty)":k))}";
+ private bool CanToggleGroups=>!disposed && !loading && !error && CollapsibleGroups && !GroupExpansionReadOnly && CollapsedGroupsChanged.HasDelegate && Selectors.Count>0;
+ private bool CanBulk(bool collapse)=>CanToggleGroups && NgDataOperations.AllGroups(groups).Any(g=>CollapsedGroups.Contains(g.Id)!=collapse);
+ private async Task ToggleGroup(string id){if(!CanToggleGroups || !DisplaySections.Any(s=>s.Group?.Id==id))return;var next=new HashSet<string>(CollapsedGroups,StringComparer.Ordinal);if(!next.Add(id))next.Remove(id);await CollapsedGroupsChanged.InvokeAsync(next);}
+ private async Task BulkGroups(bool collapse){if(!CanBulk(collapse))return;var next=new HashSet<string>(CollapsedGroups,StringComparer.Ordinal);foreach(var g in NgDataOperations.AllGroups(groups)){if(collapse)next.Add(g.Id);else next.Remove(g.Id);}await CollapsedGroupsChanged.InvokeAsync(next);}
+ private IReadOnlyList<(NgGridGroup<TItem>? Group,IReadOnlyList<TItem> Rows)> DisplaySections {
+   get {if(Selectors.Count==0)return [(null,Visible)];var ids=Visible.Select(RowId).ToHashSet();var result=new List<(NgGridGroup<TItem>?,IReadOnlyList<TItem>)>();
+     void Walk(IEnumerable<NgGridGroup<TItem>> nodes){foreach(var g in nodes){var rows=g.Items.Where(r=>ids.Contains(RowId(r))).ToArray();if(rows.Length==0)continue;result.Add((g,!IsCollapsed(g.Id) && g.Children.Count==0?rows:[]));if(!IsCollapsed(g.Id))Walk(g.Children);}}
+     Walk(groups);return result;
+   }
+ }
+ private IReadOnlyList<TItem> DisplayRows=>DisplaySections.SelectMany(s=>s.Rows).ToArray();
  private bool wasGrouped;
  [Parameter] public object? DataVersion{get;set;}
  [Parameter] public bool MultiSort{get;set;}
@@ -51,7 +79,7 @@
  [Parameter] public RenderFragment<TItem>? RowActions{get;set;}
  [Parameter] public int InitialPageSize{get;set;}=5;
  private bool CanChange(TItem row)=>!loading && !error && Selectable && !SelectionReadOnly && SelectedIdsChanged.HasDelegate && (CanSelect?.Invoke(row)??true);
- private IReadOnlyList<TItem> Eligible=>Visible.Where(x=>CanSelect?.Invoke(x)??true).ToArray();
+ private IReadOnlyList<TItem> Eligible=>DisplayRows.Where(x=>CanSelect?.Invoke(x)??true).ToArray();
  private string search="";
  private readonly List<NgSortDescriptor> sorts=[];
  private bool loading,error,disposed;
@@ -64,12 +92,15 @@
  private int Total=>ReadData is null?filtered.Count:total;
  private int page=1,size;
  private IReadOnlyList<TItem> filtered=[];
- private IEnumerable<IReadOnlyList<TItem>> VisibleSections=>GroupBy is null?[Visible]:NgDataOperations.Group(Visible,GroupBy).Select(g=>g.Items);
+
  private IReadOnlyList<TItem> Visible=>ReadData is null?filtered.Skip((page-1)*size).Take(size).ToArray():filtered;
  protected override void OnInitialized()=>size=Math.Max(1,InitialPageSize);
  protected override async Task OnParametersSetAsync(){
-   if(GroupBy is not null && ReadData is not null)throw new ArgumentException("Local grouping requires Items, not ReadData.");
-   if(wasGrouped!=(GroupBy is not null)){page=1;wasGrouped=GroupBy is not null;}
+   if(GroupBy is not null && GroupSelectors.Count>0)throw new ArgumentException("Use GroupBy or GroupSelectors, not both.");
+   if(Selectors.Count>8)throw new ArgumentException("At most eight group levels are supported.");
+   foreach(var aggregate in GroupAggregates)aggregate.Calculate(Array.Empty<TItem>());
+   if(Selectors.Count>0 && ReadData is not null)throw new ArgumentException("Local grouping requires Items, not ReadData.");
+   if(wasGrouped!=(Selectors.Count>0)){page=1;wasGrouped=Selectors.Count>0;}
    ValidateRows(Items);
    if(Columns.Count==0 || Columns.Any(x=>string.IsNullOrWhiteSpace(x.Key)) || Columns.Select(x=>x.Key).Distinct().Count()!=Columns.Count)throw new ArgumentException("Grid column keys must be nonempty and unique, with at least one column.");
    var changed=sorts.RemoveAll(s=>!Columns.Any(c=>c.Key==s.Key && c.Sortable))>0;
@@ -80,7 +111,8 @@
    }else if(ReadData is null)Refresh();
  }
  private void ValidateRows(IReadOnlyList<TItem> rows){if(rows.Any(x=>string.IsNullOrWhiteSpace(RowId(x))) || rows.Select(RowId).Distinct().Count()!=rows.Count)throw new ArgumentException("Grid row IDs must be nonempty and unique.");}
- private void Refresh(){filtered=NgDataOperations.Query(Items,Columns,search,sorts);groupCounts.Clear();if(GroupBy is not null){var groups=NgDataOperations.Group(filtered,GroupBy);groupCounts=groups.ToDictionary(g=>g.Key,g=>g.Items.Count,StringComparer.Ordinal);filtered=groups.SelectMany(g=>g.Items).ToArray();}page=NgDataOperations.ClampPage(page,filtered.Count,size);}
+ private void Refresh(){filtered=NgDataOperations.Query(Items,Columns,search,sorts);groups=NgDataOperations.GroupTree(filtered,Selectors);if(groups.Count>0)filtered=groups.SelectMany(g=>g.Items).ToArray();page=NgDataOperations.ClampPage(page,filtered.Count,size);}
+
  public async Task ReloadAsync(){
    if(disposed)return;
    var ticket=++revision;pending?.Cancel();pending?.Dispose();pending=new();var token=pending.Token;
@@ -114,6 +146,6 @@
  private async Task ChangePage(int value){if(value==page)return;page=value;await ReloadAsync();}
  private async Task Resize(int value){size=value;page=1;await ReloadAsync();}
  public void Dispose(){disposed=true;++revision;pending?.Cancel();pending?.Dispose();}
- private async Task Toggle(TItem row){var matches=(ReadData is null?Items:filtered).Where(x=>RowId(x)==RowId(row)).ToArray();if(matches.Length==0 || !CanChange(matches[0]))return;var id=RowId(row);var next=new HashSet<string>(SelectedIds);if(!next.Add(id))next.Remove(id);await SelectedIdsChanged.InvokeAsync(next);}
+ private async Task Toggle(TItem row){var matches=(ReadData is null?Items:filtered).Where(x=>RowId(x)==RowId(row)).ToArray();if(matches.Length==0 || !DisplayRows.Any(r=>RowId(r)==RowId(row)) || !CanChange(matches[0]))return;var id=RowId(row);var next=new HashSet<string>(SelectedIds);if(!next.Add(id))next.Remove(id);await SelectedIdsChanged.InvokeAsync(next);}
  private async Task SelectPage(){if(loading || error || !Selectable || SelectionReadOnly || !SelectedIdsChanged.HasDelegate || Eligible.Count==0)return;var next=new HashSet<string>(SelectedIds);var remove=Eligible.All(x=>next.Contains(RowId(x)));foreach(var row in Eligible){if(remove)next.Remove(RowId(row));else next.Add(RowId(row));}await SelectedIdsChanged.InvokeAsync(next);}
 }
