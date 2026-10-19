@@ -46,6 +46,36 @@ editingGrid.Editing=EditConfig(commit:(op,id,v,t)=>{persistenceCalls++;return pe
 EditCall("BeginEdit",NgGridEditOperation.Update,"Updated");editRows.Clear();await (Task)EditCall("CommitEdit")!;EditAssert(persistenceCalls==3,"Removed row guard");editingGrid.Dispose();
 #pragma warning restore BL0005
 await Check<NgDataGrid<string>>(new(){["Items"]=new[]{"Alpha"},["Columns"]=new[]{new NgDataColumn<string>("n","Name",r=>r)},["RowId"]=(Func<string,string>)(r=>r),["Editing"]=EditConfig()},"Create record","Edit Alpha","Delete Alpha");
+// CSV/TSV encoding and Grid export lifecycle.
+var exportColumns=new[]{new NgDataColumn<string>("name","Name",r=>r),new NgDataColumn<string>("length","Length",r=>r.Length)};
+var csvOptions=new NgGridExport<string>{OnExport=(_,_)=>Task.CompletedTask,ColumnKeys=["name"]};
+var csvFile=NgGridCsv.Create(new[]{"a,\"b\"\nc","Україна","=SUM(A1)","  +cmd","-1","@x","\tdata"},exportColumns,csvOptions);
+EditAssert(csvFile.Content=="\uFEFF\"Name\"\r\n\"a,\"\"b\"\"\nc\"\r\n\"Україна\"\r\n\"'=SUM(A1)\"\r\n\"'  +cmd\"\r\n\"'-1\"\r\n\"'@x\"\r\n\"'\tdata\"\r\n","CSV quoting, formula protection and Unicode");
+EditAssert(csvFile.Bytes.Take(3).SequenceEqual(new byte[]{239,187,191}) && csvFile.RowCount==7,"UTF8 BOM and row count");
+var tsv=NgGridCsv.Create(new[]{"é"},exportColumns,csvOptions with{ColumnKeys=["length","name"],IncludeHeaders=false,IncludeBom=false,Delimiter="\t",Format=(key,r)=>key=="length"?"one":r});
+EditAssert(tsv.Content=="\"one\"\t\"é\"\r\n" && tsv.MimeType=="text/tab-separated-values;charset=utf-8","TSV formatting and ordered columns");
+foreach(var exportOptions in new[]{csvOptions with{MaxRows=1},csvOptions with{MaxCharacters=4},csvOptions with{Delimiter="|"},csvOptions with{ColumnKeys=["missing"]},csvOptions with{ColumnKeys=["name","name"]},csvOptions with{FileName="../x.csv"}}){var rejected=false;try{NgGridCsv.Create(new[]{"a","b"},exportColumns,exportOptions);}catch(ArgumentException){rejected=true;}EditAssert(rejected,"Export rejects invalid limit/descriptor atomically");}
+EditAssert(NgGridCsv.Create(Array.Empty<string>(),exportColumns,csvOptions).Content=="\uFEFF\"Name\"\r\n","Empty export retains headers");
+#pragma warning disable BL0005
+var exportedFiles=new List<NgGridExportFile>();
+var exportGrid=new NgDataGrid<string>{Items=new[]{"A","B","C","D"},Columns=exportColumns,RowId=r=>r,InitialPageSize=2,SelectedIds=["B","C","missing"],GroupBy=r=>r=="A"?"hidden":"shown",CollapsibleGroups=true,CollapsedGroups=[NgDataOperations.GroupId(["hidden"])],Export=csvOptions with{OnExport=(file,token)=>{exportedFiles.Add(file);return Task.CompletedTask;}}};
+var exportType=exportGrid.GetType();object? ExportCall(string method,params object?[] args)=>exportType.GetMethod(method,privateFlags)!.Invoke(exportGrid,args);
+void ExportField(string field,object? value)=>exportType.GetField(field,privateFlags)!.SetValue(exportGrid,value);
+ExportCall("OnInitialized");ExportCall("Refresh");await (Task)ExportCall("ExportAsync")!;EditAssert(exportedFiles.Last().RowCount==1 && exportedFiles.Last().Content.Contains("B"),"Page export excludes collapsed rows");
+ExportField("exportScope",NgGridExportScope.Filtered);await (Task)ExportCall("ExportAsync")!;EditAssert(exportedFiles.Last().RowCount==4,"Filtered export includes off-page collapsed records");
+ExportField("exportScope",NgGridExportScope.Selected);await (Task)ExportCall("ExportAsync")!;EditAssert(exportedFiles.Last().RowCount==2,"Selected query excludes unknown IDs");
+ExportField("search","C");ExportCall("Refresh");await (Task)ExportCall("ExportAsync")!;EditAssert(exportedFiles.Last().RowCount==1,"Selected intersects current search");
+var pendingExport=new TaskCompletionSource<IReadOnlyList<string>>();NgGridExportRequest? capturedExport=null;var exportCalls=0;
+exportGrid.ReadData=(_,_)=>Task.FromResult(new NgDataResult<string>(["A"],3));
+exportGrid.Export=csvOptions with{ReadExportData=(request,token)=>{capturedExport=request;exportCalls++;return pendingExport.Task;},OnExport=(file,token)=>{exportedFiles.Add(file);return Task.CompletedTask;}};
+var priorExports=exportedFiles.Count;var exportingTask=(Task)ExportCall("ExportAsync")!;await (Task)ExportCall("ExportAsync")!;EditAssert(exportCalls==1 && capturedExport!.Search=="C" && capturedExport.SelectedIds.Contains("missing"),"Single-flight export query snapshot");
+pendingExport.SetResult(["B","A"]);await exportingTask;EditAssert(exportedFiles.Count==priorExports,"Server cannot return unselected rows");
+pendingExport=new();exportingTask=(Task)ExportCall("ExportAsync")!;pendingExport.SetResult(["B","B"]);await exportingTask;EditAssert(exportedFiles.Count==priorExports,"Duplicate export records rejected");
+pendingExport=new();exportingTask=(Task)ExportCall("ExportAsync")!;ExportCall("CancelExport");pendingExport.SetResult(["C"]);await exportingTask;EditAssert(exportedFiles.Count==priorExports,"Cancelled completion cannot deliver export");
+pendingExport=new();exportingTask=(Task)ExportCall("ExportAsync")!;pendingExport.SetResult(["C"]);await exportingTask;EditAssert(exportedFiles.Count==priorExports+1,"Retry export success");
+exportGrid.Export=exportGrid.Export with{ReadOnly=true};await (Task)ExportCall("ExportAsync")!;EditAssert(exportCalls==4,"Read-only export blocks adapter");exportGrid.Dispose();
+#pragma warning restore BL0005
+await Check<NgDataGrid<string>>(new(){["Columns"]=exportColumns,["RowId"]=(Func<string,string>)(r=>r),["Export"]=csvOptions},"Export scope","Prepare export","Selected filtered records");
 foreach(var locked in new[]{false,true}){
  await Check<NgTreeView<string>>(new(){["Items"]=new[]{new NgTreeNode<string>("a","Alpha")},["Text"]=(Func<string,string>)(s=>s),["Checkboxes"]=true,["ShowCheckActions"]=true,["CheckingReadOnly"]=locked,["CheckLoadedText"]="<Check loaded>",["ClearLoadedText"]="Clear loaded"},"&lt;Check loaded&gt;","Clear loaded","disabled");
  await Check<NgTreeList<string>>(new(){["Items"]=Array.Empty<NgTreeNode<string>>(),["Columns"]=new[]{new NgDataColumn<string>("name","Name",s=>s)},["Checkboxes"]=true,["ShowCheckActions"]=true,["CheckingReadOnly"]=locked},"Check loaded nodes","Clear loaded checks","disabled");

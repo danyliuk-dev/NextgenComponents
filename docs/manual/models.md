@@ -169,3 +169,7 @@ Use `GroupBy`/`groupBy` for a single string selector or `GroupSelectors`/`groupS
 ## Grid editing
 
 `NgGridEditing<T>`, `NgGridEditField` and `NgGridEditOperation` define drafts and application-owned asynchronous persistence. See [Grid editing](grid-editing.md) for validation, cancellation, concurrency and source refresh.
+
+## Grid export
+
+`NgGridExport<T>`, `NgGridExportScope`, `NgGridExportRequest`, `NgGridExportFile` and `NgGridCsv` define bounded CSV/TSV generation and delivery. See [Grid export](grid-export.md) for scope, remote completeness, encoding, limits and cancellation.

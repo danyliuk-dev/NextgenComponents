@@ -5,6 +5,13 @@
 @if(error){<p role="alert">@ErrorText <button type="button" @onclick="ReloadAsync">@RetryText</button></p>}
 <div class="ng-data-toolbar"><label class="ng-field">Search @Label<input class="ng-input" aria-label="@($"Search {Label}")" value="@search" @oninput="Search" /></label><span role="status">@SelectedIds.Count selected</span>@Toolbar @if(Editing is {} editor){<button type="button" class="ng-button ng-primary" disabled="@(!CanCreate)" @onclick="()=>BeginEdit(NgGridEditOperation.Create,default)">@editor.CreateText</button>} @if(MultiSort){<button type="button" disabled="@(sorts.Count==0)" @onclick="ClearSort">Clear sorting</button>}</div>
 @if(CollapsibleGroups && IsGrouped){<div class="ng-data-toolbar"><button type="button" disabled="@(!CanBulk(false))" @onclick="()=>BulkGroups(false)">@(ReadGroupedData is null?ExpandGroupsText:ExpandPageGroupsText)</button><button type="button" disabled="@(!CanBulk(true))" @onclick="()=>BulkGroups(true)">@(ReadGroupedData is null?CollapseGroupsText:CollapsePageGroupsText)</button></div>}
+@if(Export is {} export){<div class="ng-data-toolbar">
+<label class="ng-field">@export.ScopeText<select class="ng-input" aria-label="@export.ScopeText" value="@exportScope" disabled="@exporting" @onchange="ChangeExportScope">
+<option value="Page">@export.PageText</option><option value="Filtered" disabled="@(IsRemote && export.ReadExportData is null)">@export.FilteredText</option><option value="Selected" disabled="@(IsRemote && export.ReadExportData is null)">@export.SelectedText</option></select></label>
+<button type="button" class="ng-button" disabled="@(!CanExport)" @onclick="ExportAsync">@export.ExportText</button>
+@if(exporting){<span role="status">@export.BusyText</span><button type="button" class="ng-button" @onclick="CancelExport">@export.CancelText</button>}
+@if(exportError){<span role="alert">@export.ErrorText</span>}else if(exportReady){<span role="status">@export.ReadyText</span>}
+</div>}
 <div class="ng-table-scroll" tabindex="0" aria-label="@($"{Label} table scroll area")">
 <table class="ng-data-table"><caption class="ng-sr-only">@Label</caption><thead><tr>
 @if(Selectable){<th scope="col"><input type="checkbox" aria-label="Select page" checked="@(Eligible.Count>0 && Eligible.All(x=>SelectedIds.Contains(RowId(x))))" disabled="@(Eligible.Count==0 || SelectionReadOnly || !SelectedIdsChanged.HasDelegate)" aria-checked="@(Eligible.Any(x=>SelectedIds.Contains(RowId(x))) && !Eligible.All(x=>SelectedIds.Contains(RowId(x)))?"mixed":null)" @onchange="SelectPage" /></th>}
@@ -40,6 +47,36 @@
 <NgPager Total="Total" Page="page" PageChanged="ChangePage" PageSize="size" PageSizeChanged="Resize" Sizes="PageSizes" />
 </div>
 @code {
+ [Parameter] public NgGridExport<TItem>? Export{get;set;}
+ private NgGridExportScope exportScope;
+ private bool exporting,exportError,exportReady;
+ private long exportRevision;
+ private CancellationTokenSource? exportPending;
+ private bool CanExport=>!disposed && !loading && !error && !saving && !exporting && Export is {ReadOnly:false} && (exportScope==NgGridExportScope.Page || !IsRemote || Export.ReadExportData is not null);
+ private void ChangeExportScope(ChangeEventArgs e){if(exporting)return;if(Enum.TryParse<NgGridExportScope>(e.Value?.ToString(),out var scope) && Enum.IsDefined(scope)){exportScope=scope;exportReady=exportError=false;}}
+ private void CancelExport(){++exportRevision;exportPending?.Cancel();exporting=exportReady=exportError=false;}
+ private async Task ExportAsync(){
+   if(!CanExport)return;
+   var config=Export! with {ColumnKeys=Export!.ColumnKeys.ToArray()};var scope=exportScope;var ticket=++exportRevision;using var operation=new CancellationTokenSource();exportPending=operation;
+   exporting=true;exportReady=exportError=false;
+   try{
+     var columns=config.Resolve(Columns).ToArray();
+     // Snapshot query and selection before the first await. The adapter owns server ordering/filtering.
+     var selected=SelectedIds.ToHashSet(StringComparer.Ordinal);
+     IReadOnlyList<TItem> source;
+     if(IsRemote && scope!=NgGridExportScope.Page){
+       var request=new NgGridExportRequest(scope,search,Array.AsReadOnly(sorts.ToArray()),Array.AsReadOnly(RemoteGroupKeys.ToArray()),Array.AsReadOnly(selected.Order(StringComparer.Ordinal).ToArray()),config.MaxRows);
+       source=(await config.ReadExportData!(request,operation.Token)).ToArray();
+     }else source=(scope==NgGridExportScope.Page?DisplayRows:filtered).Where(r=>scope!=NgGridExportScope.Selected || selected.Contains(RowId(r))).ToArray();
+     if(disposed || ticket!=exportRevision || Export is not {ReadOnly:false})return;
+     ValidateRows(source);
+     if(scope==NgGridExportScope.Selected && source.Any(r=>!selected.Contains(RowId(r))))throw new ArgumentException("Export returned unselected records.");
+     var file=NgGridCsv.Create(source,columns,config);
+     await config.OnExport(file,operation.Token);
+     if(!disposed && ticket==exportRevision && Export is {ReadOnly:false})exportReady=true;
+   }catch{if(!disposed && ticket==exportRevision)exportError=true;}
+   finally{if(!disposed && ticket==exportRevision)exporting=false;if(ReferenceEquals(exportPending,operation))exportPending=null;}
+ }
  [Parameter] public NgGridEditing<TItem>? Editing{get;set;}
  private bool HasActions=>RowActions is not null || Editing is not null;
  private NgGridEditOperation? editOperation;
@@ -149,6 +186,8 @@
  private IReadOnlyList<TItem> Visible=>!IsRemote?filtered.Skip((page-1)*size).Take(size).ToArray():filtered;
  protected override void OnInitialized()=>size=Math.Max(1,InitialPageSize);
  protected override async Task OnParametersSetAsync(){
+   Export?.Resolve(Columns);
+   if(!Equals(previousVersion,DataVersion) || previousReader!=((Delegate?)ReadGroupedData??ReadData) || Export is null || Export.ReadOnly)CancelExport();
    Editing?.Check();
    if(!Equals(previousVersion,DataVersion) || previousReader!=((Delegate?)ReadGroupedData??ReadData) || Editing is null)InvalidateEdit();
    if(GroupBy is not null && GroupSelectors.Count>0)throw new ArgumentException("Use GroupBy or GroupSelectors, not both.");
@@ -210,7 +249,7 @@
  private async Task ClearSort(){sorts.Clear();page=1;await ReloadAsync();}
  private async Task ChangePage(int value){if(value==page)return;page=value;await ReloadAsync();}
  private async Task Resize(int value){size=value;page=1;await ReloadAsync();}
- public void Dispose(){InvalidateEdit();disposed=true;++revision;pending?.Cancel();pending?.Dispose();}
+ public void Dispose(){CancelExport();InvalidateEdit();disposed=true;++revision;pending?.Cancel();pending?.Dispose();}
  private async Task Toggle(TItem row){var matches=(!IsRemote?Items:filtered).Where(x=>RowId(x)==RowId(row)).ToArray();if(matches.Length==0 || !DisplayRows.Any(r=>RowId(r)==RowId(row)) || !CanChange(matches[0]))return;var id=RowId(row);var next=new HashSet<string>(SelectedIds);if(!next.Add(id))next.Remove(id);await SelectedIdsChanged.InvokeAsync(next);}
  private async Task SelectPage(){if(loading || error || !Selectable || SelectionReadOnly || !SelectedIdsChanged.HasDelegate || Eligible.Count==0)return;var next=new HashSet<string>(SelectedIds);var remove=Eligible.All(x=>next.Contains(RowId(x)));foreach(var row in Eligible){if(remove)next.Remove(RowId(row));else next.Add(RowId(row));}await SelectedIdsChanged.InvokeAsync(next);}
 }

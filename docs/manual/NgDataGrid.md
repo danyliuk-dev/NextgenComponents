@@ -14,11 +14,11 @@ The documentation launcher embeds these running examples here. Choose a framewor
 
 ## Behavior and practical rules
 
-ReadData/readData enables asynchronous page loading; Items/items is used only in local mode. The request contains 1-based Page/page, PageSize/pageSize, Search/search and an ordered immutable Sorts/sorts list. Return only the requested page and Total/total after filtering, before paging. The demo simulates a remote data adapter with a delay; replace its body with your HTTP/database call. A newer request or source replacement invalidates older results and errors; Blazor also passes a cancellation token. Flutter ignores stale futures but does not abort the transport. Loading hides old rows and blocks selection. Failure shows ErrorText/errorText and RetryText/retryText without exposing exception details. Change DataVersion/dataVersion to reload page 1; keep reader identity stable. Blazor ReloadAsync reloads the current page. A shrinking total clamps the page and fetches it again. Invalid totals, duplicate IDs and oversized pages become retryable errors. MultiSort/multiSort appends clicked columns by priority; clicking again toggles direction without moving priority. Clear sorting restores source order. Local sorting is stable. Row/column IDs must be unique and nonblank. Selection remains parent-owned and page selection preserves hidden/protected IDs. CanSelect/canSelect and SelectionReadOnly/selectionReadOnly still apply. Virtualization, remote grouping, built-in CRUD and export remain open. See [data workspace](../data-workspace.md).
+ReadData/readData enables asynchronous page loading; Items/items is used only in local mode. The request contains 1-based Page/page, PageSize/pageSize, Search/search and an ordered immutable Sorts/sorts list. Return only the requested page and Total/total after filtering, before paging. The demo simulates a remote data adapter with a delay; replace its body with your HTTP/database call. A newer request or source replacement invalidates older results and errors; Blazor also passes a cancellation token. Flutter ignores stale futures but does not abort the transport. Loading hides old rows and blocks selection. Failure shows ErrorText/errorText and RetryText/retryText without exposing exception details. Change DataVersion/dataVersion to reload page 1; keep reader identity stable. Blazor ReloadAsync reloads the current page. A shrinking total clamps the page and fetches it again. Invalid totals, duplicate IDs and oversized pages become retryable errors. MultiSort/multiSort appends clicked columns by priority; clicking again toggles direction without moving priority. Clear sorting restores source order. Local sorting is stable. Row/column IDs must be unique and nonblank. Selection remains parent-owned and page selection preserves hidden/protected IDs. CanSelect/canSelect and SelectionReadOnly/selectionReadOnly still apply. Virtualization and batch/cell editing remain open. Remote grouping, single-record editing and CSV/TSV export use the explicit adapters below. See [data workspace](../data-workspace.md).
 
 ### Local grouping and paging
 
-GroupBy/groupBy enables one local grouping level over string keys; empty strings are a valid group and keys are case-sensitive. Search and sort run first, then groups gather matching records in first-appearance order while preserving sorted order within each group, then the flattened grouped rows are paged. Headers do not consume page slots. A group crossing a page boundary repeats its header; the count is the complete filtered group count, not only the current page. GroupText/groupText formats the key and count as plain text. Selection/page selection covers data rows only and retains off-page IDs. Enabling/disabling grouping resets to page 1; changing a grouping rule in-place requires DataVersion/dataVersion to reset paging. Selectors must be pure. GroupBy/groupBy cannot be combined with ReadData/readData: use ReadGroupedData/readGroupedData for the group-aware server protocol, never approximate a full group from one server page. Virtualization and built-in CRUD remain open; remote grouping uses the separate adapter below.
+GroupBy/groupBy enables one local grouping level over string keys; empty strings are a valid group and keys are case-sensitive. Search and sort run first, then groups gather matching records in first-appearance order while preserving sorted order within each group, then the flattened grouped rows are paged. Headers do not consume page slots. A group crossing a page boundary repeats its header; the count is the complete filtered group count, not only the current page. GroupText/groupText formats the key and count as plain text. Selection/page selection covers data rows only and retains off-page IDs. Enabling/disabling grouping resets to page 1; changing a grouping rule in-place requires DataVersion/dataVersion to reset paging. Selectors must be pure. GroupBy/groupBy cannot be combined with ReadData/readData: use ReadGroupedData/readGroupedData for the group-aware server protocol, never approximate a full group from one server page. Virtualization remains open; remote grouping, editing and export use the separate contracts below.
 
 ### Nested groups
 
@@ -46,18 +46,30 @@ ReadGroupedData/readGroupedData uses NgGroupedDataRequest (page, pageSize, searc
 Editing/editing accepts NgGridEditing<T>: text-field descriptors, a draft factory, validation, asynchronous persistence and per-record permissions. The editable inventory demonstrates required and integer validation, duplicate-name server errors, protected records, delayed saves, generic failures, retry and cancellation. See [Grid editing](grid-editing.md) for lifecycle, remote refresh, concurrency and application responsibilities.
 
 
+### CSV and TSV export
+
+Export/export accepts NgGridExport<T> with an output callback, ordered column keys, optional plain-text formatting, delimiter, headers, BOM and limits. Page exports rendered rows; Filtered exports the complete query; Selected intersects the query with caller-owned selected IDs. Full remote export requires ReadExportData/readExportData; ordinary page reads are never silently treated as complete datasets. See [Grid export](grid-export.md) for exact scope, escaping, formula protection, adapter, cancellation and browser-download contracts.
+
+
 ## Blazor example
 
 ```razor
 @using System.Net.Http.Json
 @inject System.Net.Http.IHttpClientFactory HttpFactory
 @inject NavigationManager Navigation
+<h3>Grid export</h3>
+<p>Prepare a CSV or TSV file, inspect its row count, then download. Local export respects the current query; remote full export uses a separate bounded adapter.</p>
+<NgCheckBox Label="Export quantity column" @bind-Value="exportQuantity"/>
+<NgCheckBox Label="Use tab-separated format" @bind-Value="exportTsv"/>
+<NgCheckBox Label="Fail exports" @bind-Value="exportFail"/>
+<NgCheckBox Label="Lock export" @bind-Value="exportLocked"/>
+@if(lastExport is {} file){<p>Last export: @file.RowCount rows · @string.Join(", ",file.ColumnKeys)</p><a class="ng-button" href="@($"data:{file.MimeType};base64,{Convert.ToBase64String(file.Bytes)}")" download="@file.FileName">Download last export</a><pre>@file.Content[..Math.Min(file.Content.Length,1200)]</pre>}
 <h3>Local grouped inventory</h3>
 <NgCheckBox Label="Group by product" @bind-Value="grouped"/>
 <NgCheckBox Label="Also group by availability" @bind-Value="nested"/>
 <NgCheckBox Label="Show group totals" @bind-Value="totals"/>
 <NgCheckBox Label="Lock group expansion" @bind-Value="groupLocked"/>
-<NgDataGrid TItem="Product" Label="Grouped inventory" Items="rows" Columns="columns" RowId="r=>r.Id" GroupSelectors="Grouping" DataVersion="@($"{grouped}/{nested}")" CollapsibleGroups="true" @bind-CollapsedGroups="collapsed" GroupExpansionReadOnly="groupLocked" GroupAggregates="@(totals?aggregates:[])" GroupText="GroupCaption" MultiSort="true" @bind-SelectedIds="localSelected" CanSelect="r=>r.Count<100"/>
+<NgDataGrid TItem="Product" Label="Grouped inventory" Export="LocalExport" Items="rows" Columns="columns" RowId="r=>r.Id" GroupSelectors="Grouping" DataVersion="@($"{grouped}/{nested}")" CollapsibleGroups="true" @bind-CollapsedGroups="collapsed" GroupExpansionReadOnly="groupLocked" GroupAggregates="@(totals?aggregates:[])" GroupText="GroupCaption" MultiSort="true" @bind-SelectedIds="localSelected" CanSelect="r=>r.Count<100"/>
 <p>Local selection: @string.Join(", ",localSelected.Order())</p>
 <h3>Editable inventory</h3>
 <p>Drafts are isolated. Quantities 100 and above are protected. Try a blank name, invalid quantity, a save failure and a retry.</p>
@@ -77,9 +89,19 @@ Editing/editing accepts NgGridEditing<T>: text-field descriptors, a draft factor
 <h3>Remote paging adapter</h3>
 <NgCheckBox Label="Fail requests" @bind-Value="fail"/>
 <NgButton OnClick="()=>version++">Reload source</NgButton>
-<NgDataGrid TItem="Product" ReadData="Read" DataVersion="version" MultiSort="true" Columns="columns" RowId="r=>r.Id" @bind-SelectedIds="selected" CanSelect="r=>r.Count<100" PageSizes="new[]{5,10,20}"/>
+<NgDataGrid TItem="Product" ReadData="Read" Export="RemoteExport" DataVersion="version" MultiSort="true" Columns="columns" RowId="r=>r.Id" @bind-SelectedIds="selected" CanSelect="r=>r.Count<100" PageSizes="new[]{5,10,20}"/>
 <p>Requests: @requests · Latest query: @query</p>
 @code {
+ private bool exportQuantity=true,exportTsv,exportFail,exportLocked;private NgGridExportFile? lastExport;
+ private NgGridExport<Product> LocalExport=>new(){OnExport=ReceiveExport,ColumnKeys=exportQuantity?["name","count"]:["name"],FileName=exportTsv?"inventory.tsv":"inventory.csv",Delimiter=exportTsv?"\t":",",ReadOnly=exportLocked,ScopeText="Local export scope",Format=(key,r)=>key=="count"?r.Count.ToString(System.Globalization.CultureInfo.InvariantCulture):r.Name};
+ private NgGridExport<Product> RemoteExport=>LocalExport with {ReadExportData=ReadExport,ScopeText="Remote export scope"};
+ private async Task ReceiveExport(NgGridExportFile file,CancellationToken token){token.ThrowIfCancellationRequested();if(exportFail)throw new InvalidOperationException("Private delivery detail");lastExport=file;await InvokeAsync(StateHasChanged);}
+ private async Task<IReadOnlyList<Product>> ReadExport(NgGridExportRequest request,CancellationToken token){
+   await Task.Delay(600,token);if(exportFail)throw new InvalidOperationException("Private adapter detail");
+   var result=NgDataOperations.Query(rows,columns,request.Search,request.Sorts);
+   if(request.Scope==NgGridExportScope.Selected)result=result.Where(r=>request.SelectedIds.Contains(r.Id)).ToArray();
+   if(result.Count>request.MaxRows)throw new InvalidOperationException("Too many records");return result;
+ }
  public record Product(string Id,string Name,int Count);
  private bool grouped=true,nested=true,totals=true,groupLocked;
  private HashSet<string> collapsed=[];
@@ -141,6 +163,25 @@ import 'dart:convert';
 import 'dart:js_interop';
 import 'package:web/web.dart' as web;
 
+bool exportQuantity=true,exportTsv=false,exportFail=false,exportLocked=false;
+NgGridExportFile? lastExport;
+NgGridExport<({String id,String name,int count})> exportConfig(bool remote)=>NgGridExport(
+  onExport:receiveExport,readExportData:remote?readExport:null,columnKeys:exportQuantity?['name','count']:['name'],
+  fileName:exportTsv?'inventory.tsv':'inventory.csv',delimiter:exportTsv?'\t':',',readOnly:exportLocked,
+  scopeText:remote?'Remote export scope':'Local export scope',format:(key,r)=>key=='count'?'${r.count}':r.name);
+Future<void> receiveExport(NgGridExportFile file)async{
+  if(exportFail)throw StateError('Private delivery detail');if(mounted)setState(()=>lastExport=file);
+}
+Future<List<({String id,String name,int count})>> readExport(NgGridExportRequest request)async{
+  await Future<void>.delayed(const Duration(milliseconds:600));if(exportFail)throw StateError('Private adapter detail');
+  var result=NgDataOperations.queryMany(rows,columns,request.search,request.sorts);
+  if(request.scope==NgGridExportScope.selected)result=result.where((r)=>request.selectedIds.contains(r.id)).toList();
+  if(result.length>request.maxRows)throw StateError('Too many records');return result;
+}
+void downloadExport(NgGridExportFile file){
+  final anchor=web.HTMLAnchorElement()..href='data:${file.mimeType};base64,${base64Encode(file.bytes)}'..download=file.fileName;
+  anchor.click();
+}
 final editableRows=<( {String id,String name,int count})>[(id:'e1',name:'Chair',count:12),(id:'e2',name:'Desk',count:24),(id:'e3',name:'Protected',count:100)];
 bool editLocked=false,editFail=false;
 int writes=0,nextEditId=4;
@@ -197,12 +238,19 @@ Future<NgDataResult<({String id, String name, int count})>> read(NgDataRequest r
   return NgDataResult(result.skip((request.page-1)*request.pageSize).take(request.pageSize).toList(), result.length);
 }
 Widget build(BuildContext context) => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+  const Text('Grid export'),
+  const Text('Prepare CSV or TSV, inspect the result, then download. Remote full export uses a separate bounded adapter.'),
+  NgCheckBox(label:'Export quantity column',value:exportQuantity,onChanged:(v)=>setState(()=>exportQuantity=v)),
+  NgCheckBox(label:'Use tab-separated format',value:exportTsv,onChanged:(v)=>setState(()=>exportTsv=v)),
+  NgCheckBox(label:'Fail exports',value:exportFail,onChanged:(v)=>setState(()=>exportFail=v)),
+  NgCheckBox(label:'Lock export',value:exportLocked,onChanged:(v)=>setState(()=>exportLocked=v)),
+  if(lastExport case final file?)...[Text('Last export: ${file.rowCount} rows · ${file.columnKeys.join(", ")}'),NgButton(onPressed:()=>downloadExport(file),child:const Text('Download last export')),SelectableText(file.content.substring(0,file.content.length>1200?1200:file.content.length))],
   const Text('Local grouped inventory'),
   NgCheckBox(label:'Group by product',value:grouped,onChanged:(v)=>setState(()=>grouped=v)),
   NgCheckBox(label:'Also group by availability',value:nested,onChanged:(v)=>setState(()=>nested=v)),
   NgCheckBox(label:'Show group totals',value:totals,onChanged:(v)=>setState(()=>totals=v)),
   NgCheckBox(label:'Lock group expansion',value:groupLocked,onChanged:(v)=>setState(()=>groupLocked=v)),
-  NgDataGrid<({String id,String name,int count})>(label:'Grouped inventory',items:rows,columns:columns,rowId:(r)=>r.id,groupSelectors:!grouped?[]:nested?[(r)=>r.name,(r)=>r.count<100?'Available':'Protected']:[(r)=>r.name],dataVersion:'$grouped/$nested',collapsibleGroups:true,collapsedGroups:collapsed,onCollapsedGroupsChanged:(v)=>setState(()=>collapsed=v),groupExpansionReadOnly:groupLocked,groupAggregates:totals?aggregates:[],groupText:(key,count)=>'$key: $count matching records',multiSort:true,selectedIds:localSelected,onSelectionChanged:(v)=>setState(()=>localSelected=v),canSelect:(r)=>r.count<100),
+  NgDataGrid<({String id,String name,int count})>(label:'Grouped inventory',export:exportConfig(false),items:rows,columns:columns,rowId:(r)=>r.id,groupSelectors:!grouped?[]:nested?[(r)=>r.name,(r)=>r.count<100?'Available':'Protected']:[(r)=>r.name],dataVersion:'$grouped/$nested',collapsibleGroups:true,collapsedGroups:collapsed,onCollapsedGroupsChanged:(v)=>setState(()=>collapsed=v),groupExpansionReadOnly:groupLocked,groupAggregates:totals?aggregates:[],groupText:(key,count)=>'$key: $count matching records',multiSort:true,selectedIds:localSelected,onSelectionChanged:(v)=>setState(()=>localSelected=v),canSelect:(r)=>r.count<100),
   Text('Local selection: ${(localSelected.toList()..sort()).join(", ")}'),
   const Text('Editable inventory'),
   const Text('Drafts are isolated. Quantities 100 and above are protected. Try validation, failure and retry.'),
@@ -222,7 +270,7 @@ Widget build(BuildContext context) => Column(crossAxisAlignment: CrossAxisAlignm
   const Text('Remote paging adapter'),
   NgCheckBox(label: 'Fail requests', value: fail, onChanged: (v) => setState(() => fail = v)),
   NgButton(onPressed: () => setState(() => version++), child: const Text('Reload source')),
-  NgDataGrid<({String id, String name, int count})>(readData: read, dataVersion: version, multiSort: true,
+  NgDataGrid<({String id, String name, int count})>(readData: read, export:exportConfig(true), dataVersion: version, multiSort: true,
     columns: columns, rowId: (r) => r.id, selectedIds: selected, canSelect: (r) => r.count < 100,
     pageSizes: const [5,10,20], onSelectionChanged: (v) => setState(() => selected = v)),
   Text('Requests: $requests · Latest query: $query'),
@@ -235,6 +283,7 @@ Names are case-sensitive. `?` permits null. `EditorRequired` parameters are mark
 
 | Parameter | Type | Default / requirement | Purpose |
 |---|---|---|---|
+| `Export` | `NgGridExport<TItem>?` | not set | Optional NgGridExport configuration: query/selection scope, ordered columns, text formatting, bounded CSV/TSV delivery and a full-data remote adapter. See Grid export. |
 | `Editing` | `NgGridEditing<TItem>?` | not set | Optional NgGridEditing configuration for isolated drafts, validation, async persistence and confirmed deletion. See Grid editing. |
 | `ReadData` | `Func<NgDataRequest,CancellationToken,Task<NgDataResult<TItem>>>?` | not set | Async page adapter; return requested rows and filtered total. See request/result contracts above. |
 | `ReadGroupedData` | `Func<NgGroupedDataRequest,CancellationToken,Task<NgGroupedDataResult<TItem>>>?` | not set | Async grouped page adapter; mutually exclusive with ReadData and local grouping/aggregates. |
@@ -280,6 +329,7 @@ Names are case-sensitive. `?` permits null. `EditorRequired` parameters are mark
 
 | Argument | Type | Purpose |
 |---|---|---|
+| `export` | `NgGridExport<T>?` | Optional NgGridExport configuration: query/selection scope, ordered columns, text formatting, bounded CSV/TSV delivery and a full-data remote adapter. See Grid export. |
 | `editing` | `NgGridEditing<T>?` | Optional NgGridEditing configuration for isolated drafts, validation, async persistence and confirmed deletion. See Grid editing. |
 | `items` | `List<T>` | Input collection. Replace it when changing records or configuration. |
 | `readData` | `Future<NgDataResult<T>> Function(NgDataRequest)?` | Async page adapter; return requested rows and filtered total. See request/result contracts above. |
@@ -323,6 +373,7 @@ const NgDataGrid({
     super.key,
     this.items = const [],
     this.editing,
+    this.export,
     this.readData,
     this.readGroupedData,
     this.remoteGroupKeys = const [],

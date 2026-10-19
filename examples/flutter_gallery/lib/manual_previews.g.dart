@@ -331,6 +331,25 @@ Widget build(BuildContext context) => NgBreadcrumb(
 }
 class NgDataGridExample extends StatefulWidget { const NgDataGridExample({super.key}); @override State<NgDataGridExample> createState()=>_NgDataGridExampleState(); }
 class _NgDataGridExampleState extends State<NgDataGridExample> {
+bool exportQuantity=true,exportTsv=false,exportFail=false,exportLocked=false;
+NgGridExportFile? lastExport;
+NgGridExport<({String id,String name,int count})> exportConfig(bool remote)=>NgGridExport(
+  onExport:receiveExport,readExportData:remote?readExport:null,columnKeys:exportQuantity?['name','count']:['name'],
+  fileName:exportTsv?'inventory.tsv':'inventory.csv',delimiter:exportTsv?'\t':',',readOnly:exportLocked,
+  scopeText:remote?'Remote export scope':'Local export scope',format:(key,r)=>key=='count'?'${r.count}':r.name);
+Future<void> receiveExport(NgGridExportFile file)async{
+  if(exportFail)throw StateError('Private delivery detail');if(mounted)setState(()=>lastExport=file);
+}
+Future<List<({String id,String name,int count})>> readExport(NgGridExportRequest request)async{
+  await Future<void>.delayed(const Duration(milliseconds:600));if(exportFail)throw StateError('Private adapter detail');
+  var result=NgDataOperations.queryMany(rows,columns,request.search,request.sorts);
+  if(request.scope==NgGridExportScope.selected)result=result.where((r)=>request.selectedIds.contains(r.id)).toList();
+  if(result.length>request.maxRows)throw StateError('Too many records');return result;
+}
+void downloadExport(NgGridExportFile file){
+  final anchor=web.HTMLAnchorElement()..href='data:${file.mimeType};base64,${base64Encode(file.bytes)}'..download=file.fileName;
+  anchor.click();
+}
 final editableRows=<( {String id,String name,int count})>[(id:'e1',name:'Chair',count:12),(id:'e2',name:'Desk',count:24),(id:'e3',name:'Protected',count:100)];
 bool editLocked=false,editFail=false;
 int writes=0,nextEditId=4;
@@ -387,12 +406,19 @@ Future<NgDataResult<({String id, String name, int count})>> read(NgDataRequest r
   return NgDataResult(result.skip((request.page-1)*request.pageSize).take(request.pageSize).toList(), result.length);
 }
 Widget build(BuildContext context) => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+  const Text('Grid export'),
+  const Text('Prepare CSV or TSV, inspect the result, then download. Remote full export uses a separate bounded adapter.'),
+  NgCheckBox(label:'Export quantity column',value:exportQuantity,onChanged:(v)=>setState(()=>exportQuantity=v)),
+  NgCheckBox(label:'Use tab-separated format',value:exportTsv,onChanged:(v)=>setState(()=>exportTsv=v)),
+  NgCheckBox(label:'Fail exports',value:exportFail,onChanged:(v)=>setState(()=>exportFail=v)),
+  NgCheckBox(label:'Lock export',value:exportLocked,onChanged:(v)=>setState(()=>exportLocked=v)),
+  if(lastExport case final file?)...[Text('Last export: ${file.rowCount} rows · ${file.columnKeys.join(", ")}'),NgButton(onPressed:()=>downloadExport(file),child:const Text('Download last export')),SelectableText(file.content.substring(0,file.content.length>1200?1200:file.content.length))],
   const Text('Local grouped inventory'),
   NgCheckBox(label:'Group by product',value:grouped,onChanged:(v)=>setState(()=>grouped=v)),
   NgCheckBox(label:'Also group by availability',value:nested,onChanged:(v)=>setState(()=>nested=v)),
   NgCheckBox(label:'Show group totals',value:totals,onChanged:(v)=>setState(()=>totals=v)),
   NgCheckBox(label:'Lock group expansion',value:groupLocked,onChanged:(v)=>setState(()=>groupLocked=v)),
-  NgDataGrid<({String id,String name,int count})>(label:'Grouped inventory',items:rows,columns:columns,rowId:(r)=>r.id,groupSelectors:!grouped?[]:nested?[(r)=>r.name,(r)=>r.count<100?'Available':'Protected']:[(r)=>r.name],dataVersion:'$grouped/$nested',collapsibleGroups:true,collapsedGroups:collapsed,onCollapsedGroupsChanged:(v)=>setState(()=>collapsed=v),groupExpansionReadOnly:groupLocked,groupAggregates:totals?aggregates:[],groupText:(key,count)=>'$key: $count matching records',multiSort:true,selectedIds:localSelected,onSelectionChanged:(v)=>setState(()=>localSelected=v),canSelect:(r)=>r.count<100),
+  NgDataGrid<({String id,String name,int count})>(label:'Grouped inventory',export:exportConfig(false),items:rows,columns:columns,rowId:(r)=>r.id,groupSelectors:!grouped?[]:nested?[(r)=>r.name,(r)=>r.count<100?'Available':'Protected']:[(r)=>r.name],dataVersion:'$grouped/$nested',collapsibleGroups:true,collapsedGroups:collapsed,onCollapsedGroupsChanged:(v)=>setState(()=>collapsed=v),groupExpansionReadOnly:groupLocked,groupAggregates:totals?aggregates:[],groupText:(key,count)=>'$key: $count matching records',multiSort:true,selectedIds:localSelected,onSelectionChanged:(v)=>setState(()=>localSelected=v),canSelect:(r)=>r.count<100),
   Text('Local selection: ${(localSelected.toList()..sort()).join(", ")}'),
   const Text('Editable inventory'),
   const Text('Drafts are isolated. Quantities 100 and above are protected. Try validation, failure and retry.'),
@@ -412,7 +438,7 @@ Widget build(BuildContext context) => Column(crossAxisAlignment: CrossAxisAlignm
   const Text('Remote paging adapter'),
   NgCheckBox(label: 'Fail requests', value: fail, onChanged: (v) => setState(() => fail = v)),
   NgButton(onPressed: () => setState(() => version++), child: const Text('Reload source')),
-  NgDataGrid<({String id, String name, int count})>(readData: read, dataVersion: version, multiSort: true,
+  NgDataGrid<({String id, String name, int count})>(readData: read, export:exportConfig(true), dataVersion: version, multiSort: true,
     columns: columns, rowId: (r) => r.id, selectedIds: selected, canSelect: (r) => r.count < 100,
     pageSizes: const [5,10,20], onSelectionChanged: (v) => setState(() => selected = v)),
   Text('Requests: $requests · Latest query: $query'),

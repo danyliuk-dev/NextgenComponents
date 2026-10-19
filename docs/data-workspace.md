@@ -102,3 +102,11 @@ Database providers/query translation, lazy group paging, virtualization, CRUD/ex
 Both platforms now provide an opt-in single-record inline editor with isolated string drafts, required/custom validation, asynchronous persistence, safe application errors and retry, cancellation, confirmed deletion and current-record permissions. Persistence remains application-owned. Repeated submissions are blocked; removed records, source changes and obsolete completions cannot apply stale UI results. Successful writes refresh local grouping or the current remote query and clamp shrinking pages. Selection remains caller-owned.
 
 The editable inventory demonstrates the whole workflow, protected rows, duplicate-name validation and delayed failures. See [Grid editing](manual/grid-editing.md). Custom editor templates, batch/cell editing, database providers, export, virtualization and native/accessibility certification remain open. The next substantial block is Grid export with query/column scope, formatting, escaping and runnable examples on both Web platforms.
+
+## Grid CSV/TSV export workflows (0.68)
+
+Both Web platforms provide opt-in page, full-filtered and selected-filtered export, ordered column subsets and plain-text formatting. Group headers and aggregate rows are excluded. Page scope exports rendered records; full scopes include collapsed/off-page local records. Full remote scopes require a separate bounded adapter carrying query, sort, grouping and selection snapshots. Export never mislabels a downloaded page as a complete server dataset.
+
+CSV/TSV generation includes UTF-8/BOM options, headers, quoting, CRLF records, Unicode and formula-like text protection. Row/character caps fail without truncation. Single-flight preparation supports cancellation, safe errors, retry and invalidation on source/permission changes. Both demos preview the result and download a real file. See [Grid export](manual/grid-export.md).
+
+XLSX/PDF output, streaming server exports, database providers, virtual scrolling, batch/cell editing and native/accessibility certification remain open. The next substantial data block is virtual scrolling for large Grid and tree datasets, with explicit local/remote boundaries, selection/focus behavior and performance verification.

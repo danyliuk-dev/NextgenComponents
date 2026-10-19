@@ -1,8 +1,10 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'components.dart';
 part 'grouped_data.dart';
 part 'grid_editing.dart';
+part 'grid_export.dart';
 
 class NgDataColumn<T> {
   final String key, title;
@@ -534,6 +536,7 @@ class NgBreadcrumb extends StatelessWidget {
 }
 
 class NgDataGrid<T> extends StatefulWidget {
+  final NgGridExport<T>? export;
   final NgGridEditing<T>? editing;
   final List<T> items;
   final Future<NgDataResult<T>> Function(NgDataRequest)? readData;
@@ -569,6 +572,7 @@ class NgDataGrid<T> extends StatefulWidget {
     super.key,
     this.items = const [],
     this.editing,
+    this.export,
     this.readData,
     this.readGroupedData,
     this.remoteGroupKeys = const [],
@@ -610,6 +614,139 @@ class NgDataGrid<T> extends StatefulWidget {
 }
 
 class _NgDataGridState<T> extends State<NgDataGrid<T>> {
+  NgGridExportScope exportScope = NgGridExportScope.page;
+  bool exporting = false, exportError = false, exportReady = false;
+  int exportRevision = 0;
+  bool get canExport =>
+      mounted &&
+      !loading &&
+      !error &&
+      !saving &&
+      !exporting &&
+      widget.export != null &&
+      !widget.export!.readOnly &&
+      (exportScope == NgGridExportScope.page ||
+          !isRemote ||
+          widget.export!.readExportData != null);
+  void cancelExport() {
+    exportRevision++;
+    exporting = exportError = exportReady = false;
+  }
+
+  Future<void> exportData() async {
+    if (!canExport) return;
+    final config = widget.export!,
+        scope = exportScope,
+        ticket = ++exportRevision;
+    setState(() {
+      exporting = true;
+      exportError = exportReady = false;
+    });
+    try {
+      final columns = config.resolve(widget.columns);
+      final selected = Set<String>.of(widget.selectedIds);
+      List<T> source;
+      if (isRemote && scope != NgGridExportScope.page) {
+        final request = NgGridExportRequest(
+          scope,
+          search,
+          List.of(sorts),
+          List.of(widget.remoteGroupKeys),
+          selected.toList()..sort(),
+          config.maxRows,
+        );
+        source = List.of(await config.readExportData!(request));
+      } else {
+        source = (scope == NgGridExportScope.page ? displayRows : rows)
+            .where(
+              (r) =>
+                  scope != NgGridExportScope.selected ||
+                  selected.contains(widget.rowId(r)),
+            )
+            .toList();
+      }
+      if (!mounted ||
+          ticket != exportRevision ||
+          widget.export == null ||
+          widget.export!.readOnly)
+        return;
+      validate(source);
+      if (scope == NgGridExportScope.selected &&
+          source.any((r) => !selected.contains(widget.rowId(r))))
+        throw ArgumentError('Export returned unselected records.');
+      final file = NgGridCsv.create(source, columns, config);
+      await config.onExport(file);
+      if (mounted &&
+          ticket == exportRevision &&
+          widget.export != null &&
+          !widget.export!.readOnly)
+        setState(() => exportReady = true);
+    } catch (_) {
+      if (mounted && ticket == exportRevision)
+        setState(() => exportError = true);
+    } finally {
+      if (mounted && ticket == exportRevision)
+        setState(() => exporting = false);
+    }
+  }
+
+  Widget exportToolbar() {
+    final config = widget.export!;
+    return Wrap(
+      spacing: 12,
+      runSpacing: 8,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: [
+        Semantics(
+          label: config.scopeText,
+          child: DropdownButton<NgGridExportScope>(
+            value: exportScope,
+            onChanged: exporting
+                ? null
+                : (v) {
+                    if (v != null)
+                      setState(() {
+                        exportScope = v;
+                        exportReady = exportError = false;
+                      });
+                  },
+            items: [
+              DropdownMenuItem(
+                value: NgGridExportScope.page,
+                child: Text(config.pageText),
+              ),
+              DropdownMenuItem(
+                value: NgGridExportScope.filtered,
+                enabled: !isRemote || config.readExportData != null,
+                child: Text(config.filteredText),
+              ),
+              DropdownMenuItem(
+                value: NgGridExportScope.selected,
+                enabled: !isRemote || config.readExportData != null,
+                child: Text(config.selectedText),
+              ),
+            ],
+          ),
+        ),
+        TextButton(
+          onPressed: canExport ? exportData : null,
+          child: Text(config.exportText),
+        ),
+        if (exporting) ...[
+          Semantics(liveRegion: true, child: Text(config.busyText)),
+          TextButton(
+            onPressed: () => setState(cancelExport),
+            child: Text(config.cancelText),
+          ),
+        ],
+        if (exportError)
+          Semantics(liveRegion: true, child: Text(config.errorText))
+        else if (exportReady)
+          Semantics(liveRegion: true, child: Text(config.readyText)),
+      ],
+    );
+  }
+
   NgGridEditOperation? editOperation;
   String? editId, editError;
   Map<String, String> draft = {};
@@ -1049,6 +1186,12 @@ class _NgDataGridState<T> extends State<NgDataGrid<T>> {
     if (oldWidget.dataVersion != widget.dataVersion ||
         oldWidget.readData != widget.readData ||
         oldWidget.readGroupedData != widget.readGroupedData ||
+        widget.export == null ||
+        widget.export!.readOnly)
+      cancelExport();
+    if (oldWidget.dataVersion != widget.dataVersion ||
+        oldWidget.readData != widget.readData ||
+        oldWidget.readGroupedData != widget.readGroupedData ||
         (oldWidget.editing != null && widget.editing == null))
       invalidateEdit();
     validateGrouping();
@@ -1074,6 +1217,7 @@ class _NgDataGridState<T> extends State<NgDataGrid<T>> {
 
   @override
   void dispose() {
+    cancelExport();
     revision++;
     super.dispose();
   }
@@ -1110,6 +1254,7 @@ class _NgDataGridState<T> extends State<NgDataGrid<T>> {
   }
 
   void validateGrouping() {
+    widget.export?.resolve(widget.columns);
     widget.editing?.check();
     if (widget.groupBy != null && widget.groupSelectors.isNotEmpty)
       throw ArgumentError('Use groupBy or groupSelectors, not both.');
@@ -1237,6 +1382,7 @@ class _NgDataGridState<T> extends State<NgDataGrid<T>> {
               ),
             ],
           ),
+        if (widget.export != null) exportToolbar(),
         LayoutBuilder(
           builder: (context, c) => SingleChildScrollView(
             scrollDirection: Axis.horizontal,

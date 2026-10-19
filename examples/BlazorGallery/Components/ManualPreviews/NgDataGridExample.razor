@@ -2,12 +2,19 @@
 @using System.Net.Http.Json
 @inject System.Net.Http.IHttpClientFactory HttpFactory
 @inject NavigationManager Navigation
+<h3>Grid export</h3>
+<p>Prepare a CSV or TSV file, inspect its row count, then download. Local export respects the current query; remote full export uses a separate bounded adapter.</p>
+<NgCheckBox Label="Export quantity column" @bind-Value="exportQuantity"/>
+<NgCheckBox Label="Use tab-separated format" @bind-Value="exportTsv"/>
+<NgCheckBox Label="Fail exports" @bind-Value="exportFail"/>
+<NgCheckBox Label="Lock export" @bind-Value="exportLocked"/>
+@if(lastExport is {} file){<p>Last export: @file.RowCount rows · @string.Join(", ",file.ColumnKeys)</p><a class="ng-button" href="@($"data:{file.MimeType};base64,{Convert.ToBase64String(file.Bytes)}")" download="@file.FileName">Download last export</a><pre>@file.Content[..Math.Min(file.Content.Length,1200)]</pre>}
 <h3>Local grouped inventory</h3>
 <NgCheckBox Label="Group by product" @bind-Value="grouped"/>
 <NgCheckBox Label="Also group by availability" @bind-Value="nested"/>
 <NgCheckBox Label="Show group totals" @bind-Value="totals"/>
 <NgCheckBox Label="Lock group expansion" @bind-Value="groupLocked"/>
-<NgDataGrid TItem="Product" Label="Grouped inventory" Items="rows" Columns="columns" RowId="r=>r.Id" GroupSelectors="Grouping" DataVersion="@($"{grouped}/{nested}")" CollapsibleGroups="true" @bind-CollapsedGroups="collapsed" GroupExpansionReadOnly="groupLocked" GroupAggregates="@(totals?aggregates:[])" GroupText="GroupCaption" MultiSort="true" @bind-SelectedIds="localSelected" CanSelect="r=>r.Count<100"/>
+<NgDataGrid TItem="Product" Label="Grouped inventory" Export="LocalExport" Items="rows" Columns="columns" RowId="r=>r.Id" GroupSelectors="Grouping" DataVersion="@($"{grouped}/{nested}")" CollapsibleGroups="true" @bind-CollapsedGroups="collapsed" GroupExpansionReadOnly="groupLocked" GroupAggregates="@(totals?aggregates:[])" GroupText="GroupCaption" MultiSort="true" @bind-SelectedIds="localSelected" CanSelect="r=>r.Count<100"/>
 <p>Local selection: @string.Join(", ",localSelected.Order())</p>
 <h3>Editable inventory</h3>
 <p>Drafts are isolated. Quantities 100 and above are protected. Try a blank name, invalid quantity, a save failure and a retry.</p>
@@ -27,9 +34,19 @@
 <h3>Remote paging adapter</h3>
 <NgCheckBox Label="Fail requests" @bind-Value="fail"/>
 <NgButton OnClick="()=>version++">Reload source</NgButton>
-<NgDataGrid TItem="Product" ReadData="Read" DataVersion="version" MultiSort="true" Columns="columns" RowId="r=>r.Id" @bind-SelectedIds="selected" CanSelect="r=>r.Count<100" PageSizes="new[]{5,10,20}"/>
+<NgDataGrid TItem="Product" ReadData="Read" Export="RemoteExport" DataVersion="version" MultiSort="true" Columns="columns" RowId="r=>r.Id" @bind-SelectedIds="selected" CanSelect="r=>r.Count<100" PageSizes="new[]{5,10,20}"/>
 <p>Requests: @requests · Latest query: @query</p>
 @code {
+ private bool exportQuantity=true,exportTsv,exportFail,exportLocked;private NgGridExportFile? lastExport;
+ private NgGridExport<Product> LocalExport=>new(){OnExport=ReceiveExport,ColumnKeys=exportQuantity?["name","count"]:["name"],FileName=exportTsv?"inventory.tsv":"inventory.csv",Delimiter=exportTsv?"\t":",",ReadOnly=exportLocked,ScopeText="Local export scope",Format=(key,r)=>key=="count"?r.Count.ToString(System.Globalization.CultureInfo.InvariantCulture):r.Name};
+ private NgGridExport<Product> RemoteExport=>LocalExport with {ReadExportData=ReadExport,ScopeText="Remote export scope"};
+ private async Task ReceiveExport(NgGridExportFile file,CancellationToken token){token.ThrowIfCancellationRequested();if(exportFail)throw new InvalidOperationException("Private delivery detail");lastExport=file;await InvokeAsync(StateHasChanged);}
+ private async Task<IReadOnlyList<Product>> ReadExport(NgGridExportRequest request,CancellationToken token){
+   await Task.Delay(600,token);if(exportFail)throw new InvalidOperationException("Private adapter detail");
+   var result=NgDataOperations.Query(rows,columns,request.Search,request.Sorts);
+   if(request.Scope==NgGridExportScope.Selected)result=result.Where(r=>request.SelectedIds.Contains(r.Id)).ToArray();
+   if(result.Count>request.MaxRows)throw new InvalidOperationException("Too many records");return result;
+ }
  public record Product(string Id,string Name,int Count);
  private bool grouped=true,nested=true,totals=true,groupLocked;
  private HashSet<string> collapsed=[];
