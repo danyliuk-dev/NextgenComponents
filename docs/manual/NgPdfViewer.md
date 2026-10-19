@@ -4,7 +4,7 @@
 
 ## When to use it
 
-Open, navigate, search and copy text from PDF documents.
+Browse page thumbnails, navigate, search and copy text from PDF documents.
 
 ## Appearance and live example
 
@@ -22,12 +22,14 @@ Blazor serves _content/NextgenComponents.Blazor/pdf-viewer/. With UseStaticFiles
 ### Navigation, search and state
 Previous/Next and Page use one-based page numbers. Zoom is 10–300%, with 25-point button increments. Fit width/page recomputes on viewport resize. Enlarged pages scroll internally. Height is 400–1600, default 640; the toolbar wraps on narrow widths and leaves at least 100 px for the page.
 
+Thumbnails opens a collapsible page rail. Buttons show page numbers and mark the current page with aria-current. Click or use Tab then Enter/Space to navigate. Previous/Next, direct page entry and search results keep the rail selection synchronized. Only visible previews render, sequentially; each raster is at most 224 by 288 pixels. Scrolling away, hiding the rail or replacing the document releases preview canvases. A failed preview retains its page button. The rail starts closed for each document and narrows on small screens.
+
 Find searches a case-insensitive substring across every page, normalizing whitespace and matching across text items/lines. Results list page numbers; selecting one opens that page and Page text. Clear removes query/results/highlights. Page text supports ordinary selection/copy. Text can also be selected over the rendered page; Ctrl/Cmd+C uses the browser clipboard. Current-page matches are highlighted (up to 1,000 non-overlapping matches), surviving zoom/navigation/fit. Find applies a changed query; Clear, an empty Find and document changes reset it. Redrawing clears ordinary selection. Highlight geometry depends on PDF fonts/text; CSS Custom Highlight API is used in Chrome, with page search and selection as fallback. No OCR: scanned PDFs without text cannot be searched. Hyphenation, ligatures and source text order may affect matching.
 
 Download saves the original bytes, including locally opened files. Filenames from URLs/files are stripped of control characters/path separators. The viewer does not edit PDF. Page/zoom/search/local-file state belongs to the iframe. Source or theme changes recreate it and reset state; reopen local files after a theme change. Identical parent rebuilds preserve it. Page/load callbacks and controlled page binding are not implemented.
 
 ### Limits and failures
-At most 20 MiB and 200 pages, including streamed URL downloads. One page is rendered at a time; raster output is capped at 16 million pixels and an 8192-pixel side, reducing quality at extreme zoom if necessary. Corrupt files, CORS/access errors and password-protected documents show an error and allow another file. No passwords, forms, annotations, signatures, PDF links, print, OCR, thumbnails or built-in localization. PDF JavaScript/actions are not executed.
+At most 20 MiB and 200 pages, including streamed URL downloads. One page is rendered at a time in the main viewport; raster output is capped at 16 million pixels and an 8192-pixel side, reducing quality at extreme zoom if necessary. Corrupt files, CORS/access errors and password-protected documents show an error and allow another file. No passwords, forms, annotations, signatures, PDF links, print, OCR or built-in localization. PDF JavaScript/actions are not executed.
 
 Flutter currently supports this component on Web only; native displays an explicit unsupported message. Native support and full screen-reader certification are not part of this release.
 

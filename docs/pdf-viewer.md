@@ -1,4 +1,4 @@
-# PDF Viewer capabilities — 0.8.1
+# PDF Viewer capabilities — 0.44
 
 Reference audit (2026-10-18): [Telerik PDF Viewer overview](https://www.telerik.com/blazor-ui/documentation/components/pdfviewer/overview). Its feature set includes navigation, zoom, search/selection, file open/download, printing, annotations and form filling. This implementation provides the subset below, without API compatibility.
 
@@ -14,14 +14,22 @@ Reference audit (2026-10-18): [Telerik PDF Viewer overview](https://www.telerik.
 | Dark theme, narrow layout | Implemented | Implemented |
 | Passwords, print, annotations/forms/signatures, links, OCR | Planned | Planned |
 | Text selection over page, exact search highlights | Implemented | Implemented |
-| Thumbnails | Planned | Planned |
+| Lazy page thumbnails with synchronized selection | Implemented | Implemented |
 | Page/load callbacks and controlled navigation | Planned | Planned |
 | Native platforms | Not verified | Explicit unsupported placeholder |
 
-Shared renderer runs in an iframe, independent of SignalR and Flutter rendering. Limits: 20 MiB, 200 pages, one rendered page, maximum 16 million raster pixels and 8192px per side. Fit modes recompute on resize. Source or theme changes reset the iframe; a locally opened document must be reopened after a theme change. No PDF data is uploaded by the viewer.
+Shared renderer runs in an iframe, independent of SignalR and Flutter rendering. Limits: 20 MiB, 200 pages, one main rendered page plus visible thumbnails, maximum 16 million raster pixels and 8192px per side. Fit modes recompute on resize. Source or theme changes reset the iframe; a locally opened document must be reopened after a theme change. No PDF data is uploaded by the viewer.
 
-[Detailed Russian manual](manual/NgPdfViewer.md). Gallery /pdf / Foundation → PDF Viewer. [PDF.js](https://mozilla.github.io/pdf.js/) 6.4.299 is Apache-2.0; pinned distribution and notices are included. Original toolbar/behavior/styles live in shared/pdf-viewer, copied into both packages by scripts/sync_pdf_assets.py. No Telerik implementation/assets were copied.
+[Detailed English manual](manual/NgPdfViewer.md). Gallery /pdf / Foundation → PDF Viewer. [PDF.js](https://mozilla.github.io/pdf.js/) 6.4.299 is Apache-2.0; pinned distribution and notices are included. Original toolbar/behavior/styles live in shared/pdf-viewer, copied into both packages by scripts/sync_pdf_assets.py. No Telerik implementation/assets were copied.
 
 ## Text layer (0.8.1)
 
 PDF.js TextLayer overlays the rendered page at the same scale and page rotation. Native browser selection supports copy; changing page/zoom rerenders and clears selection. CSS Custom Highlight ranges mark up to 1000 non-overlapping matches on the visible page without modifying the text nodes. Search ignores case and folds whitespace; matches can span adjacent PDF text runs and line breaks. Clear/empty search/new document removes highlights. Scans still require OCR. Browsers without the CSS Highlight API retain selection and page search; highlights were verified in Chrome.
+
+## Page thumbnails (0.44)
+
+Use **Thumbnails** to open the page rail. Every page has a numbered native button; Tab and Enter/Space work without custom keyboard modes. The current page is marked with `aria-current="page"`, and navigation from the toolbar or search keeps that selection visible. The rail starts closed after document replacement.
+
+Only intersecting thumbnails render, one preview job at a time, at a maximum of 224 × 288 raster pixels each. Leaving the visible rail, closing it or replacing the PDF releases preview canvases. Generation checks prevent old document/observer work from appearing in the next document. A failed preview shows a fallback and leaves navigation available. This shares the packaged PDF.js document with the main view and makes no additional document requests.
+
+The rail narrows on small screens; fit page/width responds to the remaining viewport. Main page text selection, search and download retain their existing behavior. Parent page/load callbacks and controlled page binding remain planned.

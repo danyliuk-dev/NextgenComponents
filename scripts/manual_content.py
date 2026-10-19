@@ -1241,7 +1241,7 @@ D = {'NgButton': {'title': 'Button',
           'fails, check the module and ValueChanged handling. Native/mobile and screen-reader audits '
           'remain separate.'},
  'NgPdfViewer': {'title': 'PDF viewer',
-                 'use': 'Open, navigate, search and copy text from PDF documents.',
+                 'use': 'Browse page thumbnails, navigate, search and copy text from PDF documents.',
                  'blazor': '<NgPdfViewer Label="Guide" Source="samples/nextgen-guide.pdf" Height="720" '
                            'Dark="false"/>\n'
                            '<p>PDF must be hosted by the application at this address.</p>',
@@ -1268,6 +1268,13 @@ D = {'NgButton': {'title': 'Button',
                           'scroll internally. Height is 400–1600, default 640; the toolbar wraps on narrow '
                           'widths and leaves at least 100 px for the page.\n'
                           '\n'
+                          'Thumbnails opens a collapsible page rail. Buttons show page numbers and mark the current '
+                          'page with aria-current. Click or use Tab then Enter/Space to navigate. Previous/Next, '
+                          'direct page entry and search results keep the rail selection synchronized. Only visible '
+                          'previews render, sequentially; each raster is at most 224 by 288 pixels. Scrolling '
+                          'away, hiding the rail or replacing the document releases preview canvases. A failed '
+                          'preview retains its page button. The rail starts closed for each document and narrows '
+                          'on small screens.\n\n'
                           'Find searches a case-insensitive substring across every page, normalizing '
                           'whitespace and matching across text items/lines. Results list page numbers; '
                           'selecting one opens that page and Page text. Clear removes '
@@ -1290,11 +1297,11 @@ D = {'NgButton': {'title': 'Button',
                           '\n'
                           '### Limits and failures\n'
                           'At most 20 MiB and 200 pages, including streamed URL downloads. One page is '
-                          'rendered at a time; raster output is capped at 16 million pixels and an '
+                          'rendered at a time in the main viewport; raster output is capped at 16 million pixels and an '
                           '8192-pixel side, reducing quality at extreme zoom if necessary. Corrupt files, '
                           'CORS/access errors and password-protected documents show an error and allow '
                           'another file. No passwords, forms, annotations, signatures, PDF links, print, '
-                          'OCR, thumbnails or built-in localization. PDF JavaScript/actions are not '
+                          'OCR or built-in localization. PDF JavaScript/actions are not '
                           'executed.\n'
                           '\n'
                           'Flutter currently supports this component on Web only; native displays an '

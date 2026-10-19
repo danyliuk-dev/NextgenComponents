@@ -1,3 +1,4 @@
+import { Thumbnails } from './thumbnails.mjs';
 import { findTextMatches, indexTextItems, matchSegments } from './text-search.mjs';
 import { getDocument, GlobalWorkerOptions, TextLayer } from './vendor/pdf.min.mjs';
 GlobalWorkerOptions.workerSrc = new URL('./vendor/pdf.worker.min.mjs', import.meta.url).href;
@@ -7,6 +8,7 @@ document.documentElement.dataset.theme = params.get('theme') === 'dark' ? 'dark'
 const LIMIT = 20 * 1024 * 1024;
 let doc, task, renderTask, bytes, filename='document.pdf', page=1, scale=1, mode='fit', generation=0, renderVersion=0, searchVersion=0, request;
 const texts = new Map();
+const thumbnails=new Thumbnails($('thumbnails'),$('thumbnails-toggle'),number=>{if(doc){page=number;render();}});
 let textLayer, displayedText, activeQuery='';
 function clearTextLayer() {
   textLayer?.cancel();textLayer=undefined;displayedText=undefined;
@@ -31,6 +33,7 @@ function highlightMatches() {
 
 const status = (text, error=false) => { $('status').textContent=text; $('status').classList.toggle('error',error); };
 function controls() {
+  thumbnails.select(page);
   for (const id of ['page','out','in','width','fit','query','search','download']) $(id).disabled=!doc;
   $('previous').disabled=!doc||page<=1; $('next').disabled=!doc||page>=doc.numPages;
   $('page').value=page; $('page').max=doc?.numPages??1; $('pages').textContent='of '+(doc?.numPages??0);
@@ -82,6 +85,7 @@ async function render() {
   }catch(e){if(version===renderVersion&&e.name!=='RenderingCancelledException'&&e.name!=='AbortException')status('Unable to render this page.',true);}
 }
 async function reset() {
+  thumbnails.reset();
   const version=++generation; renderVersion++; searchVersion++; request?.abort();request=undefined;
   renderTask?.cancel();clearTextLayer();activeQuery=''; const old=task; task=undefined;doc=undefined;bytes=undefined;texts.clear();page=1;
   $('page-surface').hidden=true;$('canvas').hidden=true;$('canvas').width=1;$('canvas').height=1;$('text').textContent='';$('results').replaceChildren();$('search-status').textContent='';$('name').textContent='No document';controls();
@@ -98,7 +102,7 @@ async function load(data,name,version) {
     const pdf=await task.promise;
     if(version!==generation)return;
     if(pdf.numPages>200){await reset();status('Use a PDF with at most 200 pages.',true);return;}
-    doc=pdf;page=1;mode='fit';$('name').textContent=filename;controls();await render();
+    doc=pdf;page=1;mode='fit';thumbnails.reset(pdf);$('name').textContent=filename;controls();await render();
   }catch(e){
     if(version!==generation)return;
     await reset();
@@ -137,11 +141,11 @@ $('search-form').onsubmit=async e=>{
   $('results').replaceChildren();if(!query||!current){$('search-status').textContent='';return;}$('search-status').textContent='Searching…';let count=0;
   try{for(let number=1;number<=current.numPages;number++){
     const text=await textFor(current,number);if(version!==searchVersion||current!==doc)return;
-    if(findTextMatches(text,query,1).length){count++;const button=document.createElement('button');button.type='button';button.textContent='Page '+number;button.onclick=()=>{page=number;render();$('text-panel').open=true;};$('results').append(button);}
+    if(findTextMatches(text,query,1).length){count++;const button=document.createElement('button');button.type='button';button.textContent='Page '+number;button.onclick=()=>{if(current!==doc||version!==searchVersion)return;page=number;render();$('text-panel').open=true;};$('results').append(button);}
   }if(version===searchVersion)$('search-status').textContent=count+' matching pages.';}
   catch{if(version===searchVersion)$('search-status').textContent='Unable to search this document.';}
 };
 let resizeTimer;new ResizeObserver(()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(()=>{if(doc&&mode!=='manual')render();},120);}).observe($('viewport'));
-window.addEventListener('pagehide',()=>{request?.abort();task?.destroy();});
+window.addEventListener('pagehide',()=>{thumbnails.reset();request?.abort();task?.destroy();});
 controls();$('canvas').hidden=true;
 if(params.get('source'))openUrl(params.get('source'));
