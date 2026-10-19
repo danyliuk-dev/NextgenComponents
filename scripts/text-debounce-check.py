@@ -13,13 +13,15 @@ def click(label):
  time.sleep(.05)
 def native_click(label):
  selector=f"[...document.querySelectorAll('button,[role=button]')].find(e=>e.textContent.trim()==={label!r}||e.getAttribute('aria-label')==={label!r})"
- p=c.eval(f"(()=>{{const e={selector};e.scrollIntoView({{block:'center'}});const r=e.getBoundingClientRect();return {{x:r.x+r.width/2,y:r.y+r.height/2}};}})()")
+ c.eval(f"{selector}.scrollIntoView({{block:'center'}})");time.sleep(.3)
+ p=c.eval(f"(()=>{{const e={selector};const r=e.getBoundingClientRect();return {{x:r.x+r.width/2,y:r.y+r.height/2}};}})()")
  for kind in ['mousePressed','mouseReleased']:c.call('Input.dispatchMouseEvent',dict(type=kind,button='left',clickCount=1,**p))
  time.sleep(.05)
 def status():
  return c.eval("(()=>{const nodes=[...document.querySelectorAll('p,flt-semantics')];const e=nodes.find(e=>(e.getAttribute('aria-label')||e.textContent).match(/^Delay: \\d+ ms · Notifications:/));const s=e?.getAttribute('aria-label')||e?.textContent;return s?s.match(/\\d+/g).map(Number):null})()")
 def focus():
- p=c.eval(f"(()=>{{const e={field()};e.scrollIntoView({{block:'center'}});const r=e.getBoundingClientRect();return {{x:r.x+25,y:r.y+15}};}})()")
+ c.eval(f"{field()}.scrollIntoView({{block:'center'}})");time.sleep(.3)
+ p=c.eval(f"(()=>{{const e={field()};const r=e.getBoundingClientRect();return {{x:r.x+25,y:r.y+15}};}})()")
  for kind in ['mousePressed','mouseReleased']:c.call('Input.dispatchMouseEvent',dict(type=kind,button='left',clickCount=1,**p))
  time.sleep(.03)
 def enter(value):

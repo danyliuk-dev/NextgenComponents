@@ -3065,7 +3065,7 @@ OnDebouncedChange/onDebouncedChange is an optional notification after typing or 
 
 A different externally supplied value, a changed delay, read-only/disabled state, handler removal, Flutter controller replacement or disposal cancels a pending notification. External changes alone never schedule notifications. Appearance changes and ordinary parent rebuilds retain pending work; the current callback receives the notification. Flutter selection-only controller changes do not cancel it. Flutter Form.reset follows TextFormField's native onChanged behavior and may schedule the reset value; use a replacement key/controller to discard all draft work.
 
-OnCommit/onSubmitted stays independent: blur/submit neither flushes nor cancels the delayed callback. Debouncing does not make submission wait or perform validation/network requests. Once a callback starts, cancelling later input cannot undo its effects: applications must protect asynchronous search results with their own request/version checks. IME composition follows native input events; composition-aware suppression is not supplied. Blazor cannot distinguish an external assignment of the same string from the normal binding echo; use a replacement key to reset the editor unconditionally.
+OnCommit/onSubmitted stays independent: blur/submit neither flushes nor cancels the delayed callback. Debouncing does not make submission wait or perform validation/network requests. Once a callback starts, cancelling later input cannot undo its effects: applications must protect asynchronous search results with their own request/version checks. IME composition suppression is available from 0.57; see below. Blazor cannot distinguish an external assignment of the same string from the normal binding echo; use a replacement key to reset the editor unconditionally.
 """
 
 # Responsive form fields and actions, 0.50.
@@ -3226,3 +3226,15 @@ Disabled/busy forms cannot toggle sections. Descendant toggle requests are also 
 
 Native buttons support keyboard activation. A collapse removes descendant focus; opening does not automatically focus an editor. Applications that collapse a section externally must choose any required focus destination. Screen-reader certification remains open. This is retained presentation state, not conditional schemas or removal of fields.
 '''
+
+# IME-aware text notifications, 0.57.
+for _editor in ('NgTextBox', 'NgTextArea'):
+    D[_editor]['blazor'] = '<p>IME input updates the draft immediately; notifications wait until composition ends.</p>\n' + D[_editor]['blazor']
+    D[_editor]['dart'] = D[_editor]['dart'].replace('children:[', "children:[const Text('IME input updates the draft immediately; notifications wait until composition ends.'),", 1)
+    D[_editor]['notes'] += """
+
+### IME composition (0.57)
+While an input method is composing text, debounced notifications are suppressed, including with a zero delay. Binding, validation and onChanged still follow native edits immediately. Completing composition starts the configured delay again; completion with unchanged text also produces one notification. A later edit replaces that pending notification normally.
+
+Locks, external replacement, handler removal and disposal still cancel pending work. Clear is a new empty edit. Composition does not delay form submission or OnCommit/onSubmitted. Blazor uses a native composition observer loaded after interactive rendering; Flutter observes the editing composition range and native Web composition events (including semantics mode), while retaining TextFormField controller/reset ownership. Initial rendering does not notify. Browser automation checks native Chromium composition events and Flutter tests cover editing ranges; physical OS input methods, mobile keyboards and assistive technology certification remain separate verification.
+"""

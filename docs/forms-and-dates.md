@@ -122,3 +122,7 @@ NgFormSection now accepts either leaf Fields/fields or child Sections/sections. 
 ## Controlled section expansion (0.56)
 
 Expanded/expanded and OnExpandedChanged/onExpandedChanged provide controlled disclosure headings on NgFormSection. Collapsed editors stay mounted, retain their state and still participate in validation. Form busy/disabled state and collapsed ancestors guard toggles. Invalid groups are not automatically expanded; keep the summary visible and provide a way to reopen them. See the Form manual for focus and lifecycle rules.
+
+## IME-aware notifications (0.57)
+
+TextBox and TextArea suppress delayed notifications while native text composition is active. Composition completion restarts the delay, even when the string itself is unchanged; zero delay also waits for completion. Draft binding and validation remain immediate. Existing cancellation and independent commit/submission behavior is retained. Manuals and live previews describe this contract. Physical OS IME keyboards and native mobile targets remain unverified.

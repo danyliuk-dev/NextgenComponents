@@ -783,3 +783,20 @@ Validation completed:
 Evidence: [Blazor collapsed errors](screenshots/form056-blazor-collapsed.png), [Flutter narrow disclosure](screenshots/form056-flutter-narrow.png), [desktop manual](screenshots/form056-desktop-manual.png).
 
 Validation does not automatically expand invalid groups. Applications must keep hidden errors discoverable and manage focus when collapsing externally. Expansion is not conditional validation or authorization. Generated/conditional schemas and full native/screen-reader certification remain open; full Telerik API/pixel parity is not claimed.
+
+## IME-aware text notifications — 0.57 (2026-10-19, Linux on iMac)
+
+TextBox and TextArea suppress debounced notifications while text composition is active, including zero delay. Completion restarts the delay and notifies once even when the text string is unchanged. Draft binding and validation remain immediate. Native event observers are detached on disposal; Flutter retains framework-owned controller/reset behavior and also observes Web composition events because its semantics editing strategy can omit composing ranges.
+
+Validation completed:
+
+- 400 Blazor rendering/data checks and a gallery build with zero warnings/errors.
+- 241 Flutter tests and clean Dart analysis. New tests cover both editors with framework-owned/external controllers, immediate draft changes, unchanged-string composition completion, same-text composition start during a pending delay, zero delay, locks and disposal. Existing debounce/reset regression tests pass.
+- 47 Razor and 47 Dart manual examples compiled/analyzed; 94 lossless highlighting checks. Flutter Web build passed with the existing CupertinoIcons font warning.
+- Visible local Chrome: 28 IME assertions per platform using CDP native composition and text insertion, including observed compositionstart/end, suppression, unchanged completion, zero delay, replacement/readonly cancellation, clear during composition and zero-delay clear. Flutter runs with browser semantics enabled, exercising the additional native event observer.
+- Ordinary typing/debounce regression: 26 assertions per platform, including replacement, locks, delay changes, appearance rebuilds, clear and blur. Total editor browser assertions: 108.
+- Desktop shell checked the 0.57 badge, IME manual content and nested live preview. Blazor, Flutter and desktop screenshots were inspected directly.
+
+Evidence: [Blazor editor](screenshots/text057-blazor.png), [Flutter editor](screenshots/text057-flutter.png), [desktop manual](screenshots/text057-desktop-manual.png).
+
+Physical OS IME keyboards, native mobile targets and assistive technology certification remain unverified. Commit/submission stays independent; already-started asynchronous application requests need their own stale-result protection. Full Telerik API/pixel parity is not claimed.

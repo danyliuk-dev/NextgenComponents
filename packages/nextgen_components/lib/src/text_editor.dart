@@ -1,5 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'text_composition_stub.dart'
+    if (dart.library.js_interop) 'text_composition_web.dart';
 
 // Internal shared implementation; TextBox and TextArea retain their public APIs.
 class NextgenTextEditor extends StatefulWidget {
@@ -60,9 +63,53 @@ class _NextgenTextEditorState extends State<NextgenTextEditor> {
       field.currentState?.value ??
       widget.initialValue ??
       '';
+  // Read the framework-owned controller without taking ownership: supplying a
+  // replacement controller would change TextFormField.initialValue/reset behavior.
+  TextEditingValue? get editingValue {
+    if (widget.controller != null) return widget.controller!.value;
+    TextEditingValue? result;
+    void visit(Element element) {
+      if (element.widget case EditableText editor) {
+        result = editor.controller.value;
+      } else if (result == null) {
+        element.visitChildElements(visit);
+      }
+    }
+
+    field.currentContext?.visitChildElements(visit);
+    return result;
+  }
+
+  late final TextCompositionObserver nativeComposition;
+  bool get composing {
+    if (nativeComposition.active) return true;
+    final range = editingValue?.composing;
+    return range != null && range.isValid && !range.isCollapsed;
+  }
+
+  int notificationEpoch = 0;
+  TextEditingValue observeEdit(
+    TextEditingValue oldValue,
+    TextEditingValue value,
+  ) {
+    cancelDebounce();
+    if (!value.composing.isCollapsed && value.composing.isValid) return value;
+    // IME may commit without changing text, so onChanged alone is insufficient.
+    if (!oldValue.composing.isCollapsed && oldValue.composing.isValid) {
+      final epoch = notificationEpoch;
+      scheduleMicrotask(() {
+        if (mounted && epoch == notificationEpoch && text == value.text) {
+          scheduleDebounce(value.text);
+        }
+      });
+    }
+    return value;
+  }
+
   Timer? debounce;
   String? pendingValue;
   void cancelDebounce() {
+    notificationEpoch++;
     debounce?.cancel();
     debounce = null;
     pendingValue = null;
@@ -74,11 +121,16 @@ class _NextgenTextEditorState extends State<NextgenTextEditor> {
         !widget.enabled ||
         widget.readOnly ||
         widget.onDebouncedChange == null ||
+        composing ||
         text != value)
       return;
     pendingValue = value;
     debounce = Timer(Duration(milliseconds: widget.debounceDelay), () {
-      if (!mounted || !widget.enabled || widget.readOnly || text != value)
+      if (!mounted ||
+          !widget.enabled ||
+          widget.readOnly ||
+          composing ||
+          text != value)
         return;
       cancelDebounce();
       widget.onDebouncedChange?.call(value);
@@ -90,6 +142,19 @@ class _NextgenTextEditorState extends State<NextgenTextEditor> {
   @override
   void initState() {
     super.initState();
+    nativeComposition = TextCompositionObserver(
+      () => mounted && inputFocus.hasFocus,
+      (active, value) {
+        cancelDebounce();
+        if (!active) {
+          final epoch = notificationEpoch;
+          scheduleMicrotask(() {
+            if (mounted && epoch == notificationEpoch && text == value)
+              scheduleDebounce(value);
+          });
+        }
+      },
+    );
     widget.controller?.addListener(changed);
   }
 
@@ -125,6 +190,7 @@ class _NextgenTextEditorState extends State<NextgenTextEditor> {
   void dispose() {
     cancelDebounce();
     widget.controller?.removeListener(changed);
+    nativeComposition.dispose();
     ownedFocus.dispose();
     super.dispose();
   }
@@ -138,6 +204,7 @@ class _NextgenTextEditorState extends State<NextgenTextEditor> {
         text.isEmpty)
       return;
     setState(() => revealed = false);
+    nativeComposition.reset();
     field.currentState?.didChange('');
     widget.controller?.clear();
     inputFocus.requestFocus();
@@ -223,6 +290,7 @@ class _NextgenTextEditorState extends State<NextgenTextEditor> {
       },
       child: TextFormField(
         key: field,
+        inputFormatters: [TextInputFormatter.withFunction(observeEdit)],
         style: widget.size == 'medium'
             ? null
             : TextStyle(fontSize: widget.size == 'small' ? 13 : 18),
