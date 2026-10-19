@@ -14,6 +14,15 @@ async Task Check<T>(Dictionary<string, object?> parameters, params string[] expe
  foreach (var text in expected) if (!html.Contains(text)) throw new Exception($"{typeof(T).Name}: missing {text} in {html}");
  Console.WriteLine($"PASS {typeof(T).Name}"); count++;
 }
+var remoteColumns=new[]{new NgDataColumn<string>("name","Name",s=>s)};
+await Check<NgDataGrid<string>>(new(){["Columns"]=remoteColumns,["RowId"]=(Func<string,string>)(s=>s),["ReadData"]=(Func<NgDataRequest,CancellationToken,Task<NgDataResult<string>>>)((r,t)=>Task.FromResult(new NgDataResult<string>(["Server row"],42))),["MultiSort"]=true},"Server row","Clear sorting","42");
+await Check<NgDataGrid<string>>(new(){["Columns"]=remoteColumns,["RowId"]=(Func<string,string>)(s=>s),["ReadData"]=(Func<NgDataRequest,CancellationToken,Task<NgDataResult<string>>>)((r,t)=>Task.FromException<NgDataResult<string>>(new Exception("private")))},"Unable to load records.","Retry");
+await Check<NgDataGrid<string>>(new(){["Columns"]=remoteColumns,["RowId"]=(Func<string,string>)(s=>s),["ReadData"]=(Func<NgDataRequest,CancellationToken,Task<NgDataResult<string>>>)((r,t)=>Task.FromResult(new NgDataResult<string>(["duplicate","duplicate"],2)))},"Unable to load records.");
+var manyRows=new[]{(Id:"a",Group:1,Value:2),(Id:"b",Group:0,Value:5),(Id:"c",Group:1,Value:3),(Id:"d",Group:1,Value:3)};
+NgDataColumn<(string Id,int Group,int Value)>[] manyColumns=[new("group","Group",r=>r.Group),new("value","Value",r=>r.Value)];
+if(string.Join(",",NgDataOperations.Query(manyRows,manyColumns,"",new NgSortDescriptor[]{new("group"),new("value",true)}).Select(r=>r.Id))!="b,c,d,a")throw new Exception("Unstable multi-sort");count++;
+await Check<NgTreeView<string>>(new(){["Items"]=new[]{new NgTreeNode<string>("root","Root",HasChildren:true)},["Text"]=(Func<string,string>)(s=>s)},"Expand Root","aria-expanded=\"false\"");
+await Check<NgTreeList<string>>(new(){["Items"]=new[]{new NgTreeNode<string>("root","Root",HasChildren:true)},["Columns"]=remoteColumns},"Expand Root");
 await Check<NgDateRangePicker>(new(){["Presets"]=new[]{new NgDateRangePreset("week","<Week>",new(2026,10,20),new(2026,10,23))},["Value"]=new NgDateRange(new(2026,10,20),new(2026,10,23)),["ShowClearButton"]=true},"&lt;Week&gt;","aria-pressed=\"true\"","Clear range","disabled");
 foreach(var presets in new[]{new[]{new NgDateRangePreset("","Empty",new(2026,10,1),new(2026,10,2))},new[]{new NgDateRangePreset("id"," ",new(2026,10,1),new(2026,10,2))},new[]{new NgDateRangePreset("id","Reverse",new(2026,10,2),new(2026,10,1))},new[]{new NgDateRangePreset("id","One",new(2026,10,1),new(2026,10,2)),new NgDateRangePreset("id","Two",new(2026,10,2),new(2026,10,3))}}){
  try{await Check<NgDateRangePicker>(new(){["Presets"]=presets});throw new Exception("Malformed presets accepted");}catch(ArgumentException){count++;}

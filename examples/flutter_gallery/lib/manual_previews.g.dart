@@ -328,50 +328,75 @@ Widget build(BuildContext context) => NgBreadcrumb(
 }
 class NgDataGridExample extends StatefulWidget { const NgDataGridExample({super.key}); @override State<NgDataGridExample> createState()=>_NgDataGridExampleState(); }
 class _NgDataGridExampleState extends State<NgDataGridExample> {
-final rows = [(id: 'a', name: 'Desk', count: 12), (id: 'b', name: 'Chair', count: 120)];
+final rows = List.generate(40, (i) => (id: 'p${i+1}', name: i.isOdd ? 'Desk' : 'Chair', count: (i+1)*4));
+final columns = <NgDataColumn<({String id, String name, int count})>>[
+  NgDataColumn('name', 'Name', (r) => r.name), NgDataColumn('count', 'Quantity', (r) => r.count)];
 Set<String> selected = {};
-Widget build(BuildContext context) => NgDataGrid<({String id, String name, int count})>(
-  items: rows, rowId: (r) => r.id, selectedIds: selected,
-  canSelect: (r) => r.count < 100, pageSizes: const [5, 10, 20],
-  onSelectionChanged: (v) => setState(() => selected = v),
-  columns: [NgDataColumn('name','Name',(r) => r.name),
-    NgDataColumn('count','Quantity',(r) => r.count)]);
+bool fail = false;
+int version = 0, requests = 0;
+String query = '';
+Future<NgDataResult<({String id, String name, int count})>> read(NgDataRequest request) async {
+  requests++; query = '${request.search} / page ${request.page} / ${request.sorts.length} sorts';
+  await Future<void>.delayed(const Duration(milliseconds: 350)); if (mounted) setState(() {});
+  if (fail) throw StateError('Demo failure');
+  final result = NgDataOperations.queryMany(rows, columns, request.search, request.sorts);
+  return NgDataResult(result.skip((request.page-1)*request.pageSize).take(request.pageSize).toList(), result.length);
+}
+Widget build(BuildContext context) => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+  NgCheckBox(label: 'Fail requests', value: fail, onChanged: (v) => setState(() => fail = v)),
+  NgButton(onPressed: () => setState(() => version++), child: const Text('Reload source')),
+  NgDataGrid<({String id, String name, int count})>(readData: read, dataVersion: version, multiSort: true,
+    columns: columns, rowId: (r) => r.id, selectedIds: selected, canSelect: (r) => r.count < 100,
+    pageSizes: const [5,10,20], onSelectionChanged: (v) => setState(() => selected = v)),
+  Text('Requests: $requests · Latest query: $query'),
+]);
 }
 class NgTreeViewExample extends StatefulWidget { const NgTreeViewExample({super.key}); @override State<NgTreeViewExample> createState()=>_NgTreeViewExampleState(); }
 class _NgTreeViewExampleState extends State<NgTreeViewExample> {
-bool selectionReadOnly = false, expansionReadOnly = false;
-Set<String> expanded = {'root'}; String? selected;
-Widget build(BuildContext context) => Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-  NgCheckBox(label: 'Selection read-only', value: selectionReadOnly, onChanged: (v) => setState(() => selectionReadOnly = v)),
-  NgCheckBox(label: 'Expansion read-only', value: expansionReadOnly, onChanged: (v) => setState(() => expansionReadOnly = v)),
-  NgTreeView<String>(
-  selectionReadOnly: selectionReadOnly, expansionReadOnly: expansionReadOnly,
-  emptyText: 'No teams found.',
-  items: const [NgTreeNode('root','Projects',children: [NgTreeNode('a','Design'),NgTreeNode('b','Engineering')])],
-  text: (s) => s,
-  itemBuilder: (context, s) => Text('$s · team', style: const TextStyle(fontWeight: FontWeight.bold)),
-  expandedIds: expanded, selectedId: selected,
-  onExpandedChanged: (v) => setState(() => expanded = v),
-  onSelected: (v) => setState(() => selected = v)),
-  Text('Selected team: ${selected ?? "none"}'),
+final nodes = <NgTreeNode<String>>[const NgTreeNode('root','Projects',hasChildren: true)];
+Set<String> expanded = {};
+String? selected;
+bool selectionReadOnly = false, expansionReadOnly = false, fail = false;
+int version = 0, requests = 0;
+Future<List<NgTreeNode<String>>> load(NgTreeNode<String> node) async {
+  requests++; await Future<void>.delayed(const Duration(milliseconds: 350)); if (mounted) setState(() {});
+  if (fail) throw StateError('Demo failure');
+  return node.id == 'root' ? [const NgTreeNode('a','Design'),const NgTreeNode('b','Engineering',hasChildren:true)]
+    : [const NgTreeNode('api','API'),const NgTreeNode('web','Web')];
+}
+Widget build(BuildContext context) => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+ NgCheckBox(label:'Selection read-only',value:selectionReadOnly,onChanged:(v)=>setState(()=>selectionReadOnly=v)),
+ NgCheckBox(label:'Expansion read-only',value:expansionReadOnly,onChanged:(v)=>setState(()=>expansionReadOnly=v)),
+ NgCheckBox(label:'Fail requests',value:fail,onChanged:(v)=>setState(()=>fail=v)),
+ NgButton(onPressed:()=>setState((){version++;expanded={};selected=null;}),child:const Text('Reset tree')),
+ NgTreeView<String>(items:nodes,text: (s) => s, loadChildren:load,dataVersion:version,
+   expandedIds:expanded,onExpandedChanged:(v)=>setState(()=>expanded=v),selectedId:selected,onSelected:(v)=>setState(()=>selected=v),
+   selectionReadOnly:selectionReadOnly,expansionReadOnly:expansionReadOnly,emptyText:'No teams found.'),
+ Text('Selected team: ${selected??"none"} · Child requests: $requests'),
 ]);
 }
 class NgTreeListExample extends StatefulWidget { const NgTreeListExample({super.key}); @override State<NgTreeListExample> createState()=>_NgTreeListExampleState(); }
 class _NgTreeListExampleState extends State<NgTreeListExample> {
-bool selectionReadOnly = false, expansionReadOnly = false;
-Set<String> expanded = {'root'}; String? selected;
-Widget build(BuildContext context) => Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-  NgCheckBox(label: 'Selection read-only', value: selectionReadOnly, onChanged: (v) => setState(() => selectionReadOnly = v)),
-  NgCheckBox(label: 'Expansion read-only', value: expansionReadOnly, onChanged: (v) => setState(() => expansionReadOnly = v)),
-  NgTreeList<String>(
-  selectionReadOnly: selectionReadOnly, expansionReadOnly: expansionReadOnly,
-  emptyText: 'No teams found.',
-  items: const [NgTreeNode('root','Projects',children: [NgTreeNode('a','Design'),NgTreeNode('b','Engineering')])],
-  columns: [NgDataColumn('name','Name',(s) => s, cellBuilder: (context,s) => Text(s, style: const TextStyle(fontWeight: FontWeight.bold)))],
-  expandedIds: expanded, selectedId: selected,
-  onExpandedChanged: (v) => setState(() => expanded = v),
-  onSelected: (v) => setState(() => selected = v)),
-  Text('Selected team: ${selected ?? "none"}'),
+final nodes = <NgTreeNode<String>>[const NgTreeNode('root','Projects',hasChildren: true)];
+Set<String> expanded = {};
+String? selected;
+bool selectionReadOnly = false, expansionReadOnly = false, fail = false;
+int version = 0, requests = 0;
+Future<List<NgTreeNode<String>>> load(NgTreeNode<String> node) async {
+  requests++; await Future<void>.delayed(const Duration(milliseconds: 350)); if (mounted) setState(() {});
+  if (fail) throw StateError('Demo failure');
+  return node.id == 'root' ? [const NgTreeNode('a','Design'),const NgTreeNode('b','Engineering',hasChildren:true)]
+    : [const NgTreeNode('api','API'),const NgTreeNode('web','Web')];
+}
+Widget build(BuildContext context) => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+ NgCheckBox(label:'Selection read-only',value:selectionReadOnly,onChanged:(v)=>setState(()=>selectionReadOnly=v)),
+ NgCheckBox(label:'Expansion read-only',value:expansionReadOnly,onChanged:(v)=>setState(()=>expansionReadOnly=v)),
+ NgCheckBox(label:'Fail requests',value:fail,onChanged:(v)=>setState(()=>fail=v)),
+ NgButton(onPressed:()=>setState((){version++;expanded={};selected=null;}),child:const Text('Reset tree')),
+ NgTreeList<String>(items:nodes,columns: [NgDataColumn('name','Name',(s) => s)], loadChildren:load,dataVersion:version,
+   expandedIds:expanded,onExpandedChanged:(v)=>setState(()=>expanded=v),selectedId:selected,onSelected:(v)=>setState(()=>selected=v),
+   selectionReadOnly:selectionReadOnly,expansionReadOnly:expansionReadOnly,emptyText:'No teams found.'),
+ Text('Selected team: ${selected??"none"} · Child requests: $requests'),
 ]);
 }
 class NgChartExample extends StatefulWidget { const NgChartExample({super.key}); @override State<NgChartExample> createState()=>_NgChartExampleState(); }

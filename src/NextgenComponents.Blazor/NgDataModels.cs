@@ -7,9 +7,13 @@ public sealed record NgDataColumn<T>(string Key, string Title, Func<T,object?> V
 {
     public string Text(T item) => Format?.Invoke(item) ?? Convert.ToString(Value(item),CultureInfo.CurrentCulture) ?? "";
 }
-public sealed record NgTreeNode<T>(string Id,T Item,IReadOnlyList<NgTreeNode<T>>? Children=null,bool Disabled=false);
+public sealed record NgTreeNode<T>(string Id,T Item,IReadOnlyList<NgTreeNode<T>>? Children=null,bool Disabled=false,bool HasChildren=false);
 public sealed record NgTreeRow<T>(NgTreeNode<T> Node,int Depth,string? ParentId,bool Expanded);
 public sealed record NgBreadcrumbItem(string Id,string Label);
+
+public sealed record NgSortDescriptor(string Key,bool Descending=false);
+public sealed record NgDataRequest(int Page,int PageSize,string Search,IReadOnlyList<NgSortDescriptor> Sorts);
+public sealed record NgDataResult<T>(IReadOnlyList<T> Items,int Total);
 
 public static class NgDataOperations
 {
@@ -17,10 +21,20 @@ public static class NgDataOperations
     public static int ClampPage(int page,int total,int size) => Math.Clamp(page,1,PageCount(total,size));
     public static IReadOnlyList<T> Query<T>(IEnumerable<T> source,IReadOnlyList<NgDataColumn<T>> columns,string search,string? sortKey,bool descending)
     {
+        return Query(source,columns,search,sortKey is null?[]:[new(sortKey,descending)]);
+    }
+    public static IReadOnlyList<T> Query<T>(IEnumerable<T> source,IReadOnlyList<NgDataColumn<T>> columns,string search,IReadOnlyList<NgSortDescriptor> sorts)
+    {
         var rows=source.Where(row=>string.IsNullOrWhiteSpace(search)||columns.Any(c=>c.Text(row).Contains(search.Trim(),StringComparison.CurrentCultureIgnoreCase)));
-        var column=columns.FirstOrDefault(c=>c.Key==sortKey && c.Sortable);
-        if(column is not null) rows=descending ? rows.OrderByDescending(column.Value,ValueComparer.Instance) : rows.OrderBy(column.Value,ValueComparer.Instance);
-        return rows.ToArray();
+        IOrderedEnumerable<T>? ordered=null;
+        foreach(var sort in sorts) {
+            var column=columns.FirstOrDefault(c=>c.Key==sort.Key && c.Sortable);
+            if(column is null)continue;
+            ordered=ordered is null
+                ? sort.Descending?rows.OrderByDescending(column.Value,ValueComparer.Instance):rows.OrderBy(column.Value,ValueComparer.Instance)
+                : sort.Descending?ordered.ThenByDescending(column.Value,ValueComparer.Instance):ordered.ThenBy(column.Value,ValueComparer.Instance);
+        }
+        return (ordered??rows).ToArray();
     }
     public static int CompareValues(object? a,object? b) => ValueComparer.Instance.Compare(a,b);
     private sealed class ValueComparer : IComparer<object?>
@@ -41,7 +55,7 @@ public static class NgDataOperations
                 var children=Walk(node.Children??[],depth+1,node.Id);
                 var match=label(node.Item).Contains(search.Trim(),StringComparison.CurrentCultureIgnoreCase);
                 if(filtering && !match && children.Count==0)continue;
-                var open=filtering ? children.Count>0 : node.Children?.Count>0 && expanded.Contains(node.Id);
+                var open=filtering ? children.Count>0 : (node.Children?.Count>0 || node.HasChildren) && expanded.Contains(node.Id);
                 result.Add(new(node,depth,parent,open));
                 if(open)result.AddRange(children);
             }

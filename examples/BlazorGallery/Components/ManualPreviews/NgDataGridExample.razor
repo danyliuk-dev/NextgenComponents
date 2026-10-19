@@ -1,3 +1,19 @@
 @* Generated from scripts/manual_content.py *@
-<NgDataGrid TItem="Product" Items="rows" Columns="columns" RowId="r=>r.Id" @bind-SelectedIds="selected" CanSelect="r=>r.Count < 100" PageSizes="new[]{5,10,20}"/>
-@code { public record Product(string Id,string Name,int Count); private Product[] rows=[new("a","Desk",12),new("b","Chair",120)]; private HashSet<string> selected=[]; private NgDataColumn<Product>[] columns=[new("name","Name",r=>r.Name),new("count","Quantity",r=>r.Count)]; }
+<NgCheckBox Label="Fail requests" @bind-Value="fail"/>
+<NgButton OnClick="()=>version++">Reload source</NgButton>
+<NgDataGrid TItem="Product" ReadData="Read" DataVersion="version" MultiSort="true" Columns="columns" RowId="r=>r.Id" @bind-SelectedIds="selected" CanSelect="r=>r.Count<100" PageSizes="new[]{5,10,20}"/>
+<p>Requests: @requests · Latest query: @query</p>
+@code {
+ public record Product(string Id,string Name,int Count);
+ private bool fail; private int version,requests; private string query="";
+ private HashSet<string> selected=[];
+ private static readonly Product[] rows=Enumerable.Range(1,40).Select(i=>new Product($"p{i}",i%2==0?"Desk":"Chair",i*4)).ToArray();
+ private static readonly NgDataColumn<Product>[] columns=[new("name","Name",r=>r.Name),new("count","Quantity",r=>r.Count)];
+ private async Task<NgDataResult<Product>> Read(NgDataRequest request,CancellationToken token){
+   requests++;query=$"{request.Search} / page {request.Page} / {request.Sorts.Count} sorts";
+   await Task.Delay(350,token);await InvokeAsync(StateHasChanged);
+   if(fail)throw new InvalidOperationException("Demo failure");
+   var result=NgDataOperations.Query(rows,columns,request.Search,request.Sorts);
+   return new(result.Skip((request.Page-1)*request.PageSize).Take(request.PageSize).ToArray(),result.Count);
+ }
+}

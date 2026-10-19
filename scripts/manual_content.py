@@ -3293,3 +3293,225 @@ Counts follow each platform's existing length limit: Blazor browser maxlength an
 
 Counters update immediately for drafts (including IME), Clear, external replacement and native Flutter Form.reset. Appearance/mode changes retain text and pending debounce work. Blazor merges the counter ID into aria-describedby and exposes a polite atomic live region; Flutter retains framework counter semantics with a live text update. Physical screen-reader behavior remains unverified. Long labels can wrap; custom code should avoid announcing sensitive information.
 """
+
+# 0.60: asynchronous data adapters and lazy hierarchy examples.
+D['NgDataGrid'].update({'use': 'Page, search and sort local or remote records.',
+ 'blazor': '<NgCheckBox Label="Fail requests" @bind-Value="fail"/>\n'
+           '<NgButton OnClick="()=>version++">Reload source</NgButton>\n'
+           '<NgDataGrid TItem="Product" ReadData="Read" DataVersion="version" MultiSort="true" '
+           'Columns="columns" RowId="r=>r.Id" @bind-SelectedIds="selected" '
+           'CanSelect="r=>r.Count<100" PageSizes="new[]{5,10,20}"/>\n'
+           '<p>Requests: @requests · Latest query: @query</p>\n'
+           '@code {\n'
+           ' public record Product(string Id,string Name,int Count);\n'
+           ' private bool fail; private int version,requests; private string query="";\n'
+           ' private HashSet<string> selected=[];\n'
+           ' private static readonly Product[] rows=Enumerable.Range(1,40).Select(i=>new '
+           'Product($"p{i}",i%2==0?"Desk":"Chair",i*4)).ToArray();\n'
+           ' private static readonly NgDataColumn<Product>[] '
+           'columns=[new("name","Name",r=>r.Name),new("count","Quantity",r=>r.Count)];\n'
+           ' private async Task<NgDataResult<Product>> Read(NgDataRequest '
+           'request,CancellationToken token){\n'
+           '   requests++;query=$"{request.Search} / page {request.Page} / {request.Sorts.Count} '
+           'sorts";\n'
+           '   await Task.Delay(350,token);await InvokeAsync(StateHasChanged);\n'
+           '   if(fail)throw new InvalidOperationException("Demo failure");\n'
+           '   var result=NgDataOperations.Query(rows,columns,request.Search,request.Sorts);\n'
+           '   return '
+           'new(result.Skip((request.Page-1)*request.PageSize).Take(request.PageSize).ToArray(),result.Count);\n'
+           ' }\n'
+           '}',
+ 'dart': "final rows = List.generate(40, (i) => (id: 'p${i+1}', name: i.isOdd ? 'Desk' : 'Chair', "
+         'count: (i+1)*4));\n'
+         'final columns = <NgDataColumn<({String id, String name, int count})>>[\n'
+         "  NgDataColumn('name', 'Name', (r) => r.name), NgDataColumn('count', 'Quantity', (r) => "
+         'r.count)];\n'
+         'Set<String> selected = {};\n'
+         'bool fail = false;\n'
+         'int version = 0, requests = 0;\n'
+         "String query = '';\n"
+         'Future<NgDataResult<({String id, String name, int count})>> read(NgDataRequest request) '
+         'async {\n'
+         "  requests++; query = '${request.search} / page ${request.page} / "
+         "${request.sorts.length} sorts';\n"
+         '  await Future<void>.delayed(const Duration(milliseconds: 350)); if (mounted) '
+         'setState(() {});\n'
+         "  if (fail) throw StateError('Demo failure');\n"
+         '  final result = NgDataOperations.queryMany(rows, columns, request.search, '
+         'request.sorts);\n'
+         '  return '
+         'NgDataResult(result.skip((request.page-1)*request.pageSize).take(request.pageSize).toList(), '
+         'result.length);\n'
+         '}\n'
+         'Widget build(BuildContext context) => Column(crossAxisAlignment: '
+         'CrossAxisAlignment.start, children: [\n'
+         "  NgCheckBox(label: 'Fail requests', value: fail, onChanged: (v) => setState(() => fail "
+         '= v)),\n'
+         "  NgButton(onPressed: () => setState(() => version++), child: const Text('Reload "
+         "source')),\n"
+         '  NgDataGrid<({String id, String name, int count})>(readData: read, dataVersion: '
+         'version, multiSort: true,\n'
+         '    columns: columns, rowId: (r) => r.id, selectedIds: selected, canSelect: (r) => '
+         'r.count < 100,\n'
+         '    pageSizes: const [5,10,20], onSelectionChanged: (v) => setState(() => selected = '
+         'v)),\n'
+         "  Text('Requests: $requests · Latest query: $query'),\n"
+         ']);',
+ 'notes': 'ReadData/readData enables asynchronous page loading; Items/items is used only in local '
+          'mode. The request contains 1-based Page/page, PageSize/pageSize, Search/search and an '
+          'ordered immutable Sorts/sorts list. Return only the requested page and Total/total '
+          'after filtering, before paging. The demo simulates a remote data adapter with a delay; '
+          'replace its body with your HTTP/database call. A newer request or source replacement '
+          'invalidates older results and errors; Blazor also passes a cancellation token. Flutter '
+          'ignores stale futures but does not abort the transport. Loading hides old rows and '
+          'blocks selection. Failure shows ErrorText/errorText and RetryText/retryText without '
+          'exposing exception details. Change DataVersion/dataVersion to reload page 1; keep '
+          'reader identity stable. Blazor ReloadAsync reloads the current page. A shrinking total '
+          'clamps the page and fetches it again. Invalid totals, duplicate IDs and oversized pages '
+          'become retryable errors. MultiSort/multiSort appends clicked columns by priority; '
+          'clicking again toggles direction without moving priority. Clear sorting restores source '
+          'order. Local sorting is stable. Row/column IDs must be unique and nonblank. Selection '
+          'remains parent-owned and page selection preserves hidden/protected IDs. '
+          'CanSelect/canSelect and SelectionReadOnly/selectionReadOnly still apply. '
+          'Virtualization, grouping, built-in CRUD and export remain open. See [data '
+          'workspace](../data-workspace.md).'})
+D['NgTreeView'].update({'use': 'Browse and select hierarchical records.',
+ 'blazor': '<NgCheckBox Label="Selection read-only" @bind-Value="selectionReadOnly"/>\n'
+           '<NgCheckBox Label="Expansion read-only" @bind-Value="expansionReadOnly"/>\n'
+           '<NgCheckBox Label="Fail requests" @bind-Value="fail"/>\n'
+           '<NgButton OnClick="Reset">Reset tree</NgButton>\n'
+           '<NgTreeView TItem="string" Items="nodes" Text="s=>s" LoadChildren="Load" '
+           'DataVersion="version" @bind-ExpandedIds="expanded" @bind-SelectedId="selected" '
+           'SelectionReadOnly="selectionReadOnly" ExpansionReadOnly="expansionReadOnly" '
+           'EmptyText="No teams found."/>\n'
+           '<p>Selected team: @(selected??"none") · Child requests: @requests</p>\n'
+           '@code {\n'
+           ' private bool selectionReadOnly,expansionReadOnly,fail; private int version,requests;\n'
+           ' private string? selected; private HashSet<string> expanded=[];\n'
+           ' private static readonly NgTreeNode<string>[] '
+           'nodes=[new("root","Projects",HasChildren:true)];\n'
+           ' private void Reset(){version++;expanded=[];selected=null;}\n'
+           ' private async Task<IReadOnlyList<NgTreeNode<string>>> Load(NgTreeNode<string> '
+           'node,CancellationToken token){\n'
+           '   requests++;await Task.Delay(350,token);await '
+           'InvokeAsync(StateHasChanged);if(fail)throw new InvalidOperationException("Demo '
+           'failure");\n'
+           '   return '
+           'node.Id=="root"?[new("a","Design"),new("b","Engineering",HasChildren:true)]:[new("api","API"),new("web","Web")];\n'
+           ' }\n'
+           '}',
+ 'dart': "final nodes = <NgTreeNode<String>>[const NgTreeNode('root','Projects',hasChildren: "
+         'true)];\n'
+         'Set<String> expanded = {};\n'
+         'String? selected;\n'
+         'bool selectionReadOnly = false, expansionReadOnly = false, fail = false;\n'
+         'int version = 0, requests = 0;\n'
+         'Future<List<NgTreeNode<String>>> load(NgTreeNode<String> node) async {\n'
+         '  requests++; await Future<void>.delayed(const Duration(milliseconds: 350)); if '
+         '(mounted) setState(() {});\n'
+         "  if (fail) throw StateError('Demo failure');\n"
+         "  return node.id == 'root' ? [const NgTreeNode('a','Design'),const "
+         "NgTreeNode('b','Engineering',hasChildren:true)]\n"
+         "    : [const NgTreeNode('api','API'),const NgTreeNode('web','Web')];\n"
+         '}\n'
+         'Widget build(BuildContext context) => Column(crossAxisAlignment: '
+         'CrossAxisAlignment.start, children: [\n'
+         " NgCheckBox(label:'Selection "
+         "read-only',value:selectionReadOnly,onChanged:(v)=>setState(()=>selectionReadOnly=v)),\n"
+         " NgCheckBox(label:'Expansion "
+         "read-only',value:expansionReadOnly,onChanged:(v)=>setState(()=>expansionReadOnly=v)),\n"
+         " NgCheckBox(label:'Fail requests',value:fail,onChanged:(v)=>setState(()=>fail=v)),\n"
+         ' NgButton(onPressed:()=>setState((){version++;expanded={};selected=null;}),child:const '
+         "Text('Reset tree')),\n"
+         ' NgTreeView<String>(items:nodes,text: (s) => s, loadChildren:load,dataVersion:version,\n'
+         '   '
+         'expandedIds:expanded,onExpandedChanged:(v)=>setState(()=>expanded=v),selectedId:selected,onSelected:(v)=>setState(()=>selected=v),\n'
+         "   selectionReadOnly:selectionReadOnly,expansionReadOnly:expansionReadOnly,emptyText:'No "
+         "teams found.'),\n"
+         ' Text(\'Selected team: ${selected??"none"} · Child requests: $requests\'),\n'
+         ']);',
+ 'notes': 'HasChildren/hasChildren marks an unloaded branch. LoadChildren/loadChildren returns its '
+          'children on the first explicit expansion; a failed expansion displays '
+          'ErrorText/errorText and can be retried. Keep lazy branches initially collapsed. '
+          'LoadingText/loadingText is shown while waiting. Children are cached for '
+          'collapse/reopen, including an empty result which turns the branch into a leaf. '
+          'Duplicate/cyclic IDs across the resolved tree are rejected as load errors. Search '
+          'examines loaded nodes only and does not fetch descendants. Replace the immutable root '
+          'collection, loader, or DataVersion/dataVersion to invalidate the cache and pending '
+          'results; keep references stable across selection/expansion rebuilds. Blazor sends '
+          'cancellation; Flutter discards stale futures without transport cancellation. Selection '
+          'and expansion remain parent-controlled; locks and disabled nodes are rechecked after '
+          'loading. Returned children do not mutate the parent root collection. Templates and '
+          'custom empty text remain supported. Virtualization, drag/drop, checkbox selection and '
+          'complete keyboard/screen-reader parity remain open.'})
+D['NgTreeList'].update({'use': 'Combine hierarchical rows with typed columns.',
+ 'blazor': '<NgCheckBox Label="Selection read-only" @bind-Value="selectionReadOnly"/>\n'
+           '<NgCheckBox Label="Expansion read-only" @bind-Value="expansionReadOnly"/>\n'
+           '<NgCheckBox Label="Fail requests" @bind-Value="fail"/>\n'
+           '<NgButton OnClick="Reset">Reset tree</NgButton>\n'
+           '<NgTreeList TItem="string" Items="nodes" Columns="columns" LoadChildren="Load" '
+           'DataVersion="version" @bind-ExpandedIds="expanded" @bind-SelectedId="selected" '
+           'SelectionReadOnly="selectionReadOnly" ExpansionReadOnly="expansionReadOnly" '
+           'EmptyText="No teams found."/>\n'
+           '<p>Selected team: @(selected??"none") · Child requests: @requests</p>\n'
+           '@code {\n'
+           ' private bool selectionReadOnly,expansionReadOnly,fail; private int version,requests;\n'
+           ' private string? selected; private HashSet<string> expanded=[];\n'
+           ' private static readonly NgTreeNode<string>[] '
+           'nodes=[new("root","Projects",HasChildren:true)];\n'
+           ' private static readonly NgDataColumn<string>[] columns=[new("name","Name",s=>s)];\n'
+           ' private void Reset(){version++;expanded=[];selected=null;}\n'
+           ' private async Task<IReadOnlyList<NgTreeNode<string>>> Load(NgTreeNode<string> '
+           'node,CancellationToken token){\n'
+           '   requests++;await Task.Delay(350,token);await '
+           'InvokeAsync(StateHasChanged);if(fail)throw new InvalidOperationException("Demo '
+           'failure");\n'
+           '   return '
+           'node.Id=="root"?[new("a","Design"),new("b","Engineering",HasChildren:true)]:[new("api","API"),new("web","Web")];\n'
+           ' }\n'
+           '}',
+ 'dart': "final nodes = <NgTreeNode<String>>[const NgTreeNode('root','Projects',hasChildren: "
+         'true)];\n'
+         'Set<String> expanded = {};\n'
+         'String? selected;\n'
+         'bool selectionReadOnly = false, expansionReadOnly = false, fail = false;\n'
+         'int version = 0, requests = 0;\n'
+         'Future<List<NgTreeNode<String>>> load(NgTreeNode<String> node) async {\n'
+         '  requests++; await Future<void>.delayed(const Duration(milliseconds: 350)); if '
+         '(mounted) setState(() {});\n'
+         "  if (fail) throw StateError('Demo failure');\n"
+         "  return node.id == 'root' ? [const NgTreeNode('a','Design'),const "
+         "NgTreeNode('b','Engineering',hasChildren:true)]\n"
+         "    : [const NgTreeNode('api','API'),const NgTreeNode('web','Web')];\n"
+         '}\n'
+         'Widget build(BuildContext context) => Column(crossAxisAlignment: '
+         'CrossAxisAlignment.start, children: [\n'
+         " NgCheckBox(label:'Selection "
+         "read-only',value:selectionReadOnly,onChanged:(v)=>setState(()=>selectionReadOnly=v)),\n"
+         " NgCheckBox(label:'Expansion "
+         "read-only',value:expansionReadOnly,onChanged:(v)=>setState(()=>expansionReadOnly=v)),\n"
+         " NgCheckBox(label:'Fail requests',value:fail,onChanged:(v)=>setState(()=>fail=v)),\n"
+         ' NgButton(onPressed:()=>setState((){version++;expanded={};selected=null;}),child:const '
+         "Text('Reset tree')),\n"
+         " NgTreeList<String>(items:nodes,columns: [NgDataColumn('name','Name',(s) => s)], "
+         'loadChildren:load,dataVersion:version,\n'
+         '   '
+         'expandedIds:expanded,onExpandedChanged:(v)=>setState(()=>expanded=v),selectedId:selected,onSelected:(v)=>setState(()=>selected=v),\n'
+         "   selectionReadOnly:selectionReadOnly,expansionReadOnly:expansionReadOnly,emptyText:'No "
+         "teams found.'),\n"
+         ' Text(\'Selected team: ${selected??"none"} · Child requests: $requests\'),\n'
+         ']);',
+ 'notes': 'HasChildren/hasChildren marks an unloaded branch. LoadChildren/loadChildren returns its '
+          'children on the first explicit expansion; a failed expansion displays '
+          'ErrorText/errorText and can be retried. Keep lazy branches initially collapsed. '
+          'LoadingText/loadingText is shown while waiting. Children are cached for '
+          'collapse/reopen, including an empty result which turns the branch into a leaf. '
+          'Duplicate/cyclic IDs across the resolved tree are rejected as load errors. Search '
+          'examines loaded nodes only and does not fetch descendants. Replace the immutable root '
+          'collection, loader, or DataVersion/dataVersion to invalidate the cache and pending '
+          'results; keep references stable across selection/expansion rebuilds. Blazor sends '
+          'cancellation; Flutter discards stale futures without transport cancellation. Selection '
+          'and expansion remain parent-controlled; locks and disabled nodes are rechecked after '
+          'loading. Returned children do not mutate the parent root collection. Templates and '
+          'custom empty text remain supported. Virtualization, drag/drop, checkbox selection and '
+          'complete keyboard/screen-reader parity remain open.'})

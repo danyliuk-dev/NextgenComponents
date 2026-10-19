@@ -4,7 +4,7 @@
 
 ## When to use it
 
-Display, sort, filter, select and page local records.
+Page, search and sort local or remote records.
 
 ## Appearance and live example
 
@@ -14,26 +14,56 @@ The documentation launcher embeds these running examples here. Choose a framewor
 
 ## Behavior and practical rules
 
-NgDataColumn<T> supplies a stable key, title and Value/value accessor. Return typed values for sorting; Format/format changes display only. Template/cellBuilder customizes a cell. RowId and column keys must be nonempty and unique; at least one column is required. CanSelect/canSelect protects rows from row and page selection without deleting existing selected IDs. SelectionReadOnly/selectionReadOnly freezes selection while search, sort and paging remain available. Page selection affects only eligible visible rows and preserves hidden or protected selections. Selection is controlled: accept the callback and pass the new set back; the original set is never mutated. PageSizes/pageSizes configures the pager; positive distinct sizes are sorted and the current size is retained. EmptyTemplate/emptyBuilder replaces the empty-result message. Save selection callbacks and replace Items/items after edits so the grid recalculates. Toolbar and row actions allow the application to own editing and persistence. This local grid does not implement server data binding, virtualization, column grouping or Excel export; see [data workspace](../data-workspace.md).
+ReadData/readData enables asynchronous page loading; Items/items is used only in local mode. The request contains 1-based Page/page, PageSize/pageSize, Search/search and an ordered immutable Sorts/sorts list. Return only the requested page and Total/total after filtering, before paging. The demo simulates a remote data adapter with a delay; replace its body with your HTTP/database call. A newer request or source replacement invalidates older results and errors; Blazor also passes a cancellation token. Flutter ignores stale futures but does not abort the transport. Loading hides old rows and blocks selection. Failure shows ErrorText/errorText and RetryText/retryText without exposing exception details. Change DataVersion/dataVersion to reload page 1; keep reader identity stable. Blazor ReloadAsync reloads the current page. A shrinking total clamps the page and fetches it again. Invalid totals, duplicate IDs and oversized pages become retryable errors. MultiSort/multiSort appends clicked columns by priority; clicking again toggles direction without moving priority. Clear sorting restores source order. Local sorting is stable. Row/column IDs must be unique and nonblank. Selection remains parent-owned and page selection preserves hidden/protected IDs. CanSelect/canSelect and SelectionReadOnly/selectionReadOnly still apply. Virtualization, grouping, built-in CRUD and export remain open. See [data workspace](../data-workspace.md).
 
 ## Blazor example
 
 ```razor
-<NgDataGrid TItem="Product" Items="rows" Columns="columns" RowId="r=>r.Id" @bind-SelectedIds="selected" CanSelect="r=>r.Count < 100" PageSizes="new[]{5,10,20}"/>
-@code { public record Product(string Id,string Name,int Count); private Product[] rows=[new("a","Desk",12),new("b","Chair",120)]; private HashSet<string> selected=[]; private NgDataColumn<Product>[] columns=[new("name","Name",r=>r.Name),new("count","Quantity",r=>r.Count)]; }
+<NgCheckBox Label="Fail requests" @bind-Value="fail"/>
+<NgButton OnClick="()=>version++">Reload source</NgButton>
+<NgDataGrid TItem="Product" ReadData="Read" DataVersion="version" MultiSort="true" Columns="columns" RowId="r=>r.Id" @bind-SelectedIds="selected" CanSelect="r=>r.Count<100" PageSizes="new[]{5,10,20}"/>
+<p>Requests: @requests · Latest query: @query</p>
+@code {
+ public record Product(string Id,string Name,int Count);
+ private bool fail; private int version,requests; private string query="";
+ private HashSet<string> selected=[];
+ private static readonly Product[] rows=Enumerable.Range(1,40).Select(i=>new Product($"p{i}",i%2==0?"Desk":"Chair",i*4)).ToArray();
+ private static readonly NgDataColumn<Product>[] columns=[new("name","Name",r=>r.Name),new("count","Quantity",r=>r.Count)];
+ private async Task<NgDataResult<Product>> Read(NgDataRequest request,CancellationToken token){
+   requests++;query=$"{request.Search} / page {request.Page} / {request.Sorts.Count} sorts";
+   await Task.Delay(350,token);await InvokeAsync(StateHasChanged);
+   if(fail)throw new InvalidOperationException("Demo failure");
+   var result=NgDataOperations.Query(rows,columns,request.Search,request.Sorts);
+   return new(result.Skip((request.Page-1)*request.PageSize).Take(request.PageSize).ToArray(),result.Count);
+ }
+}
 ```
 
 ## Flutter example
 
 ```dart
-final rows = [(id: 'a', name: 'Desk', count: 12), (id: 'b', name: 'Chair', count: 120)];
+final rows = List.generate(40, (i) => (id: 'p${i+1}', name: i.isOdd ? 'Desk' : 'Chair', count: (i+1)*4));
+final columns = <NgDataColumn<({String id, String name, int count})>>[
+  NgDataColumn('name', 'Name', (r) => r.name), NgDataColumn('count', 'Quantity', (r) => r.count)];
 Set<String> selected = {};
-Widget build(BuildContext context) => NgDataGrid<({String id, String name, int count})>(
-  items: rows, rowId: (r) => r.id, selectedIds: selected,
-  canSelect: (r) => r.count < 100, pageSizes: const [5, 10, 20],
-  onSelectionChanged: (v) => setState(() => selected = v),
-  columns: [NgDataColumn('name','Name',(r) => r.name),
-    NgDataColumn('count','Quantity',(r) => r.count)]);
+bool fail = false;
+int version = 0, requests = 0;
+String query = '';
+Future<NgDataResult<({String id, String name, int count})>> read(NgDataRequest request) async {
+  requests++; query = '${request.search} / page ${request.page} / ${request.sorts.length} sorts';
+  await Future<void>.delayed(const Duration(milliseconds: 350)); if (mounted) setState(() {});
+  if (fail) throw StateError('Demo failure');
+  final result = NgDataOperations.queryMany(rows, columns, request.search, request.sorts);
+  return NgDataResult(result.skip((request.page-1)*request.pageSize).take(request.pageSize).toList(), result.length);
+}
+Widget build(BuildContext context) => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+  NgCheckBox(label: 'Fail requests', value: fail, onChanged: (v) => setState(() => fail = v)),
+  NgButton(onPressed: () => setState(() => version++), child: const Text('Reload source')),
+  NgDataGrid<({String id, String name, int count})>(readData: read, dataVersion: version, multiSort: true,
+    columns: columns, rowId: (r) => r.id, selectedIds: selected, canSelect: (r) => r.count < 100,
+    pageSizes: const [5,10,20], onSelectionChanged: (v) => setState(() => selected = v)),
+  Text('Requests: $requests · Latest query: $query'),
+]);
 ```
 
 ## Blazor parameters and events
@@ -42,7 +72,13 @@ Names are case-sensitive. `?` permits null. `EditorRequired` parameters are mark
 
 | Parameter | Type | Default / requirement | Purpose |
 |---|---|---|---|
-| `Items` | `IReadOnlyList<TItem>` | required | Input collection. Replace it when changing records or configuration. |
+| `ReadData` | `Func<NgDataRequest,CancellationToken,Task<NgDataResult<TItem>>>?` | not set | Async page adapter; return requested rows and filtered total. See request/result contracts above. |
+| `DataVersion` | `object?` | not set | Change to invalidate pending reads and cached data; keep stable otherwise. |
+| `MultiSort` | `bool` | false | Append sorted columns in priority order; default false. |
+| `LoadingText` | `string` | "Loading records…" | Localized loading status. |
+| `ErrorText` | `string` | "Unable to load records." | Localized failure status; raw service errors are not rendered. |
+| `RetryText` | `string` | "Retry" | Localized retry action text. |
+| `Items` | `IReadOnlyList<TItem>` | [] | Input collection. Replace it when changing records or configuration. |
 | `Columns` | `IReadOnlyList<NgDataColumn<TItem>>` | required | Column definitions; see the data model and example. |
 | `RowId` | `Func<TItem,string>` | required | See the behavior rules and model contract above. |
 | `Label` | `string` | "Records" | Visible label or accessible name. |
@@ -65,6 +101,12 @@ Names are case-sensitive. `?` permits null. `EditorRequired` parameters are mark
 | Argument | Type | Purpose |
 |---|---|---|
 | `items` | `List<T>` | Input collection. Replace it when changing records or configuration. |
+| `readData` | `Future<NgDataResult<T>> Function(NgDataRequest)?` | Async page adapter; return requested rows and filtered total. See request/result contracts above. |
+| `dataVersion` | `Object?` | Change to invalidate pending reads and cached data; keep stable otherwise. |
+| `multiSort` | `bool` | Append sorted columns in priority order; default false. |
+| `loadingText` | `String` | Localized loading status. |
+| `errorText` | `String` | Localized failure status; raw service errors are not rendered. |
+| `retryText` | `String` | Localized retry action text. |
 | `columns` | `List<NgDataColumn<T>>` | Column definitions; see the data model and example. |
 | `rowId` | `String Function(T)` | See the behavior rules and model contract above. |
 | `selectedIds` | `Set<String>` | See the behavior rules and model contract above. |
@@ -82,7 +124,13 @@ Names are case-sensitive. `?` permits null. `EditorRequired` parameters are mark
 ```dart
 const NgDataGrid({
     super.key,
-    required this.items,
+    this.items = const [],
+    this.readData,
+    this.dataVersion,
+    this.multiSort = false,
+    this.loadingText = 'Loading records…',
+    this.errorText = 'Unable to load records.',
+    this.retryText = 'Retry',
     required this.columns,
     required this.rowId,
     this.selectedIds = const {},

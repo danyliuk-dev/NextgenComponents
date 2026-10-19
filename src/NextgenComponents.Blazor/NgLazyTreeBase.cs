@@ -1,0 +1,50 @@
+using Microsoft.AspNetCore.Components;
+namespace NextgenComponents.Blazor;
+
+/// <summary>Lazy child cache scoped to an immutable root collection and DataVersion.</summary>
+public abstract class NgLazyTreeBase<T> : ComponentBase, IDisposable
+{
+    [Parameter] public IReadOnlyList<NgTreeNode<T>> Items { get; set; }=[];
+    [Parameter] public Func<NgTreeNode<T>,CancellationToken,Task<IReadOnlyList<NgTreeNode<T>>>>? LoadChildren { get; set; }
+    [Parameter] public object? DataVersion { get; set; }
+    [Parameter] public string LoadingText { get; set; }="Loading children…";
+    [Parameter] public string ErrorText { get; set; }="Unable to load children. Expand to retry.";
+    private readonly Dictionary<string,IReadOnlyList<NgTreeNode<T>>> cache=[];
+    private readonly HashSet<string> loading=[],errors=[];
+    private IReadOnlyList<NgTreeNode<T>>? source;
+    private Delegate? loader;
+    private object? version;
+    private CancellationTokenSource lifetime=new();
+    private int revision;
+    private bool disposed;
+    protected bool IsLoading(string id)=>loading.Contains(id);
+    protected bool HasError(string id)=>errors.Contains(id);
+    protected IReadOnlyList<NgTreeNode<T>> ResolvedItems=>Resolve(Items);
+    private IReadOnlyList<NgTreeNode<T>> Resolve(IReadOnlyList<NgTreeNode<T>> nodes)=>nodes.Select(n=>cache.TryGetValue(n.Id,out var children)
+        ? n with { Children=Resolve(children),HasChildren=children.Count>0 }
+        : n with { Children=Resolve(n.Children??[]) }).ToArray();
+    protected override void OnParametersSet(){
+        // Validate before resolving, including cycles and reused IDs.
+        NgDataOperations.Flatten(Items,new HashSet<string>(),_=>"");
+        if(!ReferenceEquals(source,Items) || !Equals(loader,LoadChildren) || !Equals(version,DataVersion)){
+            ++revision;lifetime.Cancel();lifetime.Dispose();lifetime=new();cache.Clear();loading.Clear();errors.Clear();
+            source=Items;loader=LoadChildren;version=DataVersion;
+        }
+    }
+    protected async Task<bool> EnsureChildren(NgTreeNode<T> node){
+        if(!node.HasChildren || node.Children?.Count>0 || cache.ContainsKey(node.Id))return true;
+        if(LoadChildren is null || loading.Contains(node.Id))return false;
+        var ticket=revision;loading.Add(node.Id);errors.Remove(node.Id);StateHasChanged();
+        try{
+            var children=await LoadChildren(node,lifetime.Token);
+            if(disposed || revision!=ticket)return false;
+            NgDataOperations.Flatten(children,new HashSet<string>(),_=>"");
+            cache[node.Id]=children.ToArray();
+            try{NgDataOperations.Flatten(ResolvedItems,new HashSet<string>(),_=>"");}
+            catch{cache.Remove(node.Id);throw;}
+            return true;
+        }catch(Exception){if(!disposed && revision==ticket)errors.Add(node.Id);return false;}
+        finally{if(!disposed && revision==ticket)loading.Remove(node.Id);}
+    }
+    public void Dispose(){disposed=true;++revision;lifetime.Cancel();lifetime.Dispose();}
+}

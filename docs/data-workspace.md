@@ -6,9 +6,9 @@ Five additional components on both Blazor and Flutter Web: DataGrid, TreeList, T
 
 | Control | Implemented in this release | Remaining reference capabilities |
 |---|---|---|
-| NgDataGrid | Generic columns with typed sort values, formatted/custom cells, stable single-column sort, local cross-column text search, paging, row/page selection, toolbar and row-action slots, empty state, horizontal scrolling | Server loading, virtualization, column filters, multi-sort, grouping, column resize/reorder/pinning, export, built-in CRUD modes, persistent state, cell keyboard navigation |
-| NgTreeList | Nested generic data, expand/collapse, sibling sorting, search with ancestor context, node selection, custom data cells | Remote children, virtualization, paging, built-in editing/dragging, multi-column filters, treegrid keyboard pattern |
-| NgTreeView | Nested data, expand/collapse, selection, disabled nodes, search retaining ancestors, Up/Down/Home/End navigation, Right/Left expansion and parent/child focus, Enter/Space selection | Checkboxes, drag-and-drop, remote loading, virtualization, full screen-reader audit |
+| NgDataGrid | Generic columns with typed sort values, formatted/custom cells, stable single/multi-column sort, local/remote cross-column text search, async page adapters, paging, row/page selection, toolbar and row-action slots, empty state, horizontal scrolling | Virtualization, column filters, grouping, column resize/reorder/pinning, export, built-in CRUD modes, persistent state, cell keyboard navigation |
+| NgTreeList | Nested generic data, lazy child loading, expand/collapse, sibling sorting, search with ancestor context, node selection, custom data cells | Virtualization, paging, built-in editing/dragging, multi-column filters, treegrid keyboard pattern |
+| NgTreeView | Nested data, lazy child loading, expand/collapse, selection, disabled nodes, search retaining ancestors, Up/Down/Home/End navigation, Right/Left expansion and parent/child focus, Enter/Space selection | Checkboxes, drag-and-drop, virtualization, full screen-reader audit |
 | NgPager | Range/count, first/previous/numbered/next/last buttons, selectable page sizes, disabled boundaries, empty/shrunk-data page clamp | Direct page entry, localization API, persisted state |
 | NgBreadcrumb | Current-item marker, ancestor navigation callback, wrapping layout | Icons, router integration, overflow menus, editable path |
 
@@ -50,3 +50,7 @@ Search temporarily opens matching paths and disables expansion actions, without 
 TreeView `ItemTemplate`/`itemBuilder` customizes decorative node content. TreeList supports the first column's cell template inside the selection button. Keep these templates noninteractive; Text/text or formatted column text remains the accessible name and search source. Both trees offer EmptyText/emptyText and EmptyTemplate/emptyBuilder.
 
 IDs must be nonempty and unique across the tree. TreeList requires at least one column with unique nonempty keys. Leaf IDs in expanded sets are ignored. TreeView ArrowRight only enters an enabled immediate child, never a sibling of a leaf. Full roving tabindex, focus recovery after node removal, type-ahead, checkbox/multiple selection and TreeList treegrid keyboard navigation remain open. Native/mobile and screen-reader certification remain separate.
+
+## Async adapters (0.60)
+
+See the [Grid manual](manual/NgDataGrid.md), [TreeView manual](manual/NgTreeView.md) and [TreeList manual](manual/NgTreeList.md) for runnable loading/error/retry examples and source identity rules. Grid returns only the current server page; trees cache fetched children without mutating input roots. Changing DataVersion invalidates pending results. The examples use delayed local adapters, ready to replace with application HTTP/database calls. Native/mobile and full accessibility certification remain separate.

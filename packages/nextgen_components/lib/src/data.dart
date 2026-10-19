@@ -23,12 +23,13 @@ class NgTreeNode<T> {
   final String id;
   final T item;
   final List<NgTreeNode<T>> children;
-  final bool disabled;
+  final bool disabled, hasChildren;
   const NgTreeNode(
     this.id,
     this.item, {
     this.children = const [],
     this.disabled = false,
+    this.hasChildren = false,
   });
 }
 
@@ -38,6 +39,95 @@ class NgTreeRow<T> {
   final String? parentId;
   final bool expanded;
   const NgTreeRow(this.node, this.depth, this.parentId, this.expanded);
+}
+
+class NgSortDescriptor {
+  final String key;
+  final bool descending;
+  const NgSortDescriptor(this.key, {this.descending = false});
+}
+
+class NgDataRequest {
+  final int page, pageSize;
+  final String search;
+  final List<NgSortDescriptor> sorts;
+  NgDataRequest(
+    this.page,
+    this.pageSize,
+    this.search,
+    List<NgSortDescriptor> sorts,
+  ) : sorts = List.unmodifiable(sorts);
+}
+
+class NgDataResult<T> {
+  final List<T> items;
+  final int total;
+  NgDataResult(List<T> items, this.total) : items = List.unmodifiable(items);
+}
+
+// Cache is scoped to immutable root identity, loader identity and dataVersion.
+class _LazyTreeCache<T> {
+  final cache = <String, List<NgTreeNode<T>>>{};
+  final loading = <String>{}, errors = <String>{};
+  List<NgTreeNode<T>>? source;
+  Future<List<NgTreeNode<T>>> Function(NgTreeNode<T>)? loader;
+  Object? version;
+  int revision = 0;
+  void update(
+    List<NgTreeNode<T>> items,
+    Future<List<NgTreeNode<T>>> Function(NgTreeNode<T>)? load,
+    Object? value,
+  ) {
+    NgDataOperations.flatten(items, {}, (_) => '');
+    if (!identical(source, items) || loader != load || version != value) {
+      revision++;
+      cache.clear();
+      loading.clear();
+      errors.clear();
+      source = items;
+      loader = load;
+      version = value;
+    }
+  }
+
+  List<NgTreeNode<T>> resolve(List<NgTreeNode<T>> items) => items.map((n) {
+    final children = cache[n.id];
+    return NgTreeNode(
+      n.id,
+      n.item,
+      children: resolve(children ?? n.children),
+      disabled: n.disabled,
+      hasChildren: children == null ? n.hasChildren : children.isNotEmpty,
+    );
+  }).toList();
+  Future<bool> ensure(NgTreeNode<T> node) async {
+    if (!node.hasChildren ||
+        node.children.isNotEmpty ||
+        cache.containsKey(node.id))
+      return true;
+    if (loader == null || loading.contains(node.id)) return false;
+    final ticket = revision;
+    loading.add(node.id);
+    errors.remove(node.id);
+    try {
+      final children = await loader!(node);
+      if (revision != ticket) return false;
+      NgDataOperations.flatten(children, {}, (_) => '');
+      cache[node.id] = List.unmodifiable(children);
+      try {
+        NgDataOperations.flatten(resolve(source!), {}, (_) => '');
+      } catch (_) {
+        cache.remove(node.id);
+        rethrow;
+      }
+      return true;
+    } catch (_) {
+      if (revision == ticket) errors.add(node.id);
+      return false;
+    } finally {
+      if (revision == ticket) loading.remove(node.id);
+    }
+  }
 }
 
 abstract final class NgDataOperations {
@@ -63,6 +153,22 @@ abstract final class NgDataOperations {
     String? sortKey,
     bool descending,
   ) {
+    return queryMany(
+      items,
+      columns,
+      search,
+      sortKey == null
+          ? []
+          : [NgSortDescriptor(sortKey, descending: descending)],
+    );
+  }
+
+  static List<T> queryMany<T>(
+    List<T> items,
+    List<NgDataColumn<T>> columns,
+    String search,
+    List<NgSortDescriptor> sorts,
+  ) {
     final needle = search.trim().toLowerCase();
     final rows = items
         .where(
@@ -71,16 +177,19 @@ abstract final class NgDataOperations {
               columns.any((c) => c.text(item).toLowerCase().contains(needle)),
         )
         .toList();
-    final column = columns
-        .where((c) => c.key == sortKey && c.sortable)
-        .firstOrNull;
-    if (column == null) return rows;
     final indexed = rows.indexed.toList();
     indexed.sort((a, b) {
-      final order =
-          compare(column.value(a.$2), column.value(b.$2)) *
-          (descending ? -1 : 1);
-      return order == 0 ? a.$1.compareTo(b.$1) : order;
+      for (final sort in sorts) {
+        final column = columns
+            .where((c) => c.key == sort.key && c.sortable)
+            .firstOrNull;
+        if (column == null) continue;
+        final result =
+            compare(column.value(a.$2), column.value(b.$2)) *
+            (sort.descending ? -1 : 1);
+        if (result != 0) return result;
+      }
+      return a.$1.compareTo(b.$1);
     });
     return indexed.map((e) => e.$2).toList();
   }
@@ -124,7 +233,8 @@ abstract final class NgDataOperations {
           continue;
         final open = needle.isNotEmpty
             ? children.isNotEmpty
-            : n.children.isNotEmpty && expanded.contains(n.id);
+            : (n.children.isNotEmpty || n.hasChildren) &&
+                  expanded.contains(n.id);
         result.add(NgTreeRow(n, depth, parent, open));
         if (open) result.addAll(children);
       }
@@ -278,6 +388,10 @@ class NgBreadcrumb extends StatelessWidget {
 
 class NgDataGrid<T> extends StatefulWidget {
   final List<T> items;
+  final Future<NgDataResult<T>> Function(NgDataRequest)? readData;
+  final Object? dataVersion;
+  final bool multiSort;
+  final String loadingText, errorText, retryText;
   final List<NgDataColumn<T>> columns;
   final String Function(T) rowId;
   final Set<String> selectedIds;
@@ -291,7 +405,13 @@ class NgDataGrid<T> extends StatefulWidget {
   final int initialPageSize;
   const NgDataGrid({
     super.key,
-    required this.items,
+    this.items = const [],
+    this.readData,
+    this.dataVersion,
+    this.multiSort = false,
+    this.loadingText = 'Loading records…',
+    this.errorText = 'Unable to load records.',
+    this.retryText = 'Retry',
     required this.columns,
     required this.rowId,
     this.selectedIds = const {},
@@ -312,23 +432,129 @@ class NgDataGrid<T> extends StatefulWidget {
 
 class _NgDataGridState<T> extends State<NgDataGrid<T>> {
   String search = '';
-  String? sortKey;
-  bool descending = false;
+  final sorts = <NgSortDescriptor>[];
+  String? get sortKey => sorts.firstOrNull?.key;
+  bool get descending => sorts.firstOrNull?.descending ?? false;
+  bool loading = false, error = false;
+  int total = 0, revision = 0;
+  List<T> remote = [];
+  List<T> get rows => widget.readData == null
+      ? NgDataOperations.queryMany(widget.items, widget.columns, search, sorts)
+      : remote;
+  List<T> get visible => widget.readData == null
+      ? rows.skip((page - 1) * size).take(size).toList()
+      : remote;
+  int get count => widget.readData == null ? rows.length : total;
+  void validate(List<T> values) {
+    if (values.any((r) => widget.rowId(r).trim().isEmpty) ||
+        values.map(widget.rowId).toSet().length != values.length) {
+      throw ArgumentError('Grid row IDs must be nonempty and unique.');
+    }
+  }
+
+  Future<void> reload() async {
+    final ticket = ++revision;
+    if (widget.readData == null) {
+      loading = error = false;
+      return;
+    }
+    loading = true;
+    error = false;
+    remote = [];
+    try {
+      final result = await widget.readData!(
+        NgDataRequest(page, size, search, sorts),
+      );
+      if (!mounted || ticket != revision) return;
+      if (result.total < 0 ||
+          result.items.length > size ||
+          result.items.length > result.total) {
+        throw ArgumentError('Invalid server page.');
+      }
+      validate(result.items);
+      total = result.total;
+      final clamped = NgDataOperations.clampPage(page, total, size);
+      if (clamped != page) {
+        page = clamped;
+        await reload();
+        return;
+      }
+      remote = List.of(result.items);
+    } catch (_) {
+      if (mounted && ticket == revision) {
+        error = true;
+        remote = [];
+      }
+    } finally {
+      if (mounted && ticket == revision) setState(() => loading = false);
+    }
+  }
+
+  void change(VoidCallback action) {
+    setState(action);
+    reload();
+  }
+
+  void sort(String key) {
+    if (!widget.columns.any((c) => c.key == key && c.sortable)) return;
+    change(() {
+      final index = sorts.indexWhere((s) => s.key == key);
+      final old = index < 0 ? null : sorts[index];
+      if (!widget.multiSort) {
+        sorts.clear();
+      } else if (index >= 0) {
+        sorts.removeAt(index);
+      }
+      final next = NgSortDescriptor(
+        key,
+        descending: old != null && !old.descending,
+      );
+      sorts.insert(widget.multiSort && index >= 0 ? index : sorts.length, next);
+      page = 1;
+    });
+  }
+
+  @override
+  void didUpdateWidget(covariant NgDataGrid<T> oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final before = sorts.length;
+    sorts.removeWhere(
+      (s) => !widget.columns.any((c) => c.key == s.key && c.sortable),
+    );
+    if (!widget.multiSort && sorts.length > 1)
+      sorts.removeRange(1, sorts.length);
+    if (oldWidget.readData != widget.readData ||
+        oldWidget.dataVersion != widget.dataVersion ||
+        before != sorts.length) {
+      page = 1;
+      reload();
+    }
+  }
+
+  @override
+  void dispose() {
+    revision++;
+    super.dispose();
+  }
+
   int page = 1;
   late int size;
   @override
   void initState() {
     super.initState();
     size = widget.initialPageSize < 1 ? 1 : widget.initialPageSize;
+    reload();
   }
 
   bool canChange(T row) =>
+      !loading &&
+      !error &&
       !widget.selectionReadOnly &&
       widget.onSelectionChanged != null &&
       (widget.canSelect?.call(row) ?? true);
   void selectRow(T row) {
     if (!mounted) return;
-    final matches = widget.items.where(
+    final matches = (widget.readData == null ? widget.items : remote).where(
       (item) => widget.rowId(item) == widget.rowId(row),
     );
     if (matches.isEmpty || !canChange(matches.first)) return;
@@ -349,16 +575,7 @@ class _NgDataGridState<T> extends State<NgDataGrid<T>> {
       throw ArgumentError(
         'Grid column keys must be nonempty and unique, with at least one column.',
       );
-    if (!widget.columns.any((c) => c.key == sortKey)) sortKey = null;
-    final rows = NgDataOperations.query(
-      widget.items,
-      widget.columns,
-      search,
-      sortKey,
-      descending,
-    );
-    page = NgDataOperations.clampPage(page, rows.length, size);
-    final visible = rows.skip((page - 1) * size).take(size).toList();
+    if (!loading) page = NgDataOperations.clampPage(page, count, size);
     final eligible = visible
         .where((row) => widget.canSelect?.call(row) ?? true)
         .toList();
@@ -370,6 +587,18 @@ class _NgDataGridState<T> extends State<NgDataGrid<T>> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        if (loading)
+          Semantics(liveRegion: true, child: Text(widget.loadingText)),
+        if (error)
+          Row(
+            children: [
+              Text(widget.errorText),
+              TextButton(
+                onPressed: () => change(() {}),
+                child: Text(widget.retryText),
+              ),
+            ],
+          ),
         Wrap(
           spacing: 16,
           runSpacing: 12,
@@ -382,7 +611,7 @@ class _NgDataGridState<T> extends State<NgDataGrid<T>> {
                   labelText: 'Search ${widget.label}',
                   prefixIcon: const Icon(Icons.search),
                 ),
-                onChanged: (v) => setState(() {
+                onChanged: (v) => change(() {
                   search = v;
                   page = 1;
                 }),
@@ -393,6 +622,16 @@ class _NgDataGridState<T> extends State<NgDataGrid<T>> {
               child: Text('${widget.selectedIds.length} selected'),
             ),
             ?widget.toolbar,
+            if (widget.multiSort)
+              TextButton(
+                onPressed: sorts.isEmpty
+                    ? null
+                    : () => change(() {
+                        sorts.clear();
+                        page = 1;
+                      }),
+                child: const Text('Clear sorting'),
+              ),
           ],
         ),
         const SizedBox(height: 16),
@@ -430,31 +669,17 @@ class _NgDataGridState<T> extends State<NgDataGrid<T>> {
                               ? true
                               : null,
                           onChanged:
-                              widget.selectionReadOnly || eligible.isEmpty
+                              loading ||
+                                  error ||
+                                  widget.selectionReadOnly ||
+                                  eligible.isEmpty
                               ? null
                               : (_) {
                                   if (!mounted ||
                                       widget.selectionReadOnly ||
                                       widget.onSelectionChanged == null)
                                     return;
-                                  final latest = NgDataOperations.query(
-                                    widget.items,
-                                    widget.columns,
-                                    search,
-                                    sortKey,
-                                    descending,
-                                  );
-                                  final current = latest
-                                      .skip(
-                                        (NgDataOperations.clampPage(
-                                                  page,
-                                                  latest.length,
-                                                  size,
-                                                ) -
-                                                1) *
-                                            size,
-                                      )
-                                      .take(size)
+                                  final current = visible
                                       .where(canChange)
                                       .toList();
                                   if (current.isEmpty) return;
@@ -478,12 +703,14 @@ class _NgDataGridState<T> extends State<NgDataGrid<T>> {
                     ),
                   for (final column in widget.columns)
                     DataColumn(
-                      label: Text(column.title),
+                      label: Text(
+                        widget.multiSort &&
+                                sorts.any((s) => s.key == column.key)
+                            ? '${column.title} ${sorts.indexWhere((s) => s.key == column.key) + 1}${sorts.firstWhere((s) => s.key == column.key).descending ? "↓" : "↑"}'
+                            : column.title,
+                      ),
                       onSort: column.sortable
-                          ? (i, ascending) => setState(() {
-                              descending = sortKey == column.key && !descending;
-                              sortKey = column.key;
-                            })
+                          ? (i, ascending) => sort(column.key)
                           : null,
                     ),
                   if (widget.rowActions != null)
@@ -526,18 +753,18 @@ class _NgDataGridState<T> extends State<NgDataGrid<T>> {
             ),
           ),
         ),
-        if (rows.isEmpty)
+        if (!loading && !error && rows.isEmpty)
           Padding(
             padding: const EdgeInsets.all(24),
             child: widget.emptyBuilder ?? Text(widget.emptyText),
           ),
         NgPager(
-          total: rows.length,
+          total: count,
           page: page,
           pageSize: size,
           sizes: widget.pageSizes,
-          onPageChanged: (v) => setState(() => page = v),
-          onPageSizeChanged: (v) => setState(() {
+          onPageChanged: (v) => change(() => page = v),
+          onPageSizeChanged: (v) => change(() {
             size = v;
             page = 1;
           }),
@@ -550,6 +777,9 @@ class _NgDataGridState<T> extends State<NgDataGrid<T>> {
 class NgTreeView<T> extends StatefulWidget {
   final Widget Function(BuildContext, T)? itemBuilder;
   final List<NgTreeNode<T>> items;
+  final Future<List<NgTreeNode<T>>> Function(NgTreeNode<T>)? loadChildren;
+  final Object? dataVersion;
+  final String loadingText, errorText;
   final String Function(T) text;
   final String label, emptyText;
   final bool selectionReadOnly, expansionReadOnly;
@@ -561,6 +791,10 @@ class NgTreeView<T> extends StatefulWidget {
   const NgTreeView({
     super.key,
     required this.items,
+    this.loadChildren,
+    this.dataVersion,
+    this.loadingText = 'Loading children…',
+    this.errorText = 'Unable to load children. Expand to retry.',
     required this.text,
     required this.expandedIds,
     required this.onExpandedChanged,
@@ -579,15 +813,28 @@ class NgTreeView<T> extends StatefulWidget {
 
 class _NgTreeViewState<T> extends State<NgTreeView<T>> {
   String search = '';
+  final lazy = _LazyTreeCache<T>();
+  @override
+  void initState() {
+    super.initState();
+    lazy.update(widget.items, widget.loadChildren, widget.dataVersion);
+  }
+
+  @override
+  void didUpdateWidget(covariant NgTreeView<T> oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    lazy.update(widget.items, widget.loadChildren, widget.dataVersion);
+  }
+
   final nodes = <String, FocusNode>{};
   List<NgTreeRow<T>> get rows => NgDataOperations.flatten<T>(
-    widget.items,
+    lazy.resolve(widget.items),
     widget.expandedIds,
     widget.text,
     search: search,
   );
   NgTreeNode<T>? currentNode(String id) => NgDataOperations.flatten(
-    widget.items,
+    lazy.resolve(widget.items),
     widget.expandedIds,
     widget.text,
     search: search,
@@ -599,11 +846,26 @@ class _NgTreeViewState<T> extends State<NgTreeView<T>> {
     widget.onSelected?.call(id);
   }
 
-  void toggle(String id) {
+  Future<void> toggle(String id) async {
     if (!mounted || widget.expansionReadOnly || search.trim().isNotEmpty)
       return;
     final node = currentNode(id);
-    if (node == null || node.disabled || node.children.isEmpty) return;
+    if (node == null ||
+        node.disabled ||
+        (node.children.isEmpty && !node.hasChildren))
+      return;
+    if (!widget.expandedIds.contains(id)) {
+      final pending = lazy.ensure(node);
+      setState(() {});
+      final accepted = await pending;
+      if (!mounted) return;
+      setState(() {});
+      if (!accepted) return;
+    }
+    if (!mounted || widget.expansionReadOnly || search.trim().isNotEmpty)
+      return;
+    final latest = currentNode(id);
+    if (latest == null || latest.disabled) return;
     final next = {...widget.expandedIds};
     if (!next.add(id)) next.remove(id);
     widget.onExpandedChanged(next);
@@ -611,6 +873,7 @@ class _NgTreeViewState<T> extends State<NgTreeView<T>> {
 
   @override
   void dispose() {
+    lazy.revision++;
     for (final n in nodes.values) {
       n.dispose();
     }
@@ -650,7 +913,7 @@ class _NgTreeViewState<T> extends State<NgTreeView<T>> {
               if (key == LogicalKeyboardKey.end) target = enabled.last.node.id;
               if (key == LogicalKeyboardKey.arrowRight) {
                 if (!row.expanded &&
-                    row.node.children.isNotEmpty &&
+                    (row.node.children.isNotEmpty || row.node.hasChildren) &&
                     search.trim().isEmpty) {
                   toggle(row.node.id);
                 } else if (row.expanded && index < enabled.length - 1) {
@@ -664,7 +927,7 @@ class _NgTreeViewState<T> extends State<NgTreeView<T>> {
               }
               if (key == LogicalKeyboardKey.arrowLeft) {
                 if (row.expanded &&
-                    row.node.children.isNotEmpty &&
+                    (row.node.children.isNotEmpty || row.node.hasChildren) &&
                     search.trim().isEmpty) {
                   toggle(row.node.id);
                 } else {
@@ -722,12 +985,14 @@ class _NgTreeViewState<T> extends State<NgTreeView<T>> {
                       constraints: const BoxConstraints(minHeight: 40),
                       child: Row(
                         children: [
-                          if (row.node.children.isNotEmpty)
+                          if ((row.node.children.isNotEmpty ||
+                              row.node.hasChildren))
                             IconButton(
                               tooltip:
                                   '${row.expanded ? 'Collapse' : 'Expand'} ${widget.text(row.node.item)}',
                               onPressed:
                                   row.node.disabled ||
+                                      lazy.loading.contains(row.node.id) ||
                                       widget.expansionReadOnly ||
                                       search.trim().isNotEmpty
                                   ? null
@@ -740,6 +1005,10 @@ class _NgTreeViewState<T> extends State<NgTreeView<T>> {
                             )
                           else
                             const SizedBox(width: 40),
+                          if (lazy.loading.contains(row.node.id))
+                            Text(widget.loadingText),
+                          if (lazy.errors.contains(row.node.id))
+                            Text(widget.errorText),
                           Expanded(
                             child: widget.itemBuilder == null
                                 ? Text(
@@ -779,6 +1048,9 @@ class _NgTreeViewState<T> extends State<NgTreeView<T>> {
 
 class NgTreeList<T> extends StatefulWidget {
   final List<NgTreeNode<T>> items;
+  final Future<List<NgTreeNode<T>>> Function(NgTreeNode<T>)? loadChildren;
+  final Object? dataVersion;
+  final String loadingText, errorText;
   final List<NgDataColumn<T>> columns;
   final Set<String> expandedIds;
   final ValueChanged<Set<String>> onExpandedChanged;
@@ -790,6 +1062,10 @@ class NgTreeList<T> extends StatefulWidget {
   const NgTreeList({
     super.key,
     required this.items,
+    this.loadChildren,
+    this.dataVersion,
+    this.loadingText = 'Loading children…',
+    this.errorText = 'Unable to load children. Expand to retry.',
     required this.columns,
     required this.expandedIds,
     required this.onExpandedChanged,
@@ -807,10 +1083,23 @@ class NgTreeList<T> extends StatefulWidget {
 
 class _NgTreeListState<T> extends State<NgTreeList<T>> {
   String search = '';
+  final lazy = _LazyTreeCache<T>();
+  @override
+  void initState() {
+    super.initState();
+    lazy.update(widget.items, widget.loadChildren, widget.dataVersion);
+  }
+
+  @override
+  void didUpdateWidget(covariant NgTreeList<T> oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    lazy.update(widget.items, widget.loadChildren, widget.dataVersion);
+  }
+
   String? sortKey;
   bool descending = false;
   NgTreeNode<T>? currentNode(String id) => NgDataOperations.flatten(
-    widget.items,
+    lazy.resolve(widget.items),
     widget.expandedIds,
     (item) => widget.columns.map((c) => c.text(item)).join(' '),
     search: search,
@@ -822,14 +1111,35 @@ class _NgTreeListState<T> extends State<NgTreeList<T>> {
     widget.onSelected?.call(id);
   }
 
-  void toggle(String id) {
+  Future<void> toggle(String id) async {
     if (!mounted || widget.expansionReadOnly || search.trim().isNotEmpty)
       return;
     final node = currentNode(id);
-    if (node == null || node.disabled || node.children.isEmpty) return;
+    if (node == null ||
+        node.disabled ||
+        (node.children.isEmpty && !node.hasChildren))
+      return;
+    if (!widget.expandedIds.contains(id)) {
+      final pending = lazy.ensure(node);
+      setState(() {});
+      final accepted = await pending;
+      if (!mounted) return;
+      setState(() {});
+      if (!accepted) return;
+    }
+    if (!mounted || widget.expansionReadOnly || search.trim().isNotEmpty)
+      return;
+    final latest = currentNode(id);
+    if (latest == null || latest.disabled) return;
     final next = {...widget.expandedIds};
     if (!next.add(id)) next.remove(id);
     widget.onExpandedChanged(next);
+  }
+
+  @override
+  void dispose() {
+    lazy.revision++;
+    super.dispose();
   }
 
   @override
@@ -848,7 +1158,7 @@ class _NgTreeListState<T> extends State<NgTreeList<T>> {
         .firstOrNull;
     final sortIndex = widget.columns.indexWhere((c) => c.key == sortKey);
     final rows = NgDataOperations.flatten<T>(
-      widget.items,
+      lazy.resolve(widget.items),
       widget.expandedIds,
       (item) => widget.columns.map((c) => c.text(item)).join(' '),
       search: search,
@@ -907,12 +1217,16 @@ class _NgTreeListState<T> extends State<NgTreeList<T>> {
                                 ? Row(
                                     children: [
                                       SizedBox(width: row.depth * 20),
-                                      if (row.node.children.isNotEmpty)
+                                      if ((row.node.children.isNotEmpty ||
+                                          row.node.hasChildren))
                                         IconButton(
                                           tooltip:
                                               '${row.expanded ? 'Collapse' : 'Expand'} ${widget.columns[i].text(row.node.item)}',
                                           onPressed:
                                               row.node.disabled ||
+                                                  lazy.loading.contains(
+                                                    row.node.id,
+                                                  ) ||
                                                   widget.expansionReadOnly ||
                                                   search.trim().isNotEmpty
                                               ? null
@@ -925,9 +1239,16 @@ class _NgTreeListState<T> extends State<NgTreeList<T>> {
                                         )
                                       else
                                         const SizedBox(width: 40),
+                                      if (lazy.loading.contains(row.node.id))
+                                        Text(widget.loadingText),
+                                      if (lazy.errors.contains(row.node.id))
+                                        Text(widget.errorText),
                                       TextButton(
                                         onPressed:
                                             row.node.disabled ||
+                                                lazy.loading.contains(
+                                                  row.node.id,
+                                                ) ||
                                                 widget.selectionReadOnly ||
                                                 widget.onSelected == null
                                             ? null

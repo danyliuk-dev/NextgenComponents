@@ -1,6 +1,17 @@
 @* Generated from scripts/manual_content.py *@
 <NgCheckBox Label="Selection read-only" @bind-Value="selectionReadOnly"/>
 <NgCheckBox Label="Expansion read-only" @bind-Value="expansionReadOnly"/>
-<NgTreeView TItem="string" Items="nodes" Text="s=>s" @bind-ExpandedIds="expanded" @bind-SelectedId="selected" SelectionReadOnly="selectionReadOnly" ExpansionReadOnly="expansionReadOnly" EmptyText="No teams found."><ItemTemplate Context="item"><strong>@item</strong><span> · team</span></ItemTemplate></NgTreeView>
-<p>Selected team: @(selected??"none")</p>
-@code { private bool selectionReadOnly,expansionReadOnly; private string? selected; private HashSet<string> expanded=["root"]; private NgTreeNode<string>[] nodes=[new("root","Projects",[new("a","Design"),new("b","Engineering")])]; }
+<NgCheckBox Label="Fail requests" @bind-Value="fail"/>
+<NgButton OnClick="Reset">Reset tree</NgButton>
+<NgTreeView TItem="string" Items="nodes" Text="s=>s" LoadChildren="Load" DataVersion="version" @bind-ExpandedIds="expanded" @bind-SelectedId="selected" SelectionReadOnly="selectionReadOnly" ExpansionReadOnly="expansionReadOnly" EmptyText="No teams found."/>
+<p>Selected team: @(selected??"none") · Child requests: @requests</p>
+@code {
+ private bool selectionReadOnly,expansionReadOnly,fail; private int version,requests;
+ private string? selected; private HashSet<string> expanded=[];
+ private static readonly NgTreeNode<string>[] nodes=[new("root","Projects",HasChildren:true)];
+ private void Reset(){version++;expanded=[];selected=null;}
+ private async Task<IReadOnlyList<NgTreeNode<string>>> Load(NgTreeNode<string> node,CancellationToken token){
+   requests++;await Task.Delay(350,token);await InvokeAsync(StateHasChanged);if(fail)throw new InvalidOperationException("Demo failure");
+   return node.Id=="root"?[new("a","Design"),new("b","Engineering",HasChildren:true)]:[new("api","API"),new("web","Web")];
+ }
+}

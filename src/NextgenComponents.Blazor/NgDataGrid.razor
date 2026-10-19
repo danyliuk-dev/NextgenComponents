@@ -1,23 +1,32 @@
 @typeparam TItem
-<div class="ng-data-grid">
-<div class="ng-data-toolbar"><label class="ng-field">Search @Label<input class="ng-input" aria-label="@($"Search {Label}")" value="@search" @oninput="Search" /></label><span role="status">@SelectedIds.Count selected</span>@Toolbar</div>
+@implements IDisposable
+<div class="ng-data-grid" aria-busy="@(loading?"true":"false")">
+@if(loading){<p role="status">@LoadingText</p>}
+@if(error){<p role="alert">@ErrorText <button type="button" @onclick="ReloadAsync">@RetryText</button></p>}
+<div class="ng-data-toolbar"><label class="ng-field">Search @Label<input class="ng-input" aria-label="@($"Search {Label}")" value="@search" @oninput="Search" /></label><span role="status">@SelectedIds.Count selected</span>@Toolbar @if(MultiSort){<button type="button" disabled="@(sorts.Count==0)" @onclick="ClearSort">Clear sorting</button>}</div>
 <div class="ng-table-scroll" tabindex="0" aria-label="@($"{Label} table scroll area")">
 <table class="ng-data-table"><caption class="ng-sr-only">@Label</caption><thead><tr>
 @if(Selectable){<th scope="col"><input type="checkbox" aria-label="Select page" checked="@(Eligible.Count>0 && Eligible.All(x=>SelectedIds.Contains(RowId(x))))" disabled="@(Eligible.Count==0 || SelectionReadOnly || !SelectedIdsChanged.HasDelegate)" aria-checked="@(Eligible.Any(x=>SelectedIds.Contains(RowId(x))) && !Eligible.All(x=>SelectedIds.Contains(RowId(x)))?"mixed":null)" @onchange="SelectPage" /></th>}
-@foreach(var column in Columns){<th scope="col" aria-sort="@(sortKey==column.Key?(descending?"descending":"ascending"):"none")">@if(column.Sortable){<button type="button" @onclick="()=>Sort(column.Key)">@column.Title @(sortKey==column.Key?(descending?"↓":"↑"):"↕")</button>}else{@column.Title}</th>}
+@foreach(var column in Columns){var sort=sorts.FirstOrDefault(x=>x.Key==column.Key);<th scope="col" aria-sort="@(sort is not null?(sort.Descending?"descending":"ascending"):"none")">@if(column.Sortable){<button type="button" @onclick="()=>Sort(column.Key)">@column.Title @(sort is not null?$"{(sort.Descending?"↓":"↑")}{(MultiSort?sorts.IndexOf(sort)+1:"")}":"↕")</button>}else{@column.Title}</th>}
 @if(RowActions is not null){<th scope="col">Actions</th>}
 </tr></thead><tbody>
-@if(Visible.Count==0){<tr><td colspan="@(Columns.Count+(Selectable?1:0)+(RowActions is null?0:1))" class="ng-empty">@if(EmptyTemplate is not null){@EmptyTemplate}else{@EmptyText}</td></tr>}
+@if(!loading && !error && Visible.Count==0){<tr><td colspan="@(Columns.Count+(Selectable?1:0)+(RowActions is null?0:1))" class="ng-empty">@if(EmptyTemplate is not null){@EmptyTemplate}else{@EmptyText}</td></tr>}
 @foreach(var row in Visible){var id=RowId(row);<tr @key="id" class="@(SelectedIds.Contains(id)?"ng-row-selected":"")">
 @if(Selectable){<td><input type="checkbox" aria-label="@($"Select {id}")" checked="@SelectedIds.Contains(id)" disabled="@(!CanChange(row))" @onchange="()=>Toggle(row)" /></td>}
 @foreach(var column in Columns){<td>@if(column.Template is not null){@column.Template(row)}else{@column.Text(row)}</td>}
 @if(RowActions is not null){<td>@RowActions(row)</td>}
 </tr>}
 </tbody></table></div>
-<NgPager Total="filtered.Count" Page="page" PageChanged="v=>page=v" PageSize="size" PageSizeChanged="Resize" Sizes="PageSizes" />
+<NgPager Total="Total" Page="page" PageChanged="ChangePage" PageSize="size" PageSizeChanged="Resize" Sizes="PageSizes" />
 </div>
 @code {
- [Parameter,EditorRequired] public IReadOnlyList<TItem> Items{get;set;}=[];
+ [Parameter] public Func<NgDataRequest,CancellationToken,Task<NgDataResult<TItem>>>? ReadData{get;set;}
+ [Parameter] public object? DataVersion{get;set;}
+ [Parameter] public bool MultiSort{get;set;}
+ [Parameter] public string LoadingText{get;set;}="Loading records…";
+ [Parameter] public string ErrorText{get;set;}="Unable to load records.";
+ [Parameter] public string RetryText{get;set;}="Retry";
+ [Parameter] public IReadOnlyList<TItem> Items{get;set;}=[];
  [Parameter,EditorRequired] public IReadOnlyList<NgDataColumn<TItem>> Columns{get;set;}=[];
  [Parameter,EditorRequired] public Func<TItem,string> RowId{get;set;}=default!;
  [Parameter] public string Label{get;set;}="Records";
@@ -32,20 +41,67 @@
  [Parameter] public RenderFragment? Toolbar{get;set;}
  [Parameter] public RenderFragment<TItem>? RowActions{get;set;}
  [Parameter] public int InitialPageSize{get;set;}=5;
- private bool CanChange(TItem row)=>Selectable && !SelectionReadOnly && SelectedIdsChanged.HasDelegate && (CanSelect?.Invoke(row)??true);
+ private bool CanChange(TItem row)=>!loading && !error && Selectable && !SelectionReadOnly && SelectedIdsChanged.HasDelegate && (CanSelect?.Invoke(row)??true);
  private IReadOnlyList<TItem> Eligible=>Visible.Where(x=>CanSelect?.Invoke(x)??true).ToArray();
  private string search="";
- private string? sortKey;
- private bool descending;
+ private readonly List<NgSortDescriptor> sorts=[];
+ private bool loading,error,disposed;
+ private int total;
+ private long revision;
+ private CancellationTokenSource? pending;
+ private object? previousVersion;
+ private Delegate? previousReader;
+ private string previousColumns="";
+ private int Total=>ReadData is null?filtered.Count:total;
  private int page=1,size;
  private IReadOnlyList<TItem> filtered=[];
- private IReadOnlyList<TItem> Visible=>filtered.Skip((page-1)*size).Take(size).ToArray();
+ private IReadOnlyList<TItem> Visible=>ReadData is null?filtered.Skip((page-1)*size).Take(size).ToArray():filtered;
  protected override void OnInitialized()=>size=Math.Max(1,InitialPageSize);
- protected override void OnParametersSet(){if(Items.Any(x=>string.IsNullOrWhiteSpace(RowId(x))) || Items.Select(RowId).Distinct().Count()!=Items.Count)throw new ArgumentException("Grid row IDs must be nonempty and unique.");if(Columns.Count==0 || Columns.Any(x=>string.IsNullOrWhiteSpace(x.Key)) || Columns.Select(x=>x.Key).Distinct().Count()!=Columns.Count)throw new ArgumentException("Grid column keys must be nonempty and unique, with at least one column.");if(!Columns.Any(x=>x.Key==sortKey))sortKey=null;Refresh();}
- private void Refresh(){filtered=NgDataOperations.Query(Items,Columns,search,sortKey,descending);page=NgDataOperations.ClampPage(page,filtered.Count,size);}
- private void Search(ChangeEventArgs e){search=e.Value?.ToString()??"";page=1;Refresh();}
- private void Sort(string key){descending=sortKey==key && !descending;sortKey=key;Refresh();}
- private void Resize(int value){size=value;page=1;Refresh();}
- private async Task Toggle(TItem row){var matches=Items.Where(x=>RowId(x)==RowId(row)).ToArray();if(matches.Length==0 || !CanChange(matches[0]))return;var id=RowId(row);var next=new HashSet<string>(SelectedIds);if(!next.Add(id))next.Remove(id);await SelectedIdsChanged.InvokeAsync(next);}
- private async Task SelectPage(){if(!Selectable || SelectionReadOnly || !SelectedIdsChanged.HasDelegate || Eligible.Count==0)return;var next=new HashSet<string>(SelectedIds);var remove=Eligible.All(x=>next.Contains(RowId(x)));foreach(var row in Eligible){if(remove)next.Remove(RowId(row));else next.Add(RowId(row));}await SelectedIdsChanged.InvokeAsync(next);}
+ protected override async Task OnParametersSetAsync(){
+   ValidateRows(Items);
+   if(Columns.Count==0 || Columns.Any(x=>string.IsNullOrWhiteSpace(x.Key)) || Columns.Select(x=>x.Key).Distinct().Count()!=Columns.Count)throw new ArgumentException("Grid column keys must be nonempty and unique, with at least one column.");
+   var changed=sorts.RemoveAll(s=>!Columns.Any(c=>c.Key==s.Key && c.Sortable))>0;
+   if(!MultiSort && sorts.Count>1){sorts.RemoveRange(1,sorts.Count-1);changed=true;}
+   var signature=string.Join("|",Columns.Select(c=>$"{c.Key}:{c.Sortable}"));
+   if(!Equals(previousReader,ReadData) || !Equals(previousVersion,DataVersion) || previousColumns!=signature || changed){
+     previousReader=ReadData;previousVersion=DataVersion;previousColumns=signature;page=1;await ReloadAsync();
+   }else if(ReadData is null)Refresh();
+ }
+ private void ValidateRows(IReadOnlyList<TItem> rows){if(rows.Any(x=>string.IsNullOrWhiteSpace(RowId(x))) || rows.Select(RowId).Distinct().Count()!=rows.Count)throw new ArgumentException("Grid row IDs must be nonempty and unique.");}
+ private void Refresh(){filtered=NgDataOperations.Query(Items,Columns,search,sorts);page=NgDataOperations.ClampPage(page,filtered.Count,size);}
+ public async Task ReloadAsync(){
+   if(disposed)return;
+   var ticket=++revision;pending?.Cancel();pending?.Dispose();pending=new();var token=pending.Token;
+   if(ReadData is null){loading=error=false;Refresh();return;}
+   var reader=ReadData;loading=true;error=false;filtered=[];StateHasChanged();
+   try{
+     var request=new NgDataRequest(page,size,search,Array.AsReadOnly(sorts.ToArray()));
+     var result=await reader(request,token);
+     if(disposed || ticket!=revision)return;
+     if(result.Total<0 || result.Items.Count>size || result.Items.Count>result.Total)throw new ArgumentException("Invalid server page.");
+     ValidateRows(result.Items);
+     total=result.Total;
+     var clamped=NgDataOperations.ClampPage(page,total,size);
+     if(page!=clamped){page=clamped;await ReloadAsync();return;}
+     filtered=result.Items.ToArray();
+   }catch(Exception){if(!disposed && ticket==revision){error=true;filtered=[];}}
+   finally{if(!disposed && ticket==revision){loading=false;StateHasChanged();}}
+ }
+ private async Task Search(ChangeEventArgs e){search=e.Value?.ToString()??"";page=1;await ReloadAsync();}
+ private async Task Sort(string key){
+   if(!Columns.Any(c=>c.Key==key && c.Sortable))return;
+   var old=sorts.FirstOrDefault(s=>s.Key==key);
+   var sortPriority=old is null?sorts.Count:sorts.IndexOf(old);
+   if(!MultiSort)sorts.Clear();else if(old is not null)sorts.Remove(old);
+   var next=new NgSortDescriptor(key,old is not null && !old.Descending);
+   // Preserve priority when toggling an existing descriptor.
+   if(MultiSort && old is not null){var order=sortPriority;sorts.Insert(Math.Min(order,sorts.Count),next);}else sorts.Add(next);
+   page=1;await ReloadAsync();
+ }
+ private async Task ClearSort(){sorts.Clear();page=1;await ReloadAsync();}
+ private async Task ChangePage(int value){if(value==page)return;page=value;await ReloadAsync();}
+ private async Task Resize(int value){size=value;page=1;await ReloadAsync();}
+ public void Dispose(){disposed=true;++revision;pending?.Cancel();pending?.Dispose();}
+ private async Task Toggle(TItem row){var matches=(ReadData is null?Items:filtered).Where(x=>RowId(x)==RowId(row)).ToArray();if(matches.Length==0 || !CanChange(matches[0]))return;var id=RowId(row);var next=new HashSet<string>(SelectedIds);if(!next.Add(id))next.Remove(id);await SelectedIdsChanged.InvokeAsync(next);}
+ private async Task SelectPage(){if(loading || error || !Selectable || SelectionReadOnly || !SelectedIdsChanged.HasDelegate || Eligible.Count==0)return;var next=new HashSet<string>(SelectedIds);var remove=Eligible.All(x=>next.Contains(RowId(x)));foreach(var row in Eligible){if(remove)next.Remove(RowId(row));else next.Add(RowId(row));}await SelectedIdsChanged.InvokeAsync(next);}
 }

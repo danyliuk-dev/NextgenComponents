@@ -1,10 +1,11 @@
 @typeparam TItem
+@inherits NgLazyTreeBase<TItem>
 @inject IJSRuntime JS
 <div class="ng-tree-view"><label class="ng-field">Search @Label<input class="ng-input" aria-label="@($"Search {Label}")" @bind="search" @bind:event="oninput" /></label>
 <div role="tree" aria-label="@Label" @ref="root">
-@foreach(var row in Rows){var node=row.Node;<div role="treeitem" tabindex="@(node.Disabled?-1:0)" aria-label="@Text(node.Item)" aria-level="@(row.Depth+1)" aria-selected="@(SelectedId==node.Id?"true":"false")" aria-disabled="@(node.Disabled?"true":"false")" aria-expanded="@(node.Children?.Count>0?(row.Expanded?"true":"false"):null)" data-tree-id="@node.Id" data-parent="@row.ParentId" class="ng-tree-row @(SelectedId==node.Id?"ng-row-selected":"")" style="padding-left:@(row.Depth*20)px" @onclick="()=>Select(node)" @onkeydown="e=>Key(e,node,row.Expanded)">
-@if(node.Children?.Count>0){<button type="button" tabindex="-1" aria-label="@($"{(row.Expanded?"Collapse":"Expand")} {Text(node.Item)}")" disabled="@(node.Disabled || ExpansionReadOnly || !ExpandedIdsChanged.HasDelegate || !string.IsNullOrWhiteSpace(search))" @onclick:stopPropagation @onclick="()=>Toggle(node.Id)">@(row.Expanded?"▾":"▸")</button>}else{<span class="ng-tree-spacer"></span>}
-<span aria-hidden="@(ItemTemplate is not null?"true":null)">@if(ItemTemplate is not null){@ItemTemplate(node.Item)}else{@Text(node.Item)}</span></div>}
+@foreach(var row in Rows){var node=row.Node;<div role="treeitem" tabindex="@(node.Disabled?-1:0)" aria-label="@Text(node.Item)" aria-level="@(row.Depth+1)" aria-selected="@(SelectedId==node.Id?"true":"false")" aria-disabled="@(node.Disabled?"true":"false")" aria-expanded="@((node.Children?.Count>0 || node.HasChildren)?(row.Expanded?"true":"false"):null)" data-tree-id="@node.Id" data-parent="@row.ParentId" class="ng-tree-row @(SelectedId==node.Id?"ng-row-selected":"")" style="padding-left:@(row.Depth*20)px" @onclick="()=>Select(node)" @onkeydown="e=>Key(e,node,row.Expanded)">
+@if((node.Children?.Count>0 || node.HasChildren)){<button type="button" tabindex="-1" aria-label="@($"{(row.Expanded?"Collapse":"Expand")} {Text(node.Item)}")" disabled="@(node.Disabled || IsLoading(node.Id) || ExpansionReadOnly || !ExpandedIdsChanged.HasDelegate || !string.IsNullOrWhiteSpace(search))" @onclick:stopPropagation @onclick="()=>Toggle(node.Id)">@(row.Expanded?"▾":"▸")</button>}else{<span class="ng-tree-spacer"></span>}
+<span aria-busy="@(IsLoading(node.Id)?"true":"false")">@if(IsLoading(node.Id)){<span role="status">@LoadingText</span>}@if(HasError(node.Id)){<span role="alert">@ErrorText</span>}</span><span aria-hidden="@(ItemTemplate is not null?"true":null)">@if(ItemTemplate is not null){@ItemTemplate(node.Item)}else{@Text(node.Item)}</span></div>}
 @if(Rows.Count==0){<p class="ng-empty">@if(EmptyTemplate is not null){@EmptyTemplate}else{@EmptyText}</p>}
 </div></div>
 @code {
@@ -14,7 +15,6 @@
  [Parameter] public RenderFragment? EmptyTemplate{get;set;}
  [Parameter] public string EmptyText{get;set;}="No matching items.";
  [Parameter] public string Label{get;set;}="Folders";
- [Parameter,EditorRequired] public IReadOnlyList<NgTreeNode<TItem>> Items{get;set;}=[];
  [Parameter,EditorRequired] public Func<TItem,string> Text{get;set;}=default!;
  [Parameter] public string? SelectedId{get;set;}
  [Parameter] public EventCallback<string?> SelectedIdChanged{get;set;}
@@ -22,9 +22,12 @@
  [Parameter] public EventCallback<HashSet<string>> ExpandedIdsChanged{get;set;}
  private string search="";
  private ElementReference root;
- private IReadOnlyList<NgTreeRow<TItem>> Rows=>NgDataOperations.Flatten(Items,ExpandedIds,Text,search);
+ private IReadOnlyList<NgTreeRow<TItem>> Rows=>NgDataOperations.Flatten(ResolvedItems,ExpandedIds,Text,search);
  private async Task Select(NgTreeNode<TItem> node){if(SelectionReadOnly || !SelectedIdChanged.HasDelegate || !Rows.Any(r=>r.Node.Id==node.Id && !r.Node.Disabled))return;await SelectedIdChanged.InvokeAsync(node.Id);}
- private async Task Toggle(string id){if(ExpansionReadOnly || !ExpandedIdsChanged.HasDelegate || !string.IsNullOrWhiteSpace(search) || !Rows.Any(r=>r.Node.Id==id && !r.Node.Disabled && r.Node.Children?.Count>0))return;var next=new HashSet<string>(ExpandedIds);if(!next.Add(id))next.Remove(id);await ExpandedIdsChanged.InvokeAsync(next);}
- private async Task Key(KeyboardEventArgs e,NgTreeNode<TItem> node,bool open){if(node.Disabled)return;if(e.Key is "Enter" or " ")await Select(node);if(string.IsNullOrWhiteSpace(search)&&node.Children?.Count>0&&((e.Key=="ArrowRight"&&!open)||(e.Key=="ArrowLeft"&&open)))await Toggle(node.Id);}
+ private async Task Toggle(string id){if(ExpansionReadOnly || !ExpandedIdsChanged.HasDelegate || !string.IsNullOrWhiteSpace(search) || !Rows.Any(r=>r.Node.Id==id && !r.Node.Disabled && (r.Node.Children?.Count>0 || r.Node.HasChildren)))return;var node=Rows.First(r=>r.Node.Id==id).Node;
+ if(!ExpandedIds.Contains(id) && !await EnsureChildren(node))return;
+ if(ExpansionReadOnly || !ExpandedIdsChanged.HasDelegate || !string.IsNullOrWhiteSpace(search) || !Rows.Any(r=>r.Node.Id==id && !r.Node.Disabled))return;
+ var next=new HashSet<string>(ExpandedIds);if(!next.Add(id))next.Remove(id);await ExpandedIdsChanged.InvokeAsync(next);}
+ private async Task Key(KeyboardEventArgs e,NgTreeNode<TItem> node,bool open){if(node.Disabled)return;if(e.Key is "Enter" or " ")await Select(node);if(string.IsNullOrWhiteSpace(search)&&(node.Children?.Count>0 || node.HasChildren)&&((e.Key=="ArrowRight"&&!open)||(e.Key=="ArrowLeft"&&open)))await Toggle(node.Id);}
  protected override async Task OnAfterRenderAsync(bool first){if(first){var module=await JS.InvokeAsync<IJSObjectReference>("import","./_content/NextgenComponents.Blazor/nextgen.js");await module.InvokeVoidAsync("tree",root);await module.DisposeAsync();}}
 }

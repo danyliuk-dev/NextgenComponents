@@ -834,3 +834,12 @@ Validation completed:
 Evidence: [Blazor counter](screenshots/count059-blazor.png), [Flutter counter](screenshots/count059-flutter.png), [desktop manual](screenshots/count059-desktop-manual.png).
 
 Counter formatting receives counts rather than password text and must remain pure. Counters do not define a shared server length policy or add validation. Native targets and physical accessibility certification remain separate work; full Telerik API/pixel parity is not claimed.
+
+## Remote Grid and lazy trees — 0.60 (2026-10-19, Linux on iMac)
+
+- Grid async page/search adapters, stable ordered multi-sort, loading/error/retry, source-version invalidation, stale-response rejection and total shrink recovery.
+- TreeView/TreeList lazy children, cached empty/successful branches, source invalidation, retry and duplicate-ID rejection. Expansion/selection locks rechecked after awaits.
+- .NET build passed with zero warnings/errors; 416 rendering/data checks passed. Flutter analyze passed; all 254 tests passed, including 7 new async/data scenarios.
+- All 94 manual examples compiled/analyzed; 94 highlighted examples passed. Web build passed (existing unused CupertinoIcons font warning).
+- Dedicated foreground Chrome review060 on local Linux/iMac: both Web platforms passed remote page/search/sort/retry and both lazy-tree nested/cache/error/selection/reset scenarios. Evidence: artifacts/browser/data060-*.png; repeat with scripts/remote-data-check.py and its flutter argument.
+- No full parity claim. Virtualization, grouping, built-in CRUD, drag/drop, checked tree selection and native/screen-reader validation remain open. Demo adapters simulate network delay; application transport is caller-owned.
