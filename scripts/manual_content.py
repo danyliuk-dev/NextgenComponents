@@ -3274,3 +3274,22 @@ ShowClearButton/showClearButton (default false) adds an atomic clear action; Cle
 
 Shared dual-calendar highlighting, relative-date engines and native/screen-reader certification remain open. These original preset contracts do not claim Telerik API compatibility.
 """
+
+# Configurable counters, 0.59.
+for _editor in ('NgTextBox','NgTextArea'):
+    D[_editor]['blazor'] = '<div class="ng-prompt-actions"><NgButton OnClick="CycleCounter">Change counter</NgButton><NgButton OnClick="()=>customCounter=!customCounter">Custom counter</NgButton><NgButton OnClick="LoadEmoji">Load emoji</NgButton><NgButton OnClick="LoadOverflow">Load over limit</NgButton></div>\n' + D[_editor]['blazor'].replace('<'+_editor+' ', '<'+_editor+' CounterMode="@counterMode" CounterText="@(customCounter?FormatCounter:null)" ',1).replace('@code {', '@code {\n private string counterMode="used";private bool customCounter;\n private string FormatCounter(int current,int? maximum)=>$"Used: {current}; limit: {maximum}";\n private void CycleCounter()=>counterMode=counterMode=="used"?"remaining":counterMode=="remaining"?"hidden":counterMode=="hidden"?"native":"used";\n private void LoadEmoji()=>text="👨‍👩‍👧‍👦";\n private void LoadOverflow()=>text=new string(\'x\',85);')
+    D[_editor]['dart'] = "String counterMode='used';bool customCounter=false;\n" + D[_editor]['dart'].replace('children:[', "children:[Wrap(spacing:8,runSpacing:8,children:[NgButton(onPressed:()=>setState(()=>counterMode=counterMode=='used'?'remaining':counterMode=='remaining'?'hidden':counterMode=='hidden'?'native':'used'),child:const Text('Change counter')),NgButton(onPressed:()=>setState(()=>customCounter=!customCounter),child:const Text('Custom counter')),NgButton(onPressed:()=>setState(()=>editor.text='👨‍👩‍👧‍👦'),child:const Text('Load emoji')),NgButton(onPressed:()=>setState(()=>editor.text='x'*85),child:const Text('Load over limit'))]),",1).replace(_editor+'(',_editor+"(counterMode:counterMode,counterText:customCounter?(n,m)=>'Used: $n; limit: $m':null,",1)
+    if _editor == 'NgTextArea':
+        D[_editor]['blazor']=D[_editor]['blazor'].replace('<NgTextArea ', '<NgTextArea MaxLength="80" ',1)
+        D[_editor]['dart']=D[_editor]['dart'].replace('NgTextArea(', 'NgTextArea(maxLength:80,',1)
+    D[_editor]['notes'] += """
+
+### Character counters (0.59)
+CounterMode/counterMode accepts native (default), hidden, used or remaining. Native preserves existing presentation: no counter in Blazor, the framework counter in Flutter when MaxLength/maxLength is set. Hidden removes only the counter; it never disables length enforcement or validation. Used displays the current count, with the maximum when present. Remaining requires a maximum, displays the remaining allowance and reports an over-limit amount for externally supplied overlong text.
+
+CounterText/counterText optionally formats the displayed text from the current count and nullable maximum. It applies only in used/remaining modes; use it for localized text. It receives counts, never the password value. In Blazor it is Func<int,int?,string>; in Flutter it is String Function(int current,int? maximum). Returned text is plain text, not HTML. Keep this formatting function pure.
+
+Counts follow each platform's existing length limit: Blazor browser maxlength and counter use UTF-16 units; Flutter uses grapheme clusters. A family emoji can therefore count as 11 in Blazor and 1 in Flutter. Counts do not promise byte counts or a shared server-side length policy. External overlong values remain visible; a counter is presentation, not additional validation.
+
+Counters update immediately for drafts (including IME), Clear, external replacement and native Flutter Form.reset. Appearance/mode changes retain text and pending debounce work. Blazor merges the counter ID into aria-describedby and exposes a polite atomic live region; Flutter retains framework counter semantics with a live text update. Physical screen-reader behavior remains unverified. Long labels can wrap; custom code should avoid announcing sensitive information.
+"""

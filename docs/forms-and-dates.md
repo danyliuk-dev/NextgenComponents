@@ -10,7 +10,7 @@ Web-first implementation on Blazor and Flutter: eleven additional controls, brin
 | NgDateRangePicker | Two date pickers, complete-pair and start/end ordering validation, endpoint disabled-date rules, read-only, named presets and atomic clear | Shared dual-calendar range highlighting |
 | NgTimePicker | Strict HH:mm, bounds, picker UI | Custom step intervals and time-list templates |
 | NgDateTimePicker | Strict yyyy-mm-dd HH:mm, bounds, picker UI | Time-zone conversion, custom formats and step intervals |
-| NgTextArea | Multiple rows, maximum length, disabled state, form integration | Auto-resizing and character-counter parity |
+| NgTextArea | Multiple rows, maximum length, disabled state, form integration, bounded autosizing and configurable counters | Native length-count differences and accessibility certification |
 | NgAutoComplete | Local suggestions, free text | Remote/async data, virtualization, templates |
 | NgComboBox | Local filtering, strict existing-option selection, disabled options, keyboard selection | Remote data, virtualization, custom item templates |
 | NgMultiSelect | Filtered options, removable chips, selection limit, disabled options | Virtualization, remote data, select-all/grouping |
@@ -130,3 +130,7 @@ TextBox and TextArea suppress delayed notifications while native text compositio
 ## Date range presets and clearing (0.58)
 
 DateRangePicker accepts ordered NgDateRangePreset descriptors with stable unique IDs, labels, complete dates and optional disabled flags. Preset activation applies both endpoints with one callback and repairs invalid drafts, including when the accepted dates are unchanged. Endpoint bounds/disabled rules and read-only/disabled state guard actions. Optional ShowClearButton/showClearButton emits null and resets both editors. Presets wrap on narrow screens. Relative periods, interior-day rules and shared calendar range highlighting remain application-owned or open; see the detailed manual.
+
+## Configurable text counters (0.59)
+
+TextBox/TextArea add native, hidden, used and remaining CounterMode/counterMode options and a pure CounterText/counterText formatter for localization. Native preserves prior presentation. Remaining requires MaxLength/maxLength; hiding never disables the limit. Draft changes, IME, clear and external values update the count immediately. Blazor uses UTF-16 units and Flutter grapheme clusters, matching their existing limits. Programmatic overflow is displayed without truncation; server validation remains application-owned. See both editor manuals for accessibility and formatting contracts.

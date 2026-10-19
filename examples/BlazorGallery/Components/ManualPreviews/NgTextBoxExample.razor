@@ -1,4 +1,5 @@
 @* Generated from scripts/manual_content.py *@
+<div class="ng-prompt-actions"><NgButton OnClick="CycleCounter">Change counter</NgButton><NgButton OnClick="()=>customCounter=!customCounter">Custom counter</NgButton><NgButton OnClick="LoadEmoji">Load emoji</NgButton><NgButton OnClick="LoadOverflow">Load over limit</NgButton></div>
 <p>IME input updates the draft immediately; notifications wait until composition ends.</p>
 <div class="ng-prompt-actions"><NgButton OnClick="CycleRounded">Change corners</NgButton><NgButton OnClick="ToggleFlat">Toggle flat fill</NgButton></div>
 <p>Corners: @rounded</p>
@@ -8,12 +9,17 @@
 <p>Size: @size · Fill: @fill</p>
 <NgButton OnClick="()=>password=!password">Toggle password mode</NgButton>
 <NgCheckBox Label="Read only" @bind-Value="locked"/>
-<NgTextBox Rounded="@rounded" DebounceDelay="delay" OnDebouncedChange="Debounced" Size="@size" FillMode="@fill" @ref="editor" Label="Project name" @bind-Value="text" ReadOnly="locked" ShowClearButton="true" Password="password" ShowPasswordToggle="true" MaxLength="80" HelperText="Use a short, descriptive name." OnCommit="v=>committed=v">
+<NgTextBox CounterMode="@counterMode" CounterText="@(customCounter?FormatCounter:null)" Rounded="@rounded" DebounceDelay="delay" OnDebouncedChange="Debounced" Size="@size" FillMode="@fill" @ref="editor" Label="Project name" @bind-Value="text" ReadOnly="locked" ShowClearButton="true" Password="password" ShowPasswordToggle="true" MaxLength="80" HelperText="Use a short, descriptive name." OnCommit="v=>committed=v">
 <PrefixTemplate><span aria-hidden="true">@@</span></PrefixTemplate>
 </NgTextBox>
 <NgButton OnClick="()=>editor!.FocusAsync().AsTask()">Focus editor</NgButton>
 <p>Length: @(text?.Length??0)</p>
 @code {
+ private string counterMode="used";private bool customCounter;
+ private string FormatCounter(int current,int? maximum)=>$"Used: {current}; limit: {maximum}";
+ private void CycleCounter()=>counterMode=counterMode=="used"?"remaining":counterMode=="remaining"?"hidden":counterMode=="hidden"?"native":"used";
+ private void LoadEmoji()=>text="👨‍👩‍👧‍👦";
+ private void LoadOverflow()=>text=new string('x',85);
  private void ToggleFlat()=>fill=fill=="flat"?"theme":"flat";
  private string rounded="theme";
  private void CycleRounded()=>rounded=rounded=="theme"?"large":rounded=="large"?"none":rounded=="none"?"small":rounded=="small"?"medium":rounded=="medium"?"full":"theme";

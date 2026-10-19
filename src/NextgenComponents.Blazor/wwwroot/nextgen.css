@@ -216,3 +216,5 @@ textarea.ng-textarea-auto{box-sizing:border-box;line-height:1.5;resize:none}
 .ng-section-toggle{font-weight:700;padding:4px 8px;gap:8px}
 
 .ng-range-presets{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0 16px}.ng-range-presets [aria-pressed=true]{outline:2px solid var(--ng-primary);outline-offset:-2px}
+
+.ng-text-counter{display:block;overflow-wrap:anywhere}.ng-text-counter[data-over-limit=true]{color:var(--ng-error)}

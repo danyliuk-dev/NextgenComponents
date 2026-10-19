@@ -68,6 +68,7 @@ Widget build(BuildContext context) => NgButton(primary: true,
 }
 class NgTextBoxExample extends StatefulWidget { const NgTextBoxExample({super.key}); @override State<NgTextBoxExample> createState()=>_NgTextBoxExampleState(); }
 class _NgTextBoxExampleState extends State<NgTextBoxExample> {
+String counterMode='used';bool customCounter=false;
 String rounded='theme';
 int delay=600,notifications=0,notifiedLength=0;
 String size='medium',fill='theme';
@@ -75,7 +76,7 @@ bool locked = false, password = true; String submitted = '';
 final editor = TextEditingController(text:'Design review');
 final focus = FocusNode();
 @override void dispose(){editor.dispose();focus.dispose();super.dispose();}
-Widget build(BuildContext context)=>Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[const Text('IME input updates the draft immediately; notifications wait until composition ends.'),
+Widget build(BuildContext context)=>Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[Wrap(spacing:8,runSpacing:8,children:[NgButton(onPressed:()=>setState(()=>counterMode=counterMode=='used'?'remaining':counterMode=='remaining'?'hidden':counterMode=='hidden'?'native':'used'),child:const Text('Change counter')),NgButton(onPressed:()=>setState(()=>customCounter=!customCounter),child:const Text('Custom counter')),NgButton(onPressed:()=>setState(()=>editor.text='👨‍👩‍👧‍👦'),child:const Text('Load emoji')),NgButton(onPressed:()=>setState(()=>editor.text='x'*85),child:const Text('Load over limit'))]),const Text('IME input updates the draft immediately; notifications wait until composition ends.'),
 Wrap(spacing:8,children:[NgButton(onPressed:()=>setState(()=>rounded=rounded=='theme'?'large':rounded=='large'?'none':rounded=='none'?'small':rounded=='small'?'medium':rounded=='medium'?'full':'theme'),child:const Text('Change corners')),NgButton(onPressed:()=>setState(()=>fill=fill=='flat'?'theme':'flat'),child:const Text('Toggle flat fill'))]),
 Text('Corners: $rounded'),
 Wrap(spacing:8,children:[NgButton(onPressed:()=>setState(()=>editor.text='External replacement'),child:const Text('Replace draft')),NgButton(onPressed:()=>setState(()=>delay=delay==600?0:600),child:const Text('Change delay'))]),
@@ -84,7 +85,7 @@ Wrap(spacing:8,children:[NgButton(onPressed:()=>setState(()=>size=size=='medium'
 Text('Size: $size · Fill: $fill'),
 NgButton(onPressed:()=>setState(()=>password=!password),child:const Text('Toggle password mode')),
 NgCheckBox(label:'Read only',value:locked,onChanged:(v)=>setState(()=>locked=v)),
-NgTextBox(rounded:rounded,debounceDelay:delay,onDebouncedChange:(v)=>setState((){notifications++;notifiedLength=v.length;}),size:size,fillMode:fill,label:'Project name',controller:editor,focusNode:focus,readOnly:locked,showClearButton:true,password:password,showPasswordToggle:true,maxLength:80,
+NgTextBox(counterMode:counterMode,counterText:customCounter?(n,m)=>'Used: $n; limit: $m':null,rounded:rounded,debounceDelay:delay,onDebouncedChange:(v)=>setState((){notifications++;notifiedLength=v.length;}),size:size,fillMode:fill,label:'Project name',controller:editor,focusNode:focus,readOnly:locked,showClearButton:true,password:password,showPasswordToggle:true,maxLength:80,
 helperText:'Use a short, descriptive name.',prefix:const Icon(Icons.edit_outlined),
 onChanged:(_)=>setState((){}),onSubmitted:(v)=>setState(()=>submitted=v)),
 NgButton(onPressed:()=>focus.requestFocus(),child:const Text('Focus editor')),
@@ -93,13 +94,14 @@ Text('Length: ${editor.text.length}')]);
 }
 class NgTextAreaExample extends StatefulWidget { const NgTextAreaExample({super.key}); @override State<NgTextAreaExample> createState()=>_NgTextAreaExampleState(); }
 class _NgTextAreaExampleState extends State<NgTextAreaExample> {
+String counterMode='used';bool customCounter=false;
 String rounded='theme';
 int delay=600,notifications=0,notifiedLength=0;
 String size='medium',fill='theme';
 bool automatic = true, locked = false;
 final editor = TextEditingController(text:'Short note');
 @override void dispose(){editor.dispose();super.dispose();}
-Widget build(BuildContext context)=>Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[const Text('IME input updates the draft immediately; notifications wait until composition ends.'),
+Widget build(BuildContext context)=>Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[Wrap(spacing:8,runSpacing:8,children:[NgButton(onPressed:()=>setState(()=>counterMode=counterMode=='used'?'remaining':counterMode=='remaining'?'hidden':counterMode=='hidden'?'native':'used'),child:const Text('Change counter')),NgButton(onPressed:()=>setState(()=>customCounter=!customCounter),child:const Text('Custom counter')),NgButton(onPressed:()=>setState(()=>editor.text='👨‍👩‍👧‍👦'),child:const Text('Load emoji')),NgButton(onPressed:()=>setState(()=>editor.text='x'*85),child:const Text('Load over limit'))]),const Text('IME input updates the draft immediately; notifications wait until composition ends.'),
 Wrap(spacing:8,children:[NgButton(onPressed:()=>setState(()=>rounded=rounded=='theme'?'large':rounded=='large'?'none':rounded=='none'?'small':rounded=='small'?'medium':rounded=='medium'?'full':'theme'),child:const Text('Change corners')),NgButton(onPressed:()=>setState(()=>fill=fill=='flat'?'theme':'flat'),child:const Text('Toggle flat fill'))]),
 Text('Corners: $rounded'),
 Wrap(spacing:8,children:[NgButton(onPressed:()=>setState(()=>editor.text='External replacement'),child:const Text('Replace draft')),NgButton(onPressed:()=>setState(()=>delay=delay==600?0:600),child:const Text('Change delay'))]),
@@ -112,7 +114,7 @@ Text('Size: $size · Fill: $fill'),
   NgButton(onPressed:()=>setState(()=>editor.text='Short note'),child:const Text('Load short text')),
  ]),
  NgCheckBox(label:'Read only',value:locked,onChanged:(v)=>setState(()=>locked=v)),
- NgTextArea(rounded:rounded,debounceDelay:delay,onDebouncedChange:(v)=>setState((){notifications++;notifiedLength=v.length;}),size:size,fillMode:fill,label:'Delivery notes',controller:editor,rows:2,maxRows:6,autoSize:automatic,
+ NgTextArea(maxLength:80,counterMode:counterMode,counterText:customCounter?(n,m)=>'Used: $n; limit: $m':null,rounded:rounded,debounceDelay:delay,onDebouncedChange:(v)=>setState((){notifications++;notifiedLength=v.length;}),size:size,fillMode:fill,label:'Delivery notes',controller:editor,rows:2,maxRows:6,autoSize:automatic,
   readOnly:locked,showClearButton:true,helperText:'Grows from 2 to 6 rows; longer notes scroll.',onChanged:(_)=>setState((){})),
  Text('Automatic height: $automatic · Length: ${editor.text.length}'),
 ]);

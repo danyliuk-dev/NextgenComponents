@@ -1,4 +1,5 @@
 @* Generated from scripts/manual_content.py *@
+<div class="ng-prompt-actions"><NgButton OnClick="CycleCounter">Change counter</NgButton><NgButton OnClick="()=>customCounter=!customCounter">Custom counter</NgButton><NgButton OnClick="LoadEmoji">Load emoji</NgButton><NgButton OnClick="LoadOverflow">Load over limit</NgButton></div>
 <p>IME input updates the draft immediately; notifications wait until composition ends.</p>
 <div class="ng-prompt-actions"><NgButton OnClick="CycleRounded">Change corners</NgButton><NgButton OnClick="ToggleFlat">Toggle flat fill</NgButton></div>
 <p>Corners: @rounded</p>
@@ -12,10 +13,15 @@
  <NgButton OnClick="LoadShort">Load short text</NgButton>
 </div>
 <NgCheckBox Label="Read only" @bind-Value="locked"/>
-<NgTextArea Rounded="@rounded" DebounceDelay="delay" OnDebouncedChange="Debounced" Size="@size" FillMode="@fill" Label="Delivery notes" @bind-Value="text" Rows="2" MaxRows="6" AutoSize="automatic"
+<NgTextArea MaxLength="80" CounterMode="@counterMode" CounterText="@(customCounter?FormatCounter:null)" Rounded="@rounded" DebounceDelay="delay" OnDebouncedChange="Debounced" Size="@size" FillMode="@fill" Label="Delivery notes" @bind-Value="text" Rows="2" MaxRows="6" AutoSize="automatic"
  ReadOnly="locked" ShowClearButton="true" HelperText="Grows from 2 to 6 rows; longer notes scroll."/>
 <p>Automatic height: @automatic · Length: @(text?.Length??0)</p>
 @code {
+ private string counterMode="used";private bool customCounter;
+ private string FormatCounter(int current,int? maximum)=>$"Used: {current}; limit: {maximum}";
+ private void CycleCounter()=>counterMode=counterMode=="used"?"remaining":counterMode=="remaining"?"hidden":counterMode=="hidden"?"native":"used";
+ private void LoadEmoji()=>text="👨‍👩‍👧‍👦";
+ private void LoadOverflow()=>text=new string('x',85);
  private void ToggleFlat()=>fill=fill=="flat"?"theme":"flat";
  private string rounded="theme";
  private void CycleRounded()=>rounded=rounded=="theme"?"large":rounded=="large"?"none":rounded=="none"?"small":rounded=="small"?"medium":rounded=="medium"?"full":"theme";

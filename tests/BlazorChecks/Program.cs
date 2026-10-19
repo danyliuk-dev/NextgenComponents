@@ -20,6 +20,12 @@ foreach(var presets in new[]{new[]{new NgDateRangePreset("","Empty",new(2026,10,
 }
 RenderFragment Text(string value) => b => b.AddContent(0, value);
 string? name = "<script>unsafe</script>";
+await Check<NgTextBox>(new(){["ValueExpression"]=(Expression<Func<string?>>)(()=>name),["Value"]="👨‍👩‍👧‍👦",["CounterMode"]="remaining",["MaxLength"]=4,["Id"]="counted",["HelperText"]="Help"},"7 over limit","data-over-limit=\"true\"","counted-help counted-count","aria-live=\"polite\"");
+await Check<NgTextArea>(new(){["ValueExpression"]=(Expression<Func<string?>>)(()=>name),["Value"]="Hi",["CounterMode"]="used"},"2 characters");
+await Check<NgTextArea>(new(){["ValueExpression"]=(Expression<Func<string?>>)(()=>name),["Value"]="Hi",["CounterMode"]="used",["CounterText"]=(Func<int,int?,string>)((n,m)=>$"<Used {n}>")},"&lt;Used 2&gt;");
+foreach(var mode in new[]{"bad","remaining"}){
+ try{await Check<NgTextBox>(new(){["ValueExpression"]=(Expression<Func<string?>>)(()=>name),["CounterMode"]=mode});throw new Exception("Invalid counter accepted");}catch(ArgumentException){count++;}
+}
 decimal? number = 5;
 bool enabled = true;
 string team = "a";

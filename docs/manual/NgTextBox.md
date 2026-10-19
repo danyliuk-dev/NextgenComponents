@@ -63,9 +63,20 @@ While an input method is composing text, debounced notifications are suppressed,
 Locks, external replacement, handler removal and disposal still cancel pending work. Clear is a new empty edit. Composition does not delay form submission or OnCommit/onSubmitted. Blazor uses a native composition observer loaded after interactive rendering; Flutter observes the editing composition range and native Web composition events (including semantics mode), while retaining TextFormField controller/reset ownership. Initial rendering does not notify. Browser automation checks native Chromium composition events and Flutter tests cover editing ranges; physical OS input methods, mobile keyboards and assistive technology certification remain separate verification.
 
 
+### Character counters (0.59)
+CounterMode/counterMode accepts native (default), hidden, used or remaining. Native preserves existing presentation: no counter in Blazor, the framework counter in Flutter when MaxLength/maxLength is set. Hidden removes only the counter; it never disables length enforcement or validation. Used displays the current count, with the maximum when present. Remaining requires a maximum, displays the remaining allowance and reports an over-limit amount for externally supplied overlong text.
+
+CounterText/counterText optionally formats the displayed text from the current count and nullable maximum. It applies only in used/remaining modes; use it for localized text. It receives counts, never the password value. In Blazor it is Func<int,int?,string>; in Flutter it is String Function(int current,int? maximum). Returned text is plain text, not HTML. Keep this formatting function pure.
+
+Counts follow each platform's existing length limit: Blazor browser maxlength and counter use UTF-16 units; Flutter uses grapheme clusters. A family emoji can therefore count as 11 in Blazor and 1 in Flutter. Counts do not promise byte counts or a shared server-side length policy. External overlong values remain visible; a counter is presentation, not additional validation.
+
+Counters update immediately for drafts (including IME), Clear, external replacement and native Flutter Form.reset. Appearance/mode changes retain text and pending debounce work. Blazor merges the counter ID into aria-describedby and exposes a polite atomic live region; Flutter retains framework counter semantics with a live text update. Physical screen-reader behavior remains unverified. Long labels can wrap; custom code should avoid announcing sensitive information.
+
+
 ## Blazor example
 
 ```razor
+<div class="ng-prompt-actions"><NgButton OnClick="CycleCounter">Change counter</NgButton><NgButton OnClick="()=>customCounter=!customCounter">Custom counter</NgButton><NgButton OnClick="LoadEmoji">Load emoji</NgButton><NgButton OnClick="LoadOverflow">Load over limit</NgButton></div>
 <p>IME input updates the draft immediately; notifications wait until composition ends.</p>
 <div class="ng-prompt-actions"><NgButton OnClick="CycleRounded">Change corners</NgButton><NgButton OnClick="ToggleFlat">Toggle flat fill</NgButton></div>
 <p>Corners: @rounded</p>
@@ -75,12 +86,17 @@ Locks, external replacement, handler removal and disposal still cancel pending w
 <p>Size: @size · Fill: @fill</p>
 <NgButton OnClick="()=>password=!password">Toggle password mode</NgButton>
 <NgCheckBox Label="Read only" @bind-Value="locked"/>
-<NgTextBox Rounded="@rounded" DebounceDelay="delay" OnDebouncedChange="Debounced" Size="@size" FillMode="@fill" @ref="editor" Label="Project name" @bind-Value="text" ReadOnly="locked" ShowClearButton="true" Password="password" ShowPasswordToggle="true" MaxLength="80" HelperText="Use a short, descriptive name." OnCommit="v=>committed=v">
+<NgTextBox CounterMode="@counterMode" CounterText="@(customCounter?FormatCounter:null)" Rounded="@rounded" DebounceDelay="delay" OnDebouncedChange="Debounced" Size="@size" FillMode="@fill" @ref="editor" Label="Project name" @bind-Value="text" ReadOnly="locked" ShowClearButton="true" Password="password" ShowPasswordToggle="true" MaxLength="80" HelperText="Use a short, descriptive name." OnCommit="v=>committed=v">
 <PrefixTemplate><span aria-hidden="true">@@</span></PrefixTemplate>
 </NgTextBox>
 <NgButton OnClick="()=>editor!.FocusAsync().AsTask()">Focus editor</NgButton>
 <p>Length: @(text?.Length??0)</p>
 @code {
+ private string counterMode="used";private bool customCounter;
+ private string FormatCounter(int current,int? maximum)=>$"Used: {current}; limit: {maximum}";
+ private void CycleCounter()=>counterMode=counterMode=="used"?"remaining":counterMode=="remaining"?"hidden":counterMode=="hidden"?"native":"used";
+ private void LoadEmoji()=>text="👨‍👩‍👧‍👦";
+ private void LoadOverflow()=>text=new string('x',85);
  private void ToggleFlat()=>fill=fill=="flat"?"theme":"flat";
  private string rounded="theme";
  private void CycleRounded()=>rounded=rounded=="theme"?"large":rounded=="large"?"none":rounded=="none"?"small":rounded=="small"?"medium":rounded=="medium"?"full":"theme";
@@ -96,6 +112,7 @@ Locks, external replacement, handler removal and disposal still cancel pending w
 ## Flutter example
 
 ```dart
+String counterMode='used';bool customCounter=false;
 String rounded='theme';
 int delay=600,notifications=0,notifiedLength=0;
 String size='medium',fill='theme';
@@ -103,7 +120,7 @@ bool locked = false, password = true; String submitted = '';
 final editor = TextEditingController(text:'Design review');
 final focus = FocusNode();
 @override void dispose(){editor.dispose();focus.dispose();super.dispose();}
-Widget build(BuildContext context)=>Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[const Text('IME input updates the draft immediately; notifications wait until composition ends.'),
+Widget build(BuildContext context)=>Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[Wrap(spacing:8,runSpacing:8,children:[NgButton(onPressed:()=>setState(()=>counterMode=counterMode=='used'?'remaining':counterMode=='remaining'?'hidden':counterMode=='hidden'?'native':'used'),child:const Text('Change counter')),NgButton(onPressed:()=>setState(()=>customCounter=!customCounter),child:const Text('Custom counter')),NgButton(onPressed:()=>setState(()=>editor.text='👨‍👩‍👧‍👦'),child:const Text('Load emoji')),NgButton(onPressed:()=>setState(()=>editor.text='x'*85),child:const Text('Load over limit'))]),const Text('IME input updates the draft immediately; notifications wait until composition ends.'),
 Wrap(spacing:8,children:[NgButton(onPressed:()=>setState(()=>rounded=rounded=='theme'?'large':rounded=='large'?'none':rounded=='none'?'small':rounded=='small'?'medium':rounded=='medium'?'full':'theme'),child:const Text('Change corners')),NgButton(onPressed:()=>setState(()=>fill=fill=='flat'?'theme':'flat'),child:const Text('Toggle flat fill'))]),
 Text('Corners: $rounded'),
 Wrap(spacing:8,children:[NgButton(onPressed:()=>setState(()=>editor.text='External replacement'),child:const Text('Replace draft')),NgButton(onPressed:()=>setState(()=>delay=delay==600?0:600),child:const Text('Change delay'))]),
@@ -112,7 +129,7 @@ Wrap(spacing:8,children:[NgButton(onPressed:()=>setState(()=>size=size=='medium'
 Text('Size: $size · Fill: $fill'),
 NgButton(onPressed:()=>setState(()=>password=!password),child:const Text('Toggle password mode')),
 NgCheckBox(label:'Read only',value:locked,onChanged:(v)=>setState(()=>locked=v)),
-NgTextBox(rounded:rounded,debounceDelay:delay,onDebouncedChange:(v)=>setState((){notifications++;notifiedLength=v.length;}),size:size,fillMode:fill,label:'Project name',controller:editor,focusNode:focus,readOnly:locked,showClearButton:true,password:password,showPasswordToggle:true,maxLength:80,
+NgTextBox(counterMode:counterMode,counterText:customCounter?(n,m)=>'Used: $n; limit: $m':null,rounded:rounded,debounceDelay:delay,onDebouncedChange:(v)=>setState((){notifications++;notifiedLength=v.length;}),size:size,fillMode:fill,label:'Project name',controller:editor,focusNode:focus,readOnly:locked,showClearButton:true,password:password,showPasswordToggle:true,maxLength:80,
 helperText:'Use a short, descriptive name.',prefix:const Icon(Icons.edit_outlined),
 onChanged:(_)=>setState((){}),onSubmitted:(v)=>setState(()=>submitted=v)),
 NgButton(onPressed:()=>focus.requestFocus(),child:const Text('Focus editor')),
@@ -126,6 +143,8 @@ Names are case-sensitive. `?` permits null. `EditorRequired` parameters are mark
 
 | Parameter | Type | Default / requirement | Purpose |
 |---|---|---|---|
+| `CounterMode` | `string` | "native" | native (default), hidden, used or remaining; remaining requires a maximum. |
+| `CounterText` | `Func<int,int?,string>?` | not set | Optional plain-text formatter receiving current count and nullable maximum; used/remaining only. |
 | `Id` | `string` | "ng-"+Guid.NewGuid().ToString("N") | See the behavior rules and model contract above. |
 | `Label` | `string` | "" | Visible label or accessible name. |
 | `Size` | `string` | "medium" | See the behavior rules and model contract above. |
@@ -156,6 +175,8 @@ Names are case-sensitive. `?` permits null. `EditorRequired` parameters are mark
 | Argument | Type | Purpose |
 |---|---|---|
 | `label` | `String` | Visible label or accessible name. |
+| `counterMode` | `String` | native (default), hidden, used or remaining; remaining requires a maximum. |
+| `counterText` | `String Function(int current, int? maximum)?` | Optional plain-text formatter receiving current count and nullable maximum; used/remaining only. |
 | `debounceDelay` | `int` | See the behavior rules and model contract above. |
 | `onDebouncedChange` | `ValueChanged<String>?` | See the behavior rules and model contract above. |
 | `size` | `String` | See the behavior rules and model contract above. |
@@ -182,6 +203,8 @@ Names are case-sensitive. `?` permits null. `EditorRequired` parameters are mark
 const NgTextBox({
     super.key,
     required this.label,
+    this.counterMode = 'native',
+    this.counterText,
     this.size = 'medium',
     this.fillMode = 'theme',
     this.rounded = 'theme',

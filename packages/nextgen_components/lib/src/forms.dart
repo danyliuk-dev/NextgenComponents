@@ -5,6 +5,8 @@ import 'components.dart';
 
 class NgTextArea extends StatelessWidget {
   final String label;
+  final String counterMode;
+  final String Function(int current, int? maximum)? counterText;
   final int debounceDelay;
   final ValueChanged<String>? onDebouncedChange;
   final String size, fillMode, rounded;
@@ -24,6 +26,8 @@ class NgTextArea extends StatelessWidget {
   const NgTextArea({
     super.key,
     this.label = 'Notes',
+    this.counterMode = 'native',
+    this.counterText,
     this.size = 'medium',
     this.fillMode = 'theme',
     this.rounded = 'theme',
@@ -60,6 +64,8 @@ class NgTextArea extends StatelessWidget {
       );
     return NextgenTextEditor(
       label: label,
+      counterMode: counterMode,
+      counterText: counterText,
       debounceDelay: debounceDelay,
       onDebouncedChange: onDebouncedChange,
       size: size,

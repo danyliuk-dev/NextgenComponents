@@ -9,8 +9,14 @@
 @if(SuffixTemplate is not null){<span class="ng-input-adornment">@SuffixTemplate</span>}
 </div>
 @if(!string.IsNullOrEmpty(HelperText)){<small id="@(Id+"-help")">@HelperText</small>}
+@if(HasCounter){<small id="@(Id+"-count")" class="ng-text-counter" data-over-limit="@(MaxLength is not null&&Count>MaxLength?"true":"false")" aria-live="polite" aria-atomic="true">@CountText</small>}
 </div>
 @code {
+ [Parameter] public string CounterMode {get;set;}="native";
+ [Parameter] public Func<int,int?,string>? CounterText {get;set;}
+ private bool HasCounter=>CounterMode is "used" or "remaining";
+ private int Count=>(CurrentValueAsString??"").Length;
+ private string CountText=>CounterText?.Invoke(Count,MaxLength)??(CounterMode=="remaining"?(Count>MaxLength?$"{Count-MaxLength} over limit":$"{MaxLength-Count} remaining"):MaxLength is null?(Count==1?"1 character":$"{Count} characters"):$"{Count} / {MaxLength}");
  [Parameter] public string Id {get;set;}="ng-"+Guid.NewGuid().ToString("N");
  [Parameter] public string Label {get;set;}="Notes";
  [Parameter] public string Size {get;set;}="medium";
@@ -63,9 +69,9 @@
  private bool disposed;
 
  private ElementReference element;
- private string? DescriptionIds=>string.Join(" ",new[]{AdditionalAttributes?.GetValueOrDefault("aria-describedby")?.ToString(),string.IsNullOrEmpty(HelperText)?null:Id+"-help"}.Where(s=>!string.IsNullOrWhiteSpace(s)));
+ private string? DescriptionIds=>string.Join(" ",new[]{AdditionalAttributes?.GetValueOrDefault("aria-describedby")?.ToString(),string.IsNullOrEmpty(HelperText)?null:Id+"-help",HasCounter?Id+"-count":null}.Where(s=>!string.IsNullOrWhiteSpace(s)));
  public ValueTask FocusAsync()=>element.FocusAsync();
- protected override void OnParametersSet(){base.OnParametersSet();if(DebounceDelay is <0 or >60000)throw new ArgumentOutOfRangeException(nameof(DebounceDelay));if(debounce is not null&&(Disabled||ReadOnly||!OnDebouncedChange.HasDelegate||CurrentValue!=pendingValue||DebounceDelay!=pendingDelay))CancelDebounce();if(Size is not ("small" or "medium" or "large"))throw new ArgumentException("Use small, medium or large.",nameof(Size));if(FillMode is not ("theme" or "outline" or "filled" or "flat"))throw new ArgumentException("Use theme, outline, filled or flat.",nameof(FillMode));if(Rounded is not ("theme" or "none" or "small" or "medium" or "large" or "full"))throw new ArgumentException("Use theme, none, small, medium, large or full.",nameof(Rounded));if(MaxLength is <=0)throw new ArgumentOutOfRangeException(nameof(MaxLength));if(Rows is <1 or >30)throw new ArgumentOutOfRangeException(nameof(Rows));if(MaxRows is <1 or >30||(AutoSize&&MaxRows<Rows))throw new ArgumentOutOfRangeException(nameof(MaxRows),"Use 1–30 maximum rows, at least Rows when AutoSize is enabled.");}
+ protected override void OnParametersSet(){base.OnParametersSet();if(CounterMode is not ("native" or "hidden" or "used" or "remaining"))throw new ArgumentException("Use native, hidden, used or remaining.",nameof(CounterMode));if(CounterMode=="remaining"&&MaxLength is null)throw new ArgumentException("Remaining count requires MaxLength.",nameof(MaxLength));if(DebounceDelay is <0 or >60000)throw new ArgumentOutOfRangeException(nameof(DebounceDelay));if(debounce is not null&&(Disabled||ReadOnly||!OnDebouncedChange.HasDelegate||CurrentValue!=pendingValue||DebounceDelay!=pendingDelay))CancelDebounce();if(Size is not ("small" or "medium" or "large"))throw new ArgumentException("Use small, medium or large.",nameof(Size));if(FillMode is not ("theme" or "outline" or "filled" or "flat"))throw new ArgumentException("Use theme, outline, filled or flat.",nameof(FillMode));if(Rounded is not ("theme" or "none" or "small" or "medium" or "large" or "full"))throw new ArgumentException("Use theme, none, small, medium, large or full.",nameof(Rounded));if(MaxLength is <=0)throw new ArgumentOutOfRangeException(nameof(MaxLength));if(Rows is <1 or >30)throw new ArgumentOutOfRangeException(nameof(Rows));if(MaxRows is <1 or >30||(AutoSize&&MaxRows<Rows))throw new ArgumentOutOfRangeException(nameof(MaxRows),"Use 1–30 maximum rows, at least Rows when AutoSize is enabled.");}
  protected override async Task OnAfterRenderAsync(bool firstRender){
   if(disposed)return;
   if(OnDebouncedChange.HasDelegate)await (composition??=new(JS,CompositionChanged)).AttachAsync(element);

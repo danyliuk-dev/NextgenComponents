@@ -817,3 +817,20 @@ Validation completed:
 Evidence: [Blazor narrow](screenshots/range058-blazor-narrow.png), [Flutter narrow](screenshots/range058-flutter-narrow.png), [desktop manual](screenshots/range058-desktop-manual.png).
 
 Preset/clear resets close pickers and discard inner editor focus/selection. Date restrictions apply to endpoints, not interior days. Shared dual-calendar highlighting, relative-date engines, physical native targets and full accessibility certification remain open. Full Telerik API/pixel parity is not claimed.
+
+## Configurable text counters — 0.59 (2026-10-19, Linux on iMac)
+
+TextBox and TextArea add native/hidden/used/remaining modes and a plain-text count formatter. Native preserves existing platform defaults. Remaining requires a maximum; hidden never disables length enforcement. Counters follow draft updates, IME, clear, external replacement and native Flutter reset. Blazor counts UTF-16 units; Flutter counts grapheme clusters. Externally supplied overflow remains visible and is reported without truncation.
+
+Validation completed:
+
+- 410 Blazor rendering/data checks and a gallery build with zero warnings/errors. New checks cover Unicode overflow, helper/counter description IDs, polite live regions, escaped custom labels and invalid configurations.
+- 247 Flutter tests and clean Dart analysis. Counter tests cover modes, composed emoji/combining marks, overflow, formatter updates, readonly replacement, hidden length enforcement, clear, unlimited counts and framework-owned form reset. The 12 counter/IME/debounce tests were rerun after the semantics correction.
+- 47 Razor and 47 Dart manual examples compiled/analyzed; 94 highlighting checks. Flutter Web build passed with the existing CupertinoIcons font warning.
+- Foreground local Chrome: 40 Blazor and 38 Flutter assertions (78 total), using native clicks after scroll settling. Verified Unicode differences, external overflow, custom/hidden/native counters, immediate clear/input updates, pending notifications across mode changes, native IME composition, readonly external replacement, hidden length enforcement and 390 px layout.
+- Browser review found that a nested Flutter live-region wrapper lost its accessible counter text after focus. The implementation now uses TextField's own counter semantics; focused semantic-label widget checks and browser checks pass. Physical screen-reader output remains unverified.
+- Desktop shell verified the 0.59 badge, counter manual and embedded live counter. Both narrow editor screenshots and the desktop screenshot were inspected directly.
+
+Evidence: [Blazor counter](screenshots/count059-blazor.png), [Flutter counter](screenshots/count059-flutter.png), [desktop manual](screenshots/count059-desktop-manual.png).
+
+Counter formatting receives counts rather than password text and must remain pure. Counters do not define a shared server length policy or add validation. Native targets and physical accessibility certification remain separate work; full Telerik API/pixel parity is not claimed.

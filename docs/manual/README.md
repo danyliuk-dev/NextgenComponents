@@ -1,6 +1,6 @@
 # Nextgen Components manual
 
-Version 0.58.0. Detailed guidance for every public Blazor and Flutter Web component. This documents the implemented API, not full Telerik feature parity.
+Version 0.59.0. Detailed guidance for every public Blazor and Flutter Web component. This documents the implemented API, not full Telerik feature parity.
 
 Start with [Getting started](getting-started.md) and [Code examples](code-examples.md). See [data models and formulas](models.md) for shared model contracts and [verification](../verification.md) for tested behavior.
 

@@ -7,6 +7,8 @@ import 'text_composition_stub.dart'
 // Internal shared implementation; TextBox and TextArea retain their public APIs.
 class NextgenTextEditor extends StatefulWidget {
   final String label;
+  final String counterMode;
+  final String Function(int current, int? maximum)? counterText;
   final int debounceDelay;
   final ValueChanged<String>? onDebouncedChange;
   final String size, fillMode, rounded;
@@ -24,6 +26,8 @@ class NextgenTextEditor extends StatefulWidget {
   const NextgenTextEditor({
     super.key,
     required this.label,
+    this.counterMode = 'native',
+    this.counterText,
     this.size = 'medium',
     this.fillMode = 'theme',
     this.rounded = 'theme',
@@ -232,6 +236,10 @@ class _NextgenTextEditorState extends State<NextgenTextEditor> {
     ].contains(widget.rounded)) {
       throw ArgumentError('Use theme, none, small, medium, large or full.');
     }
+    if (!['native', 'hidden', 'used', 'remaining'].contains(widget.counterMode))
+      throw ArgumentError('Use native, hidden, used or remaining.');
+    if (widget.counterMode == 'remaining' && widget.maxLength == null)
+      throw ArgumentError('Remaining count requires maxLength.');
     final decorationTheme = Theme.of(context).inputDecorationTheme;
     final radius = BorderRadius.circular(switch (widget.rounded) {
       'none' => 0,
@@ -316,6 +324,35 @@ class _NextgenTextEditorState extends State<NextgenTextEditor> {
         },
         validator: widget.validator,
         maxLength: widget.maxLength,
+        buildCounter: widget.counterMode == 'native'
+            ? null
+            : (
+                context, {
+                required currentLength,
+                required isFocused,
+                required maxLength,
+              }) {
+                if (widget.counterMode == 'hidden') return null;
+                final over = maxLength != null && currentLength > maxLength;
+                final label =
+                    widget.counterText?.call(currentLength, maxLength) ??
+                    (widget.counterMode == 'remaining'
+                        ? (over
+                              ? '${currentLength - maxLength} over limit'
+                              : '${maxLength! - currentLength} remaining')
+                        : maxLength == null
+                        ? (currentLength == 1
+                              ? '1 character'
+                              : '$currentLength characters')
+                        : '$currentLength / $maxLength');
+                // TextField supplies the counter's semantics/live region.
+                return Text(
+                  label,
+                  style: TextStyle(
+                    color: over ? Theme.of(context).colorScheme.error : null,
+                  ),
+                );
+              },
         enabled: widget.enabled,
         readOnly: widget.readOnly,
         minLines: widget.multiline ? widget.rows : null,
