@@ -288,6 +288,7 @@ final rows = [(id: 'a', name: 'Desk', count: 12), (id: 'b', name: 'Chair', count
 Set<String> selected = {};
 Widget build(BuildContext context) => NgDataGrid<({String id, String name, int count})>(
   items: rows, rowId: (r) => r.id, selectedIds: selected,
+  canSelect: (r) => r.count < 100, pageSizes: const [5, 10, 20],
   onSelectionChanged: (v) => setState(() => selected = v),
   columns: [NgDataColumn('name','Name',(r) => r.name),
     NgDataColumn('count','Quantity',(r) => r.count)]);

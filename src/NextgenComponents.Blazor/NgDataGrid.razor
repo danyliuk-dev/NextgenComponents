@@ -3,18 +3,18 @@
 <div class="ng-data-toolbar"><label class="ng-field">Search @Label<input class="ng-input" aria-label="@($"Search {Label}")" value="@search" @oninput="Search" /></label><span role="status">@SelectedIds.Count selected</span>@Toolbar</div>
 <div class="ng-table-scroll" tabindex="0" aria-label="@($"{Label} table scroll area")">
 <table class="ng-data-table"><caption class="ng-sr-only">@Label</caption><thead><tr>
-@if(Selectable){<th scope="col"><input type="checkbox" aria-label="Select page" checked="@(Visible.Count>0 && Visible.All(x=>SelectedIds.Contains(RowId(x))))" disabled="@(Visible.Count==0)" @onchange="SelectPage" /></th>}
+@if(Selectable){<th scope="col"><input type="checkbox" aria-label="Select page" checked="@(Eligible.Count>0 && Eligible.All(x=>SelectedIds.Contains(RowId(x))))" disabled="@(Eligible.Count==0 || SelectionReadOnly || !SelectedIdsChanged.HasDelegate)" aria-checked="@(Eligible.Any(x=>SelectedIds.Contains(RowId(x))) && !Eligible.All(x=>SelectedIds.Contains(RowId(x)))?"mixed":null)" @onchange="SelectPage" /></th>}
 @foreach(var column in Columns){<th scope="col" aria-sort="@(sortKey==column.Key?(descending?"descending":"ascending"):"none")">@if(column.Sortable){<button type="button" @onclick="()=>Sort(column.Key)">@column.Title @(sortKey==column.Key?(descending?"↓":"↑"):"↕")</button>}else{@column.Title}</th>}
 @if(RowActions is not null){<th scope="col">Actions</th>}
 </tr></thead><tbody>
-@if(Visible.Count==0){<tr><td colspan="@(Columns.Count+(Selectable?1:0)+(RowActions is null?0:1))" class="ng-empty">@EmptyText</td></tr>}
+@if(Visible.Count==0){<tr><td colspan="@(Columns.Count+(Selectable?1:0)+(RowActions is null?0:1))" class="ng-empty">@if(EmptyTemplate is not null){@EmptyTemplate}else{@EmptyText}</td></tr>}
 @foreach(var row in Visible){var id=RowId(row);<tr @key="id" class="@(SelectedIds.Contains(id)?"ng-row-selected":"")">
-@if(Selectable){<td><input type="checkbox" aria-label="@($"Select {id}")" checked="@SelectedIds.Contains(id)" @onchange="()=>Toggle(id)" /></td>}
+@if(Selectable){<td><input type="checkbox" aria-label="@($"Select {id}")" checked="@SelectedIds.Contains(id)" disabled="@(!CanChange(row))" @onchange="()=>Toggle(row)" /></td>}
 @foreach(var column in Columns){<td>@if(column.Template is not null){@column.Template(row)}else{@column.Text(row)}</td>}
 @if(RowActions is not null){<td>@RowActions(row)</td>}
 </tr>}
 </tbody></table></div>
-<NgPager Total="filtered.Count" Page="page" PageChanged="v=>page=v" PageSize="size" PageSizeChanged="Resize" />
+<NgPager Total="filtered.Count" Page="page" PageChanged="v=>page=v" PageSize="size" PageSizeChanged="Resize" Sizes="PageSizes" />
 </div>
 @code {
  [Parameter,EditorRequired] public IReadOnlyList<TItem> Items{get;set;}=[];
@@ -22,12 +22,18 @@
  [Parameter,EditorRequired] public Func<TItem,string> RowId{get;set;}=default!;
  [Parameter] public string Label{get;set;}="Records";
  [Parameter] public string EmptyText{get;set;}="No matching records.";
+ [Parameter] public Func<TItem,bool>? CanSelect{get;set;}
+ [Parameter] public bool SelectionReadOnly{get;set;}
+ [Parameter] public RenderFragment? EmptyTemplate{get;set;}
+ [Parameter] public IReadOnlyList<int> PageSizes{get;set;}=[5,10,25,50];
  [Parameter] public bool Selectable{get;set;}=true;
  [Parameter] public HashSet<string> SelectedIds{get;set;}=[];
  [Parameter] public EventCallback<HashSet<string>> SelectedIdsChanged{get;set;}
  [Parameter] public RenderFragment? Toolbar{get;set;}
  [Parameter] public RenderFragment<TItem>? RowActions{get;set;}
  [Parameter] public int InitialPageSize{get;set;}=5;
+ private bool CanChange(TItem row)=>Selectable && !SelectionReadOnly && SelectedIdsChanged.HasDelegate && (CanSelect?.Invoke(row)??true);
+ private IReadOnlyList<TItem> Eligible=>Visible.Where(x=>CanSelect?.Invoke(x)??true).ToArray();
  private string search="";
  private string? sortKey;
  private bool descending;
@@ -35,11 +41,11 @@
  private IReadOnlyList<TItem> filtered=[];
  private IReadOnlyList<TItem> Visible=>filtered.Skip((page-1)*size).Take(size).ToArray();
  protected override void OnInitialized()=>size=Math.Max(1,InitialPageSize);
- protected override void OnParametersSet(){if(Items.Select(RowId).Distinct().Count()!=Items.Count)throw new ArgumentException("Grid row IDs must be unique.");Refresh();}
+ protected override void OnParametersSet(){if(Items.Any(x=>string.IsNullOrWhiteSpace(RowId(x))) || Items.Select(RowId).Distinct().Count()!=Items.Count)throw new ArgumentException("Grid row IDs must be nonempty and unique.");if(Columns.Count==0 || Columns.Any(x=>string.IsNullOrWhiteSpace(x.Key)) || Columns.Select(x=>x.Key).Distinct().Count()!=Columns.Count)throw new ArgumentException("Grid column keys must be nonempty and unique, with at least one column.");if(!Columns.Any(x=>x.Key==sortKey))sortKey=null;Refresh();}
  private void Refresh(){filtered=NgDataOperations.Query(Items,Columns,search,sortKey,descending);page=NgDataOperations.ClampPage(page,filtered.Count,size);}
  private void Search(ChangeEventArgs e){search=e.Value?.ToString()??"";page=1;Refresh();}
  private void Sort(string key){descending=sortKey==key && !descending;sortKey=key;Refresh();}
  private void Resize(int value){size=value;page=1;Refresh();}
- private async Task Toggle(string id){var next=new HashSet<string>(SelectedIds);if(!next.Add(id))next.Remove(id);SelectedIds=next;await SelectedIdsChanged.InvokeAsync(next);}
- private async Task SelectPage(){var next=new HashSet<string>(SelectedIds);var remove=Visible.All(x=>next.Contains(RowId(x)));foreach(var row in Visible){if(remove)next.Remove(RowId(row));else next.Add(RowId(row));}SelectedIds=next;await SelectedIdsChanged.InvokeAsync(next);}
+ private async Task Toggle(TItem row){var matches=Items.Where(x=>RowId(x)==RowId(row)).ToArray();if(matches.Length==0 || !CanChange(matches[0]))return;var id=RowId(row);var next=new HashSet<string>(SelectedIds);if(!next.Add(id))next.Remove(id);await SelectedIdsChanged.InvokeAsync(next);}
+ private async Task SelectPage(){if(!Selectable || SelectionReadOnly || !SelectedIdsChanged.HasDelegate || Eligible.Count==0)return;var next=new HashSet<string>(SelectedIds);var remove=Eligible.All(x=>next.Contains(RowId(x)));foreach(var row in Eligible){if(remove)next.Remove(RowId(row));else next.Add(RowId(row));}await SelectedIdsChanged.InvokeAsync(next);}
 }

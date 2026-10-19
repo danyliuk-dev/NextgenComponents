@@ -1,5 +1,5 @@
 <nav class="ng-pager" aria-label="@Label">
-<span role="status">@(Total==0?0:(Current-1)*Size+1)–@Math.Min(Current*Size,Math.Max(0,Total)) of @Math.Max(0,Total)</span>
+<span role="status">@(Total==0?0:(long)(Current-1)*Size+1)–@Math.Min((long)Current*Size,Math.Max(0,Total)) of @Math.Max(0,Total)</span>
 <div class="ng-pager-buttons">
 <NgButton Disabled="@(Disabled || Current==1)" OnClick="()=>Go(1)" aria-label="First page">«</NgButton>
 <NgButton Disabled="@(Disabled || Current==1)" OnClick="()=>Go(Current-1)" aria-label="Previous page">‹</NgButton>
@@ -21,6 +21,6 @@
  private int Size=>Math.Max(1,PageSize);
  private int Count=>NgDataOperations.PageCount(Total,Size);
  private int Current=>NgDataOperations.ClampPage(Page,Total,Size);
- private Task Go(int page)=>PageChanged.InvokeAsync(NgDataOperations.ClampPage(page,Total,Size));
- private async Task Resize(ChangeEventArgs e){if(int.TryParse(e.Value?.ToString(),out var size)&&size>0){await PageSizeChanged.InvokeAsync(size);await PageChanged.InvokeAsync(1);}}
+ private Task Go(int page)=>Disabled?Task.CompletedTask:PageChanged.InvokeAsync(NgDataOperations.ClampPage(page,Total,Size));
+ private async Task Resize(ChangeEventArgs e){if(!Disabled && int.TryParse(e.Value?.ToString(),out var size)&&size>0){await PageSizeChanged.InvokeAsync(size);await PageChanged.InvokeAsync(1);}}
 }

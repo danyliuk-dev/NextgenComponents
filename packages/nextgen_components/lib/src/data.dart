@@ -283,7 +283,10 @@ class NgDataGrid<T> extends StatefulWidget {
   final Set<String> selectedIds;
   final ValueChanged<Set<String>>? onSelectionChanged;
   final Widget Function(BuildContext, T)? rowActions;
-  final Widget? toolbar;
+  final Widget? toolbar, emptyBuilder;
+  final bool selectionReadOnly;
+  final bool Function(T)? canSelect;
+  final List<int> pageSizes;
   final String label, emptyText;
   final int initialPageSize;
   const NgDataGrid({
@@ -295,6 +298,10 @@ class NgDataGrid<T> extends StatefulWidget {
     this.onSelectionChanged,
     this.rowActions,
     this.toolbar,
+    this.emptyBuilder,
+    this.selectionReadOnly = false,
+    this.canSelect,
+    this.pageSizes = const [5, 10, 25, 50],
     this.label = 'Records',
     this.emptyText = 'No matching records.',
     this.initialPageSize = 5,
@@ -315,10 +322,34 @@ class _NgDataGridState<T> extends State<NgDataGrid<T>> {
     size = widget.initialPageSize < 1 ? 1 : widget.initialPageSize;
   }
 
+  bool canChange(T row) =>
+      !widget.selectionReadOnly &&
+      widget.onSelectionChanged != null &&
+      (widget.canSelect?.call(row) ?? true);
+  void selectRow(T row) {
+    if (!mounted) return;
+    final matches = widget.items.where(
+      (item) => widget.rowId(item) == widget.rowId(row),
+    );
+    if (matches.isEmpty || !canChange(matches.first)) return;
+    final next = {...widget.selectedIds};
+    if (!next.add(widget.rowId(row))) next.remove(widget.rowId(row));
+    widget.onSelectionChanged!(next);
+  }
+
   @override
   Widget build(BuildContext context) {
-    if (widget.items.map(widget.rowId).toSet().length != widget.items.length)
-      throw ArgumentError('Grid row IDs must be unique.');
+    if (widget.items.any((row) => widget.rowId(row).trim().isEmpty) ||
+        widget.items.map(widget.rowId).toSet().length != widget.items.length)
+      throw ArgumentError('Grid row IDs must be nonempty and unique.');
+    if (widget.columns.isEmpty ||
+        widget.columns.any((c) => c.key.trim().isEmpty) ||
+        widget.columns.map((c) => c.key).toSet().length !=
+            widget.columns.length)
+      throw ArgumentError(
+        'Grid column keys must be nonempty and unique, with at least one column.',
+      );
+    if (!widget.columns.any((c) => c.key == sortKey)) sortKey = null;
     final rows = NgDataOperations.query(
       widget.items,
       widget.columns,
@@ -328,6 +359,13 @@ class _NgDataGridState<T> extends State<NgDataGrid<T>> {
     );
     page = NgDataOperations.clampPage(page, rows.length, size);
     final visible = rows.skip((page - 1) * size).take(size).toList();
+    final eligible = visible
+        .where((row) => widget.canSelect?.call(row) ?? true)
+        .toList();
+    final selectionVisible = widget.onSelectionChanged != null;
+    final selectedCount = eligible
+        .where((row) => widget.selectedIds.contains(widget.rowId(row)))
+        .length;
     final sortIndex = widget.columns.indexWhere((c) => c.key == sortKey);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -369,24 +407,75 @@ class _NgDataGridState<T> extends State<NgDataGrid<T>> {
                 key: ValueKey(
                   '$sortKey:$descending:$page:$search:${visible.map(widget.rowId).join(',')}',
                 ),
-                sortColumnIndex: sortIndex < 0 ? null : sortIndex,
-                sortAscending: !descending,
-                showCheckboxColumn: widget.onSelectionChanged != null,
-                columnSpacing: 24,
-                onSelectAll: widget.onSelectionChanged == null
+                sortColumnIndex: sortIndex < 0
                     ? null
-                    : (select) {
-                        final next = {...widget.selectedIds};
-                        for (final row in visible) {
-                          if (select == true) {
-                            next.add(widget.rowId(row));
-                          } else {
-                            next.remove(widget.rowId(row));
-                          }
-                        }
-                        widget.onSelectionChanged!(next);
-                      },
+                    : sortIndex + (selectionVisible ? 1 : 0),
+                sortAscending: !descending,
+                showCheckboxColumn: false,
+                columnSpacing: 24,
                 columns: [
+                  if (selectionVisible)
+                    DataColumn(
+                      label: Semantics(
+                        label:
+                            selectedCount > 0 && selectedCount < eligible.length
+                            ? 'Select page (partially selected)'
+                            : 'Select page',
+                        container: true,
+                        child: Checkbox(
+                          tristate: true,
+                          value: selectedCount == 0
+                              ? false
+                              : selectedCount == eligible.length
+                              ? true
+                              : null,
+                          onChanged:
+                              widget.selectionReadOnly || eligible.isEmpty
+                              ? null
+                              : (_) {
+                                  if (!mounted ||
+                                      widget.selectionReadOnly ||
+                                      widget.onSelectionChanged == null)
+                                    return;
+                                  final latest = NgDataOperations.query(
+                                    widget.items,
+                                    widget.columns,
+                                    search,
+                                    sortKey,
+                                    descending,
+                                  );
+                                  final current = latest
+                                      .skip(
+                                        (NgDataOperations.clampPage(
+                                                  page,
+                                                  latest.length,
+                                                  size,
+                                                ) -
+                                                1) *
+                                            size,
+                                      )
+                                      .take(size)
+                                      .where(canChange)
+                                      .toList();
+                                  if (current.isEmpty) return;
+                                  final remove = current.every(
+                                    (row) => widget.selectedIds.contains(
+                                      widget.rowId(row),
+                                    ),
+                                  );
+                                  final next = {...widget.selectedIds};
+                                  for (final row in current) {
+                                    if (remove) {
+                                      next.remove(widget.rowId(row));
+                                    } else {
+                                      next.add(widget.rowId(row));
+                                    }
+                                  }
+                                  widget.onSelectionChanged!(next);
+                                },
+                        ),
+                      ),
+                    ),
                   for (final column in widget.columns)
                     DataColumn(
                       label: Text(column.title),
@@ -405,15 +494,24 @@ class _NgDataGridState<T> extends State<NgDataGrid<T>> {
                     DataRow(
                       key: ValueKey(widget.rowId(row)),
                       selected: widget.selectedIds.contains(widget.rowId(row)),
-                      onSelectChanged: widget.onSelectionChanged == null
-                          ? null
-                          : (v) {
-                              final next = {...widget.selectedIds};
-                              if (!next.add(widget.rowId(row)))
-                                next.remove(widget.rowId(row));
-                              widget.onSelectionChanged!(next);
-                            },
+                      onSelectChanged: canChange(row)
+                          ? (_) => selectRow(row)
+                          : null,
                       cells: [
+                        if (selectionVisible)
+                          DataCell(
+                            Semantics(
+                              label: 'Select ${widget.rowId(row)}',
+                              child: Checkbox(
+                                value: widget.selectedIds.contains(
+                                  widget.rowId(row),
+                                ),
+                                onChanged: canChange(row)
+                                    ? (_) => selectRow(row)
+                                    : null,
+                              ),
+                            ),
+                          ),
                         for (final column in widget.columns)
                           DataCell(
                             column.cellBuilder?.call(context, row) ??
@@ -431,12 +529,13 @@ class _NgDataGridState<T> extends State<NgDataGrid<T>> {
         if (rows.isEmpty)
           Padding(
             padding: const EdgeInsets.all(24),
-            child: Text(widget.emptyText),
+            child: widget.emptyBuilder ?? Text(widget.emptyText),
           ),
         NgPager(
           total: rows.length,
           page: page,
           pageSize: size,
+          sizes: widget.pageSizes,
           onPageChanged: (v) => setState(() => page = v),
           onPageSizeChanged: (v) => setState(() {
             size = v;

@@ -4,16 +4,17 @@
 <PageTitle>Nextgen • Data workspace</PageTitle>
 <div class="ng-scope gallery" data-ng-theme="@(dark?"dark":"light")" data-ng-density="@(compact?"compact":"normal")"><main>
 <nav><a href="/code-examples">Code examples</a><strong><span class="brand-icon">N</span> NEXTGEN COMPONENTS</strong><div class="row"><a href="/">Foundation</a><a href="/forms">Forms and dates</a><NgSwitch Label="Dark theme" @bind-Value="dark"/><NgCheckBox Label="Compact" @bind-Value="compact"/></div></nav>
-<section class="hero"><p class="eyebrow">BLAZOR / DATA WORKSPACE 0.3</p><h1>Find the detail.<br/>Keep the context.</h1><p>Explore projects by team, sort budgets, select across pages and edit a project. All changes stay in this example.</p></section>
+<section class="hero"><p class="eyebrow">BLAZOR / DATA WORKSPACE 0.34</p><h1>Find the detail.<br/>Keep the context.</h1><p>Explore projects by team, sort budgets, select across pages and edit a project. All changes stay in this example.</p></section>
 <NgBreadcrumb Items="Crumbs" OnNavigate="ChooseFolder" />
 <div class="workspace-layout"><aside class="panel"><h2>Teams</h2><NgTreeView TItem="string" Items="folders" Text="x=>x" SelectedId="folder" SelectedIdChanged="ChooseFolder" @bind-ExpandedIds="folderExpanded" /></aside>
 <section class="panel workspace-main"><div class="panel-heading"><h2>@FolderName</h2><span class="tag">@Projects.Count PROJECTS</span></div>
 @if(saved is not null){<p role="status" class="data-notice">@saved</p>}
-<NgDataGrid @key="folder" TItem="Project" Items="Projects" Columns="columns" RowId="p=>p.Id" Label="Projects" @bind-SelectedIds="selected">
-<Toolbar><NgButton Disabled="@(selected.Count==0)" OnClick="()=>selected=[]">Clear selection</NgButton></Toolbar>
+<NgDataGrid @key="folder" TItem="Project" Items="Projects" Columns="columns" RowId="p=>p.Id" Label="Projects" @bind-SelectedIds="selected" CanSelect="CanSelectProject" SelectionReadOnly="selectionReadOnly" PageSizes="new[]{5,10,18}">
+<Toolbar><NgCheckBox Label="Selection read-only" @bind-Value="selectionReadOnly"/><NgButton Disabled="@(selectionReadOnly || selected.All(id=>projects.Any(p=>p.Id==id && p.Status=="Paused")))" OnClick="ClearSelection">Clear selectable</NgButton></Toolbar>
+<EmptyTemplate><strong>No projects found.</strong> Try another search.</EmptyTemplate>
 <RowActions Context="project"><NgButton aria-label="@($"Edit {project.Name}")" OnClick="()=>Edit(project)">Edit</NgButton></RowActions>
 </NgDataGrid>
-<p class="data-hint">Selection follows project IDs across sorting and pages. Click a column heading to reverse sorting.</p>
+<p class="data-hint">Paused projects are protected. Selection follows project IDs across sorting and pages. Click a column heading to reverse sorting.</p>
 </section></div>
 <section class="panel"><div class="panel-heading"><h2>Portfolio hierarchy</h2><span class="tag">TREELIST</span></div>
 <NgTreeList TItem="Project" Items="Hierarchy" Columns="treeColumns" @bind-ExpandedIds="portfolioExpanded" @bind-SelectedId="portfolioSelection" Label="Portfolio" />
@@ -22,7 +23,9 @@
 <NgDialog Title="Edit project" @bind-Open="editing"><ChildContent>@if(draft is not null){<NgForm @key="draft" Model="draft" OnValidSubmit="Save"><div class="fields"><NgTextBox Label="Project name" @bind-Value="draft.Name"/><NgTextBox Label="Owner" @bind-Value="draft.Owner"/><NgNumericTextBox Label="Budget" @bind-Value="draft.Budget" Min="0" Max="1000000"/><NgDropDownList Label="Status" Items="statuses" @bind-Value="draft.Status"/></div><div class="row"><NgButton Primary Type="submit">Save project</NgButton><NgButton OnClick="()=>editing=false">Cancel</NgButton></div></NgForm>}</ChildContent></NgDialog>
 </main></div>
 @code {
- private bool dark,compact,editing;
+ private bool dark,compact,editing,selectionReadOnly;
+ private static bool CanSelectProject(Project p)=>p.Status!="Paused";
+ private void ClearSelection(){if(!selectionReadOnly)selected=selected.Where(id=>projects.Any(p=>p.Id==id && p.Status=="Paused")).ToHashSet();}
  private string? folder="all",saved,portfolioSelection;
  private HashSet<string> selected=[],folderExpanded=["all"],portfolioExpanded=["design"];
  private Project? draft;

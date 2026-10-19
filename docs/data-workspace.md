@@ -30,3 +30,13 @@ Blazor `/data` and Flutter **Data workspace** show the same 18-project scenario.
 Flutter `NgNumericTextBox` now has optional `required` (default false), used for the editor budget. Empty, non-finite and out-of-range budgets cannot be submitted.
 
 Both galleries support shared light/dark and normal/compact theme settings. Narrow screens stack the team panel and scroll wide tables inside their own viewport. Native mobile/desktop builds remain deferred.
+
+## Grid selection and presentation (0.34)
+
+`CanSelect` / `canSelect` is a per-row predicate. False protects both selected and unselected rows from row and page selection. Existing protected selections are retained. `SelectionReadOnly` / `selectionReadOnly` freezes all selection; search, sorting, paging and application row actions remain available. These are UI controls, not authorization rules.
+
+The header toggles only eligible rows on the current filtered page. A partial eligible selection shows a dash. Blazor exposes `aria-checked="mixed"`; Flutter adds “partially selected” to the accessible name because the current Flutter Web engine reports a mixed checkbox as `aria-checked="false"`. Hidden IDs, other pages and protected IDs are preserved. Callers own selection: accept the callback and pass the returned new set back. Neither platform mutates the supplied set or silently accepts a rejected update. Blazor without a callback displays disabled checkboxes; Flutter without a callback hides the selection column.
+
+`PageSizes` / `pageSizes` configures page choices (positive, distinct, sorted, retaining the current size). `EmptyTemplate` / `emptyBuilder` supplies custom empty-result content (a RenderFragment / Widget). Grid validates nonempty unique row IDs and column keys and requires at least one column. A removed sort column clears sorting.
+
+The Data workspace protects Paused projects, offers Selection read-only, and clears only selectable IDs. App-owned editing remains available. Server data, virtualization, multi-sort/grouping, range/cell selection, direct page entry and localization remain open.

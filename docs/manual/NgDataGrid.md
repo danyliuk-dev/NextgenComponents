@@ -14,12 +14,12 @@ The documentation launcher embeds these running examples here. Choose a framewor
 
 ## Behavior and practical rules
 
-NgDataColumn<T> supplies a stable key, title and Value/value accessor. Return typed values for sorting; Format/format changes display only. Template/cellBuilder customizes a cell. RowId must return a unique stable ID. Save selection callbacks and replace Items/items after edits so the grid recalculates. Toolbar and row actions allow the application to own editing and persistence. This local grid does not implement server data binding, virtualization, column grouping or Excel export; see [data workspace](../data-workspace.md).
+NgDataColumn<T> supplies a stable key, title and Value/value accessor. Return typed values for sorting; Format/format changes display only. Template/cellBuilder customizes a cell. RowId and column keys must be nonempty and unique; at least one column is required. CanSelect/canSelect protects rows from row and page selection without deleting existing selected IDs. SelectionReadOnly/selectionReadOnly freezes selection while search, sort and paging remain available. Page selection affects only eligible visible rows and preserves hidden or protected selections. Selection is controlled: accept the callback and pass the new set back; the original set is never mutated. PageSizes/pageSizes configures the pager; positive distinct sizes are sorted and the current size is retained. EmptyTemplate/emptyBuilder replaces the empty-result message. Save selection callbacks and replace Items/items after edits so the grid recalculates. Toolbar and row actions allow the application to own editing and persistence. This local grid does not implement server data binding, virtualization, column grouping or Excel export; see [data workspace](../data-workspace.md).
 
 ## Blazor example
 
 ```razor
-<NgDataGrid TItem="Product" Items="rows" Columns="columns" RowId="r=>r.Id" @bind-SelectedIds="selected"/>
+<NgDataGrid TItem="Product" Items="rows" Columns="columns" RowId="r=>r.Id" @bind-SelectedIds="selected" CanSelect="r=>r.Count < 100" PageSizes="new[]{5,10,20}"/>
 @code { public record Product(string Id,string Name,int Count); private Product[] rows=[new("a","Desk",12),new("b","Chair",120)]; private HashSet<string> selected=[]; private NgDataColumn<Product>[] columns=[new("name","Name",r=>r.Name),new("count","Quantity",r=>r.Count)]; }
 ```
 
@@ -30,6 +30,7 @@ final rows = [(id: 'a', name: 'Desk', count: 12), (id: 'b', name: 'Chair', count
 Set<String> selected = {};
 Widget build(BuildContext context) => NgDataGrid<({String id, String name, int count})>(
   items: rows, rowId: (r) => r.id, selectedIds: selected,
+  canSelect: (r) => r.count < 100, pageSizes: const [5, 10, 20],
   onSelectionChanged: (v) => setState(() => selected = v),
   columns: [NgDataColumn('name','Name',(r) => r.name),
     NgDataColumn('count','Quantity',(r) => r.count)]);
@@ -46,6 +47,10 @@ Names are case-sensitive. `?` permits null. `EditorRequired` parameters are mark
 | `RowId` | `Func<TItem,string>` | required | See the behavior rules and model contract above. |
 | `Label` | `string` | "Records" | Visible label or accessible name. |
 | `EmptyText` | `string` | "No matching records." | See the behavior rules and model contract above. |
+| `CanSelect` | `Func<TItem,bool>?` | not set | See the behavior rules and model contract above. |
+| `SelectionReadOnly` | `bool` | false | See the behavior rules and model contract above. |
+| `EmptyTemplate` | `RenderFragment?` | not set | See the behavior rules and model contract above. |
+| `PageSizes` | `IReadOnlyList<int>` | [5,10,25,50] | See the behavior rules and model contract above. |
 | `Selectable` | `bool` | true | See the behavior rules and model contract above. |
 | `SelectedIds` | `HashSet<string>` | [] | See the behavior rules and model contract above. |
 | `SelectedIdsChanged` | `EventCallback<HashSet<string>>` | not set | See the behavior rules and model contract above. |
@@ -66,6 +71,10 @@ Names are case-sensitive. `?` permits null. `EditorRequired` parameters are mark
 | `onSelectionChanged` | `ValueChanged<Set<String>>?` | See the behavior rules and model contract above. |
 | `rowActions` | `Widget Function(BuildContext, T)?` | See the behavior rules and model contract above. |
 | `toolbar` | `Widget?` | See the behavior rules and model contract above. |
+| `emptyBuilder` | `Widget?` | See the behavior rules and model contract above. |
+| `selectionReadOnly` | `bool` | See the behavior rules and model contract above. |
+| `canSelect` | `bool Function(T)?` | See the behavior rules and model contract above. |
+| `pageSizes` | `List<int>` | See the behavior rules and model contract above. |
 | `label` | `String` | Visible label or accessible name. |
 | `emptyText` | `String` | See the behavior rules and model contract above. |
 | `initialPageSize` | `int` | See the behavior rules and model contract above. |
@@ -80,6 +89,10 @@ const NgDataGrid({
     this.onSelectionChanged,
     this.rowActions,
     this.toolbar,
+    this.emptyBuilder,
+    this.selectionReadOnly = false,
+    this.canSelect,
+    this.pageSizes = const [5, 10, 25, 50],
     this.label = 'Records',
     this.emptyText = 'No matching records.',
     this.initialPageSize = 5,

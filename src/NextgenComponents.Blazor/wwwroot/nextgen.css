@@ -165,3 +165,5 @@ textarea.ng-input { resize:vertical; min-height:80px; }
 
 .ng-text-field{margin-block-end:12px}
 .ng-selection-actions{display:flex;flex-wrap:wrap;gap:8px;margin-block:8px}.ng-combo-editor{display:flex;gap:8px;min-width:0}.ng-combo-editor>.ng-input{flex:1;min-width:0}.ng-remove-mark{margin-inline-start:6px}
+
+.ng-data-table input[aria-checked="mixed"] { appearance:none; border:1px solid var(--ng-primary);border-radius:2px;background:linear-gradient(currentColor,currentColor) center / 9px 2px no-repeat var(--ng-primary);color:var(--ng-on-primary,white); }

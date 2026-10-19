@@ -11,7 +11,7 @@ A component can be marked complete only after every reference feature is recorde
 ## Current work order
 
 1. Chip/ChipList remaining gaps stay tracked below; do not mark full parity or silently accept them. Work is delivered in component blocks, not one release per parameter.
-2. ToggleButton/ButtonGroup and Menu/Drawer implementation blocks are delivered with explicit remaining gaps below. Stepper/Wizard is also delivered below; TextBox/TextArea/Form is delivered in 0.29; AutoComplete/ComboBox/MultiSelect is delivered in 0.30; numeric/time editing is delivered in 0.31; Calendar, DateInput, DatePicker and DateRangePicker are delivered in 0.32; RadioGroup and DropDownList are delivered in 0.33; next work moves to data management. No block is a full-parity verdict.
+2. ToggleButton/ButtonGroup and Menu/Drawer implementation blocks are delivered with explicit remaining gaps below. Stepper/Wizard is also delivered below; TextBox/TextArea/Form is delivered in 0.29; AutoComplete/ComboBox/MultiSelect is delivered in 0.30; numeric/time editing is delivered in 0.31; Calendar, DateInput, DatePicker and DateRangePicker are delivered in 0.32; RadioGroup and DropDownList are delivered in 0.33; Grid protected/read-only selection is delivered in 0.34; next work continues with TreeView/TreeList data management. No block is a full-parity verdict.
 3. Continue through existing editors/forms, data management, visualization and complex editors. Add new component names only after closing the active group or recording a user-approved exception.
 
 ## Chip and ChipList feature matrix
@@ -323,3 +323,14 @@ Sources: [DropDownList overview](https://www.telerik.com/blazor-ui/documentation
 | Empty selection | Blazor empty placeholder option; Flutter null hint | Flutter has no clear command; required rules belong to application |
 | Data and advanced presentation | Local NgOption collections | Remote data, filtering, virtualization, grouping and popup templates remain open |
 | Certification | Automated tests and visible Chrome evidence | No full Telerik parity, screen-reader or native/mobile certification |
+
+
+## Grid selection and paging configuration (0.34)
+
+| Capability | Shared implementation | Remaining boundary |
+|---|---|---|
+| Protected selection | CanSelect/canSelect and selection read-only; preserve protected and hidden selected IDs | No range or cell selection |
+| Page selection | Toggle eligible visible rows only, partial-selection accessible description, controlled immutable callbacks | No select-all-pages operation |
+| Presentation | Empty template/widget and configured page sizes; current size retained | No direct page input or localization API |
+| Validation | Nonempty unique row IDs and column keys, at least one column | Server loading, virtualization, multi-sort, grouping and built-in CRUD remain open |
+| Certification | Blazor/Flutter Web tests and visible local Chrome | No full Telerik, native or screen-reader certification |

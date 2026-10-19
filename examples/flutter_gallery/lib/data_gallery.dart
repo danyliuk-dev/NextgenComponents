@@ -32,6 +32,7 @@ class DataGallery extends StatefulWidget {
 
 class _DataGalleryState extends State<DataGallery> {
   String folder = 'all';
+  bool selectionReadOnly = false;
   String? saved, portfolioSelection;
   Set<String> selected = {}, expanded = {'all'}, portfolioExpanded = {'design'};
   List<Project> projects = List.generate(18, (index) {
@@ -246,13 +247,43 @@ class _DataGalleryState extends State<DataGallery> {
             columns: columns,
             rowId: (p) => p.id,
             label: 'Projects',
+            canSelect: (p) => p.status != 'Paused',
+            selectionReadOnly: selectionReadOnly,
+            pageSizes: const [5, 10, 18],
+            emptyBuilder: const Text('No projects found. Try another search.'),
             selectedIds: selected,
             onSelectionChanged: (v) => setState(() => selected = v),
-            toolbar: NgButton(
-              onPressed: selected.isEmpty
-                  ? null
-                  : () => setState(() => selected = {}),
-              child: const Text('Clear selection'),
+            toolbar: Wrap(
+              spacing: 12,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                NgCheckBox(
+                  label: 'Selection read-only',
+                  value: selectionReadOnly,
+                  onChanged: (v) =>
+                      setState(() => selectionReadOnly = v ?? false),
+                ),
+                NgButton(
+                  onPressed:
+                      selectionReadOnly ||
+                          selected.every(
+                            (id) => projects.any(
+                              (p) => p.id == id && p.status == 'Paused',
+                            ),
+                          )
+                      ? null
+                      : () => setState(
+                          () => selected = selected
+                              .where(
+                                (id) => projects.any(
+                                  (p) => p.id == id && p.status == 'Paused',
+                                ),
+                              )
+                              .toSet(),
+                        ),
+                  child: const Text('Clear selectable'),
+                ),
+              ],
             ),
             rowActions: (context, p) => Tooltip(
               message: 'Edit ${p.name}',
@@ -263,7 +294,7 @@ class _DataGalleryState extends State<DataGallery> {
             ),
           ),
           const Text(
-            'Selection follows project IDs across sorting and pages.',
+            'Paused projects are protected. Selection follows IDs across pages.',
             style: TextStyle(fontSize: 12),
           ),
         ],
@@ -305,7 +336,7 @@ class _DataGalleryState extends State<DataGallery> {
                 ),
                 const SizedBox(height: 40),
                 Text(
-                  'FLUTTER / DATA WORKSPACE 0.3',
+                  'FLUTTER / DATA WORKSPACE 0.34',
                   style: TextStyle(
                     color: Theme.of(context).colorScheme.primary,
                   ),

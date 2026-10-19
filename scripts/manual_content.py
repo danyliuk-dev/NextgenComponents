@@ -378,7 +378,7 @@ D = {'NgButton': {'title': 'Button',
  'NgDataGrid': {'title': 'Data grid',
                 'use': 'Display, sort, filter, select and page local records.',
                 'blazor': '<NgDataGrid TItem="Product" Items="rows" Columns="columns" RowId="r=>r.Id" '
-                          '@bind-SelectedIds="selected"/>\n'
+                          '@bind-SelectedIds="selected" CanSelect="r=>r.Count < 100" PageSizes="new[]{5,10,20}"/>\n'
                           '@code { public record Product(string Id,string Name,int Count); private Product[] '
                           'rows=[new("a","Desk",12),new("b","Chair",120)]; private HashSet<string> '
                           'selected=[]; private NgDataColumn<Product>[] '
@@ -389,12 +389,19 @@ D = {'NgButton': {'title': 'Button',
                         'Widget build(BuildContext context) => NgDataGrid<({String id, String name, int '
                         'count})>(\n'
                         '  items: rows, rowId: (r) => r.id, selectedIds: selected,\n'
+                        '  canSelect: (r) => r.count < 100, pageSizes: const [5, 10, 20],\n'
                         '  onSelectionChanged: (v) => setState(() => selected = v),\n'
                         "  columns: [NgDataColumn('name','Name',(r) => r.name),\n"
                         "    NgDataColumn('count','Quantity',(r) => r.count)]);",
                 'notes': 'NgDataColumn<T> supplies a stable key, title and Value/value accessor. Return '
                          'typed values for sorting; Format/format changes display only. Template/cellBuilder '
-                         'customizes a cell. RowId must return a unique stable ID. Save selection callbacks '
+                         'customizes a cell. RowId and column keys must be nonempty and unique; at least one column is required. '
+                         'CanSelect/canSelect protects rows from row and page selection without deleting existing selected IDs. '
+                         'SelectionReadOnly/selectionReadOnly freezes selection while search, sort and paging remain available. '
+                         'Page selection affects only eligible visible rows and preserves hidden or protected selections. '
+                         'Selection is controlled: accept the callback and pass the new set back; the original set is never mutated. '
+                         'PageSizes/pageSizes configures the pager; positive distinct sizes are sorted and the current size is retained. '
+                         'EmptyTemplate/emptyBuilder replaces the empty-result message. Save selection callbacks '
                          'and replace Items/items after edits so the grid recalculates. Toolbar and row '
                          'actions allow the application to own editing and persistence. This local grid does '
                          'not implement server data binding, virtualization, column grouping or Excel '

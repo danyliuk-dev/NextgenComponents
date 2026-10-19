@@ -509,3 +509,13 @@ Expanded the remaining choice editors on both Web frameworks: read-only/disabled
 - Updated foundation galleries, English manuals, highlighted snippets and executable previews. The RadioGroup live preview was inspected inside the desktop documentation shell, which reports version 0.33.
 
 Evidence: [Blazor missing selection](screenshots/choices033-blazor-missing.png), [Flutter missing selection](screenshots/choices033-flutter-missing.png), [narrow radio layout](screenshots/choices033-flutter-narrow.png), [desktop manual preview](screenshots/choices033-desktop-manual.png). These are Web checks, not full Telerik parity or screen-reader/native certification. Next planned block: data management.
+
+## 0.34 — protected Grid selection (2026-10-19)
+
+- Blazor: 278 render/data checks; gallery build with zero warnings/errors. Flutter: 145 tests passed; focused data/Grid suite (12 tests) repeated after selection callback and semantics changes. Dart analysis passed.
+- Manual: all 47 Blazor and 47 Flutter examples compiled/analyzed; 94 highlighted examples passed lossless/escaping checks. Flutter release Web build passed (existing unused CupertinoIcons font-family warning remains).
+- Visible foreground Chrome on local Linux/iMac, isolated profile and CDP 9341: `python3 scripts/grid-selection-check.py blazor` and `flutter` passed. Four eligible rows selected per page, Paused row excluded, individual/partial/page toggles, hidden selections preserved, read-only selection and continued page navigation checked.
+- Blazor custom 18-row page and custom empty result checked; 390px previews checked for page overflow on both platforms. Desktop manual displayed updated Grid contract, category tree and embedded Blazor live preview.
+- Browser verification found Flutter merged the header checkbox into a columnheader; an explicit semantic container preserves the checkbox. Current Flutter Web SemanticCheckable maps mixed to false: the accessible name now explicitly says “partially selected”; the visual dash remains. No screen-reader or native-platform certification claimed.
+- Screenshots: [Blazor selection](screenshots/grid034-blazor-selected.png), [Blazor dark](screenshots/grid034-blazor-dark.png), [Flutter selection](screenshots/grid034-flutter-selected.png), [desktop manual](screenshots/grid034-desktop.png).
+- Remaining: server loading/virtualization, multi-sort/grouping, range/cell selection, built-in CRUD, direct page entry. Next coherent roadmap block: TreeView/TreeList state and interaction.

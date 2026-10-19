@@ -10,7 +10,7 @@ lines = ['# Feature parity with Telerik UI for Blazor', '',
 'A component can be marked complete only after every reference feature is recorded, both implementations and detailed English examples exist, meaningful automated checks and visible Chrome scenarios pass, and remaining differences are explicitly accepted. Unknown is not complete. A test pass proves the tested behavior, not all reference behavior.', '',
 '## Current work order', '',
 '1. Chip/ChipList remaining gaps stay tracked below; do not mark full parity or silently accept them. Work is delivered in component blocks, not one release per parameter.',
-'2. ToggleButton/ButtonGroup and Menu/Drawer implementation blocks are delivered with explicit remaining gaps below. Stepper/Wizard is also delivered below; TextBox/TextArea/Form is delivered in 0.29; AutoComplete/ComboBox/MultiSelect is delivered in 0.30; numeric/time editing is delivered in 0.31; Calendar, DateInput, DatePicker and DateRangePicker are delivered in 0.32; RadioGroup and DropDownList are delivered in 0.33; next work moves to data management. No block is a full-parity verdict.',
+'2. ToggleButton/ButtonGroup and Menu/Drawer implementation blocks are delivered with explicit remaining gaps below. Stepper/Wizard is also delivered below; TextBox/TextArea/Form is delivered in 0.29; AutoComplete/ComboBox/MultiSelect is delivered in 0.30; numeric/time editing is delivered in 0.31; Calendar, DateInput, DatePicker and DateRangePicker are delivered in 0.32; RadioGroup and DropDownList are delivered in 0.33; Grid protected/read-only selection is delivered in 0.34; next work continues with TreeView/TreeList data management. No block is a full-parity verdict.',
 '3. Continue through existing editors/forms, data management, visualization and complex editors. Add new component names only after closing the active group or recording a user-approved exception.', '',
 '## Chip and ChipList feature matrix', '',
 'Sources: [Chip API](https://www.telerik.com/blazor-ui/documentation/api/telerik.blazor.components.telerikchip), [Chip appearance](https://www.telerik.com/blazor-ui/documentation/components/chip/appearance), [Chip events](https://www.telerik.com/blazor-ui/documentation/components/chip/events), [ChipList binding](https://www.telerik.com/blazor-ui/documentation/components/chiplist/data-bind), [ChipList templates](https://www.telerik.com/blazor-ui/documentation/components/chiplist/templates), [ChipList appearance](https://www.telerik.com/blazor-ui/documentation/components/chiplist/appearance), [keyboard demo](https://demos.telerik.com/blazor-ui/chiplist/keyboard-navigation), [RTL reference](https://www.telerik.com/blazor-ui/documentation/globalization/rtl-support), [ARIA reference](https://www.telerik.com/blazor-ui/documentation/components/chiplist/accessibility/wai-aria-support).', '',
@@ -130,5 +130,13 @@ lines += ['', '', '## RadioGroup and DropDownList (0.33)', '',
 '| Empty selection | Blazor empty placeholder option; Flutter null hint | Flutter has no clear command; required rules belong to application |',
 '| Data and advanced presentation | Local NgOption collections | Remote data, filtering, virtualization, grouping and popup templates remain open |',
 '| Certification | Automated tests and visible Chrome evidence | No full Telerik parity, screen-reader or native/mobile certification |']
+lines += ['', '', '## Grid selection and paging configuration (0.34)', '',
+'| Capability | Shared implementation | Remaining boundary |',
+'|---|---|---|',
+'| Protected selection | CanSelect/canSelect and selection read-only; preserve protected and hidden selected IDs | No range or cell selection |',
+'| Page selection | Toggle eligible visible rows only, partial-selection accessible description, controlled immutable callbacks | No select-all-pages operation |',
+'| Presentation | Empty template/widget and configured page sizes; current size retained | No direct page input or localization API |',
+'| Validation | Nonempty unique row IDs and column keys, at least one column | Server loading, virtualization, multi-sort, grouping and built-in CRUD remain open |',
+'| Certification | Blazor/Flutter Web tests and visible local Chrome | No full Telerik, native or screen-reader certification |']
 (root/'docs/parity.md').write_text('\n'.join(lines).rstrip()+'\n')
 print(f"Generated {len(catalog['components'])} parity inventory entries")

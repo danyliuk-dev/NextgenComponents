@@ -73,6 +73,9 @@ try { NgDataOperations.Flatten(new[]{new NgTreeNode<string>("x","One"),new NgTre
 await Check<NgPager>(new(){["Total"]=18,["Page"]=2,["PageSize"]=5},"6", "10 of 18", "Rows per page", "Next page");
 await Check<NgBreadcrumb>(new(){["Items"]=new NgBreadcrumbItem[]{new("all","All projects"),new("design","Design")}},"aria-current=\"page\"", "All projects", "Design");
 await Check<NgDataGrid<(string Id,int Budget)>>(new(){["Items"]=data,["Columns"]=dataColumns,["RowId"]=(Func<(string Id,int Budget),string>)(r=>r.Id)},"Budget", "9000", "Select page");
+await Check<NgDataGrid<(string Id,int Budget)>>(new(){["Items"]=data,["Columns"]=dataColumns,["RowId"]=(Func<(string Id,int Budget),string>)(r=>r.Id),["SelectedIds"]=new HashSet<string>{"a"},["SelectionReadOnly"]=true,["PageSizes"]=new[]{2,4}},"disabled", "checked", "value=\"4\"");
+await Check<NgDataGrid<string>>(new(){["Items"]=Array.Empty<string>(),["Columns"]=new NgDataColumn<string>[]{new("id","ID",x=>x)},["RowId"]=(Func<string,string>)(x=>x),["EmptyTemplate"]=Text("Try a different query")},"Try a different query", "disabled");
+await Check<NgPager>(new(){["Total"]=int.MaxValue,["Page"]=2,["PageSize"]=int.MaxValue-1},"2147483647", "of 2147483647");
 await Check<NgTreeView<string>>(new(){["Items"]=tree,["Text"]=(Func<string,string>)(s=>s)},"role=\"tree\"", "Root", "aria-expanded=\"false\"");
 await Check<NgTreeList<string>>(new(){["Items"]=tree,["Columns"]=new NgDataColumn<string>[]{new("name","Name",s=>s)}},"Root", "Expand Root", "Search Hierarchy");
 NgChartSeries[] signed=[new("Values",[-10,0,20])];
