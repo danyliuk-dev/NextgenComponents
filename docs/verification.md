@@ -870,3 +870,12 @@ Counter formatting receives counts rather than password text and must remain pur
 - All 94 manual examples compiled/analyzed and 94 highlighting checks passed. Flutter Web build passed with the existing unused CupertinoIcons font warning.
 - Visible Chrome checks exercised both platforms and both tree controls: parent rejection/acceptance, keyboard actions, lazy-load availability, filtering/collapse-independent scope, checking locks and preservation of an already checked protected node when clearing. Updated local desktop documentation includes the new API and live examples.
 - Full-remote checking, upward normalization, virtualization, drag/drop and physical screen-reader/native validation remain open. The Flutter Web mixed-state ARIA limitation from 0.62 is unchanged. Cloudflare sites remain deleted.
+
+## Local Grid grouping (0.64) — 2026-10-20
+
+- Blazor library/gallery build passed with zero warnings/errors; 439 rendering/data checks passed. Added first-appearance/case-sensitive/empty key order, within-group order, null-key rejection, encoded group captions and remote-adapter rejection before requests.
+- Flutter analysis passed; all 266 tests passed. New grouping regression covers headers across page boundaries, full filtered counts, data-only page selection with protected/off-page IDs, sorting/search composition, mode/version resets, shrinking data, empty results and invalid remote configuration without requests.
+- All 47 Blazor and 47 Flutter manual examples compile/analyze; 94 lossless highlighting checks passed. Flutter release Web build passed with the existing CupertinoIcons font-family warning.
+- Ordinary visible Chrome on local Linux/iMac, controlled through CUA: both Grid previews showed 20 matching Chair records with five data rows per page; page 2 repeated the full group count. Selected page-1 IDs survived paging and Desk filtering. Quantity ascending/descending changed row order; protected high-quantity rows remained disabled. Disabling grouping removed headers. Both layouts were visually inspected.
+- Local desktop documentation reports 0.64 and includes the GroupBy manual plus a live preview. Documentation tab left open; browser automation slot released.
+- Scope: one local grouping level only. No collapse, aggregates, multiple levels, remote grouping, virtualization, native target or full screen-reader certification claim. Cloudflare sites were not republished.

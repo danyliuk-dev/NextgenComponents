@@ -441,6 +441,8 @@ class NgDataGrid<T> extends StatefulWidget {
   final List<T> items;
   final Future<NgDataResult<T>> Function(NgDataRequest)? readData;
   final Object? dataVersion;
+  final String Function(T)? groupBy;
+  final String Function(String, int)? groupText;
   final bool multiSort;
   final String loadingText, errorText, retryText;
   final List<NgDataColumn<T>> columns;
@@ -459,6 +461,8 @@ class NgDataGrid<T> extends StatefulWidget {
     this.items = const [],
     this.readData,
     this.dataVersion,
+    this.groupBy,
+    this.groupText,
     this.multiSort = false,
     this.loadingText = 'Loading records…',
     this.errorText = 'Unable to load records.',
@@ -489,9 +493,27 @@ class _NgDataGridState<T> extends State<NgDataGrid<T>> {
   bool loading = false, error = false;
   int total = 0, revision = 0;
   List<T> remote = [];
-  List<T> get rows => widget.readData == null
-      ? NgDataOperations.queryMany(widget.items, widget.columns, search, sorts)
-      : remote;
+  List<T> get rows {
+    if (widget.readData != null) return remote;
+    final queried = NgDataOperations.queryMany(
+      widget.items,
+      widget.columns,
+      search,
+      sorts,
+    );
+    if (widget.groupBy == null) return queried;
+    final buckets = <String, List<T>>{};
+    for (final row in queried) {
+      buckets.putIfAbsent(widget.groupBy!(row), () => []).add(row);
+    }
+    return buckets.values.expand((v) => v).toList();
+  }
+
+  String groupTitle(String key, int count) {
+    return widget.groupText?.call(key, count) ??
+        '${key.isEmpty ? "(empty)" : key} ($count)';
+  }
+
   List<T> get visible => widget.readData == null
       ? rows.skip((page - 1) * size).take(size).toList()
       : remote;
@@ -504,6 +526,7 @@ class _NgDataGridState<T> extends State<NgDataGrid<T>> {
   }
 
   Future<void> reload() async {
+    validateGrouping();
     final ticket = ++revision;
     if (widget.readData == null) {
       loading = error = false;
@@ -568,12 +591,14 @@ class _NgDataGridState<T> extends State<NgDataGrid<T>> {
   @override
   void didUpdateWidget(covariant NgDataGrid<T> oldWidget) {
     super.didUpdateWidget(oldWidget);
+    validateGrouping();
     final before = sorts.length;
     sorts.removeWhere(
       (s) => !widget.columns.any((c) => c.key == s.key && c.sortable),
     );
     if (!widget.multiSort && sorts.length > 1)
       sorts.removeRange(1, sorts.length);
+    if ((oldWidget.groupBy == null) != (widget.groupBy == null)) page = 1;
     if (oldWidget.readData != widget.readData ||
         oldWidget.dataVersion != widget.dataVersion ||
         before != sorts.length) {
@@ -593,6 +618,7 @@ class _NgDataGridState<T> extends State<NgDataGrid<T>> {
   @override
   void initState() {
     super.initState();
+    validateGrouping();
     size = widget.initialPageSize < 1 ? 1 : widget.initialPageSize;
     reload();
   }
@@ -614,8 +640,14 @@ class _NgDataGridState<T> extends State<NgDataGrid<T>> {
     widget.onSelectionChanged!(next);
   }
 
+  void validateGrouping() {
+    if (widget.groupBy != null && widget.readData != null)
+      throw ArgumentError('Local grouping requires items, not readData.');
+  }
+
   @override
   Widget build(BuildContext context) {
+    validateGrouping();
     if (widget.items.any((row) => widget.rowId(row).trim().isEmpty) ||
         widget.items.map(widget.rowId).toSet().length != widget.items.length)
       throw ArgumentError('Grid row IDs must be nonempty and unique.');
@@ -627,7 +659,15 @@ class _NgDataGridState<T> extends State<NgDataGrid<T>> {
         'Grid column keys must be nonempty and unique, with at least one column.',
       );
     if (!loading) page = NgDataOperations.clampPage(page, count, size);
-    final eligible = visible
+    final pageRows = visible;
+    final groupCounts = <String, int>{};
+    if (widget.groupBy != null) {
+      for (final row in rows) {
+        final key = widget.groupBy!(row);
+        groupCounts.update(key, (n) => n + 1, ifAbsent: () => 1);
+      }
+    }
+    final eligible = pageRows
         .where((row) => widget.canSelect?.call(row) ?? true)
         .toList();
     final selectionVisible = widget.onSelectionChanged != null;
@@ -768,7 +808,44 @@ class _NgDataGridState<T> extends State<NgDataGrid<T>> {
                     const DataColumn(label: Text('Actions')),
                 ],
                 rows: [
-                  for (final row in visible)
+                  for (final (index, row) in pageRows.indexed) ...[
+                    if (widget.groupBy != null &&
+                        (index == 0 ||
+                            widget.groupBy!(pageRows[index - 1]) !=
+                                widget.groupBy!(row)))
+                      DataRow(
+                        key: ValueKey(('group', widget.groupBy!(row))),
+                        color: WidgetStatePropertyAll(
+                          Theme.of(context).colorScheme.surfaceContainerHighest,
+                        ),
+                        cells: [
+                          if (selectionVisible)
+                            const DataCell(SizedBox.shrink()),
+                          for (
+                            var columnIndex = 0;
+                            columnIndex < widget.columns.length;
+                            columnIndex++
+                          )
+                            DataCell(
+                              columnIndex == 0
+                                  ? Semantics(
+                                      header: true,
+                                      child: Text(
+                                        groupTitle(
+                                          widget.groupBy!(row),
+                                          groupCounts[widget.groupBy!(row)]!,
+                                        ),
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    )
+                                  : const SizedBox.shrink(),
+                            ),
+                          if (widget.rowActions != null)
+                            const DataCell(SizedBox.shrink()),
+                        ],
+                      ),
                     DataRow(
                       key: ValueKey(widget.rowId(row)),
                       selected: widget.selectedIds.contains(widget.rowId(row)),
@@ -799,6 +876,7 @@ class _NgDataGridState<T> extends State<NgDataGrid<T>> {
                           DataCell(widget.rowActions!(context, row)),
                       ],
                     ),
+                  ],
                 ],
               ),
             ),

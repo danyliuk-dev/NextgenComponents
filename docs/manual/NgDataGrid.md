@@ -14,17 +14,23 @@ The documentation launcher embeds these running examples here. Choose a framewor
 
 ## Behavior and practical rules
 
-ReadData/readData enables asynchronous page loading; Items/items is used only in local mode. The request contains 1-based Page/page, PageSize/pageSize, Search/search and an ordered immutable Sorts/sorts list. Return only the requested page and Total/total after filtering, before paging. The demo simulates a remote data adapter with a delay; replace its body with your HTTP/database call. A newer request or source replacement invalidates older results and errors; Blazor also passes a cancellation token. Flutter ignores stale futures but does not abort the transport. Loading hides old rows and blocks selection. Failure shows ErrorText/errorText and RetryText/retryText without exposing exception details. Change DataVersion/dataVersion to reload page 1; keep reader identity stable. Blazor ReloadAsync reloads the current page. A shrinking total clamps the page and fetches it again. Invalid totals, duplicate IDs and oversized pages become retryable errors. MultiSort/multiSort appends clicked columns by priority; clicking again toggles direction without moving priority. Clear sorting restores source order. Local sorting is stable. Row/column IDs must be unique and nonblank. Selection remains parent-owned and page selection preserves hidden/protected IDs. CanSelect/canSelect and SelectionReadOnly/selectionReadOnly still apply. Virtualization, grouping, built-in CRUD and export remain open. See [data workspace](../data-workspace.md).
+ReadData/readData enables asynchronous page loading; Items/items is used only in local mode. The request contains 1-based Page/page, PageSize/pageSize, Search/search and an ordered immutable Sorts/sorts list. Return only the requested page and Total/total after filtering, before paging. The demo simulates a remote data adapter with a delay; replace its body with your HTTP/database call. A newer request or source replacement invalidates older results and errors; Blazor also passes a cancellation token. Flutter ignores stale futures but does not abort the transport. Loading hides old rows and blocks selection. Failure shows ErrorText/errorText and RetryText/retryText without exposing exception details. Change DataVersion/dataVersion to reload page 1; keep reader identity stable. Blazor ReloadAsync reloads the current page. A shrinking total clamps the page and fetches it again. Invalid totals, duplicate IDs and oversized pages become retryable errors. MultiSort/multiSort appends clicked columns by priority; clicking again toggles direction without moving priority. Clear sorting restores source order. Local sorting is stable. Row/column IDs must be unique and nonblank. Selection remains parent-owned and page selection preserves hidden/protected IDs. CanSelect/canSelect and SelectionReadOnly/selectionReadOnly still apply. Virtualization, remote grouping, built-in CRUD and export remain open. See [data workspace](../data-workspace.md). GroupBy/groupBy enables one local grouping level over string keys; empty strings are a valid group and keys are case-sensitive. Search and sort run first, then groups gather matching records in first-appearance order while preserving sorted order within each group, then the flattened grouped rows are paged. Headers do not consume page slots. A group crossing a page boundary repeats its header; the count is the complete filtered group count, not only the current page. GroupText/groupText formats the key and count as plain text. Selection/page selection covers data rows only and retains off-page IDs. Enabling/disabling grouping resets to page 1; changing a grouping rule in-place requires DataVersion/dataVersion to reset paging. Selectors must be pure. GroupBy/groupBy cannot be combined with ReadData/readData: remote grouping requires a separate group-aware protocol and is rejected, not approximated from one server page. Group collapse, multiple levels, aggregates and remote grouping remain open.
 
 ## Blazor example
 
 ```razor
+<h3>Local grouped inventory</h3>
+<NgCheckBox Label="Group by product" @bind-Value="grouped"/>
+<NgDataGrid TItem="Product" Label="Grouped inventory" Items="rows" Columns="columns" RowId="r=>r.Id" GroupBy="@(grouped?ProductGroup:null)" GroupText="GroupCaption" MultiSort="true" @bind-SelectedIds="localSelected" CanSelect="r=>r.Count<100"/>
+<p>Local selection: @string.Join(", ",localSelected.Order())</p>
+<h3>Remote paging adapter</h3>
 <NgCheckBox Label="Fail requests" @bind-Value="fail"/>
 <NgButton OnClick="()=>version++">Reload source</NgButton>
 <NgDataGrid TItem="Product" ReadData="Read" DataVersion="version" MultiSort="true" Columns="columns" RowId="r=>r.Id" @bind-SelectedIds="selected" CanSelect="r=>r.Count<100" PageSizes="new[]{5,10,20}"/>
 <p>Requests: @requests · Latest query: @query</p>
 @code {
  public record Product(string Id,string Name,int Count);
+ private bool grouped=true; private HashSet<string> localSelected=[]; private string ProductGroup(Product row)=>row.Name; private string GroupCaption(string key,int count)=>$"{key}: {count} matching records";
  private bool fail; private int version,requests; private string query="";
  private HashSet<string> selected=[];
  private static readonly Product[] rows=Enumerable.Range(1,40).Select(i=>new Product($"p{i}",i%2==0?"Desk":"Chair",i*4)).ToArray();
@@ -45,6 +51,7 @@ ReadData/readData enables asynchronous page loading; Items/items is used only in
 final rows = List.generate(40, (i) => (id: 'p${i+1}', name: i.isOdd ? 'Desk' : 'Chair', count: (i+1)*4));
 final columns = <NgDataColumn<({String id, String name, int count})>>[
   NgDataColumn('name', 'Name', (r) => r.name), NgDataColumn('count', 'Quantity', (r) => r.count)];
+Set<String> localSelected = {}; bool grouped=true;
 Set<String> selected = {};
 bool fail = false;
 int version = 0, requests = 0;
@@ -57,6 +64,11 @@ Future<NgDataResult<({String id, String name, int count})>> read(NgDataRequest r
   return NgDataResult(result.skip((request.page-1)*request.pageSize).take(request.pageSize).toList(), result.length);
 }
 Widget build(BuildContext context) => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+  const Text('Local grouped inventory'),
+  NgCheckBox(label:'Group by product',value:grouped,onChanged:(v)=>setState(()=>grouped=v)),
+  NgDataGrid<({String id,String name,int count})>(label:'Grouped inventory',items:rows,columns:columns,rowId:(r)=>r.id,groupBy:grouped?(r)=>r.name:null,groupText:(key,count)=>'$key: $count matching records',multiSort:true,selectedIds:localSelected,onSelectionChanged:(v)=>setState(()=>localSelected=v),canSelect:(r)=>r.count<100),
+  Text('Local selection: ${(localSelected.toList()..sort()).join(", ")}'),
+  const Text('Remote paging adapter'),
   NgCheckBox(label: 'Fail requests', value: fail, onChanged: (v) => setState(() => fail = v)),
   NgButton(onPressed: () => setState(() => version++), child: const Text('Reload source')),
   NgDataGrid<({String id, String name, int count})>(readData: read, dataVersion: version, multiSort: true,
@@ -73,6 +85,8 @@ Names are case-sensitive. `?` permits null. `EditorRequired` parameters are mark
 | Parameter | Type | Default / requirement | Purpose |
 |---|---|---|---|
 | `ReadData` | `Func<NgDataRequest,CancellationToken,Task<NgDataResult<TItem>>>?` | not set | Async page adapter; return requested rows and filtered total. See request/result contracts above. |
+| `GroupBy` | `Func<TItem,string>?` | not set | Pure local string-key selector; grouping precedes paging and cannot be combined with ReadData. |
+| `GroupText` | `Func<string,int,string>?` | not set | Plain-text caption from the group key and complete filtered group count. |
 | `DataVersion` | `object?` | not set | Change to invalidate pending reads and cached data; keep stable otherwise. |
 | `MultiSort` | `bool` | false | Append sorted columns in priority order; default false. |
 | `LoadingText` | `string` | "Loading records…" | Localized loading status. |
@@ -103,6 +117,8 @@ Names are case-sensitive. `?` permits null. `EditorRequired` parameters are mark
 | `items` | `List<T>` | Input collection. Replace it when changing records or configuration. |
 | `readData` | `Future<NgDataResult<T>> Function(NgDataRequest)?` | Async page adapter; return requested rows and filtered total. See request/result contracts above. |
 | `dataVersion` | `Object?` | Change to invalidate pending reads and cached data; keep stable otherwise. |
+| `groupBy` | `String Function(T)?` | Pure local string-key selector; grouping precedes paging and cannot be combined with ReadData. |
+| `groupText` | `String Function(String, int)?` | Plain-text caption from the group key and complete filtered group count. |
 | `multiSort` | `bool` | Append sorted columns in priority order; default false. |
 | `loadingText` | `String` | Localized loading status. |
 | `errorText` | `String` | Localized failure status; raw service errors are not rendered. |
@@ -127,6 +143,8 @@ const NgDataGrid({
     this.items = const [],
     this.readData,
     this.dataVersion,
+    this.groupBy,
+    this.groupText,
     this.multiSort = false,
     this.loadingText = 'Loading records…',
     this.errorText = 'Unable to load records.',

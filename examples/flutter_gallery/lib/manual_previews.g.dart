@@ -331,6 +331,7 @@ class _NgDataGridExampleState extends State<NgDataGridExample> {
 final rows = List.generate(40, (i) => (id: 'p${i+1}', name: i.isOdd ? 'Desk' : 'Chair', count: (i+1)*4));
 final columns = <NgDataColumn<({String id, String name, int count})>>[
   NgDataColumn('name', 'Name', (r) => r.name), NgDataColumn('count', 'Quantity', (r) => r.count)];
+Set<String> localSelected = {}; bool grouped=true;
 Set<String> selected = {};
 bool fail = false;
 int version = 0, requests = 0;
@@ -343,6 +344,11 @@ Future<NgDataResult<({String id, String name, int count})>> read(NgDataRequest r
   return NgDataResult(result.skip((request.page-1)*request.pageSize).take(request.pageSize).toList(), result.length);
 }
 Widget build(BuildContext context) => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+  const Text('Local grouped inventory'),
+  NgCheckBox(label:'Group by product',value:grouped,onChanged:(v)=>setState(()=>grouped=v)),
+  NgDataGrid<({String id,String name,int count})>(label:'Grouped inventory',items:rows,columns:columns,rowId:(r)=>r.id,groupBy:grouped?(r)=>r.name:null,groupText:(key,count)=>'$key: $count matching records',multiSort:true,selectedIds:localSelected,onSelectionChanged:(v)=>setState(()=>localSelected=v),canSelect:(r)=>r.count<100),
+  Text('Local selection: ${(localSelected.toList()..sort()).join(", ")}'),
+  const Text('Remote paging adapter'),
   NgCheckBox(label: 'Fail requests', value: fail, onChanged: (v) => setState(() => fail = v)),
   NgButton(onPressed: () => setState(() => version++), child: const Text('Reload source')),
   NgDataGrid<({String id, String name, int count})>(readData: read, dataVersion: version, multiSort: true,

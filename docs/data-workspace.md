@@ -74,3 +74,9 @@ Current Flutter Web SDK maps its internal mixed checkbox state to aria-checked=f
 TreeView and TreeList expose opt-in check-loaded and clear-loaded actions. Their scope is the entire eligible loaded forest, independent of filtering, expansion and per-node cascade mode. Protected/disabled roots and subtrees are skipped; unknown/protected IDs are preserved. One fresh set is proposed per action, with parent acceptance/rejection. No-op, empty, read-only and missing-callback actions are disabled. Current data and permissions are rechecked when invoked. Lazy loads update availability without inheriting checks. Labels are localizable.
 
 Full-remote checking, upward ID normalization, virtualization, drag/drop and native/accessibility certification remain open. The Flutter mixed-state ARIA limitation documented in 0.62 is unchanged.
+
+## Local Grid grouping (0.64)
+
+GroupBy/groupBy enables one local grouping level. Search and stable sorting run before grouping; groups follow first appearance and retain row order within each group. Paging counts data rows only. Headers repeat when a group crosses a page boundary and display the full filtered count, with a customizable plain-text caption. Group headers cannot be selected; page selection affects only eligible visible data rows and preserves off-page IDs.
+
+Enabling/disabling grouping resets the page; use DataVersion/dataVersion after changing a grouping rule. Empty string keys are valid and keys are case-sensitive. Selectors must be pure. Combining grouping with ReadData/readData is rejected before requests because server pages cannot supply whole-group counts. Collapse, multiple grouping levels, aggregates, remote grouping, virtualization and built-in CRUD remain open.

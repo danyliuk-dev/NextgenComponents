@@ -11,12 +11,20 @@ public sealed record NgTreeNode<T>(string Id,T Item,IReadOnlyList<NgTreeNode<T>>
 public sealed record NgTreeRow<T>(NgTreeNode<T> Node,int Depth,string? ParentId,bool Expanded);
 public sealed record NgBreadcrumbItem(string Id,string Label);
 
+public sealed record NgDataGroup<T>(string Key,IReadOnlyList<T> Items);
+
 public sealed record NgSortDescriptor(string Key,bool Descending=false);
 public sealed record NgDataRequest(int Page,int PageSize,string Search,IReadOnlyList<NgSortDescriptor> Sorts);
 public sealed record NgDataResult<T>(IReadOnlyList<T> Items,int Total);
 
 public static class NgDataOperations
 {
+    public static IReadOnlyList<NgDataGroup<T>> Group<T>(IEnumerable<T> source,Func<T,string> key) {
+        var buckets=new Dictionary<string,List<T>>(StringComparer.Ordinal);
+        foreach(var row in source){var value=key(row)??throw new ArgumentException("Group keys cannot be null.");if(!buckets.TryGetValue(value,out var rows))buckets[value]=rows=[];rows.Add(row);}
+        return buckets.Select(x=>new NgDataGroup<T>(x.Key,Array.AsReadOnly(x.Value.ToArray()))).ToArray();
+    }
+
     // A branch check represents its own record plus eligible, loaded descendants.
     // Protected nodes are subtree barriers; their existing IDs are preserved.
     public static IReadOnlyList<string> TreeCheckTargets<T>(NgTreeNode<T> node,bool cascade,Func<NgTreeNode<T>,bool>? canCheck=null) {

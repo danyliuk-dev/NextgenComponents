@@ -1,10 +1,16 @@
 @* Generated from scripts/manual_content.py *@
+<h3>Local grouped inventory</h3>
+<NgCheckBox Label="Group by product" @bind-Value="grouped"/>
+<NgDataGrid TItem="Product" Label="Grouped inventory" Items="rows" Columns="columns" RowId="r=>r.Id" GroupBy="@(grouped?ProductGroup:null)" GroupText="GroupCaption" MultiSort="true" @bind-SelectedIds="localSelected" CanSelect="r=>r.Count<100"/>
+<p>Local selection: @string.Join(", ",localSelected.Order())</p>
+<h3>Remote paging adapter</h3>
 <NgCheckBox Label="Fail requests" @bind-Value="fail"/>
 <NgButton OnClick="()=>version++">Reload source</NgButton>
 <NgDataGrid TItem="Product" ReadData="Read" DataVersion="version" MultiSort="true" Columns="columns" RowId="r=>r.Id" @bind-SelectedIds="selected" CanSelect="r=>r.Count<100" PageSizes="new[]{5,10,20}"/>
 <p>Requests: @requests · Latest query: @query</p>
 @code {
  public record Product(string Id,string Name,int Count);
+ private bool grouped=true; private HashSet<string> localSelected=[]; private string ProductGroup(Product row)=>row.Name; private string GroupCaption(string key,int count)=>$"{key}: {count} matching records";
  private bool fail; private int version,requests; private string query="";
  private HashSet<string> selected=[];
  private static readonly Product[] rows=Enumerable.Range(1,40).Select(i=>new Product($"p{i}",i%2==0?"Desk":"Chair",i*4)).ToArray();

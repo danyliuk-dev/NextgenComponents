@@ -488,6 +488,14 @@ foreach(var (rowTotals,colTotals,expectedCells) in new[]{(true,true,12),(true,fa
  var pivotHtml=await renderer.Dispatcher.InvokeAsync(async ()=>(await renderer.RenderComponentAsync<NgPivotGrid>(ParameterView.FromDictionary(new Dictionary<string,object?>{{"Items",pivot},{"ShowRowTotals",rowTotals},{"ShowColumnTotals",colTotals}}))).ToHtmlString());
  Rule(System.Text.RegularExpressions.Regex.Matches(pivotHtml,"class=\"ng-pivot-cell\"").Count==expectedCells,$"pivot total shape {rowTotals}/{colTotals}");
 }
+var groupedRows=NgDataOperations.Group(new[]{"b1","a1","b2","A1",""},s=>s.Length==0?"":s[..1]);
+Rule(groupedRows.Select(g=>g.Key).SequenceEqual(new[]{"b","a","A",""}),"group keys preserve first appearance and case");
+Rule(groupedRows[0].Items.SequenceEqual(new[]{"b1","b2"}),"group rows retain input order");
+Reject(()=>NgDataOperations.Group(new[]{"x"},s=>null!),"null group keys rejected");
+await Check<NgDataGrid<string>>(new(){["Items"]=new[]{"b1","a1","b2","b3","b4","b5"},["Columns"]=remoteColumns,["RowId"]=(Func<string,string>)(s=>s),["GroupBy"]=(Func<string,string>)(s=>s[..1]),["GroupText"]=(Func<string,int,string>)((k,n)=>$"<{k}: {n}>")},"scope=\"rowgroup\"","&lt;b: 5&gt;","b5");
+var remoteGroupCalls=0;
+try{await Check<NgDataGrid<string>>(new(){["Columns"]=remoteColumns,["RowId"]=(Func<string,string>)(s=>s),["GroupBy"]=(Func<string,string>)(s=>s),["ReadData"]=(Func<NgDataRequest,CancellationToken,Task<NgDataResult<string>>>)((r,t)=>{remoteGroupCalls++;return Task.FromResult(new NgDataResult<string>([],0));})});throw new Exception("Remote grouping accepted");}catch(ArgumentException){count++;}
+Rule(remoteGroupCalls==0,"invalid grouping never invokes remote adapter");
 Console.WriteLine($"{count} rendering and data/date-rule checks passed. Browser interaction requires the separate visual run.");
 sealed class NoBrowserJS : IJSRuntime {
  public ValueTask<TValue> InvokeAsync<TValue>(string identifier, object?[]? args) => throw new InvalidOperationException("JS must not execute in SSR");

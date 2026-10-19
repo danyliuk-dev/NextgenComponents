@@ -9,18 +9,27 @@
 @if(Selectable){<th scope="col"><input type="checkbox" aria-label="Select page" checked="@(Eligible.Count>0 && Eligible.All(x=>SelectedIds.Contains(RowId(x))))" disabled="@(Eligible.Count==0 || SelectionReadOnly || !SelectedIdsChanged.HasDelegate)" aria-checked="@(Eligible.Any(x=>SelectedIds.Contains(RowId(x))) && !Eligible.All(x=>SelectedIds.Contains(RowId(x)))?"mixed":null)" @onchange="SelectPage" /></th>}
 @foreach(var column in Columns){var sort=sorts.FirstOrDefault(x=>x.Key==column.Key);<th scope="col" aria-sort="@(sort is not null?(sort.Descending?"descending":"ascending"):"none")">@if(column.Sortable){<button type="button" @onclick="()=>Sort(column.Key)">@column.Title @(sort is not null?$"{(sort.Descending?"↓":"↑")}{(MultiSort?sorts.IndexOf(sort)+1:"")}":"↕")</button>}else{@column.Title}</th>}
 @if(RowActions is not null){<th scope="col">Actions</th>}
-</tr></thead><tbody>
-@if(!loading && !error && Visible.Count==0){<tr><td colspan="@(Columns.Count+(Selectable?1:0)+(RowActions is null?0:1))" class="ng-empty">@if(EmptyTemplate is not null){@EmptyTemplate}else{@EmptyText}</td></tr>}
-@foreach(var row in Visible){var id=RowId(row);<tr @key="id" class="@(SelectedIds.Contains(id)?"ng-row-selected":"")">
+</tr></thead>
+@if(!loading && !error && Visible.Count==0){<tbody><tr><td colspan="@(Columns.Count+(Selectable?1:0)+(RowActions is null?0:1))" class="ng-empty">@if(EmptyTemplate is not null){@EmptyTemplate}else{@EmptyText}</td></tr></tbody>}
+@foreach(var section in VisibleSections){
+<tbody>
+@if(GroupBy is not null){var key=GroupBy(section[0]);<tr class="ng-grid-group"><th scope="rowgroup" colspan="@(Columns.Count+(Selectable?1:0)+(RowActions is null?0:1))">@(GroupText?.Invoke(key,groupCounts[key])??$"{(key.Length==0?"(empty)":key)} ({groupCounts[key]})")</th></tr>}
+@foreach(var row in section){var id=RowId(row);
+<tr @key="id" class="@(SelectedIds.Contains(id)?"ng-row-selected":"")">
 @if(Selectable){<td><input type="checkbox" aria-label="@($"Select {id}")" checked="@SelectedIds.Contains(id)" disabled="@(!CanChange(row))" @onchange="()=>Toggle(row)" /></td>}
 @foreach(var column in Columns){<td>@if(column.Template is not null){@column.Template(row)}else{@column.Text(row)}</td>}
 @if(RowActions is not null){<td>@RowActions(row)</td>}
 </tr>}
-</tbody></table></div>
+</tbody>}
+</table></div>
 <NgPager Total="Total" Page="page" PageChanged="ChangePage" PageSize="size" PageSizeChanged="Resize" Sizes="PageSizes" />
 </div>
 @code {
  [Parameter] public Func<NgDataRequest,CancellationToken,Task<NgDataResult<TItem>>>? ReadData{get;set;}
+ [Parameter] public Func<TItem,string>? GroupBy{get;set;}
+ [Parameter] public Func<string,int,string>? GroupText{get;set;}
+ private Dictionary<string,int> groupCounts=[];
+ private bool wasGrouped;
  [Parameter] public object? DataVersion{get;set;}
  [Parameter] public bool MultiSort{get;set;}
  [Parameter] public string LoadingText{get;set;}="Loading records…";
@@ -55,9 +64,12 @@
  private int Total=>ReadData is null?filtered.Count:total;
  private int page=1,size;
  private IReadOnlyList<TItem> filtered=[];
+ private IEnumerable<IReadOnlyList<TItem>> VisibleSections=>GroupBy is null?[Visible]:NgDataOperations.Group(Visible,GroupBy).Select(g=>g.Items);
  private IReadOnlyList<TItem> Visible=>ReadData is null?filtered.Skip((page-1)*size).Take(size).ToArray():filtered;
  protected override void OnInitialized()=>size=Math.Max(1,InitialPageSize);
  protected override async Task OnParametersSetAsync(){
+   if(GroupBy is not null && ReadData is not null)throw new ArgumentException("Local grouping requires Items, not ReadData.");
+   if(wasGrouped!=(GroupBy is not null)){page=1;wasGrouped=GroupBy is not null;}
    ValidateRows(Items);
    if(Columns.Count==0 || Columns.Any(x=>string.IsNullOrWhiteSpace(x.Key)) || Columns.Select(x=>x.Key).Distinct().Count()!=Columns.Count)throw new ArgumentException("Grid column keys must be nonempty and unique, with at least one column.");
    var changed=sorts.RemoveAll(s=>!Columns.Any(c=>c.Key==s.Key && c.Sortable))>0;
@@ -68,7 +80,7 @@
    }else if(ReadData is null)Refresh();
  }
  private void ValidateRows(IReadOnlyList<TItem> rows){if(rows.Any(x=>string.IsNullOrWhiteSpace(RowId(x))) || rows.Select(RowId).Distinct().Count()!=rows.Count)throw new ArgumentException("Grid row IDs must be nonempty and unique.");}
- private void Refresh(){filtered=NgDataOperations.Query(Items,Columns,search,sorts);page=NgDataOperations.ClampPage(page,filtered.Count,size);}
+ private void Refresh(){filtered=NgDataOperations.Query(Items,Columns,search,sorts);groupCounts.Clear();if(GroupBy is not null){var groups=NgDataOperations.Group(filtered,GroupBy);groupCounts=groups.ToDictionary(g=>g.Key,g=>g.Items.Count,StringComparer.Ordinal);filtered=groups.SelectMany(g=>g.Items).ToArray();}page=NgDataOperations.ClampPage(page,filtered.Count,size);}
  public async Task ReloadAsync(){
    if(disposed)return;
    var ticket=++revision;pending?.Cancel();pending?.Dispose();pending=new();var token=pending.Token;
