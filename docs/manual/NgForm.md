@@ -27,7 +27,7 @@ Automatic model-driven editor generation, conditional schemas, full Telerik even
 ### Responsive fields and actions (0.50)
 Fields/fields is an explicit ordered list of field fragments/widgets. Supply it instead of ChildContent/child; combining them throws. An empty list is allowed. Legacy content keeps its existing layout. The library does not inspect the model or generate editors.
 
-Columns/columns is the maximum number of columns (1–4, default 1). MinColumnWidth/minColumnWidth is the preferred minimum width (120–1200 CSS/logical pixels, default 240); Gap/gap is spacing in both directions (0–64, default 16). Width comes from the form's container, not the screen. Columns reduce as space narrows; one column can shrink below the preferred minimum to fit. Flutter requires bounded horizontal constraints; use Expanded when placing the form in a Row. Custom field content must itself support shrinking. Each field occupies one cell; spans and nested groups are not supplied.
+Columns/columns is the maximum number of columns (1–4, default 1). MinColumnWidth/minColumnWidth is the preferred minimum width (120–1200 CSS/logical pixels, default 240); Gap/gap is spacing in both directions (0–64, default 16). Width comes from the form's container, not the screen. Columns reduce as space narrows; one column can shrink below the preferred minimum to fit. Flutter requires bounded horizontal constraints; use Expanded when placing the form in a Row. Custom field content must itself support shrinking. Fields occupy one cell unless FieldSpans/fieldSpans is supplied; nested groups are not supplied.
 
 Changing width, columns or gaps preserves the existing field widgets, values and validation. Keep the field list order stable for positional identity; use a replacement form key when replacing the entire schema. Flutter keyed fields support reordering; do not reuse keys. Tab/focus order follows source order. Flutter Wrap and CSS Grid use each row's tallest cell without forcing editors to equal heights.
 
@@ -42,20 +42,30 @@ ShowSummary/showSummary hides the entire summary, including the custom template;
 Changing presentation or hiding/revealing the summary preserves fields and errors. Replacing the model/key resets validation as described above. Blazor unsubscribes from old EditContext notifications; disposed Flutter forms ignore queued refreshes. A custom template should contain descriptive content; field-focus links and a standardized error-to-field ID mapping are not supplied. The live-region wrapper remains around custom content, but full screen-reader certification is still open.
 
 
+### Field spans (0.52)
+FieldSpans/fieldSpans is an optional integer list matching Fields/fields exactly. Values 1–4 request that many columns; 0 occupies the whole available row. An omitted list gives every field one column. Invalid lengths, values outside 0–4 or spans without explicit fields throw. A requested span is clamped to the columns currently available, so narrow forms stay within their container. The preferred minimum width still determines how many columns fit.
+
+Fields retain source order and flow to the next row when the remaining space is insufficient; gaps are not filled by moving later fields backwards. A full-row field starts a new row and subsequent fields follow it. Row height follows the tallest field; vertical row spans are not supported. Changing spans does not reset values, focus or validation. Keep the field order stable, or use the previously documented keyed-field/reset rules.
+
+Blazor uses per-instance container-query rules with validated numeric widths and a single-column fallback in browsers without container-query support. Flutter uses Wrap with the same available-column and span rules. Field fragments must support shrinking. This is explicit layout, not automatic model/schema generation or nested field groups.
+
+
 ## Blazor example
 
 ```razor
+<div class="ng-prompt-actions"><NgButton OnClick="()=>notesSpan=notesSpan==0?2:notesSpan==2?1:0">Change notes span</NgButton><NgButton OnClick="()=>columns=3">Use three columns</NgButton></div>
 <div class="ng-prompt-actions"><NgButton OnClick="()=>customSummary=!customSummary">Toggle custom summary</NgButton><NgButton OnClick="()=>showSummary=!showSummary">Toggle summary visibility</NgButton></div>
 <div class="ng-prompt-actions"><NgButton OnClick="()=>columns=columns==2?1:2">Change columns</NgButton><NgButton OnClick="()=>gap=gap==16?32:16">Change spacing</NgButton></div>
 <p>Maximum columns: @columns · Gap: @gap</p>
 <NgCheckBox Label="Simulate save failure" @bind-Value="fail"/>
 <NgCheckBox Label="Disable form" @bind-Value="disabled"/>
-<NgForm @key="model" Model="model" ShowSummary="showSummary" SummaryTitle="Review this application" SummaryTemplate="@(customSummary?CustomSummary:null)" Fields="FormFields" Columns="columns" Gap="gap" Disabled="disabled" OnValidSubmit="Save">
+<NgForm @key="model" Model="model" ShowSummary="showSummary" SummaryTitle="Review this application" SummaryTemplate="@(customSummary?CustomSummary:null)" Fields="FormFields" FieldSpans="@(new[]{1,1,notesSpan,1})" Columns="columns" Gap="gap" Disabled="disabled" OnValidSubmit="Save">
  <Actions><NgButton Type="submit" Primary>Save application</NgButton><span>All fields are validated before saving.</span></Actions>
 </NgForm>
 <NgButton OnClick="Reset">Reset application</NgButton>
 <p role="status">@status</p>
 @code {
+ private int notesSpan;
  private bool customSummary=true,showSummary=true;
  private RenderFragment<IReadOnlyList<string>> CustomSummary=>errors=>@<div><strong>Review @errors.Count issue(s)</strong><ul>@foreach(var message in errors){<li>@message</li>}</ul></div>;
  private Draft model=new(); private bool fail,disabled; private int columns=2,gap=16; private string status="Not saved";
@@ -74,15 +84,17 @@ Changing presentation or hiding/revealing the summary preserves fields and error
 ## Flutter example
 
 ```dart
+int notesSpan=0;
 bool customSummary=true,showSummary=true;
 int revision=0,columns=2,gap=16; bool fail=false,disabled=false; String name='',owner='',notes='',reference='',status='Not saved';
 Widget build(BuildContext context)=>Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
+ Wrap(spacing:8,children:[NgButton(onPressed:()=>setState(()=>notesSpan=notesSpan==0?2:notesSpan==2?1:0),child:const Text('Change notes span')),NgButton(onPressed:()=>setState(()=>columns=3),child:const Text('Use three columns'))]),
  Wrap(spacing:8,children:[NgButton(onPressed:()=>setState(()=>customSummary=!customSummary),child:const Text('Toggle custom summary')),NgButton(onPressed:()=>setState(()=>showSummary=!showSummary),child:const Text('Toggle summary visibility'))]),
  Wrap(spacing:8,children:[NgButton(onPressed:()=>setState(()=>columns=columns==2?1:2),child:const Text('Change columns')),NgButton(onPressed:()=>setState(()=>gap=gap==16?32:16),child:const Text('Change spacing'))]),
  Text('Maximum columns: $columns · Gap: $gap'),
  NgCheckBox(label:'Simulate save failure',value:fail,onChanged:(v)=>setState(()=>fail=v)),
  NgCheckBox(label:'Disable form',value:disabled,onChanged:(v)=>setState(()=>disabled=v)),
- NgForm(showSummary:showSummary,summaryTitle:'Review this application',summaryBuilder:customSummary?(_,errors)=>Column(crossAxisAlignment:CrossAxisAlignment.start,children:[Text('Review ${errors.length} issue(s)',style:const TextStyle(fontWeight:FontWeight.bold)),for(final message in errors)Text(message)]):null,key:ValueKey(revision),columns:columns,gap:gap,enabled:!disabled,onValidSubmit:()async{
+ NgForm(fieldSpans:[1,1,notesSpan,1],showSummary:showSummary,summaryTitle:'Review this application',summaryBuilder:customSummary?(_,errors)=>Column(crossAxisAlignment:CrossAxisAlignment.start,children:[Text('Review ${errors.length} issue(s)',style:const TextStyle(fontWeight:FontWeight.bold)),for(final message in errors)Text(message)]):null,key:ValueKey(revision),columns:columns,gap:gap,enabled:!disabled,onValidSubmit:()async{
   final version=revision,denied=fail;final snapshot=name;await Future<void>.delayed(const Duration(seconds:1));
   if(denied)throw StateError('Demo failure');if(mounted&&version==revision)setState(()=>status='Saved: $snapshot');
  },fields:[
@@ -112,6 +124,7 @@ Names are case-sensitive. `?` permits null. `EditorRequired` parameters are mark
 | `BusyText` | `string` | "Saving…" | See the behavior rules and model contract above. |
 | `ErrorText` | `string` | "Unable to save. Try again." | See the behavior rules and model contract above. |
 | `Fields` | `IReadOnlyList<RenderFragment>?` | not set | Explicit ordered fields; do not combine with legacy content. |
+| `FieldSpans` | `IReadOnlyList<int>?` | not set | One span per field (0–4); zero fills the available row. Omit for one cell per field. |
 | `Columns` | `int` | 1 | Maximum responsive column count (1–4); default 1. |
 | `MinColumnWidth` | `int` | 240 | Preferred minimum cell width (120–1200); default 240. |
 | `Gap` | `int` | 16 | Horizontal and vertical cell spacing (0–64); default 16. |
@@ -128,6 +141,7 @@ Names are case-sensitive. `?` permits null. `EditorRequired` parameters are mark
 |---|---|---|
 | `child` | `Widget?` | Legacy content with application-owned layout; use child or fields. |
 | `fields` | `List<Widget>?` | Explicit ordered fields; do not combine with legacy content. |
+| `fieldSpans` | `List<int>?` | One span per field (0–4); zero fills the available row. Omit for one cell per field. |
 | `columns` | `int` | Maximum responsive column count (1–4); default 1. |
 | `minColumnWidth` | `int` | Preferred minimum cell width (120–1200); default 240. |
 | `gap` | `int` | Horizontal and vertical cell spacing (0–64); default 16. |
@@ -148,6 +162,7 @@ const NgForm({
     super.key,
     this.child,
     this.fields,
+    this.fieldSpans,
     this.columns = 1,
     this.minColumnWidth = 240,
     this.gap = 16,

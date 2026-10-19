@@ -604,6 +604,7 @@ class _NgMultiSelectState extends State<NgMultiSelect> {
 class NgForm extends StatefulWidget {
   final Widget? child;
   final List<Widget>? fields;
+  final List<int>? fieldSpans;
   final int columns, minColumnWidth, gap;
   final Widget Function(BuildContext, VoidCallback?)? actionsBuilder;
   final FutureOr<void> Function() onValidSubmit;
@@ -618,6 +619,7 @@ class NgForm extends StatefulWidget {
     super.key,
     this.child,
     this.fields,
+    this.fieldSpans,
     this.columns = 1,
     this.minColumnWidth = 240,
     this.gap = 16,
@@ -692,10 +694,22 @@ class _NgFormState extends State<NgForm> {
     }
   }
 
+  int effectiveSpan(int index, int columns) {
+    final span = widget.fieldSpans?[index] ?? 1;
+    return span == 0 ? columns : span.clamp(1, columns);
+  }
+
   @override
   Widget build(BuildContext context) {
     if ((widget.child == null) == (widget.fields == null))
       throw ArgumentError('Supply child or fields, not both.');
+    if (widget.fieldSpans != null &&
+        (widget.fields == null ||
+            widget.fieldSpans!.length != widget.fields!.length ||
+            widget.fieldSpans!.any((span) => span < 0 || span > 4)))
+      throw ArgumentError(
+        'Supply one span (0–4) per field; zero fills the row.',
+      );
     if (widget.columns < 1 || widget.columns > 4)
       throw ArgumentError('Use 1–4 columns.');
     if (widget.minColumnWidth < 120 || widget.minColumnWidth > 1200)
@@ -750,7 +764,17 @@ class _NgFormState extends State<NgForm> {
                                     1,
                                     widget.fields!.isEmpty
                                         ? 1
-                                        : widget.fields!.length,
+                                        : List.generate(
+                                            widget.fields!.length,
+                                            (i) => widget.fieldSpans?[i] ?? 1,
+                                          ).fold<int>(
+                                            0,
+                                            (sum, span) =>
+                                                sum +
+                                                (span == 0
+                                                    ? widget.columns
+                                                    : span),
+                                          ),
                                   );
                         final cellWidth = width.isFinite
                             ? ((width - (count - 1) * widget.gap) / count)
@@ -760,13 +784,15 @@ class _NgFormState extends State<NgForm> {
                           spacing: widget.gap.toDouble(),
                           runSpacing: widget.gap.toDouble(),
                           children: [
-                            for (final field in widget.fields!)
+                            for (var i = 0; i < widget.fields!.length; i++)
                               SizedBox(
-                                key: field.key == null
+                                key: widget.fields![i].key == null
                                     ? null
-                                    : ValueKey(field.key),
-                                width: cellWidth,
-                                child: field,
+                                    : ValueKey(widget.fields![i].key),
+                                width:
+                                    cellWidth * effectiveSpan(i, count) +
+                                    widget.gap * (effectiveSpan(i, count) - 1),
+                                child: widget.fields![i],
                               ),
                           ],
                         );

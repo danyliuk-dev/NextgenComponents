@@ -97,3 +97,8 @@ NgForm accepts an explicit Fields/fields list instead of legacy content, with Co
 ## Validation summaries (0.51)
 
 NgForm supports localized SummaryTitle/summaryTitle and SummaryTemplate/summaryBuilder with read-only error-message snapshots. The default summary lists individual errors; empty or hidden summaries do not render. Validation remains active when the summary is hidden. Blazor follows EditContext notifications; Flutter revalidates after field changes following the first attempted submission. Templates are descriptive; field-focus mapping remains open. See the [Form manual](manual/NgForm.md) for reset and validator contracts.
+
+
+## Form field spans (0.52)
+
+FieldSpans/fieldSpans optionally supplies one value per explicit field: 1–4 columns, or 0 for the entire available row. Spans clamp to the current responsive column count and preserve source order. Changing spans retains field state. Blazor container queries have a one-column fallback; Flutter uses Wrap. Nested groups, vertical spans and automatic schemas remain open. See the [Form manual](manual/NgForm.md).

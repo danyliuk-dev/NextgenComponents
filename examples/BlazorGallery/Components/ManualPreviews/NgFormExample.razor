@@ -1,15 +1,17 @@
 @* Generated from scripts/manual_content.py *@
+<div class="ng-prompt-actions"><NgButton OnClick="()=>notesSpan=notesSpan==0?2:notesSpan==2?1:0">Change notes span</NgButton><NgButton OnClick="()=>columns=3">Use three columns</NgButton></div>
 <div class="ng-prompt-actions"><NgButton OnClick="()=>customSummary=!customSummary">Toggle custom summary</NgButton><NgButton OnClick="()=>showSummary=!showSummary">Toggle summary visibility</NgButton></div>
 <div class="ng-prompt-actions"><NgButton OnClick="()=>columns=columns==2?1:2">Change columns</NgButton><NgButton OnClick="()=>gap=gap==16?32:16">Change spacing</NgButton></div>
 <p>Maximum columns: @columns · Gap: @gap</p>
 <NgCheckBox Label="Simulate save failure" @bind-Value="fail"/>
 <NgCheckBox Label="Disable form" @bind-Value="disabled"/>
-<NgForm @key="model" Model="model" ShowSummary="showSummary" SummaryTitle="Review this application" SummaryTemplate="@(customSummary?CustomSummary:null)" Fields="FormFields" Columns="columns" Gap="gap" Disabled="disabled" OnValidSubmit="Save">
+<NgForm @key="model" Model="model" ShowSummary="showSummary" SummaryTitle="Review this application" SummaryTemplate="@(customSummary?CustomSummary:null)" Fields="FormFields" FieldSpans="@(new[]{1,1,notesSpan,1})" Columns="columns" Gap="gap" Disabled="disabled" OnValidSubmit="Save">
  <Actions><NgButton Type="submit" Primary>Save application</NgButton><span>All fields are validated before saving.</span></Actions>
 </NgForm>
 <NgButton OnClick="Reset">Reset application</NgButton>
 <p role="status">@status</p>
 @code {
+ private int notesSpan;
  private bool customSummary=true,showSummary=true;
  private RenderFragment<IReadOnlyList<string>> CustomSummary=>errors=>@<div><strong>Review @errors.Count issue(s)</strong><ul>@foreach(var message in errors){<li>@message</li>}</ul></div>;
  private Draft model=new(); private bool fail,disabled; private int columns=2,gap=16; private string status="Not saved";

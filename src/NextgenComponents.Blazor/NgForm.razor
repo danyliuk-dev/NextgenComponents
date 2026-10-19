@@ -7,10 +7,11 @@
  else{<p>@SummaryTitle</p><ul>@foreach(var message in messages){<li>@message</li>}</ul>}
  </div>
 }
-<fieldset class="ng-form-fields" disabled="@(Disabled||busy)" aria-busy="@(busy?"true":"false")">
+<fieldset class="@(Fields is null?"ng-form-fields":"ng-form-fields ng-form-container")" disabled="@(Disabled||busy)" aria-busy="@(busy?"true":"false")">
 @if(Fields is not null){
- <div class="ng-form-layout" style="@LayoutStyle">
- @foreach(var field in Fields){<div class="ng-form-cell">@field</div>}
+ <style>@((MarkupString)LayoutRules)</style>
+ <div class="ng-form-layout @layoutId" style="@LayoutStyle">
+ @for(var i=0;i<Fields.Count;i++){<div class="ng-form-cell" style="@SpanStyle(i)">@Fields[i]</div>}
  </div>
 }else{@ChildContent}
 @if(Actions is not null){<div class="ng-form-actions">@Actions</div>}
@@ -35,6 +36,18 @@
  [Parameter] public string BusyText {get;set;}="Saving…";
  [Parameter] public string ErrorText {get;set;}="Unable to save. Try again.";
  [Parameter] public IReadOnlyList<RenderFragment>? Fields {get;set;}
+ [Parameter] public IReadOnlyList<int>? FieldSpans {get;set;}
+ private readonly string layoutId="ng-form-layout-"+Guid.NewGuid().ToString("N");
+ private int SpanAt(int index)=>FieldSpans?[index]??1;
+ private string SpanStyle(int index)=>$"grid-column:span {(SpanAt(index)==0?"var(--ng-form-count)":$"min({SpanAt(index)},var(--ng-form-count))")}";
+ private int MaximumColumns=>Math.Min(Columns,Math.Max(1,Fields is null?1:Enumerable.Range(0,Fields.Count).Sum(i=>SpanAt(i)==0?Columns:SpanAt(i))));
+ private string LayoutRules {
+  get {
+   var rules="."+layoutId+"{--ng-form-count:1}";
+   for(var c=2;c<=MaximumColumns;c++)rules+="@container ng-form-columns (min-width:"+(c*MinColumnWidth+(c-1)*Gap)+"px){."+layoutId+"{--ng-form-count:"+c+"}}";
+   return rules;
+  }
+ }
  [Parameter] public int Columns {get;set;}=1;
  [Parameter] public int MinColumnWidth {get;set;}=240;
  [Parameter] public int Gap {get;set;}=16;
@@ -49,6 +62,7 @@
   if(MinColumnWidth is <120 or >1200)throw new ArgumentOutOfRangeException(nameof(MinColumnWidth));
   if(Gap is <0 or >64)throw new ArgumentOutOfRangeException(nameof(Gap));
   if(Fields is not null&&ChildContent is not null)throw new ArgumentException("Use Fields or ChildContent, not both.");
+  if(FieldSpans is not null&&(Fields is null||FieldSpans.Count!=Fields.Count||FieldSpans.Any(span=>span is <0 or >4)))throw new ArgumentException("Supply one span (0–4) per field; zero fills the row.",nameof(FieldSpans));
   if(Fields?.Any(f=>f is null)==true)throw new ArgumentException("Fields cannot contain null entries.",nameof(Fields));
 if(!ReferenceEquals(previous,Model)||editContext is null){
   if(editContext is not null)editContext.OnValidationStateChanged-=ValidationChanged;

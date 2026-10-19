@@ -699,3 +699,20 @@ Validation completed:
 Evidence: [Blazor custom summary](screenshots/form051-blazor-two-errors.png), [Flutter narrow summary](screenshots/form051-flutter-narrow.png), [desktop manual](screenshots/form051-desktop-manual.png).
 
 Platform timing remains explicit: Blazor follows validation notifications; Flutter starts summary collection at submit and later revalidates after field changes. Validators must have no side effects. Error-to-field focus mapping, automatic schemas and native/full screen-reader certification remain open.
+
+
+## Responsive form field spans — 0.52 (2026-10-19, Linux on iMac)
+
+NgForm adds FieldSpans/fieldSpans: one value per explicit field, 1–4 columns or 0 for a complete row. Requested spans clamp to the available columns. Fields retain source order with no dense backfilling. Blazor uses instance-specific container queries with a one-column fallback; legacy ChildContent does not acquire containment. Flutter uses its existing Wrap structure.
+
+Validation completed:
+
+- 363 Blazor rendering/data checks, including responsive CSS rules, full-row spans, invalid span arrays and unchanged legacy fieldset classes; gallery build passed with zero warnings/errors.
+- 224 Flutter tests and clean Dart analysis. New tests cover fractional container widths, multi-column/full-row placement, clamping, invalid spans and retained draft/focus/validation after resizing and span changes.
+- 47 Razor and 47 Dart manual examples compiled/analyzed; 94 lossless highlighting checks. Flutter release Web build passed with the existing CupertinoIcons font warning.
+- Foreground local Chrome: 18 Blazor and 18 Flutter checks via `scripts/form-spans-check.py`. Full-row/two-column/single-cell transitions, three-column layout, sparse source-order flow, preserved notes/errors, 390 px clamping without horizontal overflow and successful save all passed.
+- Desktop shell opened the updated Form manual and live example; screenshots were inspected directly.
+
+Evidence: [Blazor two-column field](screenshots/form052-blazor-two-columns.png), [Flutter narrow form](screenshots/form052-flutter-narrow.png), [desktop manual](screenshots/form052-desktop-manual.png).
+
+Nested groups, vertical spans, automatic/conditional schemas and native/full screen-reader certification remain open. Browser verification covers current local Chrome; fallback behavior on older browsers was not separately certified.
