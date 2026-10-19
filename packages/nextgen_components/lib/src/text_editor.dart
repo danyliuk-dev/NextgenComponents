@@ -9,7 +9,8 @@ class NextgenTextEditor extends StatefulWidget {
   final FormFieldValidator<String>? validator;
   final bool enabled, readOnly, showClearButton, password, showPasswordToggle;
   final int? maxLength;
-  final int rows;
+  final int rows, maxRows;
+  final bool autoSize;
   final bool multiline;
   final FocusNode? focusNode;
   final Widget? prefix, suffix;
@@ -30,6 +31,8 @@ class NextgenTextEditor extends StatefulWidget {
     this.showPasswordToggle = false,
     this.maxLength,
     this.rows = 1,
+    this.autoSize = false,
+    this.maxRows = 12,
     this.multiline = false,
     this.focusNode,
     this.prefix,
@@ -160,7 +163,9 @@ class _NextgenTextEditorState extends State<NextgenTextEditor> {
         enabled: widget.enabled,
         readOnly: widget.readOnly,
         minLines: widget.multiline ? widget.rows : null,
-        maxLines: widget.multiline ? widget.rows : 1,
+        maxLines: widget.multiline
+            ? (widget.autoSize ? widget.maxRows : widget.rows)
+            : 1,
         obscureText: widget.password && !revealed,
         enableSuggestions: !widget.password,
         autocorrect: !widget.password,

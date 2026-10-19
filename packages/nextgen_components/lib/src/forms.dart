@@ -9,7 +9,8 @@ class NgTextArea extends StatelessWidget {
   final String? initialValue;
   final ValueChanged<String>? onChanged;
   final FormFieldValidator<String>? validator;
-  final int rows;
+  final int rows, maxRows;
+  final bool autoSize;
   final String? placeholder;
   final int? maxLength;
   final bool enabled, readOnly, showClearButton;
@@ -25,6 +26,8 @@ class NgTextArea extends StatelessWidget {
     this.onChanged,
     this.validator,
     this.rows = 4,
+    this.autoSize = false,
+    this.maxRows = 12,
     this.placeholder,
     this.maxLength,
     this.enabled = true,
@@ -43,6 +46,10 @@ class NgTextArea extends StatelessWidget {
     if (controller != null && initialValue != null)
       throw ArgumentError('Use controller or initialValue, not both.');
     if (rows < 1 || rows > 30) throw ArgumentError('Use 1–30 rows.');
+    if (maxRows < 1 || maxRows > 30 || (autoSize && maxRows < rows))
+      throw ArgumentError(
+        'Use 1–30 maximum rows, at least rows when autoSize is enabled.',
+      );
     return NextgenTextEditor(
       label: label,
       controller: controller,
@@ -60,6 +67,8 @@ class NgTextArea extends StatelessWidget {
       suffix: suffix,
       showClearButton: showClearButton,
       rows: rows,
+      autoSize: autoSize,
+      maxRows: maxRows,
       multiline: true,
     );
   }

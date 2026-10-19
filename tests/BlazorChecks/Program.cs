@@ -22,6 +22,8 @@ string team = "a";
 NgOption[] options = [new("a", "Alpha"), new("b", "Beta", true)];
 await Check<NgButton>(new() { ["Disabled"] = true, ["Primary"] = true, ["ChildContent"] = Text("Save") }, "disabled", "ng-primary", "type=\"button\"");
 await Check<NgTextBox>(new(){["Label"]="Password",["Value"]="sample",["ValueExpression"]=(Expression<Func<string?>>)(()=>name),["Password"]=true,["ShowPasswordToggle"]=true,["ShowClearButton"]=true},"type=\"password\"","Show password","Clear Password");
+await Check<NgTextArea>(new(){["Value"]="Lines",["ValueExpression"]=(Expression<Func<string?>>)(()=>name),["AutoSize"]=true,["Rows"]=2,["MaxRows"]=6},"ng-textarea-auto","rows=\"2\"");
+try{await Check<NgTextArea>(new(){["ValueExpression"]=(Expression<Func<string?>>)(()=>name),["AutoSize"]=true,["Rows"]=4,["MaxRows"]=2});throw new Exception("Invalid automatic row bounds accepted");}catch(ArgumentOutOfRangeException){count++;Console.WriteLine("PASS invalid automatic row bounds");}
 await Check<NgTextArea>(new(){["Label"]="Notes",["Value"]="",["ValueExpression"]=(Expression<Func<string?>>)(()=>name),["ShowClearButton"]=true},"Clear Notes","disabled");
 await Check<NgTextBox>(new() { ["Label"] = "Name", ["Value"] = name, ["ValueExpression"] = (Expression<Func<string?>>)(() => name), ["Id"] = "name" }, "for=\"name\"", "&lt;script&gt;", "id=\"name\"");
 await Check<NgTextBox>(new(){["Label"]="Project",["Value"]=name,["ValueExpression"]=(Expression<Func<string?>>)(()=>name),["Id"]="project",["ReadOnly"]=true,["MaxLength"]=80,["HelperText"]="Guidance",["PrefixTemplate"]=Text("Prefix"),["AdditionalAttributes"]=new Dictionary<string,object>{{"aria-describedby","external-help"}}},"readonly","maxlength=\"80\"","external-help project-help","Prefix","Guidance");

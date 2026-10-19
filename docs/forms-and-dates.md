@@ -71,3 +71,9 @@ TextBox and TextArea support `ShowClearButton` / `showClearButton` (default fals
 TextBox adds `Password` / `password` and `ShowPasswordToggle` / `showPasswordToggle`, both default false. Password masks the value; opt-in reveal only changes presentation. Read-only/disabled states suppress reveal and hide the value; clear and leaving the reveal control hide it. Flutter controller replacement also hides it. TextArea remains multiline plain text. This is presentation, not encryption or password-manager integration.
 
 Existing adornments and clear/reveal controls coexist. Flutter keeps controller ownership with the caller, preserves initial-value form reset, and rejects retained clear/reveal handlers after parameter/controller replacement or disposal. Detailed manuals and live previews demonstrate both controls. Existing platform length-count and commit-timing differences remain.
+
+## Bounded TextArea height (0.47)
+
+`AutoSize` / `autoSize` defaults to false. Enable it to grow between `Rows` / `rows` (default 4) and `MaxRows` / `maxRows` (default 12), with internal scrolling above the cap. Both bounds accept 1–30, and the maximum must be at least the minimum in automatic mode. Growth includes wrapped text, not only explicit line breaks; width changes, clear and external text replacement recalculate the height even in read-only mode. Sizing never changes the text or emits value callbacks.
+
+Blazor measures after interactive rendering with its packaged module and observes width/font changes; static SSR retains the Rows fallback. Auto mode disables manual resize; turning it off restores the prior inline height/overflow. Observers detach on component disposal or DOM removal. Flutter uses native minLines/maxLines layout. Platform font metrics/decorations remain different; custom CSS must not override the automatic height or box sizing. The manual provides a live long/short text and mode-switching example.

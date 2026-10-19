@@ -1,8 +1,15 @@
 @* Generated from scripts/manual_content.py *@
+<div class="ng-prompt-actions">
+ <NgButton OnClick="()=>automatic=!automatic">Toggle automatic height</NgButton>
+ <NgButton OnClick="LoadLong">Load long text</NgButton>
+ <NgButton OnClick="LoadShort">Load short text</NgButton>
+</div>
 <NgCheckBox Label="Read only" @bind-Value="locked"/>
-<NgTextArea @ref="editor" Label="Delivery notes" @bind-Value="text" ReadOnly="locked" ShowClearButton="true" MaxLength="80" HelperText="Use a short, descriptive note." OnCommit="v=>committed=v">
-<PrefixTemplate><span aria-hidden="true">✎</span></PrefixTemplate>
-</NgTextArea>
-<NgButton OnClick="()=>editor!.FocusAsync().AsTask()">Focus editor</NgButton>
-<p>Current: @text</p><p>Committed: @committed</p>
-@code { private NgTextArea? editor; private bool locked; private string? text="Design review",committed; }
+<NgTextArea Label="Delivery notes" @bind-Value="text" Rows="2" MaxRows="6" AutoSize="automatic"
+ ReadOnly="locked" ShowClearButton="true" HelperText="Grows from 2 to 6 rows; longer notes scroll."/>
+<p>Automatic height: @automatic · Length: @(text?.Length??0)</p>
+@code {
+ private bool automatic=true,locked; private string? text="Short note";
+ private void LoadShort()=>text="Short note";
+ private void LoadLong()=>text=string.Join("\n",Enumerable.Range(1,14).Select(i=>$"Line {i}: a detailed delivery note."));
+}

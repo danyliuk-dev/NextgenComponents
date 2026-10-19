@@ -3005,3 +3005,38 @@ for _editor in ('NgTextBox','NgTextArea'):
 D['NgTextBox']['blazor'] = D['NgTextBox']['blazor'].replace('<NgCheckBox Label="Read only"', '<NgButton OnClick="()=>password=!password">Toggle password mode</NgButton>\n<NgCheckBox Label="Read only"',1).replace('ShowClearButton="true"','ShowClearButton="true" Password="password" ShowPasswordToggle="true"').replace('<p>Current: @text</p><p>Committed: @committed</p>', '<p>Length: @(text?.Length??0)</p>').replace('private bool locked;', 'private bool locked,password=true;')
 D['NgTextBox']['dart'] = D['NgTextBox']['dart'].replace('bool locked = false;', 'bool locked = false, password = true;').replace('children:[', "children:[\nNgButton(onPressed:()=>setState(()=>password=!password),child:const Text('Toggle password mode')),",1).replace('showClearButton:true,','showClearButton:true,password:password,showPasswordToggle:true,').replace("Text('Current: ${editor.text}'),Text('Submitted: $submitted')", "Text('Length: ${editor.text.length}')")
 D['NgTextBox']['notes'] += '\n### Password presentation\nPassword/password masks the single-line value; default false. ShowPasswordToggle/showPasswordToggle is opt-in and only appears in password mode. Reveal changes presentation, never the bound value or change callbacks. Read-only/disabled fields cannot reveal; entering these states hides the value. Clear and focus leaving the reveal control hide it too. Flutter controller replacement resets reveal. Password mode does not encrypt values or provide a credential manager; application storage and submission remain application responsibilities. Flutter disables suggestions/autocorrection in password mode. TextArea has no password mode.\n'
+
+
+# Bounded automatic TextArea height, 0.47.
+D['NgTextArea']['notes'] = D['NgTextArea']['notes'].replace('automatic resize, ', '')
+D['NgTextArea']['notes'] += '\n\n### Automatic height (0.47)\nAutoSize/autoSize defaults to false. When enabled, Rows/rows is the minimum visible line count and MaxRows/maxRows is the maximum (default 12). Both accept 1–30; the maximum must be at least the minimum in automatic mode. Fixed mode keeps Rows and ignores MaxRows for layout. The automatic field grows for newlines and wrapped text, shrinks on deletion/clear/external replacement and scrolls internally above the cap. It also adapts to width changes in read-only and disabled states. Sizing never changes the value or emits a value callback.\n\nBlazor uses a packaged JS module after interactive rendering; static SSR falls back to Rows. Automatic mode owns height and disables native manual resizing. Turning it off restores the previous inline height/overflow and normal fixed-mode behavior. Flutter uses native minLines/maxLines layout. The platforms retain their own font metrics and decorations, so equal row counts do not promise equal pixel heights. Avoid application CSS that overrides automatic height, line height or box sizing.\n'
+D['NgTextArea']['blazor'] = '''<div class="ng-prompt-actions">
+ <NgButton OnClick="()=>automatic=!automatic">Toggle automatic height</NgButton>
+ <NgButton OnClick="LoadLong">Load long text</NgButton>
+ <NgButton OnClick="()=>text="Short note"">Load short text</NgButton>
+</div>
+<NgCheckBox Label="Read only" @bind-Value="locked"/>
+<NgTextArea Label="Delivery notes" @bind-Value="text" Rows="2" MaxRows="6" AutoSize="automatic"
+ ReadOnly="locked" ShowClearButton="true" HelperText="Grows from 2 to 6 rows; longer notes scroll."/>
+<p>Automatic height: @automatic · Length: @(text?.Length??0)</p>
+@code {
+ private bool automatic=true,locked; private string? text="Short note";
+ private void LoadLong()=>text=string.Join("\\n",Enumerable.Range(1,14).Select(i=>$"Line {i}: a detailed delivery note."));
+}
+'''
+D['NgTextArea']['blazor'] = D['NgTextArea']['blazor'].replace('OnClick="()=>text="Short note""', 'OnClick="LoadShort"').replace(' private void LoadLong()', ' private void LoadShort()=>text="Short note";\n private void LoadLong()')
+D['NgTextArea']['dart'] = '''bool automatic = true, locked = false;
+final editor = TextEditingController(text:'Short note');
+@override void dispose(){editor.dispose();super.dispose();}
+Widget build(BuildContext context)=>Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
+ Wrap(spacing:8,runSpacing:8,children:[
+  NgButton(onPressed:()=>setState(()=>automatic=!automatic),child:const Text('Toggle automatic height')),
+  NgButton(onPressed:()=>setState(()=>editor.text=List.generate(14,(i)=>'Line ${i+1}: a detailed delivery note.').join('\\n')),child:const Text('Load long text')),
+  NgButton(onPressed:()=>setState(()=>editor.text='Short note'),child:const Text('Load short text')),
+ ]),
+ NgCheckBox(label:'Read only',value:locked,onChanged:(v)=>setState(()=>locked=v)),
+ NgTextArea(label:'Delivery notes',controller:editor,rows:2,maxRows:6,autoSize:automatic,
+  readOnly:locked,showClearButton:true,helperText:'Grows from 2 to 6 rows; longer notes scroll.',onChanged:(_)=>setState((){})),
+ Text('Automatic height: $automatic · Length: ${editor.text.length}'),
+]);
+'''

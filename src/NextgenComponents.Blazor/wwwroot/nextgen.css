@@ -175,3 +175,6 @@ textarea.ng-input { resize:vertical; min-height:80px; }
 
 .ng-pivot-cell:disabled{color:inherit;cursor:default;opacity:1}
 .ng-diagram [aria-disabled=true]{cursor:default}
+
+/* Automatic TextArea sizing owns height; fixed mode retains native resizing. */
+textarea.ng-textarea-auto{box-sizing:border-box;line-height:1.5;resize:none}

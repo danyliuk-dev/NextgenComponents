@@ -26,39 +26,55 @@ MaxLength must be positive when supplied. It limits user entry, not application 
 OnCommit is the Blazor native change event (normally blur, or Enter for a single-line input); ValueChanged still fires while typing. Flutter onSubmitted is the platform submission action, not a blur event; multiline Enter normally inserts a newline. These are deliberately documented platform contracts, not identical event timing.
 
 ### Current scope
-No debounce, automatic resize, full appearance variants or certified screen-reader parity. Native/mobile verification remains deferred. Application supplies localized labels, guidance and validation errors.
+No debounce, full appearance variants or certified screen-reader parity. Native/mobile verification remains deferred. Application supplies localized labels, guidance and validation errors.
 
 ### Clear action (0.46)
 ShowClearButton/showClearButton adds a labelled Clear action. It is disabled for empty, read-only or disabled fields. Clear sets the value to the empty string, not null, updates the form field and emits one value-change callback. It restores input focus and does not explicitly invoke OnCommit/onSubmitted; Blazor native blur/change can still commit the preceding typed value when focus moves to the button. Required validators can therefore reject the empty field. Flutter preserves controller ownership and initialValue form reset; retained actions cannot clear a replacement controller or bypass locks. The clear action and supplied suffix can coexist.
 
 
+### Automatic height (0.47)
+AutoSize/autoSize defaults to false. When enabled, Rows/rows is the minimum visible line count and MaxRows/maxRows is the maximum (default 12). Both accept 1–30; the maximum must be at least the minimum in automatic mode. Fixed mode keeps Rows and ignores MaxRows for layout. The automatic field grows for newlines and wrapped text, shrinks on deletion/clear/external replacement and scrolls internally above the cap. It also adapts to width changes in read-only and disabled states. Sizing never changes the value or emits a value callback.
+
+Blazor uses a packaged JS module after interactive rendering; static SSR falls back to Rows. Automatic mode owns height and disables native manual resizing. Turning it off restores the previous inline height/overflow and normal fixed-mode behavior. Flutter uses native minLines/maxLines layout. The platforms retain their own font metrics and decorations, so equal row counts do not promise equal pixel heights. Avoid application CSS that overrides automatic height, line height or box sizing.
+
+
 ## Blazor example
 
 ```razor
+<div class="ng-prompt-actions">
+ <NgButton OnClick="()=>automatic=!automatic">Toggle automatic height</NgButton>
+ <NgButton OnClick="LoadLong">Load long text</NgButton>
+ <NgButton OnClick="LoadShort">Load short text</NgButton>
+</div>
 <NgCheckBox Label="Read only" @bind-Value="locked"/>
-<NgTextArea @ref="editor" Label="Delivery notes" @bind-Value="text" ReadOnly="locked" ShowClearButton="true" MaxLength="80" HelperText="Use a short, descriptive note." OnCommit="v=>committed=v">
-<PrefixTemplate><span aria-hidden="true">✎</span></PrefixTemplate>
-</NgTextArea>
-<NgButton OnClick="()=>editor!.FocusAsync().AsTask()">Focus editor</NgButton>
-<p>Current: @text</p><p>Committed: @committed</p>
-@code { private NgTextArea? editor; private bool locked; private string? text="Design review",committed; }
+<NgTextArea Label="Delivery notes" @bind-Value="text" Rows="2" MaxRows="6" AutoSize="automatic"
+ ReadOnly="locked" ShowClearButton="true" HelperText="Grows from 2 to 6 rows; longer notes scroll."/>
+<p>Automatic height: @automatic · Length: @(text?.Length??0)</p>
+@code {
+ private bool automatic=true,locked; private string? text="Short note";
+ private void LoadShort()=>text="Short note";
+ private void LoadLong()=>text=string.Join("\n",Enumerable.Range(1,14).Select(i=>$"Line {i}: a detailed delivery note."));
+}
 
 ```
 
 ## Flutter example
 
 ```dart
-bool locked = false; String submitted = '';
-final editor = TextEditingController(text:'Design review');
-final focus = FocusNode();
-@override void dispose(){editor.dispose();focus.dispose();super.dispose();}
+bool automatic = true, locked = false;
+final editor = TextEditingController(text:'Short note');
+@override void dispose(){editor.dispose();super.dispose();}
 Widget build(BuildContext context)=>Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
-NgCheckBox(label:'Read only',value:locked,onChanged:(v)=>setState(()=>locked=v)),
-NgTextArea(label:'Delivery notes',controller:editor,focusNode:focus,readOnly:locked,showClearButton:true,maxLength:80,
-helperText:'Use a short, descriptive note.',prefix:const Icon(Icons.edit_outlined),
-onChanged:(_)=>setState((){}),onSubmitted:(v)=>setState(()=>submitted=v)),
-NgButton(onPressed:()=>focus.requestFocus(),child:const Text('Focus editor')),
-Text('Current: ${editor.text}'),Text('Submitted: $submitted')]);
+ Wrap(spacing:8,runSpacing:8,children:[
+  NgButton(onPressed:()=>setState(()=>automatic=!automatic),child:const Text('Toggle automatic height')),
+  NgButton(onPressed:()=>setState(()=>editor.text=List.generate(14,(i)=>'Line ${i+1}: a detailed delivery note.').join('\n')),child:const Text('Load long text')),
+  NgButton(onPressed:()=>setState(()=>editor.text='Short note'),child:const Text('Load short text')),
+ ]),
+ NgCheckBox(label:'Read only',value:locked,onChanged:(v)=>setState(()=>locked=v)),
+ NgTextArea(label:'Delivery notes',controller:editor,rows:2,maxRows:6,autoSize:automatic,
+  readOnly:locked,showClearButton:true,helperText:'Grows from 2 to 6 rows; longer notes scroll.',onChanged:(_)=>setState((){})),
+ Text('Automatic height: $automatic · Length: ${editor.text.length}'),
+]);
 
 ```
 
@@ -80,6 +96,8 @@ Names are case-sensitive. `?` permits null. `EditorRequired` parameters are mark
 | `SuffixTemplate` | `RenderFragment?` | not set | See the behavior rules and model contract above. |
 | `OnCommit` | `EventCallback<string?>` | not set | See the behavior rules and model contract above. |
 | `Rows` | `int` | 4 | See the behavior rules and model contract above. |
+| `AutoSize` | `bool` | false | See the behavior rules and model contract above. |
+| `MaxRows` | `int` | 12 | See the behavior rules and model contract above. |
 | `Value` | `string?` | model value | Current field value. |
 | `ValueChanged` | `EventCallback<string?>` | not set | Value change callback. |
 | `ValueExpression` | `Expression<Func<string?>>` | required | Supplied by @bind-Value; pass explicitly with manual binding. |
@@ -97,6 +115,8 @@ Names are case-sensitive. `?` permits null. `EditorRequired` parameters are mark
 | `onChanged` | `ValueChanged<String>?` | Store the new value using setState or your state manager. |
 | `validator` | `FormFieldValidator<String>?` | Return null when valid or a user-facing validation error. |
 | `rows` | `int` | See the behavior rules and model contract above. |
+| `maxRows` | `int` | See the behavior rules and model contract above. |
+| `autoSize` | `bool` | See the behavior rules and model contract above. |
 | `placeholder` | `String?` | Hint displayed for empty input. |
 | `maxLength` | `int?` | See the behavior rules and model contract above. |
 | `enabled` | `bool` | See the behavior rules and model contract above. |
@@ -117,6 +137,8 @@ const NgTextArea({
     this.onChanged,
     this.validator,
     this.rows = 4,
+    this.autoSize = false,
+    this.maxRows = 12,
     this.placeholder,
     this.maxLength,
     this.enabled = true,
