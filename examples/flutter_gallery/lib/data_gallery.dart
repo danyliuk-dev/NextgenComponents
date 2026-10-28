@@ -1,3 +1,4 @@
+import 'virtual_data_gallery.dart';
 import 'package:flutter/material.dart';
 import 'package:nextgen_components/nextgen_components.dart';
 
@@ -262,8 +263,7 @@ class _DataGalleryState extends State<DataGallery> {
                 NgCheckBox(
                   label: 'Selection read-only',
                   value: selectionReadOnly,
-                  onChanged: (v) =>
-                      setState(() => selectionReadOnly = v ?? false),
+                  onChanged: (v) => setState(() => selectionReadOnly = v),
                 ),
                 NgButton(
                   onPressed:
@@ -303,6 +303,12 @@ class _DataGalleryState extends State<DataGallery> {
       ),
     );
     return Scaffold(
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => Navigator.of(context).push(
+          MaterialPageRoute<void>(builder: (_) => const VirtualDataGallery()),
+        ),
+        label: const Text('Virtual data'),
+      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(28),
         child: Center(
@@ -392,13 +398,13 @@ class _DataGalleryState extends State<DataGallery> {
                         label: 'Tree selection read-only',
                         value: treeSelectionReadOnly,
                         onChanged: (v) =>
-                            setState(() => treeSelectionReadOnly = v ?? false),
+                            setState(() => treeSelectionReadOnly = v),
                       ),
                       NgCheckBox(
                         label: 'Tree expansion read-only',
                         value: treeExpansionReadOnly,
                         onChanged: (v) =>
-                            setState(() => treeExpansionReadOnly = v ?? false),
+                            setState(() => treeExpansionReadOnly = v),
                       ),
                       NgTreeList<Project>(
                         selectionReadOnly: treeSelectionReadOnly,

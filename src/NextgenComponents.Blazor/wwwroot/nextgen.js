@@ -47,6 +47,7 @@ export function combo(root) {
 export function tree(root) {
  root.addEventListener('keydown', e => {
   const item=e.target.closest('[role=treeitem]');if(!item || e.target!==item)return;
+  if(root.classList.contains('ng-virtual-tree')) { if(['ArrowDown','ArrowUp','Home','End','ArrowRight','ArrowLeft',' '].includes(e.key))e.preventDefault(); return; }
   const items=[...root.querySelectorAll('[role=treeitem]')].filter(x=>x.getAttribute('aria-disabled')!=='true');
   const index=items.indexOf(item);let next;
   if(e.key==='ArrowDown')next=items[index+1];
@@ -61,9 +62,34 @@ export function tree(root) {
 }
 
 // Native checkbox indeterminate is a DOM property, not an HTML attribute.
+const observedTreeChecks=new WeakSet();
 export function treeChecks(root) {
- for (const box of root.querySelectorAll('input.ng-tree-check')) {
-  box.indeterminate=box.getAttribute('aria-checked')==='mixed';
-  box.checked=box.getAttribute('aria-checked')==='true';
+ const sync=()=>{
+  for (const box of root.querySelectorAll('input.ng-tree-check')) {
+   box.indeterminate=box.getAttribute('aria-checked')==='mixed';
+   box.checked=box.getAttribute('aria-checked')==='true';
+  }
+ };
+ sync();
+ if(!observedTreeChecks.has(root)){
+  observedTreeChecks.add(root);
+  new MutationObserver(sync).observe(root,{childList:true,subtree:true,attributes:true,attributeFilter:['aria-checked']});
  }
+}
+
+// A keyboard request can target an item not yet rendered by Virtualize.
+export function virtualTreeFocus(root, index, id, height) {
+ const focused=document.activeElement;
+ const apply=()=>{
+  const item=[...root.querySelectorAll('[data-tree-id]')].find(x=>x.dataset.treeId===id);
+  if(!item)return false;
+  if(document.activeElement===focused || document.activeElement===root || document.activeElement===document.body) item.focus({preventScroll:true});
+  return true;
+ };
+ const top=index*height;
+ if(top<root.scrollTop || top+height>root.scrollTop+root.clientHeight)root.scrollTop=top;
+ if(apply())return;
+ const observer=new MutationObserver(()=>{if(apply())observer.disconnect();});
+ observer.observe(root,{childList:true,subtree:true});
+ setTimeout(()=>observer.disconnect(),1500);
 }

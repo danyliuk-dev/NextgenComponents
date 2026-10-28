@@ -16,6 +16,11 @@ The documentation launcher embeds these running examples here. Choose a framewor
 
 HasChildren/hasChildren marks an unloaded branch. LoadChildren/loadChildren returns its children on the first explicit expansion; a failed expansion displays ErrorText/errorText and can be retried. Keep lazy branches initially collapsed. LoadingText/loadingText is shown while waiting. Children are cached for collapse/reopen, including an empty result which turns the branch into a leaf. Duplicate/cyclic IDs across the resolved tree are rejected as load errors. Search examines loaded nodes only and does not fetch descendants. Replace the immutable root collection, loader, or DataVersion/dataVersion to invalidate the cache and pending results; keep references stable across selection/expansion rebuilds. Blazor sends cancellation; Flutter discards stale futures without transport cancellation. Selection and expansion remain parent-controlled; locks and disabled nodes are rechecked after loading. Returned children do not mutate the parent root collection. Templates and custom empty text remain supported. Virtualization, drag/drop, complete keyboard/screen-reader parity remain open. Checkboxes/checkboxes enables independent multi-checking through CheckedIds/checkedIds and CheckedIdsChanged/onCheckedChanged. Store the proposed fresh set in the parent; rejecting it keeps the previous display. CheckingReadOnly/checkingReadOnly and CanCheck/canCheck protect checking independently of row selection and expansion. Disabled nodes cannot change. CheckLabel/checkLabel supplies a localized accessible checkbox label. Checks preserve unknown, filtered and collapsed IDs and never mutate the supplied set. Checking a lazy parent does not load or check children. Each checkbox is keyboard reachable; Space changes that checkbox without selecting or expanding its row. CheckChildren/checkChildren (default false) enables a cascade over the parent record plus its eligible, already loaded descendants. The checkbox is checked when all those IDs are present, unchecked when none are, and mixed otherwise. Clicking mixed checks the complete eligible branch; clicking checked clears it. One callback contains the whole proposed set. Disabled nodes and CanCheck/canCheck=false nodes are subtree barriers, preserving all IDs below them. Filtering and collapsing do not narrow this branch operation. CheckingReadOnly does not change the aggregate display. Independently checking every child does not check the parent record: its own ID also participates. Newly loaded descendants do not inherit marks and can turn a previously checked parent mixed without emitting a callback. Changing the cascade mode, predicate, source or loaded children only recomputes display; it does not normalize parent data. Unknown IDs and excluded branches are retained. Full-remote checking, upward ID normalization, automatic pruning and fetching unseen descendants remain application policy. Flutter partialCheckText supplies a localized spoken value for a mixed checkbox (default Partially checked). The current Flutter Web SDK renders a mixed checkbox visually and reports CheckedState.mixed internally, but its legacy DOM checkbox role maps aria-checked to false. The explicit spoken value preserves the partial-state information; exact Web ARIA mixed-state parity and physical screen-reader verification remain open. Blazor uses native indeterminate plus aria-checked=mixed. ShowCheckActions/showCheckActions (default false) displays Check loaded nodes and Clear loaded checks. These actions always cover the complete eligible loaded forest, independently of search, collapse and CheckChildren/checkChildren. They never load new children. Protected/disabled roots and subtrees are excluded; unknown IDs and existing protected checks are preserved. One fresh set is proposed per action; the parent can accept or reject it. Empty/no-op actions, CheckingReadOnly and absent checking callbacks disable the buttons. Stale actions recheck current data, permissions and visibility settings. CheckLoadedText/checkLoadedText and ClearLoadedText/clearLoadedText localize the two button labels. Loading new children updates action availability without changing checked IDs.
 
+### Virtual scrolling
+
+Virtualize/virtualize enables fixed-height windowed rendering. RowHeight/rowHeight defaults to 48; ViewportHeight/viewportHeight defaults to 384. Local Grid covers the filtered result; remote Grid retains its current-page adapter and pager; trees virtualize expanded loaded nodes. See [Virtual data](virtual-data.md) for complete selection, export, focus, layout and performance contracts and 10,000-record runnable demos. Continuous remote range loading remains separate.
+
+
 ## Blazor example
 
 ```razor
@@ -96,6 +101,9 @@ Names are case-sensitive. `?` permits null. `EditorRequired` parameters are mark
 | `ExpandedIdsChanged` | `EventCallback<HashSet<string>>` | not set | See the behavior rules and model contract above. |
 | `SelectedId` | `string?` | not set | Current selected item ID; the parent owns this value. |
 | `SelectedIdChanged` | `EventCallback<string?>` | not set | Selected item ID for the parent to store. |
+| `Virtualize` | `bool` | false | Opt-in fixed-height virtual rendering. Local Grid covers the result; remote Grid retains pages; trees cover loaded expanded nodes. See Virtual data. |
+| `RowHeight` | `float` | 48 | Fixed virtual row height, default 48 pixels; finite and at least 40. Templates must fit. |
+| `ViewportHeight` | `float` | 384 | Virtual scroll viewport height, default 384 pixels; finite and at least one row. |
 | `Items` | `IReadOnlyList<NgTreeNode<T>>` | [] | Input collection. Replace it when changing records or configuration. |
 | `LoadChildren` | `Func<NgTreeNode<T>,CancellationToken,Task<IReadOnlyList<NgTreeNode<T>>>>?` | not set | Async child adapter for unloaded HasChildren branches; first explicit expansion. |
 | `DataVersion` | `object?` | not set | Change to invalidate pending reads and cached data; keep stable otherwise. |
@@ -118,6 +126,9 @@ Names are case-sensitive. `?` permits null. `EditorRequired` parameters are mark
 
 | Argument | Type | Purpose |
 |---|---|---|
+| `virtualize` | `bool` | Opt-in fixed-height virtual rendering. Local Grid covers the result; remote Grid retains pages; trees cover loaded expanded nodes. See Virtual data. |
+| `rowHeight` | `double` | Fixed virtual row height, default 48 pixels; finite and at least 40. Templates must fit. |
+| `viewportHeight` | `double` | Virtual scroll viewport height, default 384 pixels; finite and at least one row. |
 | `items` | `List<NgTreeNode<T>>` | Input collection. Replace it when changing records or configuration. |
 | `loadChildren` | `Future<List<NgTreeNode<T>>> Function(NgTreeNode<T>)?` | Async child adapter for unloaded HasChildren branches; first explicit expansion. |
 | `dataVersion` | `Object?` | Change to invalidate pending reads and cached data; keep stable otherwise. |
@@ -148,6 +159,9 @@ Names are case-sensitive. `?` permits null. `EditorRequired` parameters are mark
 ```dart
 const NgTreeList({
     super.key,
+    this.virtualize = false,
+    this.rowHeight = 48,
+    this.viewportHeight = 384,
     required this.items,
     this.loadChildren,
     this.dataVersion,

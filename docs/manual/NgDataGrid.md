@@ -14,11 +14,11 @@ The documentation launcher embeds these running examples here. Choose a framewor
 
 ## Behavior and practical rules
 
-ReadData/readData enables asynchronous page loading; Items/items is used only in local mode. The request contains 1-based Page/page, PageSize/pageSize, Search/search and an ordered immutable Sorts/sorts list. Return only the requested page and Total/total after filtering, before paging. The demo simulates a remote data adapter with a delay; replace its body with your HTTP/database call. A newer request or source replacement invalidates older results and errors; Blazor also passes a cancellation token. Flutter ignores stale futures but does not abort the transport. Loading hides old rows and blocks selection. Failure shows ErrorText/errorText and RetryText/retryText without exposing exception details. Change DataVersion/dataVersion to reload page 1; keep reader identity stable. Blazor ReloadAsync reloads the current page. A shrinking total clamps the page and fetches it again. Invalid totals, duplicate IDs and oversized pages become retryable errors. MultiSort/multiSort appends clicked columns by priority; clicking again toggles direction without moving priority. Clear sorting restores source order. Local sorting is stable. Row/column IDs must be unique and nonblank. Selection remains parent-owned and page selection preserves hidden/protected IDs. CanSelect/canSelect and SelectionReadOnly/selectionReadOnly still apply. Virtualization and batch/cell editing remain open. Remote grouping, single-record editing and CSV/TSV export use the explicit adapters below. See [data workspace](../data-workspace.md).
+ReadData/readData enables asynchronous page loading; Items/items is used only in local mode. The request contains 1-based Page/page, PageSize/pageSize, Search/search and an ordered immutable Sorts/sorts list. Return only the requested page and Total/total after filtering, before paging. The demo simulates a remote data adapter with a delay; replace its body with your HTTP/database call. A newer request or source replacement invalidates older results and errors; Blazor also passes a cancellation token. Flutter ignores stale futures but does not abort the transport. Loading hides old rows and blocks selection. Failure shows ErrorText/errorText and RetryText/retryText without exposing exception details. Change DataVersion/dataVersion to reload page 1; keep reader identity stable. Blazor ReloadAsync reloads the current page. A shrinking total clamps the page and fetches it again. Invalid totals, duplicate IDs and oversized pages become retryable errors. MultiSort/multiSort appends clicked columns by priority; clicking again toggles direction without moving priority. Clear sorting restores source order. Local sorting is stable. Row/column IDs must be unique and nonblank. Selection remains parent-owned and page selection preserves hidden/protected IDs. CanSelect/canSelect and SelectionReadOnly/selectionReadOnly still apply. Continuous remote range loading and batch/cell editing remain open. Remote grouping, single-record editing and CSV/TSV export use the explicit adapters below. See [data workspace](../data-workspace.md).
 
 ### Local grouping and paging
 
-GroupBy/groupBy enables one local grouping level over string keys; empty strings are a valid group and keys are case-sensitive. Search and sort run first, then groups gather matching records in first-appearance order while preserving sorted order within each group, then the flattened grouped rows are paged. Headers do not consume page slots. A group crossing a page boundary repeats its header; the count is the complete filtered group count, not only the current page. GroupText/groupText formats the key and count as plain text. Selection/page selection covers data rows only and retains off-page IDs. Enabling/disabling grouping resets to page 1; changing a grouping rule in-place requires DataVersion/dataVersion to reset paging. Selectors must be pure. GroupBy/groupBy cannot be combined with ReadData/readData: use ReadGroupedData/readGroupedData for the group-aware server protocol, never approximate a full group from one server page. Virtualization remains open; remote grouping, editing and export use the separate contracts below.
+GroupBy/groupBy enables one local grouping level over string keys; empty strings are a valid group and keys are case-sensitive. Search and sort run first, then groups gather matching records in first-appearance order while preserving sorted order within each group, then the flattened grouped rows are paged. Headers do not consume page slots. A group crossing a page boundary repeats its header; the count is the complete filtered group count, not only the current page. GroupText/groupText formats the key and count as plain text. Selection/page selection covers data rows only and retains off-page IDs. Enabling/disabling grouping resets to page 1; changing a grouping rule in-place requires DataVersion/dataVersion to reset paging. Selectors must be pure. GroupBy/groupBy cannot be combined with ReadData/readData: use ReadGroupedData/readGroupedData for the group-aware server protocol, never approximate a full group from one server page. Continuous remote range loading remains open; remote grouping, editing and export use the separate contracts below.
 
 ### Nested groups
 
@@ -49,6 +49,11 @@ Editing/editing accepts NgGridEditing<T>: text-field descriptors, a draft factor
 ### CSV and TSV export
 
 Export/export accepts NgGridExport<T> with an output callback, ordered column keys, optional plain-text formatting, delimiter, headers, BOM and limits. Page exports rendered rows; Filtered exports the complete query; Selected intersects the query with caller-owned selected IDs. Full remote export requires ReadExportData/readExportData; ordinary page reads are never silently treated as complete datasets. See [Grid export](grid-export.md) for exact scope, escaping, formula protection, adapter, cancellation and browser-download contracts.
+
+
+### Virtual scrolling
+
+Virtualize/virtualize enables fixed-height windowed rendering. RowHeight/rowHeight defaults to 48; ViewportHeight/viewportHeight defaults to 384. Local Grid covers the filtered result; remote Grid retains its current-page adapter and pager; trees virtualize expanded loaded nodes. See [Virtual data](virtual-data.md) for complete selection, export, focus, layout and performance contracts and 10,000-record runnable demos. Continuous remote range loading remains separate.
 
 
 ## Blazor example
@@ -283,6 +288,9 @@ Names are case-sensitive. `?` permits null. `EditorRequired` parameters are mark
 
 | Parameter | Type | Default / requirement | Purpose |
 |---|---|---|---|
+| `Virtualize` | `bool` | false | Opt-in fixed-height virtual rendering. Local Grid covers the result; remote Grid retains pages; trees cover loaded expanded nodes. See Virtual data. |
+| `RowHeight` | `float` | 48 | Fixed virtual row height, default 48 pixels; finite and at least 40. Templates must fit. |
+| `ViewportHeight` | `float` | 384 | Virtual scroll viewport height, default 384 pixels; finite and at least one row. |
 | `Export` | `NgGridExport<TItem>?` | not set | Optional NgGridExport configuration: query/selection scope, ordered columns, text formatting, bounded CSV/TSV delivery and a full-data remote adapter. See Grid export. |
 | `Editing` | `NgGridEditing<TItem>?` | not set | Optional NgGridEditing configuration for isolated drafts, validation, async persistence and confirmed deletion. See Grid editing. |
 | `ReadData` | `Func<NgDataRequest,CancellationToken,Task<NgDataResult<TItem>>>?` | not set | Async page adapter; return requested rows and filtered total. See request/result contracts above. |
@@ -329,6 +337,9 @@ Names are case-sensitive. `?` permits null. `EditorRequired` parameters are mark
 
 | Argument | Type | Purpose |
 |---|---|---|
+| `virtualize` | `bool` | Opt-in fixed-height virtual rendering. Local Grid covers the result; remote Grid retains pages; trees cover loaded expanded nodes. See Virtual data. |
+| `rowHeight` | `double` | Fixed virtual row height, default 48 pixels; finite and at least 40. Templates must fit. |
+| `viewportHeight` | `double` | Virtual scroll viewport height, default 384 pixels; finite and at least one row. |
 | `export` | `NgGridExport<T>?` | Optional NgGridExport configuration: query/selection scope, ordered columns, text formatting, bounded CSV/TSV delivery and a full-data remote adapter. See Grid export. |
 | `editing` | `NgGridEditing<T>?` | Optional NgGridEditing configuration for isolated drafts, validation, async persistence and confirmed deletion. See Grid editing. |
 | `items` | `List<T>` | Input collection. Replace it when changing records or configuration. |
@@ -371,6 +382,9 @@ Names are case-sensitive. `?` permits null. `EditorRequired` parameters are mark
 ```dart
 const NgDataGrid({
     super.key,
+    this.virtualize = false,
+    this.rowHeight = 48,
+    this.viewportHeight = 384,
     this.items = const [],
     this.editing,
     this.export,

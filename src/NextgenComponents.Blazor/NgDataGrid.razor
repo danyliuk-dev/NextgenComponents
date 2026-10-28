@@ -12,13 +12,30 @@
 @if(exporting){<span role="status">@export.BusyText</span><button type="button" class="ng-button" @onclick="CancelExport">@export.CancelText</button>}
 @if(exportError){<span role="alert">@export.ErrorText</span>}else if(exportReady){<span role="status">@export.ReadyText</span>}
 </div>}
-<div class="ng-table-scroll" tabindex="0" aria-label="@($"{Label} table scroll area")">
+<div class="ng-table-scroll @(Virtualize?"ng-virtual-table":"")" style="@VirtualStyle" tabindex="0" aria-label="@($"{Label} table scroll area")">
 <table class="ng-data-table"><caption class="ng-sr-only">@Label</caption><thead><tr>
-@if(Selectable){<th scope="col"><input type="checkbox" aria-label="Select page" checked="@(Eligible.Count>0 && Eligible.All(x=>SelectedIds.Contains(RowId(x))))" disabled="@(Eligible.Count==0 || SelectionReadOnly || !SelectedIdsChanged.HasDelegate)" aria-checked="@(Eligible.Any(x=>SelectedIds.Contains(RowId(x))) && !Eligible.All(x=>SelectedIds.Contains(RowId(x)))?"mixed":null)" @onchange="SelectPage" /></th>}
+@if(Selectable){<th scope="col"><input type="checkbox" aria-label="@(Virtualize && !IsRemote?"Select results":"Select page")" checked="@(Eligible.Count>0 && Eligible.All(x=>SelectedIds.Contains(RowId(x))))" disabled="@(Eligible.Count==0 || SelectionReadOnly || !SelectedIdsChanged.HasDelegate)" aria-checked="@(Eligible.Any(x=>SelectedIds.Contains(RowId(x))) && !Eligible.All(x=>SelectedIds.Contains(RowId(x)))?"mixed":null)" @onchange="SelectPage" /></th>}
 @foreach(var column in Columns){var sort=sorts.FirstOrDefault(x=>x.Key==column.Key);<th scope="col" aria-sort="@(sort is not null?(sort.Descending?"descending":"ascending"):"none")">@if(column.Sortable){<button type="button" @onclick="()=>Sort(column.Key)">@column.Title @(sort is not null?$"{(sort.Descending?"↓":"↑")}{(MultiSort?sorts.IndexOf(sort)+1:"")}":"↕")</button>}else{@column.Title}</th>}
 @if(HasActions){<th scope="col">Actions</th>}
 </tr></thead>
 @if(!loading && !error && Visible.Count==0){<tbody><tr><td colspan="@(Columns.Count+(Selectable?1:0)+(HasActions?1:0))" class="ng-empty">@if(EmptyTemplate is not null){@EmptyTemplate}else{@EmptyText}</td></tr></tbody>}
+@if(Virtualize){
+<tbody>
+<VirtualRows TItem="GridEntry" Enabled="Virtualize" RowHeight="RowHeight" Items="Entries" Context="entry">
+@if(entry.Group is {} group){<tr class="ng-grid-group"><th scope="row" colspan="@(Columns.Count+(Selectable?1:0)+(HasActions?1:0))" style="padding-inline-start:@(14+group.Depth*20)px">
+@if(CollapsibleGroups){<button type="button" aria-expanded="@(!IsCollapsed(group.Id)?"true":"false")" aria-label="@ToggleLabel(group)" disabled="@(!CanToggleGroups)" @onclick="()=>ToggleGroup(group.Id)"><span aria-hidden="true">@(IsCollapsed(group.Id)?"▸":"▾")</span> @Caption(group)</button>}else{@Caption(group)}
+@foreach(var summary in group.Summaries??[]){<span class="ng-group-summary"> · @SummaryText(summary)</span>}
+@foreach(var aggregate in GroupAggregates){<span class="ng-group-summary"> · @aggregate.Text(group.Items)</span>}
+</th></tr>}
+@if(entry.HasRow){var row=entry.Row!;var id=RowId(row);
+<tr @key="id" class="@(SelectedIds.Contains(id)?"ng-row-selected":"")">
+@if(Selectable){<td><input type="checkbox" aria-label="@($"Select {id}")" checked="@SelectedIds.Contains(id)" disabled="@(!CanChange(row))" @onchange="()=>Toggle(row)" /></td>}
+@foreach(var column in Columns){<td>@if(column.Template is not null){@column.Template(row)}else{@column.Text(row)}</td>}
+@if(HasActions){<td>@if(RowActions is not null){@RowActions(row)}@if(Editing is {} edit){<button type="button" class="ng-button" aria-label="@($"{edit.UpdateText} {id}")" disabled="@(!CanEditRow(row,false))" @onclick="()=>BeginEdit(NgGridEditOperation.Update,row)">@edit.UpdateText</button><button type="button" class="ng-button" aria-label="@($"{edit.DeleteText} {id}")" disabled="@(!CanEditRow(row,true))" @onclick="()=>BeginEdit(NgGridEditOperation.Delete,row)">@edit.DeleteText</button>}</td>}
+</tr>}
+</VirtualRows>
+</tbody>
+}else{
 @foreach(var section in DisplaySections){
 <tbody>
 @if(section.Group is {} group){<tr class="ng-grid-group"><th scope="rowgroup" colspan="@(Columns.Count+(Selectable?1:0)+(HasActions?1:0))" style="padding-inline-start:@(14+group.Depth*20)px">
@@ -33,6 +50,7 @@
 @if(HasActions){<td>@if(RowActions is not null){@RowActions(row)}@if(Editing is {} edit){<button type="button" class="ng-button" aria-label="@($"{edit.UpdateText} {id}")" disabled="@(!CanEditRow(row,false))" @onclick="()=>BeginEdit(NgGridEditOperation.Update,row)">@edit.UpdateText</button><button type="button" class="ng-button" aria-label="@($"{edit.DeleteText} {id}")" disabled="@(!CanEditRow(row,true))" @onclick="()=>BeginEdit(NgGridEditOperation.Delete,row)">@edit.DeleteText</button>}</td>}
 </tr>}
 </tbody>}
+}
 </table></div>
 @if(editOperation is null && editError is not null){<p role="alert">@editError</p>}
 @if(editOperation is {} operation && Editing is {} config){
@@ -44,9 +62,16 @@
 <div class="ng-data-toolbar"><button type="button" class="ng-button ng-primary" disabled="@(!CanCommit)" @onclick="CommitEdit">@(operation==NgGridEditOperation.Delete?config.DeleteText:config.SaveText)</button>
 <button type="button" class="ng-button" disabled="@saving" @onclick="CloseEdit">@config.CancelText</button></div>
 </section>}
-<NgPager Total="Total" Page="page" PageChanged="ChangePage" PageSize="size" PageSizeChanged="Resize" Sizes="PageSizes" />
+@if(!Virtualize || IsRemote){<NgPager Total="Total" Page="page" PageChanged="ChangePage" PageSize="size" PageSizeChanged="Resize" Sizes="PageSizes" />}
 </div>
 @code {
+ [Parameter] public bool Virtualize {get;set;}
+ [Parameter] public float RowHeight {get;set;}=48;
+ [Parameter] public float ViewportHeight {get;set;}=384;
+ private string? VirtualStyle=>Virtualize?$"height:{ViewportHeight.ToString(System.Globalization.CultureInfo.InvariantCulture)}px;overflow:auto;--ng-row-height:{RowHeight.ToString(System.Globalization.CultureInfo.InvariantCulture)}px":null;
+ private record GridEntry(NgGridGroup<TItem>? Group,TItem? Row,bool HasRow);
+ private IReadOnlyList<GridEntry> Entries=>DisplaySections.SelectMany(s=>(s.Group is null?Enumerable.Empty<GridEntry>():[new GridEntry(s.Group,default,false)]).Concat(s.Rows.Select(r=>new GridEntry(null,r,true)))).ToArray();
+
  [Parameter] public NgGridExport<TItem>? Export{get;set;}
  private NgGridExportScope exportScope;
  private bool exporting,exportError,exportReady;
@@ -183,9 +208,10 @@
  private int page=1,size;
  private IReadOnlyList<TItem> filtered=[];
 
- private IReadOnlyList<TItem> Visible=>!IsRemote?filtered.Skip((page-1)*size).Take(size).ToArray():filtered;
+ private IReadOnlyList<TItem> Visible=>!IsRemote?(Virtualize?filtered:filtered.Skip((page-1)*size).Take(size).ToArray()):filtered;
  protected override void OnInitialized()=>size=Math.Max(1,InitialPageSize);
  protected override async Task OnParametersSetAsync(){
+   if(Virtualize && (!float.IsFinite(RowHeight) || RowHeight<40 || !float.IsFinite(ViewportHeight) || ViewportHeight<RowHeight))throw new ArgumentException("Virtual rows require a finite height of at least 40 and a viewport at least one row high.");
    Export?.Resolve(Columns);
    if(!Equals(previousVersion,DataVersion) || previousReader!=((Delegate?)ReadGroupedData??ReadData) || Export is null || Export.ReadOnly)CancelExport();
    Editing?.Check();

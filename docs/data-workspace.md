@@ -2,6 +2,8 @@
 
 Five additional components on both Blazor and Flutter Web: DataGrid, TreeList, TreeView, Pager and Breadcrumb. Each library now has 27 implemented catalogue subsets. These components are original implementations; Telerik source is not included.
 
+The table below records the original 0.3 release. Later sections supersede its completed gaps (grouping, CRUD, CSV/TSV export, tree checking and virtual rendering).
+
 ## Scope and reference audit
 
 | Control | Implemented in this release | Remaining reference capabilities |
@@ -110,3 +112,10 @@ Both Web platforms provide opt-in page, full-filtered and selected-filtered expo
 CSV/TSV generation includes UTF-8/BOM options, headers, quoting, CRLF records, Unicode and formula-like text protection. Row/character caps fail without truncation. Single-flight preparation supports cancellation, safe errors, retry and invalidation on source/permission changes. Both demos preview the result and download a real file. See [Grid export](manual/grid-export.md).
 
 XLSX/PDF output, streaming server exports, database providers, virtual scrolling, batch/cell editing and native/accessibility certification remain open. The next substantial data block is virtual scrolling for large Grid and tree datasets, with explicit local/remote boundaries, selection/focus behavior and performance verification.
+
+
+## Virtual rendering (0.69)
+
+Grid, TreeView and TreeList support opt-in fixed-height virtual rows on both Web platforms. Local Grid scrolls all filtered expanded results; the remote Grid virtualizes its loaded page while retaining paging and the existing adapters. Trees virtualize their expanded loaded nodes and preserve lazy child loading on expansion. Selection/check state stays caller-owned; TreeView navigation can focus rows outside the current window.
+
+See [Virtual data](manual/virtual-data.md) for sizing, templates, selection/export scope, focus behavior, performance tests and the 10,000-record demos. Continuous remote range loading, lazy group paging, variable-height rows, column virtualization and full accessibility/native verification remain open.

@@ -3762,3 +3762,9 @@ Export/export accepts NgGridExport<T> with an output callback, ordered column ke
 '''
 
 _g['notes']=_g['notes'].replace('Virtualization, remote grouping, built-in CRUD and export remain open.','Virtualization and batch/cell editing remain open. Remote grouping, single-record editing and CSV/TSV export use the explicit adapters below.').replace('Virtualization and built-in CRUD remain open; remote grouping uses the separate adapter below.','Virtualization remains open; remote grouping, editing and export use the separate contracts below.')
+
+
+# 0.69: opt-in virtual rendering with explicit server-page boundaries.
+for _name in ('NgDataGrid','NgTreeView','NgTreeList'):
+    D[_name]['notes'] += "\n\n### Virtual scrolling\n\nVirtualize/virtualize enables fixed-height windowed rendering. RowHeight/rowHeight defaults to 48; ViewportHeight/viewportHeight defaults to 384. Local Grid covers the filtered result; remote Grid retains its current-page adapter and pager; trees virtualize expanded loaded nodes. See [Virtual data](virtual-data.md) for complete selection, export, focus, layout and performance contracts and 10,000-record runnable demos. Continuous remote range loading remains separate.\n"
+D['NgDataGrid']['notes']=D['NgDataGrid']['notes'].replace('Virtualization remains open;', 'Continuous remote range loading remains open;').replace('Virtualization and batch/cell editing remain open.', 'Continuous remote range loading and batch/cell editing remain open.')

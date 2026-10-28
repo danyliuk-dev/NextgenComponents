@@ -222,3 +222,12 @@ textarea.ng-textarea-auto{box-sizing:border-box;line-height:1.5;resize:none}
 .ng-grid-editor { margin:16px 0; padding:20px; border:1px solid var(--ng-border); border-radius:var(--ng-radius); background:var(--ng-surface); display:grid; gap:12px; max-width:640px; }
 .ng-grid-editor h3 { margin:0; }
 .ng-grid-editor [role="alert"] { color:var(--ng-error); }
+
+/* Virtual rows have a fixed extent; templates must fit that extent. */
+.ng-virtual-table .ng-data-table { table-layout:fixed; min-width:600px; }
+.ng-virtual-table .ng-data-table thead { position:sticky; top:0; z-index:1; }
+.ng-virtual-table .ng-data-table tbody tr:not([aria-hidden=true]) { height:var(--ng-row-height); }
+.ng-virtual-table .ng-data-table td,.ng-virtual-table .ng-data-table tbody th { height:var(--ng-row-height); box-sizing:border-box; padding-block:0; overflow:hidden; text-overflow:ellipsis; }
+.ng-virtual-tree .ng-tree-row { height:var(--ng-row-height); min-height:var(--ng-row-height); box-sizing:border-box; white-space:nowrap; overflow:hidden; }
+
+.ng-virtual-table .ng-data-table thead th:has(>input[type=checkbox]) { width:48px; }

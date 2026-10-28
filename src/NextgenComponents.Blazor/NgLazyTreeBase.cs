@@ -5,6 +5,10 @@ namespace NextgenComponents.Blazor;
 /// <summary>Lazy child cache scoped to an immutable root collection and DataVersion.</summary>
 public abstract class NgLazyTreeBase<T> : ComponentBase, IDisposable
 {
+    [Parameter] public bool Virtualize { get; set; }
+    [Parameter] public float RowHeight { get; set; }=48;
+    [Parameter] public float ViewportHeight { get; set; }=384;
+    protected string? VirtualStyle=>Virtualize?$"height:{ViewportHeight.ToString(System.Globalization.CultureInfo.InvariantCulture)}px;overflow:auto;--ng-row-height:{RowHeight.ToString(System.Globalization.CultureInfo.InvariantCulture)}px":null;
     [Parameter] public IReadOnlyList<NgTreeNode<T>> Items { get; set; }=[];
     [Parameter] public Func<NgTreeNode<T>,CancellationToken,Task<IReadOnlyList<NgTreeNode<T>>>>? LoadChildren { get; set; }
     [Parameter] public object? DataVersion { get; set; }
@@ -59,6 +63,7 @@ public abstract class NgLazyTreeBase<T> : ComponentBase, IDisposable
         ? n with { Children=Resolve(children),HasChildren=children.Count>0 }
         : n with { Children=Resolve(n.Children??[]) }).ToArray();
     protected override void OnParametersSet(){
+        if(Virtualize && (!float.IsFinite(RowHeight) || RowHeight<40 || !float.IsFinite(ViewportHeight) || ViewportHeight<RowHeight))throw new ArgumentException("Virtual rows require a finite height of at least 40 and a viewport at least one row high.");
         // Validate before resolving, including cycles and reused IDs.
         NgDataOperations.Flatten(Items,new HashSet<string>(),_=>"");
         if(!ReferenceEquals(source,Items) || !Equals(loader,LoadChildren) || !Equals(version,DataVersion)){

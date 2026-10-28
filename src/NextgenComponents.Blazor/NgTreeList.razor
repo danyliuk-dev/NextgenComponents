@@ -2,12 +2,14 @@
 @inherits NgLazyTreeBase<TItem>
 <div class="ng-tree-list" @ref="CheckRoot"><label class="ng-field">Search @Label<input class="ng-input" aria-label="@($"Search {Label}")" @bind="search" @bind:event="oninput" /></label>
 @if(Checkboxes && ShowCheckActions){<div class="ng-tree-check-actions" style="display:flex;flex-wrap:wrap;gap:8px;margin:8px 0"><NgButton Disabled="@(!CanCheckLoaded(true))" OnClick="()=>CheckLoaded(true)">@CheckLoadedText</NgButton><NgButton Disabled="@(!CanCheckLoaded(false))" OnClick="()=>CheckLoaded(false)">@ClearLoadedText</NgButton></div>}
-<div class="ng-table-scroll" tabindex="0" aria-label="@($"{Label} table scroll area")"><table class="ng-data-table"><caption class="ng-sr-only">@Label</caption><thead><tr>
+<div class="ng-table-scroll @(Virtualize?"ng-virtual-table":"")" style="@VirtualStyle" tabindex="0" aria-label="@($"{Label} table scroll area")"><table class="ng-data-table"><caption class="ng-sr-only">@Label</caption><thead><tr>
 @foreach(var column in Columns){<th scope="col" aria-sort="@(sortKey==column.Key?(descending?"descending":"ascending"):"none")"><button type="button" disabled="@(!column.Sortable)" @onclick="()=>Sort(column.Key)">@column.Title @(sortKey==column.Key?(descending?"↓":"↑"):"↕")</button></th>}
 </tr></thead><tbody>
-@foreach(var row in Rows){var node=row.Node;<tr @key="node.Id" class="@(SelectedId==node.Id?"ng-row-selected":"")">
+<VirtualRows TItem="NgTreeRow<TItem>" Enabled="Virtualize" RowHeight="RowHeight" Items="Rows" SpacerElement="tr" Context="row">
+@{var node=row.Node;}<tr @key="node.Id" class="@(SelectedId==node.Id?"ng-row-selected":"")">
 @for(var i=0;i<Columns.Count;i++){var column=Columns[i];<td>@if(i==0){<div class="ng-tree-cell" style="padding-left:@(row.Depth*20)px">@if((node.Children?.Count>0 || node.HasChildren)){<NgButton Disabled="@(node.Disabled || IsLoading(node.Id) || ExpansionReadOnly || !ExpandedIdsChanged.HasDelegate || !string.IsNullOrWhiteSpace(search))" aria-expanded="@(row.Expanded?"true":"false")" aria-label="@($"{(row.Expanded?"Collapse":"Expand")} {column.Text(node.Item)}")" OnClick="()=>Toggle(node.Id)">@(row.Expanded?"▾":"▸")</NgButton>}else{<span class="ng-tree-spacer"></span>}@if(Checkboxes){<input type="checkbox" class="ng-tree-check" aria-label="@(CheckLabel?.Invoke(node.Item)??$"Check {column.Text(node.Item)}")" aria-checked="@CheckAria(node)" @bind:get="(CheckState(node)==true)" @bind:set="(bool _) => ToggleCheck(node.Id,Rows)" disabled="@(!CanToggleCheck(node))" @onclick:stopPropagation @onkeydown:stopPropagation/>}@if(IsLoading(node.Id)){<span role="status">@LoadingText</span>}@if(HasError(node.Id)){<span role="alert">@ErrorText</span>}<button type="button" class="ng-link" disabled="@(node.Disabled || SelectionReadOnly || !SelectedIdChanged.HasDelegate)" aria-label="@column.Text(node.Item)" aria-pressed="@(SelectedId==node.Id?"true":"false")" @onclick="()=>Select(node)">@if(column.Template is not null){<span aria-hidden="true">@column.Template(node.Item)</span>}else{@column.Text(node.Item)}</button></div>}else if(column.Template is not null){@column.Template(node.Item)}else{@column.Text(node.Item)}</td>}
-</tr>}
+</tr>
+</VirtualRows>
 @if(Rows.Count==0){<tr><td colspan="@Columns.Count" class="ng-empty">@if(EmptyTemplate is not null){@EmptyTemplate}else{@EmptyText}</td></tr>}
 </tbody></table></div></div>
 @code {

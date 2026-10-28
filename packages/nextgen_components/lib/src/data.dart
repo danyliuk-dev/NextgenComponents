@@ -5,6 +5,7 @@ import 'components.dart';
 part 'grouped_data.dart';
 part 'grid_editing.dart';
 part 'grid_export.dart';
+part 'virtual_data.dart';
 
 class NgDataColumn<T> {
   final String key, title;
@@ -536,6 +537,8 @@ class NgBreadcrumb extends StatelessWidget {
 }
 
 class NgDataGrid<T> extends StatefulWidget {
+  final bool virtualize;
+  final double rowHeight, viewportHeight;
   final NgGridExport<T>? export;
   final NgGridEditing<T>? editing;
   final List<T> items;
@@ -570,6 +573,9 @@ class NgDataGrid<T> extends StatefulWidget {
   final int initialPageSize;
   const NgDataGrid({
     super.key,
+    this.virtualize = false,
+    this.rowHeight = 48,
+    this.viewportHeight = 384,
     this.items = const [],
     this.editing,
     this.export,
@@ -1084,8 +1090,11 @@ class _NgDataGridState<T> extends State<NgDataGrid<T>> {
         '${key.isEmpty ? "(empty)" : key} ($count)';
   }
 
-  List<T> get visible =>
-      !isRemote ? rows.skip((page - 1) * size).take(size).toList() : remote;
+  List<T> get visible => !isRemote
+      ? (widget.virtualize
+            ? rows
+            : rows.skip((page - 1) * size).take(size).toList())
+      : remote;
   int get count => !isRemote ? rows.length : total;
   void validate(List<T> values) {
     if (values.any((r) => widget.rowId(r).trim().isEmpty) ||
@@ -1280,6 +1289,7 @@ class _NgDataGridState<T> extends State<NgDataGrid<T>> {
 
   @override
   Widget build(BuildContext context) {
+    _checkVirtual(widget.virtualize, widget.rowHeight, widget.viewportHeight);
     validateGrouping();
     if (widget.items.any((row) => widget.rowId(row).trim().isEmpty) ||
         widget.items.map(widget.rowId).toSet().length != widget.items.length)
@@ -1293,6 +1303,12 @@ class _NgDataGridState<T> extends State<NgDataGrid<T>> {
       );
     if (!loading) page = NgDataOperations.clampPage(page, count, size);
     final displaySections = sections;
+    final entries = <(NgGridGroup<T>?, T?)>[
+      for (final section in displaySections) ...[
+        if (section.$1 != null) (section.$1, null),
+        for (final row in section.$2) (null, row),
+      ],
+    ];
     final eligible = displaySections
         .expand((s) => s.$2)
         .where((row) => widget.canSelect?.call(row) ?? true)
@@ -1388,7 +1404,12 @@ class _NgDataGridState<T> extends State<NgDataGrid<T>> {
             scrollDirection: Axis.horizontal,
             child: ConstrainedBox(
               constraints: BoxConstraints(minWidth: c.maxWidth),
-              child: DataTable(
+              child: _NgDataTable(
+                selectionColumn: selectionVisible,
+                virtualize: widget.virtualize,
+                rowHeight: widget.rowHeight,
+                viewportHeight: widget.viewportHeight,
+                width: c.maxWidth,
                 // Flutter Web can retain stale row semantics after keyed reordering.
                 // Refresh the view identity; selection stays in caller-owned IDs.
                 key: ValueKey(
@@ -1406,8 +1427,10 @@ class _NgDataGridState<T> extends State<NgDataGrid<T>> {
                       label: Semantics(
                         label:
                             selectedCount > 0 && selectedCount < eligible.length
-                            ? 'Select page (partially selected)'
-                            : 'Select page',
+                            ? '${widget.virtualize && !isRemote ? 'Select results' : 'Select page'} (partially selected)'
+                            : (widget.virtualize && !isRemote
+                                  ? 'Select results'
+                                  : 'Select page'),
                         container: true,
                         child: Checkbox(
                           tristate: true,
@@ -1463,99 +1486,96 @@ class _NgDataGridState<T> extends State<NgDataGrid<T>> {
                     ),
                   if (hasActions) const DataColumn(label: Text('Actions')),
                 ],
-                rows: [
-                  for (final section in displaySections) ...[
-                    if (section.$1 case final group?)
-                      DataRow(
-                        key: ValueKey(('group', group.id)),
-                        color: WidgetStatePropertyAll(
-                          Theme.of(context).colorScheme.surfaceContainerHighest,
-                        ),
-                        cells: [
-                          if (selectionVisible)
-                            const DataCell(SizedBox.shrink()),
-                          for (var i = 0; i < widget.columns.length; i++)
-                            DataCell(
-                              i == 0
-                                  ? groupHeader(group)
-                                  : const SizedBox.shrink(),
-                            ),
-                          if (hasActions) const DataCell(SizedBox.shrink()),
-                        ],
+                rowCount: entries.length,
+                rowBuilder: (index) {
+                  final entry = entries[index];
+                  if (entry.$1 case final group?)
+                    return DataRow(
+                      key: ValueKey(('group', group.id)),
+                      color: WidgetStatePropertyAll(
+                        Theme.of(context).colorScheme.surfaceContainerHighest,
                       ),
-                    for (final row in section.$2)
-                      DataRow(
-                        key: ValueKey(widget.rowId(row)),
-                        selected: widget.selectedIds.contains(
-                          widget.rowId(row),
+                      cells: [
+                        if (selectionVisible) const DataCell(SizedBox.shrink()),
+                        for (var i = 0; i < widget.columns.length; i++)
+                          DataCell(
+                            i == 0
+                                ? groupHeader(group)
+                                : const SizedBox.shrink(),
+                          ),
+                        if (hasActions) const DataCell(SizedBox.shrink()),
+                      ],
+                    );
+                  final row = entry.$2 as T;
+                  return DataRow(
+                    key: ValueKey(widget.rowId(row)),
+                    selected: widget.selectedIds.contains(widget.rowId(row)),
+                    onSelectChanged: canChange(row)
+                        ? (_) => selectRow(row)
+                        : null,
+                    cells: [
+                      if (selectionVisible)
+                        DataCell(
+                          Semantics(
+                            label: 'Select ${widget.rowId(row)}',
+                            child: Checkbox(
+                              value: widget.selectedIds.contains(
+                                widget.rowId(row),
+                              ),
+                              onChanged: canChange(row)
+                                  ? (_) => selectRow(row)
+                                  : null,
+                            ),
+                          ),
                         ),
-                        onSelectChanged: canChange(row)
-                            ? (_) => selectRow(row)
-                            : null,
-                        cells: [
-                          if (selectionVisible)
-                            DataCell(
-                              Semantics(
-                                label: 'Select ${widget.rowId(row)}',
-                                child: Checkbox(
-                                  value: widget.selectedIds.contains(
-                                    widget.rowId(row),
-                                  ),
-                                  onChanged: canChange(row)
-                                      ? (_) => selectRow(row)
+                      for (final column in widget.columns)
+                        DataCell(
+                          column.cellBuilder?.call(context, row) ??
+                              Text(column.text(row)),
+                        ),
+                      if (hasActions)
+                        DataCell(
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              if (widget.rowActions != null)
+                                widget.rowActions!(context, row),
+                              if (widget.editing case final config?) ...[
+                                TextButton(
+                                  onPressed: canEditRow(row, false)
+                                      ? () => beginEdit(
+                                          NgGridEditOperation.update,
+                                          row,
+                                        )
                                       : null,
+                                  child: Semantics(
+                                    label:
+                                        '${config.updateText} ${widget.rowId(row)}',
+                                    excludeSemantics: true,
+                                    child: Text(config.updateText),
+                                  ),
                                 ),
-                              ),
-                            ),
-                          for (final column in widget.columns)
-                            DataCell(
-                              column.cellBuilder?.call(context, row) ??
-                                  Text(column.text(row)),
-                            ),
-                          if (hasActions)
-                            DataCell(
-                              Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  if (widget.rowActions != null)
-                                    widget.rowActions!(context, row),
-                                  if (widget.editing case final config?) ...[
-                                    TextButton(
-                                      onPressed: canEditRow(row, false)
-                                          ? () => beginEdit(
-                                              NgGridEditOperation.update,
-                                              row,
-                                            )
-                                          : null,
-                                      child: Semantics(
-                                        label:
-                                            '${config.updateText} ${widget.rowId(row)}',
-                                        excludeSemantics: true,
-                                        child: Text(config.updateText),
-                                      ),
-                                    ),
-                                    TextButton(
-                                      onPressed: canEditRow(row, true)
-                                          ? () => beginEdit(
-                                              NgGridEditOperation.delete,
-                                              row,
-                                            )
-                                          : null,
-                                      child: Semantics(
-                                        label:
-                                            '${config.deleteText} ${widget.rowId(row)}',
-                                        excludeSemantics: true,
-                                        child: Text(config.deleteText),
-                                      ),
-                                    ),
-                                  ],
-                                ],
-                              ),
-                            ),
-                        ],
-                      ),
-                  ],
-                ],
+                                TextButton(
+                                  onPressed: canEditRow(row, true)
+                                      ? () => beginEdit(
+                                          NgGridEditOperation.delete,
+                                          row,
+                                        )
+                                      : null,
+                                  child: Semantics(
+                                    label:
+                                        '${config.deleteText} ${widget.rowId(row)}',
+                                    excludeSemantics: true,
+                                    child: Text(config.deleteText),
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+                    ],
+                  );
+                },
               ),
             ),
           ),
@@ -1568,23 +1588,26 @@ class _NgDataGridState<T> extends State<NgDataGrid<T>> {
         if (editOperation == null && editError != null)
           Semantics(liveRegion: true, child: Text(editError!)),
         if (editOperation != null && widget.editing != null) editorPanel(),
-        NgPager(
-          total: count,
-          page: page,
-          pageSize: size,
-          sizes: widget.pageSizes,
-          onPageChanged: (v) => change(() => page = v),
-          onPageSizeChanged: (v) => change(() {
-            size = v;
-            page = 1;
-          }),
-        ),
+        if (!widget.virtualize || isRemote)
+          NgPager(
+            total: count,
+            page: page,
+            pageSize: size,
+            sizes: widget.pageSizes,
+            onPageChanged: (v) => change(() => page = v),
+            onPageSizeChanged: (v) => change(() {
+              size = v;
+              page = 1;
+            }),
+          ),
       ],
     );
   }
 }
 
 class NgTreeView<T> extends StatefulWidget {
+  final bool virtualize;
+  final double rowHeight, viewportHeight;
   final Widget Function(BuildContext, T)? itemBuilder;
   final List<NgTreeNode<T>> items;
   final Future<List<NgTreeNode<T>>> Function(NgTreeNode<T>)? loadChildren;
@@ -1608,6 +1631,9 @@ class NgTreeView<T> extends StatefulWidget {
   final ValueChanged<Set<String>> onExpandedChanged;
   const NgTreeView({
     super.key,
+    this.virtualize = false,
+    this.rowHeight = 48,
+    this.viewportHeight = 384,
     required this.items,
     this.loadChildren,
     this.dataVersion,
@@ -1642,6 +1668,7 @@ class NgTreeView<T> extends StatefulWidget {
 
 class _NgTreeViewState<T> extends State<NgTreeView<T>> {
   String search = '';
+  final virtualScroll = ScrollController();
   final lazy = _LazyTreeCache<T>();
   @override
   void initState() {
@@ -1745,6 +1772,7 @@ class _NgTreeViewState<T> extends State<NgTreeView<T>> {
 
   @override
   void dispose() {
+    virtualScroll.dispose();
     lazy.revision++;
     for (final n in nodes.values) {
       n.dispose();
@@ -1754,7 +1782,191 @@ class _NgTreeViewState<T> extends State<NgTreeView<T>> {
 
   @override
   Widget build(BuildContext context) {
+    _checkVirtual(widget.virtualize, widget.rowHeight, widget.viewportHeight);
     final visible = rows;
+    Widget buildRow(NgTreeRow<T> row) => Focus(
+      key: ValueKey(row.node.id),
+      focusNode: nodes.putIfAbsent(row.node.id, () => FocusNode()),
+      canRequestFocus: !row.node.disabled,
+      onKeyEvent: (focus, e) {
+        if (e is! KeyDownEvent || row.node.disabled || !focus.hasPrimaryFocus)
+          return KeyEventResult.ignored;
+        final key = e.logicalKey;
+        final enabled = visible.where((r) => !r.node.disabled).toList();
+        final index = enabled.indexOf(row);
+        String? target;
+        if (key == LogicalKeyboardKey.arrowDown && index < enabled.length - 1)
+          target = enabled[index + 1].node.id;
+        if (key == LogicalKeyboardKey.arrowUp && index > 0)
+          target = enabled[index - 1].node.id;
+        if (key == LogicalKeyboardKey.home) target = enabled.first.node.id;
+        if (key == LogicalKeyboardKey.end) target = enabled.last.node.id;
+        if (key == LogicalKeyboardKey.arrowRight) {
+          if (!row.expanded &&
+              (row.node.children.isNotEmpty || row.node.hasChildren) &&
+              search.trim().isEmpty) {
+            toggle(row.node.id);
+          } else if (row.expanded && index < enabled.length - 1) {
+            target = enabled
+                .skip(index + 1)
+                .where((r) => r.parentId == row.node.id)
+                .firstOrNull
+                ?.node
+                .id;
+          }
+        }
+        if (key == LogicalKeyboardKey.arrowLeft) {
+          if (row.expanded &&
+              (row.node.children.isNotEmpty || row.node.hasChildren) &&
+              search.trim().isEmpty) {
+            toggle(row.node.id);
+          } else {
+            target = enabled
+                .where((r) => r.node.id == row.parentId)
+                .firstOrNull
+                ?.node
+                .id;
+          }
+        }
+        if (key == LogicalKeyboardKey.enter || key == LogicalKeyboardKey.space)
+          select(row.node.id);
+        if (target != null) {
+          final id = target;
+          if (widget.virtualize && virtualScroll.hasClients) {
+            final offset =
+                visible.indexWhere((r) => r.node.id == id) * widget.rowHeight;
+            if (offset < virtualScroll.offset ||
+                offset + widget.rowHeight >
+                    virtualScroll.offset + widget.viewportHeight) {
+              virtualScroll.jumpTo(
+                offset.clamp(0, virtualScroll.position.maxScrollExtent),
+              );
+            }
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted) nodes[id]?.requestFocus();
+            });
+          } else {
+            nodes[id]?.requestFocus();
+          }
+        }
+        return [
+              LogicalKeyboardKey.arrowDown,
+              LogicalKeyboardKey.arrowUp,
+              LogicalKeyboardKey.arrowLeft,
+              LogicalKeyboardKey.arrowRight,
+              LogicalKeyboardKey.home,
+              LogicalKeyboardKey.end,
+              LogicalKeyboardKey.enter,
+              LogicalKeyboardKey.space,
+            ].contains(key)
+            ? KeyEventResult.handled
+            : KeyEventResult.ignored;
+      },
+      child: Builder(
+        builder: (ctx) => Semantics(
+          selected: widget.selectedId == row.node.id,
+          enabled: !row.node.disabled,
+          child: Material(
+            color: widget.selectedId == row.node.id
+                ? Theme.of(context).colorScheme.primary.withValues(alpha: .12)
+                : Colors.transparent,
+            child: InkWell(
+              canRequestFocus: false,
+              onTap: row.node.disabled
+                  ? null
+                  : () {
+                      nodes[row.node.id]?.requestFocus();
+                      select(row.node.id);
+                    },
+              child: Container(
+                decoration: BoxDecoration(
+                  border: Focus.of(ctx).hasFocus
+                      ? Border.all(color: Theme.of(context).colorScheme.primary)
+                      : null,
+                ),
+                padding: EdgeInsets.only(left: row.depth * 20),
+                constraints: const BoxConstraints(minHeight: 40),
+                child: Row(
+                  children: [
+                    if ((row.node.children.isNotEmpty || row.node.hasChildren))
+                      IconButton(
+                        tooltip:
+                            '${row.expanded ? 'Collapse' : 'Expand'} ${widget.text(row.node.item)}',
+                        onPressed:
+                            row.node.disabled ||
+                                lazy.loading.contains(row.node.id) ||
+                                widget.expansionReadOnly ||
+                                search.trim().isNotEmpty
+                            ? null
+                            : () => toggle(row.node.id),
+                        icon: Icon(
+                          row.expanded
+                              ? Icons.expand_more
+                              : Icons.chevron_right,
+                        ),
+                      )
+                    else
+                      const SizedBox(width: 40),
+                    if (widget.checkboxes)
+                      Semantics(
+                        container: true,
+                        value:
+                            _treeCheckState(
+                                  row.node,
+                                  widget.checkedIds,
+                                  widget.checkChildren,
+                                  widget.canCheck,
+                                ) ==
+                                null
+                            ? widget.partialCheckText
+                            : null,
+                        label:
+                            widget.checkLabel?.call(row.node.item) ??
+                            'Check ${widget.text(row.node.item)}',
+                        child: Checkbox(
+                          tristate: widget.checkChildren,
+                          value: _treeCheckState(
+                            row.node,
+                            widget.checkedIds,
+                            widget.checkChildren,
+                            widget.canCheck,
+                          ),
+                          onChanged: canToggleCheck(row.node)
+                              ? (_) => toggleCheck(row.node.id)
+                              : null,
+                        ),
+                      ),
+                    if (lazy.loading.contains(row.node.id))
+                      Text(widget.loadingText),
+                    if (lazy.errors.contains(row.node.id))
+                      Text(widget.errorText),
+                    Expanded(
+                      child: widget.itemBuilder == null
+                          ? Text(
+                              widget.text(row.node.item),
+                              style: TextStyle(
+                                color: row.node.disabled
+                                    ? Theme.of(context).disabledColor
+                                    : null,
+                              ),
+                            )
+                          : Semantics(
+                              label: widget.text(row.node.item),
+                              excludeSemantics: true,
+                              child: widget.itemBuilder!(
+                                context,
+                                row.node.item,
+                              ),
+                            ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -1782,182 +1994,18 @@ class _NgTreeViewState<T> extends State<NgTreeView<T>> {
             ],
           ),
         const SizedBox(height: 12),
-        for (final row in visible)
-          Focus(
-            key: ValueKey(row.node.id),
-            focusNode: nodes.putIfAbsent(row.node.id, () => FocusNode()),
-            canRequestFocus: !row.node.disabled,
-            onKeyEvent: (focus, e) {
-              if (e is! KeyDownEvent ||
-                  row.node.disabled ||
-                  !focus.hasPrimaryFocus)
-                return KeyEventResult.ignored;
-              final key = e.logicalKey;
-              final enabled = visible.where((r) => !r.node.disabled).toList();
-              final index = enabled.indexOf(row);
-              String? target;
-              if (key == LogicalKeyboardKey.arrowDown &&
-                  index < enabled.length - 1)
-                target = enabled[index + 1].node.id;
-              if (key == LogicalKeyboardKey.arrowUp && index > 0)
-                target = enabled[index - 1].node.id;
-              if (key == LogicalKeyboardKey.home)
-                target = enabled.first.node.id;
-              if (key == LogicalKeyboardKey.end) target = enabled.last.node.id;
-              if (key == LogicalKeyboardKey.arrowRight) {
-                if (!row.expanded &&
-                    (row.node.children.isNotEmpty || row.node.hasChildren) &&
-                    search.trim().isEmpty) {
-                  toggle(row.node.id);
-                } else if (row.expanded && index < enabled.length - 1) {
-                  target = enabled
-                      .skip(index + 1)
-                      .where((r) => r.parentId == row.node.id)
-                      .firstOrNull
-                      ?.node
-                      .id;
-                }
-              }
-              if (key == LogicalKeyboardKey.arrowLeft) {
-                if (row.expanded &&
-                    (row.node.children.isNotEmpty || row.node.hasChildren) &&
-                    search.trim().isEmpty) {
-                  toggle(row.node.id);
-                } else {
-                  target = enabled
-                      .where((r) => r.node.id == row.parentId)
-                      .firstOrNull
-                      ?.node
-                      .id;
-                }
-              }
-              if (key == LogicalKeyboardKey.enter ||
-                  key == LogicalKeyboardKey.space)
-                select(row.node.id);
-              if (target != null) nodes[target]?.requestFocus();
-              return [
-                    LogicalKeyboardKey.arrowDown,
-                    LogicalKeyboardKey.arrowUp,
-                    LogicalKeyboardKey.arrowLeft,
-                    LogicalKeyboardKey.arrowRight,
-                    LogicalKeyboardKey.home,
-                    LogicalKeyboardKey.end,
-                    LogicalKeyboardKey.enter,
-                    LogicalKeyboardKey.space,
-                  ].contains(key)
-                  ? KeyEventResult.handled
-                  : KeyEventResult.ignored;
-            },
-            child: Builder(
-              builder: (ctx) => Semantics(
-                selected: widget.selectedId == row.node.id,
-                enabled: !row.node.disabled,
-                child: Material(
-                  color: widget.selectedId == row.node.id
-                      ? Theme.of(
-                          context,
-                        ).colorScheme.primary.withValues(alpha: .12)
-                      : Colors.transparent,
-                  child: InkWell(
-                    canRequestFocus: false,
-                    onTap: row.node.disabled
-                        ? null
-                        : () {
-                            nodes[row.node.id]?.requestFocus();
-                            select(row.node.id);
-                          },
-                    child: Container(
-                      decoration: BoxDecoration(
-                        border: Focus.of(ctx).hasFocus
-                            ? Border.all(
-                                color: Theme.of(context).colorScheme.primary,
-                              )
-                            : null,
-                      ),
-                      padding: EdgeInsets.only(left: row.depth * 20),
-                      constraints: const BoxConstraints(minHeight: 40),
-                      child: Row(
-                        children: [
-                          if ((row.node.children.isNotEmpty ||
-                              row.node.hasChildren))
-                            IconButton(
-                              tooltip:
-                                  '${row.expanded ? 'Collapse' : 'Expand'} ${widget.text(row.node.item)}',
-                              onPressed:
-                                  row.node.disabled ||
-                                      lazy.loading.contains(row.node.id) ||
-                                      widget.expansionReadOnly ||
-                                      search.trim().isNotEmpty
-                                  ? null
-                                  : () => toggle(row.node.id),
-                              icon: Icon(
-                                row.expanded
-                                    ? Icons.expand_more
-                                    : Icons.chevron_right,
-                              ),
-                            )
-                          else
-                            const SizedBox(width: 40),
-                          if (widget.checkboxes)
-                            Semantics(
-                              container: true,
-                              value:
-                                  _treeCheckState(
-                                        row.node,
-                                        widget.checkedIds,
-                                        widget.checkChildren,
-                                        widget.canCheck,
-                                      ) ==
-                                      null
-                                  ? widget.partialCheckText
-                                  : null,
-                              label:
-                                  widget.checkLabel?.call(row.node.item) ??
-                                  'Check ${widget.text(row.node.item)}',
-                              child: Checkbox(
-                                tristate: widget.checkChildren,
-                                value: _treeCheckState(
-                                  row.node,
-                                  widget.checkedIds,
-                                  widget.checkChildren,
-                                  widget.canCheck,
-                                ),
-                                onChanged: canToggleCheck(row.node)
-                                    ? (_) => toggleCheck(row.node.id)
-                                    : null,
-                              ),
-                            ),
-                          if (lazy.loading.contains(row.node.id))
-                            Text(widget.loadingText),
-                          if (lazy.errors.contains(row.node.id))
-                            Text(widget.errorText),
-                          Expanded(
-                            child: widget.itemBuilder == null
-                                ? Text(
-                                    widget.text(row.node.item),
-                                    style: TextStyle(
-                                      color: row.node.disabled
-                                          ? Theme.of(context).disabledColor
-                                          : null,
-                                    ),
-                                  )
-                                : Semantics(
-                                    label: widget.text(row.node.item),
-                                    excludeSemantics: true,
-                                    child: widget.itemBuilder!(
-                                      context,
-                                      row.node.item,
-                                    ),
-                                  ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ),
+        if (widget.virtualize)
+          SizedBox(
+            height: widget.viewportHeight,
+            child: ListView.builder(
+              controller: virtualScroll,
+              itemExtent: widget.rowHeight,
+              itemCount: visible.length,
+              itemBuilder: (context, index) => buildRow(visible[index]),
             ),
-          ),
+          )
+        else
+          for (final row in visible) buildRow(row),
         if (visible.isEmpty)
           Padding(
             padding: const EdgeInsets.all(16),
@@ -1969,6 +2017,8 @@ class _NgTreeViewState<T> extends State<NgTreeView<T>> {
 }
 
 class NgTreeList<T> extends StatefulWidget {
+  final bool virtualize;
+  final double rowHeight, viewportHeight;
   final List<NgTreeNode<T>> items;
   final Future<List<NgTreeNode<T>>> Function(NgTreeNode<T>)? loadChildren;
   final Object? dataVersion;
@@ -1991,6 +2041,9 @@ class NgTreeList<T> extends StatefulWidget {
   final Widget? emptyBuilder;
   const NgTreeList({
     super.key,
+    this.virtualize = false,
+    this.rowHeight = 48,
+    this.viewportHeight = 384,
     required this.items,
     this.loadChildren,
     this.dataVersion,
@@ -2128,6 +2181,7 @@ class _NgTreeListState<T> extends State<NgTreeList<T>> {
 
   @override
   Widget build(BuildContext context) {
+    _checkVirtual(widget.virtualize, widget.rowHeight, widget.viewportHeight);
     if (widget.columns.isEmpty ||
         widget.columns.any((c) => c.key.trim().isEmpty) ||
         widget.columns.map((c) => c.key).toSet().length !=
@@ -2187,7 +2241,11 @@ class _NgTreeListState<T> extends State<NgTreeList<T>> {
             scrollDirection: Axis.horizontal,
             child: ConstrainedBox(
               constraints: BoxConstraints(minWidth: c.maxWidth),
-              child: DataTable(
+              child: _NgDataTable(
+                virtualize: widget.virtualize,
+                rowHeight: widget.rowHeight,
+                viewportHeight: widget.viewportHeight,
+                width: c.maxWidth,
                 // Flutter Web can retain stale row semantics after keyed reordering.
                 // Refresh the view identity; selection stays in caller-owned IDs.
                 key: ValueKey(
@@ -2208,117 +2266,114 @@ class _NgTreeListState<T> extends State<NgTreeList<T>> {
                           : null,
                     ),
                 ],
-                rows: [
-                  for (final row in rows)
-                    DataRow(
-                      key: ValueKey(row.node.id),
-                      selected: widget.selectedId == row.node.id,
-                      cells: [
-                        for (var i = 0; i < widget.columns.length; i++)
-                          DataCell(
-                            i == 0
-                                ? Row(
-                                    children: [
-                                      SizedBox(width: row.depth * 20),
-                                      if ((row.node.children.isNotEmpty ||
-                                          row.node.hasChildren))
-                                        IconButton(
-                                          tooltip:
-                                              '${row.expanded ? 'Collapse' : 'Expand'} ${widget.columns[i].text(row.node.item)}',
-                                          onPressed:
-                                              row.node.disabled ||
-                                                  lazy.loading.contains(
-                                                    row.node.id,
-                                                  ) ||
-                                                  widget.expansionReadOnly ||
-                                                  search.trim().isNotEmpty
-                                              ? null
-                                              : () => toggle(row.node.id),
-                                          icon: Icon(
-                                            row.expanded
-                                                ? Icons.expand_more
-                                                : Icons.chevron_right,
-                                          ),
-                                        )
-                                      else
-                                        const SizedBox(width: 40),
-                                      if (widget.checkboxes)
-                                        Semantics(
-                                          container: true,
-                                          value:
-                                              _treeCheckState(
-                                                    row.node,
-                                                    widget.checkedIds,
-                                                    widget.checkChildren,
-                                                    widget.canCheck,
-                                                  ) ==
-                                                  null
-                                              ? widget.partialCheckText
-                                              : null,
-                                          label:
-                                              widget.checkLabel?.call(
-                                                row.node.item,
-                                              ) ??
-                                              'Check ${widget.columns.first.text(row.node.item)}',
-                                          child: Checkbox(
-                                            tristate: widget.checkChildren,
-                                            value: _treeCheckState(
-                                              row.node,
-                                              widget.checkedIds,
-                                              widget.checkChildren,
-                                              widget.canCheck,
-                                            ),
-                                            onChanged: canToggleCheck(row.node)
-                                                ? (_) =>
-                                                      toggleCheck(row.node.id)
-                                                : null,
-                                          ),
-                                        ),
-                                      if (lazy.loading.contains(row.node.id))
-                                        Text(widget.loadingText),
-                                      if (lazy.errors.contains(row.node.id))
-                                        Text(widget.errorText),
-                                      TextButton(
+                rowCount: rows.length,
+                rowBuilder: (index) {
+                  final row = rows[index];
+                  return DataRow(
+                    key: ValueKey(row.node.id),
+                    selected: widget.selectedId == row.node.id,
+                    cells: [
+                      for (var i = 0; i < widget.columns.length; i++)
+                        DataCell(
+                          i == 0
+                              ? Row(
+                                  children: [
+                                    SizedBox(width: row.depth * 20),
+                                    if ((row.node.children.isNotEmpty ||
+                                        row.node.hasChildren))
+                                      IconButton(
+                                        tooltip:
+                                            '${row.expanded ? 'Collapse' : 'Expand'} ${widget.columns[i].text(row.node.item)}',
                                         onPressed:
                                             row.node.disabled ||
                                                 lazy.loading.contains(
                                                   row.node.id,
                                                 ) ||
-                                                widget.selectionReadOnly ||
-                                                widget.onSelected == null
+                                                widget.expansionReadOnly ||
+                                                search.trim().isNotEmpty
                                             ? null
-                                            : () => select(row.node.id),
-                                        child: Semantics(
-                                          label: widget.columns[i].text(
-                                            row.node.item,
+                                            : () => toggle(row.node.id),
+                                        icon: Icon(
+                                          row.expanded
+                                              ? Icons.expand_more
+                                              : Icons.chevron_right,
+                                        ),
+                                      )
+                                    else
+                                      const SizedBox(width: 40),
+                                    if (widget.checkboxes)
+                                      Semantics(
+                                        container: true,
+                                        value:
+                                            _treeCheckState(
+                                                  row.node,
+                                                  widget.checkedIds,
+                                                  widget.checkChildren,
+                                                  widget.canCheck,
+                                                ) ==
+                                                null
+                                            ? widget.partialCheckText
+                                            : null,
+                                        label:
+                                            widget.checkLabel?.call(
+                                              row.node.item,
+                                            ) ??
+                                            'Check ${widget.columns.first.text(row.node.item)}',
+                                        child: Checkbox(
+                                          tristate: widget.checkChildren,
+                                          value: _treeCheckState(
+                                            row.node,
+                                            widget.checkedIds,
+                                            widget.checkChildren,
+                                            widget.canCheck,
                                           ),
-                                          excludeSemantics: true,
-                                          child:
-                                              widget.columns[i].cellBuilder
-                                                  ?.call(
-                                                    context,
-                                                    row.node.item,
-                                                  ) ??
-                                              Text(
-                                                widget.columns[i].text(
-                                                  row.node.item,
-                                                ),
-                                              ),
+                                          onChanged: canToggleCheck(row.node)
+                                              ? (_) => toggleCheck(row.node.id)
+                                              : null,
                                         ),
                                       ),
-                                    ],
-                                  )
-                                : widget.columns[i].cellBuilder?.call(
-                                        context,
-                                        row.node.item,
-                                      ) ??
-                                      Text(
-                                        widget.columns[i].text(row.node.item),
+                                    if (lazy.loading.contains(row.node.id))
+                                      Text(widget.loadingText),
+                                    if (lazy.errors.contains(row.node.id))
+                                      Text(widget.errorText),
+                                    TextButton(
+                                      onPressed:
+                                          row.node.disabled ||
+                                              lazy.loading.contains(
+                                                row.node.id,
+                                              ) ||
+                                              widget.selectionReadOnly ||
+                                              widget.onSelected == null
+                                          ? null
+                                          : () => select(row.node.id),
+                                      child: Semantics(
+                                        label: widget.columns[i].text(
+                                          row.node.item,
+                                        ),
+                                        excludeSemantics: true,
+                                        child:
+                                            widget.columns[i].cellBuilder?.call(
+                                              context,
+                                              row.node.item,
+                                            ) ??
+                                            Text(
+                                              widget.columns[i].text(
+                                                row.node.item,
+                                              ),
+                                            ),
                                       ),
-                          ),
-                      ],
-                    ),
-                ],
+                                    ),
+                                  ],
+                                )
+                              : widget.columns[i].cellBuilder?.call(
+                                      context,
+                                      row.node.item,
+                                    ) ??
+                                    Text(widget.columns[i].text(row.node.item)),
+                        ),
+                    ],
+                  );
+                },
               ),
             ),
           ),

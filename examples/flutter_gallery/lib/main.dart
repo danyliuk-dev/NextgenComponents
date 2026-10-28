@@ -1,3 +1,4 @@
+import 'virtual_data_gallery.dart';
 import 'manual_previews.g.dart';
 import 'chips_gallery.dart';
 import 'selection_gallery.dart';
@@ -17,6 +18,12 @@ import 'workbook_gallery.dart';
 import 'package:nextgen_components/nextgen_components.dart';
 
 void main() {
+  if (Uri.base.queryParameters.containsKey('virtual-data')) {
+    runApp(
+      MaterialApp(theme: NgTheme.light(), home: const VirtualDataGallery()),
+    );
+    return;
+  }
   final preview = Uri.base.queryParameters['preview'];
   runApp(preview == null ? const Gallery() : ComponentPreview(name: preview));
 }
@@ -402,7 +409,8 @@ class _GalleryPageState extends State<GalleryPage> {
                                     ? (constraints.maxWidth - 20) / 2
                                     : constraints.maxWidth,
                                 child: NgDropDownList(
-                                  helperText: 'Choose the team that owns this workspace.',
+                                  helperText:
+                                      'Choose the team that owns this workspace.',
                                   label: 'Team',
                                   value: team,
                                   items: teams,
@@ -438,7 +446,10 @@ class _GalleryPageState extends State<GalleryPage> {
                         NgRadioGroup(
                           orientation: 'vertical',
                           helperText: 'Choose one access level.',
-                          itemBuilder: (_,o) => Text(o.label,style: const TextStyle(fontWeight: FontWeight.bold)),
+                          itemBuilder: (_, o) => Text(
+                            o.label,
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          ),
                           label: 'Access level',
                           value: access,
                           items: roles,

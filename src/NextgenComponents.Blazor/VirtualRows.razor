@@ -1,0 +1,14 @@
+@typeparam TItem
+@using Microsoft.AspNetCore.Components.Web.Virtualization
+@if(Enabled){
+<Virtualize Items="@Items.ToArray()" Context="item" ItemSize="RowHeight" OverscanCount="3" SpacerElement="@SpacerElement">
+@ChildContent(item)
+</Virtualize>
+}else{foreach(var item in Items){@ChildContent(item)}}
+@code {
+ [Parameter] public bool Enabled {get;set;}
+ [Parameter] public float RowHeight {get;set;}=48;
+ [Parameter] public string SpacerElement {get;set;}="tr";
+ [Parameter] public IReadOnlyList<TItem> Items {get;set;}=[];
+ [Parameter,EditorRequired] public RenderFragment<TItem> ChildContent {get;set;}=default!;
+}

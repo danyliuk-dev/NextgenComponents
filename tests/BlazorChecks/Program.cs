@@ -578,6 +578,21 @@ Reject(()=>NgGroupedData.Validate(interleaved,new(1,3,"",[],["name"]),r=>r),"int
 Reject(()=>NgGroupedData.ValidateKeys(["name","name"]),"duplicate remote group keys rejected");
 await Check<NgDataGrid<string>>(new(){["Columns"]=remoteColumns,["RowId"]=(Func<string,string>)(s=>s),["InitialPageSize"]=2,["RemoteGroupKeys"]=new[]{"name","kind"},["ReadGroupedData"]=(Func<NgGroupedDataRequest,CancellationToken,Task<NgGroupedDataResult<string>>>)((r,t)=>Task.FromResult(serverPage)),["CollapsibleGroups"]=true},"A (3)","Mean: 6","A/x/2","Collapse page groups");
 await Check<NgDataGrid<string>>(new(){["Columns"]=remoteColumns,["RowId"]=(Func<string,string>)(s=>s),["InitialPageSize"]=2,["RemoteGroupKeys"]=new[]{"name","kind"},["ReadGroupedData"]=(Func<NgGroupedDataRequest,CancellationToken,Task<NgGroupedDataResult<string>>>)((r,t)=>Task.FromResult(serverPage with {Groups=[]}))},"Unable to load records.","Retry");
+// Virtual rendering must preserve the data contract independently of DOM recycling.
+#pragma warning disable BL0005
+var virtualGrid=new NgDataGrid<int>{Virtualize=true,Items=Enumerable.Range(1,10000).ToArray(),Columns=[new("id","ID",i=>i)],RowId=i=>i.ToString()};
+virtualGrid.GetType().GetMethod("Refresh",privateFlags)!.Invoke(virtualGrid,null);
+var virtualVisible=(IReadOnlyList<int>)virtualGrid.GetType().GetProperty("Visible",privateFlags)!.GetValue(virtualGrid)!;
+Rule(virtualVisible.Count==10000 && virtualVisible[^1]==10000,"virtual local Grid retains the full logical result");
+virtualGrid.Virtualize=false;
+virtualGrid.GetType().GetField("size",privateFlags)!.SetValue(virtualGrid,5);
+Rule(((IReadOnlyList<int>)virtualGrid.GetType().GetProperty("Visible",privateFlags)!.GetValue(virtualGrid)!).Count==5,"nonvirtual Grid retains paging");
+#pragma warning restore BL0005
+foreach(var height in new[]{float.NaN,float.PositiveInfinity,0f,39f}){
+ try{await Check<NgDataGrid<int>>(new(){["Virtualize"]=true,["RowHeight"]=height,["Columns"]=new[]{new NgDataColumn<int>("id","ID",i=>i)},["RowId"]=(Func<int,string>)(i=>i.ToString())});throw new Exception("Invalid virtual row accepted");}catch(ArgumentException){count++;}
+ try{await Check<NgTreeView<int>>(new(){["Virtualize"]=true,["RowHeight"]=height,["Text"]=(Func<int,string>)(i=>i.ToString())});throw new Exception("Invalid tree row accepted");}catch(ArgumentException){count++;}
+}
+await Check<NgTreeList<int>>(new(){["Virtualize"]=true,["Columns"]=new[]{new NgDataColumn<int>("id","ID",i=>i)}} ,"ng-virtual-table","height:384px");
 Console.WriteLine($"{count} rendering and data/date-rule checks passed. Browser interaction requires the separate visual run.");
 sealed class NoBrowserJS : IJSRuntime {
  public ValueTask<TValue> InvokeAsync<TValue>(string identifier, object?[]? args) => throw new InvalidOperationException("JS must not execute in SSR");

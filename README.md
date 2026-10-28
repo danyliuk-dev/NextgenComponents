@@ -2,7 +2,7 @@
 
 Blazor and Flutter component libraries with a shared design-token source and a Telerik Blazor component roadmap.
 
-**Current release: 0.68.0 Grid CSV/TSV export workflows, 47 controls on each Web platform (53 catalogue entries including chart modes).** This is not a complete Telerik replacement or API-compatible clone. The [catalog](docs/catalog.md) tracks 139 named entries from the published Telerik Blazor index; chart variants are counted separately. See [foundation capabilities](docs/foundation.md) and [forms/date capabilities](docs/forms-and-dates.md) and [data workspace capabilities and gaps](docs/data-workspace.md) and [analytics/schedule capabilities](docs/analytics-and-schedule.md).
+**Current release: 0.69.0 virtual Grid and tree rendering, 47 controls on each Web platform (53 catalogue entries including chart modes).** This is not a complete Telerik replacement or API-compatible clone. The [catalog](docs/catalog.md) tracks 139 named entries from the published Telerik Blazor index; chart variants are counted separately. See [foundation capabilities](docs/foundation.md) and [forms/date capabilities](docs/forms-and-dates.md) and [data workspace capabilities and gaps](docs/data-workspace.md) and [analytics/schedule capabilities](docs/analytics-and-schedule.md).
 
 ## Manual
 
@@ -104,6 +104,10 @@ flutter test
 ## Feature parity tracking
 
 **47 implemented components does not mean 47 complete Telerik equivalents.** See the [feature parity matrix](docs/parity.md) for implementation, verification and remaining work separately. No component currently carries a full-parity claim. Existing groups are audited and completed before adding new component names; Chip/ChipList is the first detailed audit in this process.
+
+## Virtual data
+
+Grid, TreeView and TreeList now support fixed-height virtual rendering. Local Grid scrolls the full result; remote Grid retains server pages; trees cover expanded loaded nodes. See [Virtual data](docs/manual/virtual-data.md) for contracts and runnable 10,000-record demos. Continuous server range loading remains separate.
 
 ## Roadmap
 
