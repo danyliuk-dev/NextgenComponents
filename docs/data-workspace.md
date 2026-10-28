@@ -119,3 +119,7 @@ XLSX/PDF output, streaming server exports, database providers, virtual scrolling
 Grid, TreeView and TreeList support opt-in fixed-height virtual rows on both Web platforms. Local Grid scrolls all filtered expanded results; the remote Grid virtualizes its loaded page while retaining paging and the existing adapters. Trees virtualize their expanded loaded nodes and preserve lazy child loading on expansion. Selection/check state stays caller-owned; TreeView navigation can focus rows outside the current window.
 
 See [Virtual data](manual/virtual-data.md) for sizing, templates, selection/export scope, focus behavior, performance tests and the 10,000-record demos. Continuous remote range loading, lazy group paging, variable-height rows, column virtualization and full accessibility/native verification remain open.
+
+## Continuous remote ranges (0.70)
+
+Grid ReadRange/readRange adds flat continuous server scrolling with bounded retained data, exact offset/count validation, stale-response protection, retry, search/sort reset and caller-owned selection. Page export and header selection explicitly target the loaded window, including overscan. Existing page and grouped-page adapters remain unchanged. See [Remote ranges](manual/remote-ranges.md). Lazy group ranges, variable row heights and native/screen-reader certification remain open.

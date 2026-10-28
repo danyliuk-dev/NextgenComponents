@@ -2,7 +2,7 @@
 
 Blazor and Flutter component libraries with a shared design-token source and a Telerik Blazor component roadmap.
 
-**Current release: 0.69.0 virtual Grid and tree rendering, 47 controls on each Web platform (53 catalogue entries including chart modes).** This is not a complete Telerik replacement or API-compatible clone. The [catalog](docs/catalog.md) tracks 139 named entries from the published Telerik Blazor index; chart variants are counted separately. See [foundation capabilities](docs/foundation.md) and [forms/date capabilities](docs/forms-and-dates.md) and [data workspace capabilities and gaps](docs/data-workspace.md) and [analytics/schedule capabilities](docs/analytics-and-schedule.md).
+**Current release: 0.70.0 continuous remote Grid ranges, 47 controls on each Web platform (53 catalogue entries including chart modes).** This is not a complete Telerik replacement or API-compatible clone. The [catalog](docs/catalog.md) tracks 139 named entries from the published Telerik Blazor index; chart variants are counted separately. See [foundation capabilities](docs/foundation.md) and [forms/date capabilities](docs/forms-and-dates.md) and [data workspace capabilities and gaps](docs/data-workspace.md) and [analytics/schedule capabilities](docs/analytics-and-schedule.md).
 
 ## Manual
 
@@ -107,7 +107,7 @@ flutter test
 
 ## Virtual data
 
-Grid, TreeView and TreeList now support fixed-height virtual rendering. Local Grid scrolls the full result; remote Grid retains server pages; trees cover expanded loaded nodes. See [Virtual data](docs/manual/virtual-data.md) for contracts and runnable 10,000-record demos. Continuous server range loading remains separate.
+Grid, TreeView and TreeList now support fixed-height virtual rendering. Local Grid scrolls the full result; remote Grid retains server pages; trees cover expanded loaded nodes. See [Virtual data](docs/manual/virtual-data.md) for contracts and runnable 10,000-record demos. Continuous server range loading uses the separate ReadRange contract below.
 
 ## Roadmap
 
@@ -128,3 +128,5 @@ This repository currently contains original component implementations; no Teleri
 `python3 scripts/generate_manual.py` generates every component page, code assets and runnable previews from `scripts/manual_content.py`. Add a curated Blazor and Flutter snippet for each new public component; the generator rejects missing manuals. Previews execute those exact snippets, so code and appearance share one source. Do not edit the generated `ManualPreviews/*Example.razor` or `manual_previews.g.dart` files directly.
 
 Build both galleries after regeneration. The local documentation embeds `/preview/NgComponent` (Blazor) or `/?preview=NgComponent` (Flutter). Static Markdown readers receive links to these same examples. Previews are local, stateful examples; Reload example resets them. Modal/tooltip examples require their documented trigger. The visible Chrome smoke runner is `node scripts/manual-preview-check.mjs blazor` or `flutter`; coordinate Chrome use first. It saves runtime diagnostics and screenshots under ignored `artifacts/browser/manual-*` for visual review.
+
+Continuous remote Grid scrolling now uses a separate bounded ReadRange/readRange adapter. Both Web galleries exercise 100,000 records over HTTP, error/retry, query reset, selection retention and loaded-window export. See [Remote ranges](docs/manual/remote-ranges.md). Existing paged adapters remain backward compatible.

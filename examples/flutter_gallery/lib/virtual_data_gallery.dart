@@ -1,3 +1,4 @@
+import 'remote_range_gallery.dart';
 import 'package:flutter/material.dart';
 import 'package:nextgen_components/nextgen_components.dart';
 
@@ -59,6 +60,12 @@ class _VirtualDataGalleryState extends State<VirtualDataGallery> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
+    floatingActionButton: FloatingActionButton.extended(
+      onPressed: () => Navigator.of(context).push(
+        MaterialPageRoute<void>(builder: (_) => const RemoteRangeGallery()),
+      ),
+      label: const Text('Remote ranges'),
+    ),
     appBar: AppBar(title: const Text('Virtual data')),
     body: SingleChildScrollView(
       padding: const EdgeInsets.all(24),

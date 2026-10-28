@@ -1,11 +1,21 @@
 @typeparam TItem
 @using Microsoft.AspNetCore.Components.Web.Virtualization
-@if(Enabled){
+@if(Provider is not null){
+<Virtualize @ref="providerView" ItemsProvider="Provider" Context="item" ItemSize="RowHeight" OverscanCount="3" SpacerElement="@SpacerElement">
+<ItemContent>@ChildContent(item)</ItemContent>
+<Placeholder>@if(Placeholder is not null){@Placeholder}</Placeholder>
+</Virtualize>
+}else if(Enabled){
 <Virtualize Items="@Items.ToArray()" Context="item" ItemSize="RowHeight" OverscanCount="3" SpacerElement="@SpacerElement">
 @ChildContent(item)
 </Virtualize>
 }else{foreach(var item in Items){@ChildContent(item)}}
 @code {
+ private Virtualize<TItem>? providerView;
+ [Parameter] public ItemsProviderDelegate<TItem>? Provider {get;set;}
+ [Parameter] public RenderFragment? Placeholder {get;set;}
+ public Task RefreshAsync()=>providerView?.RefreshDataAsync()??Task.CompletedTask;
+
  [Parameter] public bool Enabled {get;set;}
  [Parameter] public float RowHeight {get;set;}=48;
  [Parameter] public string SpacerElement {get;set;}="tr";

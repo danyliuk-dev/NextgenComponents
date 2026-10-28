@@ -46,6 +46,19 @@ editingGrid.Editing=EditConfig(commit:(op,id,v,t)=>{persistenceCalls++;return pe
 EditCall("BeginEdit",NgGridEditOperation.Update,"Updated");editRows.Clear();await (Task)EditCall("CommitEdit")!;EditAssert(persistenceCalls==3,"Removed row guard");editingGrid.Dispose();
 #pragma warning restore BL0005
 await Check<NgDataGrid<string>>(new(){["Items"]=new[]{"Alpha"},["Columns"]=new[]{new NgDataColumn<string>("n","Name",r=>r)},["RowId"]=(Func<string,string>)(r=>r),["Editing"]=EditConfig()},"Create record","Edit Alpha","Delete Alpha");
+// Range responses are exact windows, never partial pages presented as a full result.
+var rangeQuery=new NgDataRangeRequest(10,5,"",Array.Empty<NgSortDescriptor>());
+var rangeSource=new List<int>{10,11,12};
+var rangeSnapshot=NgDataRange.Validate(new NgDataRangeResult<int>(10,rangeSource,13),rangeQuery,i=>i.ToString());
+rangeSource.Clear();EditAssert(rangeSnapshot.SequenceEqual([10,11,12]),"Range response snapshot");
+foreach(var bad in new[]{new NgDataRangeResult<int>(11,[10,11,12],13),new(10,[10,11],13),new(10,[10,10,12],13),new(10,[10,11,12],100001),new(10,[],-1)}){
+ var rejected=false;try{NgDataRange.Validate(bad,rangeQuery,i=>i.ToString());}catch(ArgumentException){rejected=true;}EditAssert(rejected,"Malformed range rejected atomically");
+}
+foreach(var bad in new[]{rangeQuery with{StartIndex=-1},rangeQuery with{Count=0},rangeQuery with{Count=513},rangeQuery with{StartIndex=100001}}){
+ var rejected=false;try{NgDataRange.ValidateRequest(bad);}catch(ArgumentException){rejected=true;}EditAssert(rejected,"Range request bound");
+}
+EditAssert(NgDataRange.Validate(new NgDataRangeResult<int>(100,[],12),rangeQuery with{StartIndex=100},i=>i.ToString()).Count==0,"Shrunk result accepts empty out-of-range window");
+var blankRejected=false;try{NgDataRange.Validate(new NgDataRangeResult<int>(10,[10,11,12],13),rangeQuery,_=>" ");}catch(ArgumentException){blankRejected=true;}EditAssert(blankRejected,"Blank range IDs rejected");
 // CSV/TSV encoding and Grid export lifecycle.
 var exportColumns=new[]{new NgDataColumn<string>("name","Name",r=>r),new NgDataColumn<string>("length","Length",r=>r.Length)};
 var csvOptions=new NgGridExport<string>{OnExport=(_,_)=>Task.CompletedTask,ColumnKeys=["name"]};

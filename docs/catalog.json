@@ -391,7 +391,7 @@
         "status": "foundation",
         "component": "NgDataGrid"
       },
-      "featureSpec": "docs/data-workspace.md"
+      "featureSpec": "docs/data-workspace.md; docs/manual/remote-ranges.md (bounded flat ranges; grouped ranges remain open)"
     },
     {
       "name": "Filter",

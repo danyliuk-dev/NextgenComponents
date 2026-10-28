@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'components.dart';
@@ -6,6 +7,7 @@ part 'grouped_data.dart';
 part 'grid_editing.dart';
 part 'grid_export.dart';
 part 'virtual_data.dart';
+part 'range_data.dart';
 
 class NgDataColumn<T> {
   final String key, title;
@@ -537,6 +539,8 @@ class NgBreadcrumb extends StatelessWidget {
 }
 
 class NgDataGrid<T> extends StatefulWidget {
+  final Future<NgDataRangeResult<T>> Function(NgDataRangeRequest)? readRange;
+  final String loadedWindowText, selectWindowText;
   final bool virtualize;
   final double rowHeight, viewportHeight;
   final NgGridExport<T>? export;
@@ -573,6 +577,9 @@ class NgDataGrid<T> extends StatefulWidget {
   final int initialPageSize;
   const NgDataGrid({
     super.key,
+    this.readRange,
+    this.loadedWindowText = 'Loaded window',
+    this.selectWindowText = 'Select loaded window',
     this.virtualize = false,
     this.rowHeight = 48,
     this.viewportHeight = 384,
@@ -620,6 +627,81 @@ class NgDataGrid<T> extends StatefulWidget {
 }
 
 class _NgDataGridState<T> extends State<NgDataGrid<T>> {
+  int rangeStart = 0, rangeEpoch = 0, desiredFirst = 0;
+  bool rangeKnown = false;
+  Timer? rangeTimer;
+  bool get isRange => widget.readRange != null;
+  int get rangeCount => (widget.viewportHeight / widget.rowHeight).ceil() + 96;
+  void rangeViewport(int first) {
+    desiredFirst = first;
+    final end = (first + (widget.viewportHeight / widget.rowHeight).ceil() + 8)
+        .clamp(0, total);
+    if (rangeKnown &&
+        !error &&
+        first >= rangeStart &&
+        end <= rangeStart + remote.length)
+      return;
+    rangeTimer?.cancel();
+    cancelExport();
+    // Invalidate stale success immediately, before the scroll debounce fires.
+    ++revision;
+    setState(() {
+      loading = true;
+      error = false;
+      remote = [];
+    });
+    rangeTimer = Timer(const Duration(milliseconds: 50), () {
+      if (mounted && isRange) loadRange(first);
+    });
+  }
+
+  Future<void> loadRange(int first) async {
+    final reader = widget.readRange;
+    if (reader == null || !mounted) return;
+    final ticket = ++revision, epoch = rangeEpoch;
+    final start = ((first ~/ 32) * 32 - 32).clamp(0, NgDataRange.maxTotal);
+    final request = NgDataRangeRequest(start, rangeCount, search, sorts);
+    rangeStart = start;
+    loading = true;
+    error = false;
+    remote = [];
+    cancelExport();
+    try {
+      NgDataRange.validateRequest(request);
+      final result = await reader(request);
+      if (!mounted || ticket != revision || epoch != rangeEpoch) return;
+      final rows = NgDataRange.validate(result, request, widget.rowId);
+      total = result.total;
+      rangeKnown = true;
+      if (start >= total && total > 0) {
+        await loadRange((total - rangeCount).clamp(0, total - 1));
+        return;
+      }
+      remote = rows;
+    } catch (_) {
+      if (mounted && ticket == revision && epoch == rangeEpoch) {
+        error = true;
+        remote = [];
+      }
+    } finally {
+      if (mounted && ticket == revision && epoch == rangeEpoch)
+        setState(() => loading = false);
+    }
+  }
+
+  void retryRead() {
+    if (!isRange) {
+      change(() {});
+      return;
+    }
+    rangeTimer?.cancel();
+    setState(() {
+      loading = true;
+      error = false;
+    });
+    loadRange(desiredFirst);
+  }
+
   NgGridExportScope exportScope = NgGridExportScope.page;
   bool exporting = false, exportError = false, exportReady = false;
   int exportRevision = 0;
@@ -719,7 +801,9 @@ class _NgDataGridState<T> extends State<NgDataGrid<T>> {
             items: [
               DropdownMenuItem(
                 value: NgGridExportScope.page,
-                child: Text(config.pageText),
+                child: Text(
+                  isRange ? widget.loadedWindowText : config.pageText,
+                ),
               ),
               DropdownMenuItem(
                 value: NgGridExportScope.filtered,
@@ -972,7 +1056,7 @@ class _NgDataGridState<T> extends State<NgDataGrid<T>> {
   List<NgGridGroup<T>> remoteGroups = [];
   List<String> previousGroupKeys = [];
   bool get isRemote =>
-      widget.readData != null || widget.readGroupedData != null;
+      isRange || widget.readData != null || widget.readGroupedData != null;
   bool get isGrouped => selectors.isNotEmpty || widget.readGroupedData != null;
   String summaryText(NgGroupSummary s) =>
       widget.remoteSummaryText?.call(s.title, s.value) ??
@@ -1106,6 +1190,18 @@ class _NgDataGridState<T> extends State<NgDataGrid<T>> {
   Future<void> reload() async {
     validateGrouping();
     final ticket = ++revision;
+    if (isRange) {
+      rangeTimer?.cancel();
+      rangeEpoch++;
+      rangeKnown = false;
+      desiredFirst = rangeStart = total = 0;
+      remote = [];
+      remoteGroups = [];
+      cancelExport();
+      invalidateEdit();
+      await loadRange(0);
+      return;
+    }
     if (!isRemote) {
       loading = error = false;
       return;
@@ -1193,12 +1289,14 @@ class _NgDataGridState<T> extends State<NgDataGrid<T>> {
   void didUpdateWidget(covariant NgDataGrid<T> oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.dataVersion != widget.dataVersion ||
+        oldWidget.readRange != widget.readRange ||
         oldWidget.readData != widget.readData ||
         oldWidget.readGroupedData != widget.readGroupedData ||
         widget.export == null ||
         widget.export!.readOnly)
       cancelExport();
     if (oldWidget.dataVersion != widget.dataVersion ||
+        oldWidget.readRange != widget.readRange ||
         oldWidget.readData != widget.readData ||
         oldWidget.readGroupedData != widget.readGroupedData ||
         (oldWidget.editing != null && widget.editing == null))
@@ -1213,7 +1311,17 @@ class _NgDataGridState<T> extends State<NgDataGrid<T>> {
     if ((oldWidget.groupBy == null && oldWidget.groupSelectors.isEmpty) !=
         (selectors.isEmpty))
       page = 1;
-    if (oldWidget.readData != widget.readData ||
+    if (oldWidget.readRange != widget.readRange ||
+        isRange &&
+            (oldWidget.rowHeight != widget.rowHeight ||
+                oldWidget.viewportHeight != widget.viewportHeight ||
+                oldWidget.columns
+                        .map((c) => '${c.key}:${c.sortable}')
+                        .join('|') !=
+                    widget.columns
+                        .map((c) => '${c.key}:${c.sortable}')
+                        .join('|')) ||
+        oldWidget.readData != widget.readData ||
         oldWidget.readGroupedData != widget.readGroupedData ||
         ngGroupId(previousGroupKeys) != ngGroupId(widget.remoteGroupKeys) ||
         oldWidget.dataVersion != widget.dataVersion ||
@@ -1226,6 +1334,7 @@ class _NgDataGridState<T> extends State<NgDataGrid<T>> {
 
   @override
   void dispose() {
+    rangeTimer?.cancel();
     cancelExport();
     revision++;
     super.dispose();
@@ -1263,6 +1372,26 @@ class _NgDataGridState<T> extends State<NgDataGrid<T>> {
   }
 
   void validateGrouping() {
+    if (isRange) {
+      _checkVirtual(true, widget.rowHeight, widget.viewportHeight);
+      if (!widget.virtualize ||
+          widget.readData != null ||
+          widget.readGroupedData != null ||
+          widget.items.isNotEmpty ||
+          selectors.isNotEmpty ||
+          widget.groupAggregates.isNotEmpty ||
+          widget.remoteGroupKeys.isNotEmpty) {
+        throw ArgumentError(
+          'readRange requires virtualize and cannot be combined with items, page readers or grouping.',
+        );
+      }
+      if (widget.rowHeight > 128 ||
+          (widget.viewportHeight / widget.rowHeight).ceil() > 128)
+        throw ArgumentError(
+          'Range mode supports rows up to 128px and at most 128 visible rows.',
+        );
+    }
+
     widget.export?.resolve(widget.columns);
     widget.editing?.check();
     if (widget.groupBy != null && widget.groupSelectors.isNotEmpty)
@@ -1327,10 +1456,7 @@ class _NgDataGridState<T> extends State<NgDataGrid<T>> {
           Row(
             children: [
               Text(widget.errorText),
-              TextButton(
-                onPressed: () => change(() {}),
-                child: Text(widget.retryText),
-              ),
+              TextButton(onPressed: retryRead, child: Text(widget.retryText)),
             ],
           ),
         Wrap(
@@ -1412,8 +1538,11 @@ class _NgDataGridState<T> extends State<NgDataGrid<T>> {
                 width: c.maxWidth,
                 // Flutter Web can retain stale row semantics after keyed reordering.
                 // Refresh the view identity; selection stays in caller-owned IDs.
+                onWindowChanged: isRange ? rangeViewport : null,
                 key: ValueKey(
-                  '$sortKey:$descending:$page:$search:${visible.map(widget.rowId).join(',')}',
+                  isRange
+                      ? rangeEpoch
+                      : '$sortKey:$descending:$page:$search:${visible.map(widget.rowId).join(',')}',
                 ),
                 sortColumnIndex: sortIndex < 0
                     ? null
@@ -1427,8 +1556,14 @@ class _NgDataGridState<T> extends State<NgDataGrid<T>> {
                       label: Semantics(
                         label:
                             selectedCount > 0 && selectedCount < eligible.length
-                            ? '${widget.virtualize && !isRemote ? 'Select results' : 'Select page'} (partially selected)'
-                            : (widget.virtualize && !isRemote
+                            ? '${isRange
+                                  ? widget.selectWindowText
+                                  : widget.virtualize && !isRemote
+                                  ? 'Select results'
+                                  : 'Select page'} (partially selected)'
+                            : (isRange
+                                  ? widget.selectWindowText
+                                  : widget.virtualize && !isRemote
                                   ? 'Select results'
                                   : 'Select page'),
                         container: true,
@@ -1486,9 +1621,33 @@ class _NgDataGridState<T> extends State<NgDataGrid<T>> {
                     ),
                   if (hasActions) const DataColumn(label: Text('Actions')),
                 ],
-                rowCount: entries.length,
+                rowCount: isRange ? total : entries.length,
                 rowBuilder: (index) {
-                  final entry = entries[index];
+                  final offset = isRange ? index - rangeStart : index;
+                  if (isRange &&
+                      (loading ||
+                          error ||
+                          offset < 0 ||
+                          offset >= remote.length)) {
+                    return DataRow(
+                      key: ValueKey(('placeholder', index)),
+                      cells: [
+                        if (selectionVisible) const DataCell(SizedBox.shrink()),
+                        for (var c = 0; c < widget.columns.length; c++)
+                          DataCell(
+                            Text(
+                              c == 0
+                                  ? (error
+                                        ? widget.errorText
+                                        : widget.loadingText)
+                                  : '',
+                            ),
+                          ),
+                        if (hasActions) const DataCell(SizedBox.shrink()),
+                      ],
+                    );
+                  }
+                  final entry = entries[offset];
                   if (entry.$1 case final group?)
                     return DataRow(
                       key: ValueKey(('group', group.id)),
@@ -1580,7 +1739,10 @@ class _NgDataGridState<T> extends State<NgDataGrid<T>> {
             ),
           ),
         ),
-        if (!loading && !error && rows.isEmpty)
+        if (!loading &&
+            !error &&
+            rows.isEmpty &&
+            (!isRange || rangeKnown && total == 0))
           Padding(
             padding: const EdgeInsets.all(24),
             child: widget.emptyBuilder ?? Text(widget.emptyText),
@@ -1588,7 +1750,14 @@ class _NgDataGridState<T> extends State<NgDataGrid<T>> {
         if (editOperation == null && editError != null)
           Semantics(liveRegion: true, child: Text(editError!)),
         if (editOperation != null && widget.editing != null) editorPanel(),
-        if (!widget.virtualize || isRemote)
+        if (isRange)
+          Semantics(
+            liveRegion: true,
+            child: Text(
+              '${widget.loadedWindowText}: ${remote.isEmpty ? "0" : "${rangeStart + 1}–${rangeStart + remote.length}"} / $total',
+            ),
+          ),
+        if (!isRange && (!widget.virtualize || isRemote))
           NgPager(
             total: count,
             page: page,

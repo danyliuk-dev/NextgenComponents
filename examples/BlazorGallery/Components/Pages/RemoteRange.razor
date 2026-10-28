@@ -1,0 +1,33 @@
+@page "/remote-range"
+@using System.Net.Http.Json
+@inject NavigationManager Navigation
+@implements IDisposable
+<PageTitle>Nextgen • Remote ranges</PageTitle>
+<div class="ng-scope gallery"><main>
+<nav><a href="/virtual-data">Virtual data</a><a href="/data">Data workspace</a></nav>
+<h1>Scroll the server result</h1>
+<p>100,000 synthetic records over HTTP. The client retains one bounded window. Ctrl+End jumps to the end without downloading preceding records.</p>
+<div class="row"><NgCheckBox Label="Fail reads" @bind-Value="fail"/><NgCheckBox Label="Malformed response" @bind-Value="malformed"/><NgCheckBox Label="Slow reads" @bind-Value="slow"/><NgCheckBox Label="Server has 12 records" @bind-Value="small"/><NgCheckBox Label="Lock selection" @bind-Value="locked"/><NgButton OnClick="()=>version++">Refresh query</NgButton></div>
+<p role="status">HTTP requests: @reads. Requested: @lastRequest. Selection: @string.Join(", ",selected.Order().Take(8)).</p>
+<p>Flags affect the next read. After a failure, clear its flag and use Retry. Refresh query resets the window; scrolling observes live server shrinkage.</p>
+<NgDataGrid TItem="int" ReadRange="Read" Virtualize="true" DataVersion="version" RowId="Id" Columns="columns" Label="Remote inventory" MultiSort="true" @bind-SelectedIds="selected" SelectionReadOnly="locked" CanSelect="i=>i%100!=0" Export="Export" />
+@if(exported is {} file){<p role="status">Exported @file.RowCount loaded records.</p><a download="@file.FileName" href="@($"data:{file.MimeType};base64,{Convert.ToBase64String(file.Bytes)}")">Download loaded window</a>}
+</main></div>
+@code {
+ private readonly HttpClient client=new();
+ private bool fail,malformed,slow,small,locked;
+ private int version,reads;
+ private string lastRequest="none";
+ private HashSet<string> selected=[];
+ private NgGridExportFile? exported;
+ private static string Id(int i)=>$"R{i:000000}";
+ private readonly NgDataColumn<int>[] columns=[new("id","Record",i=>i,Format:Id),new("name","Name",i=>$"Inventory {i:000000}")];
+ private NgGridExport<int> Export=>new(){OnExport=(file,token)=>{exported=file;return Task.CompletedTask;}};
+ private async Task<NgDataRangeResult<int>> Read(NgDataRangeRequest request,CancellationToken token){
+   var url=Navigation.ToAbsoluteUri($"api/range-inventory?fail={fail.ToString().ToLowerInvariant()}&malformed={malformed.ToString().ToLowerInvariant()}&slow={slow.ToString().ToLowerInvariant()}&small={small.ToString().ToLowerInvariant()}");
+   reads++;lastRequest=$"{request.StartIndex} + {request.Count}";await InvokeAsync(StateHasChanged);
+   using var response=await client.PostAsJsonAsync(url,request,token);response.EnsureSuccessStatusCode();
+   return (await response.Content.ReadFromJsonAsync<NgDataRangeResult<int>>(cancellationToken:token))!;
+ }
+ public void Dispose()=>client.Dispose();
+}

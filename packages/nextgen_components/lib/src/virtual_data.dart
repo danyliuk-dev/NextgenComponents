@@ -20,6 +20,7 @@ class _NgDataTable extends StatefulWidget {
   final int? sortColumnIndex;
   final List<DataColumn> columns;
   final int rowCount;
+  final ValueChanged<int>? onWindowChanged;
   final DataRow Function(int) rowBuilder;
   const _NgDataTable({
     super.key,
@@ -29,6 +30,7 @@ class _NgDataTable extends StatefulWidget {
     required this.width,
     required this.columns,
     required this.rowCount,
+    this.onWindowChanged,
     required this.rowBuilder,
     this.showCheckboxColumn = false,
     this.selectionColumn = false,
@@ -43,6 +45,27 @@ class _NgDataTable extends StatefulWidget {
 
 class _NgDataTableState extends State<_NgDataTable> {
   final scroll = ScrollController();
+  @override
+  void initState() {
+    super.initState();
+    scroll.addListener(_scrollChanged);
+  }
+
+  int? lastFirst;
+  void _scrollChanged() {
+    if (!scroll.hasClients || widget.onWindowChanged == null) return;
+    final first = (scroll.offset / widget.rowHeight).floor().clamp(
+      0,
+      widget.rowCount > 0 ? widget.rowCount - 1 : 0,
+    );
+    if (lastFirst == first) return;
+    lastFirst = first;
+    // Scroll notifications can occur during layout, defer the parent's mutation.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && lastFirst == first) widget.onWindowChanged?.call(first);
+    });
+  }
+
   @override
   void dispose() {
     scroll.dispose();

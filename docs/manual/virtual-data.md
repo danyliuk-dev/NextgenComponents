@@ -10,7 +10,7 @@
 | Remote Grid | The current server page, including its grouped metadata | Existing `ReadData` / `ReadGroupedData` adapters and pager remain. Scrolling never fetches another page or invents placeholders for unloaded records. Use an explicit page size such as 500. |
 | Trees | The flattened, expanded, currently loaded nodes | Existing lazy child adapters still run on expansion; scrolling itself does not fetch children. |
 
-This is rendering virtualization, not a server range protocol, lazy group paging or a bound on application data memory. Continuous scrolling across an entire remote dataset remains a separate follow-up. Searching and flattening a large tree still visit its loaded nodes.
+The modes above virtualize rendering only. Continuous remote scrolling with bounded client data uses the separate [ReadRange contract](remote-ranges.md). Lazy group paging remains unsupported. Searching and flattening a large tree still visit its loaded nodes.
 
 ## Blazor
 

@@ -2,26 +2,29 @@
 @implements IDisposable
 <div class="ng-data-grid" aria-busy="@(loading?"true":"false")">
 @if(loading){<p role="status">@LoadingText</p>}
-@if(error){<p role="alert">@ErrorText <button type="button" @onclick="ReloadAsync">@RetryText</button></p>}
+@if(error){<p role="alert">@ErrorText <button type="button" @onclick="RetryReadAsync">@RetryText</button></p>}
 <div class="ng-data-toolbar"><label class="ng-field">Search @Label<input class="ng-input" aria-label="@($"Search {Label}")" value="@search" @oninput="Search" /></label><span role="status">@SelectedIds.Count selected</span>@Toolbar @if(Editing is {} editor){<button type="button" class="ng-button ng-primary" disabled="@(!CanCreate)" @onclick="()=>BeginEdit(NgGridEditOperation.Create,default)">@editor.CreateText</button>} @if(MultiSort){<button type="button" disabled="@(sorts.Count==0)" @onclick="ClearSort">Clear sorting</button>}</div>
 @if(CollapsibleGroups && IsGrouped){<div class="ng-data-toolbar"><button type="button" disabled="@(!CanBulk(false))" @onclick="()=>BulkGroups(false)">@(ReadGroupedData is null?ExpandGroupsText:ExpandPageGroupsText)</button><button type="button" disabled="@(!CanBulk(true))" @onclick="()=>BulkGroups(true)">@(ReadGroupedData is null?CollapseGroupsText:CollapsePageGroupsText)</button></div>}
 @if(Export is {} export){<div class="ng-data-toolbar">
 <label class="ng-field">@export.ScopeText<select class="ng-input" aria-label="@export.ScopeText" value="@exportScope" disabled="@exporting" @onchange="ChangeExportScope">
-<option value="Page">@export.PageText</option><option value="Filtered" disabled="@(IsRemote && export.ReadExportData is null)">@export.FilteredText</option><option value="Selected" disabled="@(IsRemote && export.ReadExportData is null)">@export.SelectedText</option></select></label>
+<option value="Page">@(ReadRange is not null?LoadedWindowText:export.PageText)</option><option value="Filtered" disabled="@(IsRemote && export.ReadExportData is null)">@export.FilteredText</option><option value="Selected" disabled="@(IsRemote && export.ReadExportData is null)">@export.SelectedText</option></select></label>
 <button type="button" class="ng-button" disabled="@(!CanExport)" @onclick="ExportAsync">@export.ExportText</button>
 @if(exporting){<span role="status">@export.BusyText</span><button type="button" class="ng-button" @onclick="CancelExport">@export.CancelText</button>}
 @if(exportError){<span role="alert">@export.ErrorText</span>}else if(exportReady){<span role="status">@export.ReadyText</span>}
 </div>}
-<div class="ng-table-scroll @(Virtualize?"ng-virtual-table":"")" style="@VirtualStyle" tabindex="0" aria-label="@($"{Label} table scroll area")">
+<div @key="rangeEpoch" class="ng-table-scroll @(Virtualize?"ng-virtual-table":"")" style="@VirtualStyle" tabindex="0" aria-label="@($"{Label} table scroll area")">
 <table class="ng-data-table"><caption class="ng-sr-only">@Label</caption><thead><tr>
-@if(Selectable){<th scope="col"><input type="checkbox" aria-label="@(Virtualize && !IsRemote?"Select results":"Select page")" checked="@(Eligible.Count>0 && Eligible.All(x=>SelectedIds.Contains(RowId(x))))" disabled="@(Eligible.Count==0 || SelectionReadOnly || !SelectedIdsChanged.HasDelegate)" aria-checked="@(Eligible.Any(x=>SelectedIds.Contains(RowId(x))) && !Eligible.All(x=>SelectedIds.Contains(RowId(x)))?"mixed":null)" @onchange="SelectPage" /></th>}
+@if(Selectable){<th scope="col"><input type="checkbox" aria-label="@(ReadRange is not null?SelectWindowText:Virtualize && !IsRemote?"Select results":"Select page")" checked="@(Eligible.Count>0 && Eligible.All(x=>SelectedIds.Contains(RowId(x))))" disabled="@(Eligible.Count==0 || SelectionReadOnly || !SelectedIdsChanged.HasDelegate)" aria-checked="@(Eligible.Any(x=>SelectedIds.Contains(RowId(x))) && !Eligible.All(x=>SelectedIds.Contains(RowId(x)))?"mixed":null)" @onchange="SelectPage" /></th>}
 @foreach(var column in Columns){var sort=sorts.FirstOrDefault(x=>x.Key==column.Key);<th scope="col" aria-sort="@(sort is not null?(sort.Descending?"descending":"ascending"):"none")">@if(column.Sortable){<button type="button" @onclick="()=>Sort(column.Key)">@column.Title @(sort is not null?$"{(sort.Descending?"↓":"↑")}{(MultiSort?sorts.IndexOf(sort)+1:"")}":"↕")</button>}else{@column.Title}</th>}
 @if(HasActions){<th scope="col">Actions</th>}
 </tr></thead>
-@if(!loading && !error && Visible.Count==0){<tbody><tr><td colspan="@(Columns.Count+(Selectable?1:0)+(HasActions?1:0))" class="ng-empty">@if(EmptyTemplate is not null){@EmptyTemplate}else{@EmptyText}</td></tr></tbody>}
+@if(!loading && !error && Visible.Count==0 && (ReadRange is null || rangeKnown && total==0)){<tbody><tr><td colspan="@(Columns.Count+(Selectable?1:0)+(HasActions?1:0))" class="ng-empty">@if(EmptyTemplate is not null){@EmptyTemplate}else{@EmptyText}</td></tr></tbody>}
 @if(Virtualize){
 <tbody>
-<VirtualRows TItem="GridEntry" Enabled="Virtualize" RowHeight="RowHeight" Items="Entries" Context="entry">
+<VirtualRows @ref="rangeRows" TItem="GridEntry" Provider="@(ReadRange is null?null:ReadRangeRows)" Enabled="Virtualize" RowHeight="RowHeight" Items="Entries" Context="entry">
+<Placeholder><tr aria-hidden="true"><td colspan="@(Columns.Count+(Selectable?1:0)+(HasActions?1:0))" style="height:@(RowHeight)px">@(error?ErrorText:LoadingText)</td></tr></Placeholder>
+<ChildContent>
+@if(!entry.HasRow && entry.Group is null){<tr aria-hidden="true"><td colspan="@(Columns.Count+(Selectable?1:0)+(HasActions?1:0))">@ErrorText</td></tr>}
 @if(entry.Group is {} group){<tr class="ng-grid-group"><th scope="row" colspan="@(Columns.Count+(Selectable?1:0)+(HasActions?1:0))" style="padding-inline-start:@(14+group.Depth*20)px">
 @if(CollapsibleGroups){<button type="button" aria-expanded="@(!IsCollapsed(group.Id)?"true":"false")" aria-label="@ToggleLabel(group)" disabled="@(!CanToggleGroups)" @onclick="()=>ToggleGroup(group.Id)"><span aria-hidden="true">@(IsCollapsed(group.Id)?"▸":"▾")</span> @Caption(group)</button>}else{@Caption(group)}
 @foreach(var summary in group.Summaries??[]){<span class="ng-group-summary"> · @SummaryText(summary)</span>}
@@ -33,6 +36,7 @@
 @foreach(var column in Columns){<td>@if(column.Template is not null){@column.Template(row)}else{@column.Text(row)}</td>}
 @if(HasActions){<td>@if(RowActions is not null){@RowActions(row)}@if(Editing is {} edit){<button type="button" class="ng-button" aria-label="@($"{edit.UpdateText} {id}")" disabled="@(!CanEditRow(row,false))" @onclick="()=>BeginEdit(NgGridEditOperation.Update,row)">@edit.UpdateText</button><button type="button" class="ng-button" aria-label="@($"{edit.DeleteText} {id}")" disabled="@(!CanEditRow(row,true))" @onclick="()=>BeginEdit(NgGridEditOperation.Delete,row)">@edit.DeleteText</button>}</td>}
 </tr>}
+</ChildContent>
 </VirtualRows>
 </tbody>
 }else{
@@ -62,7 +66,8 @@
 <div class="ng-data-toolbar"><button type="button" class="ng-button ng-primary" disabled="@(!CanCommit)" @onclick="CommitEdit">@(operation==NgGridEditOperation.Delete?config.DeleteText:config.SaveText)</button>
 <button type="button" class="ng-button" disabled="@saving" @onclick="CloseEdit">@config.CancelText</button></div>
 </section>}
-@if(!Virtualize || IsRemote){<NgPager Total="Total" Page="page" PageChanged="ChangePage" PageSize="size" PageSizeChanged="Resize" Sizes="PageSizes" />}
+@if(ReadRange is not null){<p role="status">@LoadedWindowText: @(filtered.Count==0?"0":$"{rangeStart+1}–{rangeStart+filtered.Count}") / @total</p>}
+@if(ReadRange is null && (!Virtualize || IsRemote)){<NgPager Total="Total" Page="page" PageChanged="ChangePage" PageSize="size" PageSizeChanged="Resize" Sizes="PageSizes" />}
 </div>
 @code {
  [Parameter] public bool Virtualize {get;set;}
@@ -141,7 +146,7 @@
  [Parameter] public Func<string,double?,string>? RemoteSummaryText{get;set;}
  [Parameter] public string ExpandPageGroupsText{get;set;}="Expand page groups";
  [Parameter] public string CollapsePageGroupsText{get;set;}="Collapse page groups";
- private bool IsRemote=>ReadData is not null || ReadGroupedData is not null;
+ private bool IsRemote=>ReadRange is not null || ReadData is not null || ReadGroupedData is not null;
  private bool IsGrouped=>Selectors.Count>0 || ReadGroupedData is not null;
  private string SummaryText(NgGroupSummary summary)=>RemoteSummaryText?.Invoke(summary.Title,summary.Value)??$"{summary.Title}: {summary.Value?.ToString("0.##")??"—"}";
  [Parameter] public Func<TItem,string>? GroupBy{get;set;}
@@ -212,10 +217,11 @@
  protected override void OnInitialized()=>size=Math.Max(1,InitialPageSize);
  protected override async Task OnParametersSetAsync(){
    if(Virtualize && (!float.IsFinite(RowHeight) || RowHeight<40 || !float.IsFinite(ViewportHeight) || ViewportHeight<RowHeight))throw new ArgumentException("Virtual rows require a finite height of at least 40 and a viewport at least one row high.");
+   ValidateRangeMode();
    Export?.Resolve(Columns);
-   if(!Equals(previousVersion,DataVersion) || previousReader!=((Delegate?)ReadGroupedData??ReadData) || Export is null || Export.ReadOnly)CancelExport();
+   if(!Equals(previousVersion,DataVersion) || previousReader!=ReaderIdentity || Export is null || Export.ReadOnly)CancelExport();
    Editing?.Check();
-   if(!Equals(previousVersion,DataVersion) || previousReader!=((Delegate?)ReadGroupedData??ReadData) || Editing is null)InvalidateEdit();
+   if(!Equals(previousVersion,DataVersion) || previousReader!=ReaderIdentity || Editing is null)InvalidateEdit();
    if(GroupBy is not null && GroupSelectors.Count>0)throw new ArgumentException("Use GroupBy or GroupSelectors, not both.");
    if(Selectors.Count>8)throw new ArgumentException("At most eight group levels are supported.");
    foreach(var aggregate in GroupAggregates)aggregate.Calculate(Array.Empty<TItem>());
@@ -228,8 +234,8 @@
    var changed=sorts.RemoveAll(s=>!Columns.Any(c=>c.Key==s.Key && c.Sortable))>0;
    if(!MultiSort && sorts.Count>1){sorts.RemoveRange(1,sorts.Count-1);changed=true;}
    var signature=string.Join("|",Columns.Select(c=>$"{c.Key}:{c.Sortable}"));
-   if(!Equals(previousReader,(Delegate?)ReadGroupedData??ReadData) || previousGroupKeys!=NgDataOperations.GroupId(RemoteGroupKeys) || !Equals(previousVersion,DataVersion) || previousColumns!=signature || changed){
-     previousReader=(Delegate?)ReadGroupedData??ReadData;previousGroupKeys=NgDataOperations.GroupId(RemoteGroupKeys);previousVersion=DataVersion;previousColumns=signature;page=1;await ReloadAsync();
+   if(!Equals(previousReader,ReaderIdentity) || previousGroupKeys!=NgDataOperations.GroupId(RemoteGroupKeys) || !Equals(previousVersion,DataVersion) || previousColumns!=signature || changed){
+     previousReader=ReaderIdentity;previousGroupKeys=NgDataOperations.GroupId(RemoteGroupKeys);previousVersion=DataVersion;previousColumns=signature;page=1;await ReloadAsync();
    }else if(!IsRemote)Refresh();
  }
  private void ValidateRows(IReadOnlyList<TItem> rows){if(rows.Any(x=>string.IsNullOrWhiteSpace(RowId(x))) || rows.Select(RowId).Distinct().Count()!=rows.Count)throw new ArgumentException("Grid row IDs must be nonempty and unique.");}
@@ -237,6 +243,7 @@
 
  public async Task ReloadAsync(){
    if(disposed)return;
+   if(ReadRange is not null){ResetRange();return;}
    var ticket=++revision;pending?.Cancel();pending?.Dispose();pending=new();var token=pending.Token;
    if(!IsRemote){loading=error=false;Refresh();return;}
    var reader=ReadData;var groupedReader=ReadGroupedData;loading=true;error=false;filtered=[];groups=[];StateHasChanged();

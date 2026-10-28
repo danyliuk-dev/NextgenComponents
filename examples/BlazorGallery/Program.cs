@@ -7,6 +7,7 @@ builder.Services.AddCors(options=>options.AddPolicy("GroupedInventoryDemo",polic
 var app = builder.Build();
 app.UseCors();
 BlazorGallery.GroupedInventoryApi.Map(app);
+BlazorGallery.RangeInventoryApi.Map(app);
 var types = new Microsoft.AspNetCore.StaticFiles.FileExtensionContentTypeProvider();
 types.Mappings[".mjs"]="text/javascript";
 types.Mappings[".bcmap"]="application/octet-stream";
