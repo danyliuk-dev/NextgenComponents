@@ -9,6 +9,8 @@ root=Path(__file__).resolve().parents[1]
 D=dict(D)
 range_manual=(root/'docs/manual/remote-ranges.md').read_text()
 D['RemoteRanges']={'blazor':re.search(r'```razor\n(.*?)```',range_manual,re.S).group(1),'dart':re.search(r'```dart\n(.*?)```',range_manual,re.S).group(1)}
+grouped_manual=(root/'docs/manual/grouped-remote-ranges.md').read_text()
+D['GroupedRemoteRanges']={'blazor':re.search(r'```razor\n(.*?)```',grouped_manual,re.S).group(1),'dart':re.search(r'```dart\n(.*?)```',grouped_manual,re.S).group(1)}
 parser=argparse.ArgumentParser();parser.add_argument('--dotnet',default='dotnet');parser.add_argument('--dart',default='dart');args=parser.parse_args()
 folder=root/'artifacts/manual-check';folder.mkdir(parents=True,exist_ok=True)
 (folder/'ManualCheck.csproj').write_text('<Project Sdk="Microsoft.NET.Sdk.Razor"><PropertyGroup><TargetFramework>net10.0</TargetFramework><Nullable>enable</Nullable><ImplicitUsings>enable</ImplicitUsings></PropertyGroup><ItemGroup><FrameworkReference Include="Microsoft.AspNetCore.App"/><ProjectReference Include="../../src/NextgenComponents.Blazor/NextgenComponents.Blazor.csproj"/></ItemGroup></Project>')

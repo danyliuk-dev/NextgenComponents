@@ -1,5 +1,8 @@
 # Data workspace — 0.3
 
+Current work and remaining blocks: [work plan](roadmap.md). Historical release sections describe their own checkpoint; later sections supersede earlier Remaining lists.
+
+
 Five additional components on both Blazor and Flutter Web: DataGrid, TreeList, TreeView, Pager and Breadcrumb. Each library now has 27 implemented catalogue subsets. These components are original implementations; Telerik source is not included.
 
 The table below records the original 0.3 release. Later sections supersede its completed gaps (grouping, CRUD, CSV/TSV export, tree checking and virtual rendering).
@@ -123,3 +126,7 @@ See [Virtual data](manual/virtual-data.md) for sizing, templates, selection/expo
 ## Continuous remote ranges (0.70)
 
 Grid ReadRange/readRange adds flat continuous server scrolling with bounded retained data, exact offset/count validation, stale-response protection, retry, search/sort reset and caller-owned selection. Page export and header selection explicitly target the loaded window, including overscan. Existing page and grouped-page adapters remain unchanged. See [Remote ranges](manual/remote-ranges.md). Lazy group ranges, variable row heights and native/screen-reader certification remain open.
+
+## Grouped remote ranges (0.71)
+
+ReadGroupedRange/readGroupedRange loads exact visible-slot windows after controlled server collapse, with full ancestor metadata, bounded client retention, stale-response rejection, retry, shrink correction and record-only selection/export. Existing page/grouped-page/flat-range adapters remain compatible. See [Grouped remote ranges](manual/grouped-remote-ranges.md). Variable-height rows, column virtualization, batch/cell editing, database providers and native/accessibility validation remain open.

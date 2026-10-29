@@ -14,11 +14,11 @@ The documentation launcher embeds these running examples here. Choose a framewor
 
 ## Behavior and practical rules
 
-ReadData/readData enables asynchronous page loading; Items/items is used only in local mode. The request contains 1-based Page/page, PageSize/pageSize, Search/search and an ordered immutable Sorts/sorts list. Return only the requested page and Total/total after filtering, before paging. The demo simulates a remote data adapter with a delay; replace its body with your HTTP/database call. A newer request or source replacement invalidates older results and errors; Blazor also passes a cancellation token. Flutter ignores stale futures but does not abort the transport. Loading hides old rows and blocks selection. Failure shows ErrorText/errorText and RetryText/retryText without exposing exception details. Change DataVersion/dataVersion to reload page 1; keep reader identity stable. Blazor ReloadAsync reloads the current page. A shrinking total clamps the page and fetches it again. Invalid totals, duplicate IDs and oversized pages become retryable errors. MultiSort/multiSort appends clicked columns by priority; clicking again toggles direction without moving priority. Clear sorting restores source order. Local sorting is stable. Row/column IDs must be unique and nonblank. Selection remains parent-owned and page selection preserves hidden/protected IDs. CanSelect/canSelect and SelectionReadOnly/selectionReadOnly still apply. Lazy group paging and batch/cell editing remain open. Remote grouping, single-record editing and CSV/TSV export use the explicit adapters below. See [data workspace](../data-workspace.md).
+ReadData/readData enables asynchronous page loading; Items/items is used only in local mode. The request contains 1-based Page/page, PageSize/pageSize, Search/search and an ordered immutable Sorts/sorts list. Return only the requested page and Total/total after filtering, before paging. The demo simulates a remote data adapter with a delay; replace its body with your HTTP/database call. A newer request or source replacement invalidates older results and errors; Blazor also passes a cancellation token. Flutter ignores stale futures but does not abort the transport. Loading hides old rows and blocks selection. Failure shows ErrorText/errorText and RetryText/retryText without exposing exception details. Change DataVersion/dataVersion to reload page 1; keep reader identity stable. Blazor ReloadAsync reloads the current page. A shrinking total clamps the page and fetches it again. Invalid totals, duplicate IDs and oversized pages become retryable errors. MultiSort/multiSort appends clicked columns by priority; clicking again toggles direction without moving priority. Clear sorting restores source order. Local sorting is stable. Row/column IDs must be unique and nonblank. Selection remains parent-owned and page selection preserves hidden/protected IDs. CanSelect/canSelect and SelectionReadOnly/selectionReadOnly still apply. Grouped remote scrolling uses ReadGroupedRange/readGroupedRange; batch/cell editing remains open. Remote grouping, single-record editing and CSV/TSV export use the explicit adapters below. See [data workspace](../data-workspace.md).
 
 ### Local grouping and paging
 
-GroupBy/groupBy enables one local grouping level over string keys; empty strings are a valid group and keys are case-sensitive. Search and sort run first, then groups gather matching records in first-appearance order while preserving sorted order within each group, then the flattened grouped rows are paged. Headers do not consume page slots. A group crossing a page boundary repeats its header; the count is the complete filtered group count, not only the current page. GroupText/groupText formats the key and count as plain text. Selection/page selection covers data rows only and retains off-page IDs. Enabling/disabling grouping resets to page 1; changing a grouping rule in-place requires DataVersion/dataVersion to reset paging. Selectors must be pure. GroupBy/groupBy cannot be combined with ReadData/readData: use ReadGroupedData/readGroupedData for the group-aware server protocol, never approximate a full group from one server page. Lazy group paging remains open; remote grouping, editing and export use the separate contracts below.
+GroupBy/groupBy enables one local grouping level over string keys; empty strings are a valid group and keys are case-sensitive. Search and sort run first, then groups gather matching records in first-appearance order while preserving sorted order within each group, then the flattened grouped rows are paged. Headers do not consume page slots. A group crossing a page boundary repeats its header; the count is the complete filtered group count, not only the current page. GroupText/groupText formats the key and count as plain text. Selection/page selection covers data rows only and retains off-page IDs. Enabling/disabling grouping resets to page 1; changing a grouping rule in-place requires DataVersion/dataVersion to reset paging. Selectors must be pure. GroupBy/groupBy cannot be combined with ReadData/readData: use ReadGroupedData/readGroupedData for the group-aware server protocol, never approximate a full group from one server page. Grouped remote scrolling uses ReadGroupedRange/readGroupedRange; remote grouping, editing and export use the separate contracts below.
 
 ### Nested groups
 
@@ -59,6 +59,11 @@ Virtualize/virtualize enables fixed-height windowed rendering. RowHeight/rowHeig
 ### Continuous remote ranges
 
 ReadRange/readRange with Virtualize/virtualize scrolls a flat server result while retaining one bounded window. Requests carry a zero-based startIndex, count, search and ordered sorts; responses echo startIndex, supply exactly the requested records within total, and provide total (0–100,000). Stable unique row IDs and deterministic server ordering are required. Page selection/export are labelled Loaded window and include overscan. Full remote export still requires its own adapter. See [Remote ranges](remote-ranges.md) for executable examples, JSON, error/retry, cancellation, limits and server consistency rules.
+
+
+### Grouped remote ranges
+
+ReadGroupedRange/readGroupedRange uses a separate server contract that counts visible group headers and records after accepted collapse. It retains one bounded window, validates ancestor metadata, rejects obsolete responses and preserves caller-owned selection. Loaded-window selection/export excludes headers. See [Grouped remote ranges](grouped-remote-ranges.md) for paired executable examples, HTTP contracts, limits, collapse and failure/retry behavior.
 
 
 ## Blazor example
@@ -336,6 +341,9 @@ Names are case-sensitive. `?` permits null. `EditorRequired` parameters are mark
 | `RowActions` | `RenderFragment<TItem>?` | not set | See the behavior rules and model contract above. |
 | `InitialPageSize` | `int` | 5 | See the behavior rules and model contract above. |
 | `ReadRange` | `Func<NgDataRangeRequest,CancellationToken,Task<NgDataRangeResult<TItem>>>?` | not set | Flat remote range adapter; requires Virtualize and excludes Items, page readers and grouping. See Remote ranges. |
+| `ReadGroupedRange` | `Func<NgGroupedRangeRequest,CancellationToken,Task<NgGroupedRangeResult<TItem>>>?` | not set | Group-aware visible-slot range adapter; requires Virtualize and RemoteGroupKeys. See Grouped remote ranges. |
+| `ExpandWindowGroupsText` | `string` | "Expand loaded groups" | Localized action label for expanding group headers in the retained window. |
+| `CollapseWindowGroupsText` | `string` | "Collapse loaded groups" | Localized action label for collapsing group headers in the retained window. |
 | `LoadedWindowText` | `string` | "Loaded window" | Localized label for the retained range and Page export scope. |
 | `SelectWindowText` | `string` | "Select loaded window" | Localized accessible name for selection of eligible loaded-window records. |
 
@@ -345,9 +353,12 @@ Names are case-sensitive. `?` permits null. `EditorRequired` parameters are mark
 
 | Argument | Type | Purpose |
 |---|---|---|
+| `readGroupedRange` | `Future<NgGroupedRangeResult<T>> Function(NgGroupedRangeRequest)?` | Group-aware visible-slot range adapter; requires Virtualize and RemoteGroupKeys. See Grouped remote ranges. |
 | `readRange` | `Future<NgDataRangeResult<T>> Function(NgDataRangeRequest)?` | Flat remote range adapter; requires Virtualize and excludes Items, page readers and grouping. See Remote ranges. |
 | `loadedWindowText` | `String` | Localized label for the retained range and Page export scope. |
 | `selectWindowText` | `String` | Localized accessible name for selection of eligible loaded-window records. |
+| `expandWindowGroupsText` | `String` | Localized action label for expanding group headers in the retained window. |
+| `collapseWindowGroupsText` | `String` | Localized action label for collapsing group headers in the retained window. |
 | `virtualize` | `bool` | Opt-in fixed-height virtual rendering. Local Grid covers the result; remote Grid retains pages; trees cover loaded expanded nodes. See Virtual data. |
 | `rowHeight` | `double` | Fixed virtual row height, default 48 pixels; finite and at least 40. Templates must fit. |
 | `viewportHeight` | `double` | Virtual scroll viewport height, default 384 pixels; finite and at least one row. |
@@ -394,6 +405,9 @@ Names are case-sensitive. `?` permits null. `EditorRequired` parameters are mark
 const NgDataGrid({
     super.key,
     this.readRange,
+    this.readGroupedRange,
+    this.expandWindowGroupsText = 'Expand loaded groups',
+    this.collapseWindowGroupsText = 'Collapse loaded groups',
     this.loadedWindowText = 'Loaded window',
     this.selectWindowText = 'Select loaded window',
     this.virtualize = false,

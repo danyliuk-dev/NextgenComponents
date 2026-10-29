@@ -1,3 +1,4 @@
+import 'grouped_range_gallery.dart';
 import 'remote_range_gallery.dart';
 import 'virtual_data_gallery.dart';
 import 'manual_previews.g.dart';
@@ -19,6 +20,12 @@ import 'workbook_gallery.dart';
 import 'package:nextgen_components/nextgen_components.dart';
 
 void main() {
+  if (Uri.base.queryParameters.containsKey('grouped-range')) {
+    runApp(
+      MaterialApp(theme: NgTheme.light(), home: const GroupedRangeGallery()),
+    );
+    return;
+  }
   if (Uri.base.queryParameters.containsKey('remote-range')) {
     runApp(
       MaterialApp(theme: NgTheme.light(), home: const RemoteRangeGallery()),

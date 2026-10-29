@@ -1,0 +1,38 @@
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+const port=Number(process.argv[2]||9591);
+const tabs=await(await fetch(`http://127.0.0.1:${port}/json/list`)).json();
+const tab=tabs.find(x=>x.type==='page');
+const ws=new WebSocket(tab.webSocketDebuggerUrl);await new Promise((r,j)=>{ws.onopen=r;ws.onerror=j});
+let id=0;const pending=new Map();ws.onmessage=e=>{const x=JSON.parse(e.data);if(pending.has(x.id)){const[r,j]=pending.get(x.id);pending.delete(x.id);x.error?j(Error(x.error.message)):r(x.result)}};
+const send=(method,params={})=>new Promise((r,j)=>{const n=++id;pending.set(n,[r,j]);ws.send(JSON.stringify({id:n,method,params}))});
+const evaluate=async expression=>{const x=await send('Runtime.evaluate',{expression,awaitPromise:true,returnByValue:true});if(x.exceptionDetails)throw Error(JSON.stringify(x.exceptionDetails));return x.result.value};
+
+const wait=async expression=>{for(let i=0;i<100;i++){try{if(await evaluate(expression))return;}catch{}await new Promise(r=>setTimeout(r,100));}throw Error('Timeout '+expression)};
+const click=async text=>{if(!await evaluate(`(()=>{const b=[...document.querySelectorAll('button')].find(b=>b.textContent.trim()===${JSON.stringify(text)});if(!b||b.disabled)return false;b.click();return true;})()`))throw Error('Button '+text)};
+const flag=async text=>{await evaluate(`(()=>{const l=[...document.querySelectorAll('label')].find(l=>l.textContent.trim()===${JSON.stringify(text)});l.querySelector('input').click();})()`);await new Promise(r=>setTimeout(r,150));};
+const base=process.argv[3]||new URL(tab.url).origin;
+await send('Page.navigate',{url:base+'/grouped-range'});
+await wait("document.body.innerText.includes('Loaded slots: 1–')");
+await flag('Accept collapse');
+await click('▾ North (5000)');await new Promise(r=>setTimeout(r,400));
+if(!await evaluate("document.body.innerText.includes('▾ North (5000)')"))throw Error('Rejected collapse applied');
+await flag('Accept collapse');await click('▾ North (5000)');
+await wait("document.body.innerText.includes('▸ North (5000)')&&document.body.innerText.includes('/ 5004')");
+await click('▸ North (5000)');await wait("document.body.innerText.includes('/ 10006')");
+await evaluate("document.querySelector('input[aria-label=\"Select R000001\"]').click()");
+await wait("document.body.innerText.includes('1 selected')");
+await evaluate("(()=>{const s=document.querySelector('.ng-table-scroll');s.scrollTop=s.scrollHeight;})()");
+await wait("document.body.innerText.includes('R010000')");
+if(!await evaluate("document.body.innerText.includes('1 selected')"))throw Error('Selection lost');
+await click('Prepare export');await wait("document.body.innerText.includes('Exported')");
+await flag('Malformed response');await click('Refresh query');await wait("document.body.innerText.includes('Unable to load records.')");
+await flag('Malformed response');await click('Retry');await wait("document.body.innerText.includes('R000001')");
+// Allow the successful retry render to finish its viewport reset before scrolling.
+await new Promise(r=>setTimeout(r,600));
+await flag('Server has 12 records');await evaluate("(()=>{const s=document.querySelector('.ng-table-scroll');s.scrollTop=s.scrollHeight;})()");
+await wait("document.body.innerText.includes('/ 15')&&document.body.innerText.includes('R000012')");
+const image=await send('Page.captureScreenshot',{format:'png'});fs.writeFileSync(process.argv[4]||path.join(os.tmpdir(),'grouped-range-browser.png'),Buffer.from(image.data,'base64'));
+console.log('PASS Blazor: rejected/accepted collapse, nested windows, far-end scroll, retained selection, record export, malformed response/retry, live shrink');
+ws.close();

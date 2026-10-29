@@ -1,0 +1,23 @@
+import fs from 'node:fs';
+const port=Number(process.argv[2]||9591);
+const tabs=await(await fetch(`http://127.0.0.1:${port}/json/list`)).json();
+const tab=tabs.find(x=>x.type==='page');
+const ws=new WebSocket(tab.webSocketDebuggerUrl);await new Promise((r,j)=>{ws.onopen=r;ws.onerror=j});
+let id=0;const pending=new Map();ws.onmessage=e=>{const x=JSON.parse(e.data);if(pending.has(x.id)){const[r,j]=pending.get(x.id);pending.delete(x.id);x.error?j(Error(x.error.message)):r(x.result)}};
+const send=(method,params={})=>new Promise((r,j)=>{const n=++id;pending.set(n,[r,j]);ws.send(JSON.stringify({id:n,method,params}))});
+const evaluate=async expression=>{const x=await send('Runtime.evaluate',{expression,awaitPromise:true,returnByValue:true});if(x.exceptionDetails)throw Error(JSON.stringify(x.exceptionDetails));return x.result.value};
+
+const wait=async expression=>{for(let i=0;i<100;i++){if(await evaluate(expression))return;await new Promise(r=>setTimeout(r,100));}throw Error('Timeout '+expression)};
+const click=async text=>{if(!await evaluate(`(()=>{const b=[...document.querySelectorAll('[role=button]')].find(b=>b.textContent.trim()===${JSON.stringify(text)});if(!b)return false;b.click();return true;})()`))throw Error('Button '+text);};
+const flag=async text=>{await evaluate(`document.querySelector('[role=checkbox][aria-label="${text}"]').click()`);await new Promise(r=>setTimeout(r,180));};
+await send('Page.navigate',{url:'http://127.0.0.1:5181/?grouped-range'});await wait("document.querySelector('flt-semantics-placeholder')!==null");await evaluate("document.querySelector('flt-semantics-placeholder').click()");await wait("document.body.innerText.includes('/ 10006')");
+await flag('Accept collapse');await click('Collapse North');await new Promise(r=>setTimeout(r,400));
+if(!await evaluate("document.body.innerText.includes('Collapse North')"))throw Error('Rejected collapse applied');
+await flag('Accept collapse');await click('Collapse North');await wait("document.body.innerText.includes('/ 5004')");
+await click('Expand North');await wait("document.body.innerText.includes('/ 10006')");
+await flag('Select R000001');await wait("document.body.innerText.includes('1 selected')");
+await click('Prepare export');await wait("document.body.innerText.includes('Exported')");
+await flag('Malformed response');await click('Refresh query');await wait("[...document.querySelectorAll('[role=button]')].some(b=>b.textContent.trim()==='Retry')");
+await flag('Malformed response');await click('Retry');await wait("document.querySelector('[aria-label=\"Select R000001\"]')!==null");
+console.log('PASS Flutter visible Chrome: rejected/accepted collapse, retained selection, record export, malformed response/retry');
+const shot=await send('Page.captureScreenshot',{format:'png'});fs.writeFileSync(process.argv[3]||'/tmp/grouped-range-flutter.png',Buffer.from(shot.data,'base64'));ws.close();

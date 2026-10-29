@@ -8,6 +8,7 @@ var app = builder.Build();
 app.UseCors();
 BlazorGallery.GroupedInventoryApi.Map(app);
 BlazorGallery.RangeInventoryApi.Map(app);
+BlazorGallery.GroupedRangeInventoryApi.Map(app);
 var types = new Microsoft.AspNetCore.StaticFiles.FileExtensionContentTypeProvider();
 types.Mappings[".mjs"]="text/javascript";
 types.Mappings[".bcmap"]="application/octet-stream";

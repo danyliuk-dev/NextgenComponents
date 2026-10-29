@@ -4,7 +4,7 @@
 @implements IDisposable
 <PageTitle>Nextgen • Remote ranges</PageTitle>
 <div class="ng-scope gallery"><main>
-<nav><a href="/virtual-data">Virtual data</a><a href="/data">Data workspace</a></nav>
+<nav><a href="/grouped-range">Grouped remote ranges</a><a href="/virtual-data">Virtual data</a><a href="/data">Data workspace</a></nav>
 <h1>Scroll the server result</h1>
 <p>100,000 synthetic records over HTTP. The client retains one bounded window. Ctrl+End jumps to the end without downloading preceding records.</p>
 <div class="row"><NgCheckBox Label="Fail reads" @bind-Value="fail"/><NgCheckBox Label="Malformed response" @bind-Value="malformed"/><NgCheckBox Label="Slow reads" @bind-Value="slow"/><NgCheckBox Label="Server has 12 records" @bind-Value="small"/><NgCheckBox Label="Lock selection" @bind-Value="locked"/><NgButton OnClick="()=>version++">Refresh query</NgButton></div>

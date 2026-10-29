@@ -946,3 +946,20 @@ ReadRange/readRange adds a separate flat server range contract. Requests snapsho
 - Local API was restarted during verification after its first shell session ended; the affected connection failure was environmental. Successful retry scenarios above were repeated with the running API. Screenshots: [Blazor](screenshots/range070-blazor.jpg), [Flutter](screenshots/range070-flutter.jpg).
 
 Limits: flat results up to 100,000; fixed rows 40–128px and at most 128 visible rows. Database consistency/tie-breakers and transport remain application-owned. Continuous grouped ranges, variable-height/column virtualization, narrow-layout regression and native/screen-reader certification remain open. Public sites were not redeployed. Next block requires scoping the remote grouped-range contract before implementation.
+
+
+## Grouped continuous remote Grid ranges — 0.71 (2026-10-29)
+
+Both Web implementations add a bounded group-aware range adapter. Offsets count visible group headers and records after caller-approved collapse. The response supplies stable paths and ancestor metadata, exact slot windows, record totals and aggregates; malformed and obsolete responses cannot replace current rows. Export and selection cover loaded records only.
+
+- 1,064 Blazor rendering/data checks and 301 Flutter tests pass. Boundary cases cover malformed metadata, root headers, ancestor continuity, hidden descendants, response sizes, stale responses, collapse/query resets, retries, shrinking results and retained selection.
+- Library/gallery Dart analysis and the Blazor gallery build pass. Flutter release Web build succeeds with the existing CupertinoIcons font warning.
+- 49 Blazor and 49 Dart manual examples compile/analyze; all 94 generated highlighting checks pass.
+- Visible ordinary Chrome on Linux/iMac exercised both implementations against the synthetic 10,000-record HTTP adapter: accepted/rejected collapse, nested groups, retained selection, record-only export, malformed-response retry, end-of-data reachability and live shrinking. Browser checks are saved in scripts/grouped-range-check-{blazor,flutter}.mjs.
+- Linux AppImage, macOS Apple Silicon DMG and Windows x64 NSIS installation passed native startup, all 59 offline manuals, navigation and grouped-range interaction checks. These checks exercise the desktop Web wrapper, not native Flutter controls.
+- The public guide, standalone preview and desktop/offline guide share the new workflow. Documentation revision is 2026.10.29.3; packages contain the 0.71.0 SDK and no stale 0.70.0 NuGet package.
+
+- Website 1.0.13 and Components preview 0.71.0 are live on softwarenextgen.com. Production checks passed for 79 manuals, 4,462 links/sections and 262 public pages/assets. All three private installers passed MFA-authenticated full-download SHA-256/size and Range checks; the temporary QA account was removed. Ordinary visible Chrome passed the production grouped-range workflow; a viewport-reset wait was added to the browser harness for network latency.
+- Screenshots: [Blazor](screenshots/grouped071-blazor.png), [Flutter](screenshots/grouped071-flutter.png).
+
+Limits: 100,000 visible slots and records, fixed row height, at most 512 requested slots; response metadata covers the returned window and its ancestors. The reference server helper materializes its input and is not a database scalability implementation. Full remote export, variable-height rows, column virtualization, native Flutter and screen-reader certification remain separate work. See [the saved work plan](roadmap.md).
