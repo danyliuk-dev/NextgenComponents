@@ -2,7 +2,7 @@
 
 Blazor and Flutter component libraries with a shared design-token source and a Telerik Blazor component roadmap.
 
-**Current release: 0.71.0 grouped continuous remote Grid ranges, 47 controls on each Web platform (53 catalogue entries including chart modes).** This is not a complete Telerik replacement or API-compatible clone. The [catalog](docs/catalog.md) tracks 139 named entries from the published Telerik Blazor index; chart variants are counted separately. See [foundation capabilities](docs/foundation.md) and [forms/date capabilities](docs/forms-and-dates.md) and [data workspace capabilities and gaps](docs/data-workspace.md) and [analytics/schedule capabilities](docs/analytics-and-schedule.md).
+**Current release: 0.72.0 custom Grid editors and cell editing, 47 controls on each Web platform (53 catalogue entries including chart modes).** This is not a complete Telerik replacement or API-compatible clone. The [catalog](docs/catalog.md) tracks 139 named entries from the published Telerik Blazor index; chart variants are counted separately. See [foundation capabilities](docs/foundation.md) and [forms/date capabilities](docs/forms-and-dates.md) and [data workspace capabilities and gaps](docs/data-workspace.md) and [analytics/schedule capabilities](docs/analytics-and-schedule.md).
 
 ## Work plan
 
@@ -127,9 +127,9 @@ Each planned component needs a feature-level audit of its reference before imple
 
 This repository currently contains original component implementations; no Telerik component source or theme package is vendored. Telerik Default is a visual reference. Styling is an initial approximation, not a verified pixel match. See [provenance](docs/provenance.md).
 
-## Prepared 0.72.0 candidate
+## Grid cell editing (0.72.0)
 
-Grid now supports custom field editors and single-cell editing on both Web platforms. See [Grid editing](docs/manual/grid-editing.md#cell-editing-and-custom-editors). Source, previews, manuals and native packages are prepared; coordinated public delivery is pending authorization. The currently published release remains 0.71.0.
+Grid now supports custom field editors and single-cell editing on both Web platforms. See [Grid editing](docs/manual/grid-editing.md#cell-editing-and-custom-editors). Released with website 1.0.14, public previews/manuals and Linux, Windows and Apple Silicon installers. Offline documentation revision: 2026.10.30.1.
 
 ## Maintaining component previews
 

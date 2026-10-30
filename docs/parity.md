@@ -581,6 +581,6 @@ ReadGroupedRange/readGroupedRange adds group-aware visible-slot windows after co
 Variable-height rows, column virtualization, batch/cell editing and native/accessibility validation remain open. See [work plan](roadmap.md). Earlier release sections describe historical checkpoints; later sections supersede their Remaining lists.
 
 
-## Cell editing and custom editors (0.72 candidate)
+## Cell editing and custom editors (0.72)
 
 Paired Blazor/Flutter Web cell editors reuse full-record validation and asynchronous persistence. Custom templates/builders receive guarded string values and disabled state. One active cell, retained drafts, explicit Save/Cancel, conflict/retry and stale-callback rejection. Full-row editing remains available. Batch edits, spreadsheet keyboard navigation and variable-height rows remain open. See [Grid editing](manual/grid-editing.md#cell-editing-and-custom-editors).

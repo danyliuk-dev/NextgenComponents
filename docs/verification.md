@@ -965,7 +965,7 @@ Both Web implementations add a bounded group-aware range adapter. Offsets count 
 Limits: 100,000 visible slots and records, fixed row height, at most 512 requested slots; response metadata covers the returned window and its ancestors. The reference server helper materializes its input and is not a database scalability implementation. Full remote export, variable-height rows, column virtualization, native Flutter and screen-reader certification remain separate work. See [the saved work plan](roadmap.md).
 
 
-## Grid cell editing and custom editors — 0.72 candidate (2026-10-30)
+## Grid cell editing and custom editors — 0.72 (2026-10-30)
 
 - 1,071 Blazor checks and 302 Flutter tests passed. New coverage includes full-record drafts for cell updates, required validation, conflict/retry, permission changes and obsolete custom-editor callbacks.
 - Flutter package/gallery analysis, Blazor gallery and Flutter release Web builds passed.
@@ -975,6 +975,8 @@ Limits: 100,000 visible slots and records, fixed row height, at most 512 request
 - Linux AppImage and Apple Silicon DMG installed/launched natively; each passed 59 offline manuals and 7,378 links/assets through its own local server. Linux used extraction mode and Wayland because FUSE 2 is absent. Native validation covers startup/content; UI interaction was checked separately in Chrome.
 - All three self-contained server payloads contain library 0.72.0 and identical offline documentation revision 2026.10.30.1; no stale compressed overlay copies.
 - Windows NSIS installed and the native app passed 59 manuals and 7,378 links/assets in the dedicated VM; installed SDK and manual index are 0.72.0. The guest continued after a host timeout and its final PASS status was collected.
-- Final publication is tracked in the website workspace `deploy/release-cell072-verification.md`. Automatic approval review requires explicit authorization for installer upload and commit/push to main. Production activation/live-new-version and authenticated download checks are not yet complete.
+- Released on 2026-10-30 with website 1.0.14 and Components preview 0.72.0. Production Chrome passed cell validation, failure/retained draft and successful retry. All 79 manuals, 4,463 links/fragments, 262 public pages/assets and 47 categorized previews/icons pass; installers remain behind login/MFA.
+- Full MFA-authenticated downloads and Range requests for all three installers match their recorded SHA-256/size. The temporary QA account was removed without sending email. Dedicated native QA apps stopped and Windows VM returned to shut-off state.
+- Implementation commit: `28e76a6`; final release evidence and artifact manifest are in the website workspace `deploy/release-cell072-verification.md` and `deploy/releases-cell072.json`. Website health now derives its version from the assembly; an initial health-version mismatch triggered the planned rollback before successful final activation.
 
 Limits: one active field/record; full-record persistence rather than patches; explicit Save/Cancel; no batch editing, spreadsheet keyboard navigation or variable row heights. Native wrappers do not certify native Flutter controls or screen-reader behavior.
