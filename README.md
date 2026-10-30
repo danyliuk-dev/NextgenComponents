@@ -2,7 +2,7 @@
 
 Blazor and Flutter component libraries with a shared design-token source and a Telerik Blazor component roadmap.
 
-**Current development version: 0.73.0 Grid batch editing, 47 controls on each Web platform (53 catalogue entries including chart modes).** This is not a complete Telerik replacement or API-compatible clone. The [catalog](docs/catalog.md) tracks 139 named entries from the published Telerik Blazor index; chart variants are counted separately. See [foundation capabilities](docs/foundation.md) and [forms/date capabilities](docs/forms-and-dates.md) and [data workspace capabilities and gaps](docs/data-workspace.md) and [analytics/schedule capabilities](docs/analytics-and-schedule.md).
+**Current release: 0.73.0 Grid batch editing, 47 controls on each Web platform (53 catalogue entries including chart modes).** This is not a complete Telerik replacement or API-compatible clone. The [catalog](docs/catalog.md) tracks 139 named entries from the published Telerik Blazor index; chart variants are counted separately. See [foundation capabilities](docs/foundation.md) and [forms/date capabilities](docs/forms-and-dates.md) and [data workspace capabilities and gaps](docs/data-workspace.md) and [analytics/schedule capabilities](docs/analytics-and-schedule.md).
 
 ## Work plan
 
@@ -142,4 +142,4 @@ Continuous remote Grid scrolling now uses a separate bounded ReadRange/readRange
 
 ## Grid batch editing (0.73.0)
 
-Blazor and Flutter Web support bounded staged create/update/delete, full-record review, individual undo, discard, and one immutable batch callback. Failed saves retain the queue; permissions and validation run again before submission. Persistence owns atomic transactions and concurrency. See [Grid editing](docs/manual/grid-editing.md#batch-editing). Release validation is in progress.
+Blazor and Flutter Web support bounded staged create/update/delete, full-record review, individual undo, discard, and one immutable batch callback. Failed saves retain the queue; permissions and validation run again before submission. Persistence owns atomic transactions and concurrency. See [Grid editing](docs/manual/grid-editing.md#batch-editing). Released with website 1.0.15 and Linux, macOS and Windows installers; public and offline manuals are synchronized.
