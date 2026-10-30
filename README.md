@@ -127,6 +127,10 @@ Each planned component needs a feature-level audit of its reference before imple
 
 This repository currently contains original component implementations; no Telerik component source or theme package is vendored. Telerik Default is a visual reference. Styling is an initial approximation, not a verified pixel match. See [provenance](docs/provenance.md).
 
+## Prepared 0.72.0 candidate
+
+Grid now supports custom field editors and single-cell editing on both Web platforms. See [Grid editing](docs/manual/grid-editing.md#cell-editing-and-custom-editors). Source, previews, manuals and native packages are prepared; coordinated public delivery is pending authorization. The currently published release remains 0.71.0.
+
 ## Maintaining component previews
 
 `python3 scripts/generate_manual.py` generates every component page, code assets and runnable previews from `scripts/manual_content.py`. Add a curated Blazor and Flutter snippet for each new public component; the generator rejects missing manuals. Previews execute those exact snippets, so code and appearance share one source. Do not edit the generated `ManualPreviews/*Example.razor` or `manual_previews.g.dart` files directly.

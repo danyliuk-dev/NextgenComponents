@@ -40,4 +40,14 @@ The gallery uses disposable in-memory records scoped to its page; reloading rese
 
 CreateText, UpdateText, DeleteText, SaveText, CancelText, ConfirmDeleteText, RequiredText, ErrorText and SavingText (lower camel case in Flutter) localize every built-in editor message/action. Field labels come from descriptors. Row action accessible names combine the translated action and stable ID. The form uses standard keyboard text inputs/buttons and live error/status announcements. Required fields expose ARIA required in Blazor; Flutter marks them visually with an asterisk. No physical screen-reader or native/mobile certification is claimed.
 
-This release uses text-field descriptors and an inline single-record editor. Custom field widgets/templates, batch editing, row/cell editing, file uploads and built-in database providers remain separate capabilities.
+## Cell editing and custom editors
+
+Enable `CellEditing` / `cellEditing` on the editing configuration. Each column whose key matches a field key gains a labelled Edit button. It opens that field inside the cell; Save, Cancel and error/status messages remain in the panel below the table. Only one record or cell can be edited at a time. Create and the row Edit action still open the full-record panel. Unmatched columns remain display-only.
+
+The component takes a full draft snapshot even for a cell edit. Only the active field changes; required checks and custom validation still inspect all fields, and Commit receives the entire record draft. A cross-field error can require cancelling and using the row editor. The component does not implement patch persistence or merge concurrent server edits. Use application version checks to detect conflicts.
+
+`EditorTemplate` / `editorBuilder` optionally replaces each default text input. Its `NgGridEditorContext` contains Field/field, Value/value, Disabled/disabled and SetValue/setValue. Use the field key to choose a numeric input, select, date editor or other control. Values remain strings; parsing and storage belong to the application. Supply a label and honor Disabled. The callback additionally rejects changes while saving, after permissions are revoked, after cancellation or from an obsolete edit session. Custom controls own their keyboard behavior and focus. Saving and cancellation use explicit buttons; typing Enter or leaving a cell does not automatically persist it.
+
+Search, sorting, paging and virtualization can move the active cell out of view. The draft and action panel remain available; return to the row to edit the field again, or cancel. Remote submission requires the record to remain in the loaded window. Fixed row heights still apply: custom editors must fit the configured row height. Cell editing does not implement spreadsheet arrow-key navigation, batch commits, variable row heights, file uploads or database providers.
+
+The runnable editable inventory uses custom text/numeric controls, protected rows, delayed failures and retries on both Web platforms. The default text editor remains available when no custom builder is provided.

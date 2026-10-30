@@ -354,6 +354,7 @@ final editableRows=<( {String id,String name,int count})>[(id:'e1',name:'Chair',
 bool editLocked=false,editFail=false;
 int writes=0,nextEditId=4;
 NgGridEditing<({String id,String name,int count})> get editor=>NgGridEditing(
+  cellEditing:true,editorBuilder:(context,editor)=>TextFormField(key:ValueKey((editor.field.key,editor.disabled)),initialValue:editor.value,enabled:!editor.disabled,keyboardType:editor.field.key=='quantity'?TextInputType.number:TextInputType.text,decoration:InputDecoration(labelText:editor.field.label),onChanged:editor.setValue),
   fields:[NgGridEditField('name','Product name',required:true),NgGridEditField('quantity','Product quantity',required:true)],
   draft:(r)=>{'name':r?.name??'','quantity':'${r?.count??0}'},readOnly:editLocked,canUpdate:(r)=>r.count<100,canDelete:(r)=>r.count<100,
   validate:(v)=>int.tryParse(v['quantity']??'')==null || int.parse(v['quantity']!)<0?'Quantity must be a nonnegative integer.':null,
@@ -424,7 +425,7 @@ Widget build(BuildContext context) => Column(crossAxisAlignment: CrossAxisAlignm
   const Text('Drafts are isolated. Quantities 100 and above are protected. Try validation, failure and retry.'),
   NgCheckBox(label:'Lock editing',value:editLocked,onChanged:(v)=>setState(()=>editLocked=v)),
   NgCheckBox(label:'Fail saves',value:editFail,onChanged:(v)=>setState(()=>editFail=v)),
-  NgDataGrid<({String id,String name,int count})>(label:'Editable inventory',items:editableRows,columns:columns,rowId:(r)=>r.id,groupBy:(r)=>r.name,editing:editor),
+  NgDataGrid<({String id,String name,int count})>(label:'Editable inventory',items:editableRows,columns:[NgDataColumn('name','Name',(r)=>r.name),NgDataColumn('quantity','Quantity',(r)=>r.count)],rowId:(r)=>r.id,groupBy:(r)=>r.name,editing:editor),
   Text('Successful writes: $writes'),
   const Text('HTTP grouped inventory'),
   const Text('Live requests to the local gallery API. Start the Blazor gallery on port 5180.'),

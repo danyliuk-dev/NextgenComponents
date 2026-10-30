@@ -46,6 +46,23 @@ editingGrid.Editing=EditConfig(commit:(op,id,v,t)=>{persistenceCalls++;return pe
 EditCall("BeginEdit",NgGridEditOperation.Update,"Updated");editRows.Clear();await (Task)EditCall("CommitEdit")!;EditAssert(persistenceCalls==3,"Removed row guard");editingGrid.Dispose();
 #pragma warning restore BL0005
 await Check<NgDataGrid<string>>(new(){["Items"]=new[]{"Alpha"},["Columns"]=new[]{new NgDataColumn<string>("n","Name",r=>r)},["RowId"]=(Func<string,string>)(r=>r),["Editing"]=EditConfig()},"Create record","Edit Alpha","Delete Alpha");
+// Cell mode keeps a full record draft and guards obsolete custom-editor callbacks.
+#pragma warning disable BL0005
+var cellGrid=new NgDataGrid<string>{Items=["Alpha"],RowId=r=>r,Columns=[new("name","Name",r=>r)]};
+var cellType=cellGrid.GetType();
+object? CellCall(string method,params object?[] args)=>cellType.GetMethod(method,privateFlags)!.Invoke(cellGrid,args);
+object? CellValue(string field)=>cellType.GetField(field,privateFlags)!.GetValue(cellGrid);
+NgGridEditing<string> CellConfig(bool locked=false)=>new(){CellEditing=true,ReadOnly=locked,Fields=[new("name","Name",true),new("other","Other",true)],Draft=r=>new Dictionary<string,string>{{"name",r!},{"other","retained"}},Commit=(_,_,_,_)=>Task.FromResult<string?>("Conflict")};
+cellGrid.Editing=CellConfig();CellCall("OnInitialized");CellCall("Refresh");
+CellCall("BeginCell","Alpha","missing");EditAssert(CellValue("editOperation") is null,"Unmapped cell cannot edit");
+CellCall("BeginCell","Alpha","name");EditAssert((string?)CellValue("editCell")=="name" && ((Dictionary<string,string>)CellValue("draft")!)["other"]=="retained","Cell mode snapshots whole record");
+var oldContext=(NgGridEditorContext)CellCall("EditorContext",new NgGridEditField("name","Name"))!;
+cellGrid.Editing=CellConfig(true);oldContext.SetValue("locked");EditAssert(((Dictionary<string,string>)CellValue("draft")!)["name"]=="Alpha","Custom callback rechecks permissions");
+cellGrid.Editing=CellConfig();CellCall("CloseEdit");CellCall("BeginCell","Alpha","name");oldContext.SetValue("stale");EditAssert(((Dictionary<string,string>)CellValue("draft")!)["name"]=="Alpha","Old callback cannot change new session");
+await (Task)CellCall("CommitEdit")!;EditAssert((string?)CellValue("editCell")=="name" && (string?)CellValue("editError")=="Conflict","Cell conflict retains active draft");
+cellGrid.Dispose();oldContext.SetValue("disposed");EditAssert(CellValue("editOperation") is null,"Disposed custom callback ignored");
+#pragma warning restore BL0005
+await Check<NgDataGrid<string>>(new(){["Items"]=new[]{"Alpha"},["Columns"]=new[]{new NgDataColumn<string>("name","Name",r=>r)},["RowId"]=(Func<string,string>)(r=>r),["Editing"]=CellConfig()},"Edit Name Alpha");
 // Range responses are exact windows, never partial pages presented as a full result.
 var rangeQuery=new NgDataRangeRequest(10,5,"",Array.Empty<NgSortDescriptor>());
 var rangeSource=new List<int>{10,11,12};

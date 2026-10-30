@@ -33,7 +33,7 @@
 @if(entry.HasRow){var row=entry.Row!;var id=RowId(row);
 <tr @key="id" class="@(SelectedIds.Contains(id)?"ng-row-selected":"")">
 @if(Selectable){<td><input type="checkbox" aria-label="@($"Select {id}")" checked="@SelectedIds.Contains(id)" disabled="@(!CanChange(row))" @onchange="()=>Toggle(row)" /></td>}
-@foreach(var column in Columns){<td>@if(column.Template is not null){@column.Template(row)}else{@column.Text(row)}</td>}
+@foreach(var column in Columns){<td>@if(editCell==column.Key && editId==id && CellField(column.Key) is {} activeField){@FieldEditor(activeField)}else if(column.Template is not null){@column.Template(row)}else{@column.Text(row)}@if(Editing is {CellEditing:true} && CellField(column.Key) is not null && !(editCell==column.Key && editId==id)){<button type="button" class="ng-button" aria-label="@($"{Editing.UpdateText} {column.Title} {id}")" disabled="@(!CanEditRow(row,false))" @onclick="()=>BeginCell(row,column.Key)">@Editing.UpdateText</button>}</td>}
 @if(HasActions){<td>@if(RowActions is not null){@RowActions(row)}@if(Editing is {} edit){<button type="button" class="ng-button" aria-label="@($"{edit.UpdateText} {id}")" disabled="@(!CanEditRow(row,false))" @onclick="()=>BeginEdit(NgGridEditOperation.Update,row)">@edit.UpdateText</button><button type="button" class="ng-button" aria-label="@($"{edit.DeleteText} {id}")" disabled="@(!CanEditRow(row,true))" @onclick="()=>BeginEdit(NgGridEditOperation.Delete,row)">@edit.DeleteText</button>}</td>}
 </tr>}
 </ChildContent>
@@ -50,7 +50,7 @@
 @foreach(var row in section.Rows){var id=RowId(row);
 <tr @key="id" class="@(SelectedIds.Contains(id)?"ng-row-selected":"")">
 @if(Selectable){<td><input type="checkbox" aria-label="@($"Select {id}")" checked="@SelectedIds.Contains(id)" disabled="@(!CanChange(row))" @onchange="()=>Toggle(row)" /></td>}
-@foreach(var column in Columns){<td>@if(column.Template is not null){@column.Template(row)}else{@column.Text(row)}</td>}
+@foreach(var column in Columns){<td>@if(editCell==column.Key && editId==id && CellField(column.Key) is {} activeField){@FieldEditor(activeField)}else if(column.Template is not null){@column.Template(row)}else{@column.Text(row)}@if(Editing is {CellEditing:true} && CellField(column.Key) is not null && !(editCell==column.Key && editId==id)){<button type="button" class="ng-button" aria-label="@($"{Editing.UpdateText} {column.Title} {id}")" disabled="@(!CanEditRow(row,false))" @onclick="()=>BeginCell(row,column.Key)">@Editing.UpdateText</button>}</td>}
 @if(HasActions){<td>@if(RowActions is not null){@RowActions(row)}@if(Editing is {} edit){<button type="button" class="ng-button" aria-label="@($"{edit.UpdateText} {id}")" disabled="@(!CanEditRow(row,false))" @onclick="()=>BeginEdit(NgGridEditOperation.Update,row)">@edit.UpdateText</button><button type="button" class="ng-button" aria-label="@($"{edit.DeleteText} {id}")" disabled="@(!CanEditRow(row,true))" @onclick="()=>BeginEdit(NgGridEditOperation.Delete,row)">@edit.DeleteText</button>}</td>}
 </tr>}
 </tbody>}
@@ -62,7 +62,7 @@
 <h3>@(operation==NgGridEditOperation.Create?config.CreateText:operation==NgGridEditOperation.Delete?config.ConfirmDeleteText:config.UpdateText) @editId</h3>
 @if(editError is not null){<p role="alert">@editError</p>}
 @if(saving){<p role="status">@config.SavingText</p>}
-@if(operation!=NgGridEditOperation.Delete){foreach(var field in config.Fields){<label class="ng-field">@field.Label<input class="ng-input" aria-label="@field.Label" aria-required="@(field.Required?"true":"false")" value="@draft.GetValueOrDefault(field.Key,"")" disabled="@(saving || config.ReadOnly)" @oninput="e=>draft[field.Key]=e.Value?.ToString()??string.Empty" /></label>}}
+@if(operation!=NgGridEditOperation.Delete){if(editCell is null){foreach(var field in config.Fields){@FieldEditor(field)}}}
 <div class="ng-data-toolbar"><button type="button" class="ng-button ng-primary" disabled="@(!CanCommit)" @onclick="CommitEdit">@(operation==NgGridEditOperation.Delete?config.DeleteText:config.SaveText)</button>
 <button type="button" class="ng-button" disabled="@saving" @onclick="CloseEdit">@config.CancelText</button></div>
 </section>}
@@ -110,7 +110,20 @@
  [Parameter] public NgGridEditing<TItem>? Editing{get;set;}
  private bool HasActions=>RowActions is not null || Editing is not null;
  private NgGridEditOperation? editOperation;
- private string? editId,editError;
+ private string? editId,editError,editCell;
+ private NgGridEditField? CellField(string key)=>Editing?.Fields.FirstOrDefault(f=>f.Key==key);
+ private void BeginCell(TItem row,string key){if(Editing is not {CellEditing:true} || CellField(key) is null || !CanEditRow(row,false))return;BeginEdit(NgGridEditOperation.Update,row);if(editOperation==NgGridEditOperation.Update)editCell=key;}
+ private NgGridEditorContext EditorContext(NgGridEditField field){
+   var ticket=editRevision;
+   return new(field,draft.GetValueOrDefault(field.Key,""),!CanCommit,value=>{
+     if(ticket!=editRevision || !CanCommit || editOperation==NgGridEditOperation.Delete || (editCell is not null && editCell!=field.Key) || CellField(field.Key) is null)return;
+     draft[field.Key]=value;StateHasChanged();
+   });
+ }
+ private RenderFragment FieldEditor(NgGridEditField field)=> @<div class="ng-grid-field">@{var ctx=EditorContext(field);}
+ @if(Editing?.EditorTemplate is {} template){@template(ctx)}else{<label class="ng-field">@field.Label<input class="ng-input" aria-label="@field.Label" aria-required="@(field.Required?"true":"false")" value="@ctx.Value" disabled="@ctx.Disabled" @oninput="e=>ctx.SetValue(e.Value?.ToString()??string.Empty)" /></label>}
+ </div>;
+
  private Dictionary<string,string> draft=[];
  private bool saving;
  private long editRevision;
@@ -123,11 +136,11 @@
  private void BeginEdit(NgGridEditOperation operation,TItem? row){
    if(operation==NgGridEditOperation.Create?!CanCreate:row is null || !CanEditRow(row,operation==NgGridEditOperation.Delete))return;
    if(operation!=NgGridEditOperation.Create)row=DisplayRows.First(r=>RowId(r)==RowId(row!));
-   editError=null;
+   ++editRevision;editCell=null;editError=null;
    try{draft=operation==NgGridEditOperation.Delete?[]:new(Editing!.Draft(row));editId=operation==NgGridEditOperation.Create?null:RowId(row!);editOperation=operation;}
    catch{editError=Editing!.ErrorText;}
  }
- private void CloseEdit(){if(saving)return;editOperation=null;editId=null;editError=null;draft=[];}
+ private void CloseEdit(){if(saving)return;++editRevision;editCell=null;editOperation=null;editId=null;editError=null;draft=[];}
  private async Task CommitEdit(){
    if(!CanCommit)return;
    var config=Editing!;var operation=editOperation!.Value;

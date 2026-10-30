@@ -66,6 +66,9 @@ ReadRange/readRange with Virtualize/virtualize scrolls a flat server result whil
 ReadGroupedRange/readGroupedRange uses a separate server contract that counts visible group headers and records after accepted collapse. It retains one bounded window, validates ancestor metadata, rejects obsolete responses and preserves caller-owned selection. Loaded-window selection/export excludes headers. See [Grouped remote ranges](grouped-remote-ranges.md) for paired executable examples, HTTP contracts, limits, collapse and failure/retry behavior.
 
 
+### Cell and custom editors
+Enable CellEditing/cellEditing for field keys matching column keys. Activate the labelled Edit button in a cell, change its draft, then Save or Cancel below the table. The editable inventory supplies a custom numeric quantity input through EditorTemplate/editorBuilder. Saving validates the full record. See [Grid editing](grid-editing.md#cell-editing-and-custom-editors).
+
 ## Blazor example
 
 ```razor
@@ -90,7 +93,7 @@ ReadGroupedRange/readGroupedRange uses a separate server contract that counts vi
 <p>Drafts are isolated. Quantities 100 and above are protected. Try a blank name, invalid quantity, a save failure and a retry.</p>
 <NgCheckBox Label="Lock editing" @bind-Value="editLocked"/>
 <NgCheckBox Label="Fail saves" @bind-Value="editFail"/>
-<NgDataGrid TItem="Product" Label="Editable inventory" Items="editableRows" Columns="columns" RowId="r=>r.Id" Editing="Editor" GroupBy="r=>r.Name" Selectable="false"/>
+<NgDataGrid TItem="Product" Label="Editable inventory" Items="editableRows" Columns="@(new NgDataColumn<Product>[]{new("name","Name",r=>r.Name),new("quantity","Quantity",r=>r.Count)})" RowId="r=>r.Id" Editing="Editor" GroupBy="r=>r.Name" Selectable="false"/>
 <p>Successful writes: @writes</p>
 <h3>HTTP grouped inventory</h3>
 <p>Live requests to the local gallery API. Counts and summaries are computed before server paging.</p>
@@ -125,12 +128,14 @@ ReadGroupedRange/readGroupedRange uses a separate server contract that counts vi
  private List<Product> editableRows=[new("e1","Chair",12),new("e2","Desk",24),new("e3","Protected",100)];
  private bool editLocked,editFail;private int writes,nextEditId=4;
  private NgGridEditing<Product> Editor=>new(){
+   CellEditing=true,EditorTemplate=ProductEditor,
    Fields=[new("name","Product name",true),new("quantity","Product quantity",true)],
    Draft=r=>new Dictionary<string,string>{{"name",r?.Name??""},{"quantity",r?.Count.ToString()??"0"}},
    ReadOnly=editLocked,CanUpdate=r=>r.Count<100,CanDelete=r=>r.Count<100,
    Validate=v=>!int.TryParse(v["quantity"],out var n)||n<0?"Quantity must be a nonnegative integer.":null,
    Commit=SaveProduct
  };
+ private RenderFragment<NgGridEditorContext> ProductEditor=>ctx=>@<label class="ng-field">@ctx.Field.Label<input class="ng-input" type="@(ctx.Field.Key=="quantity"?"number":"text")" min="0" aria-label="@ctx.Field.Label" aria-required="true" value="@ctx.Value" disabled="@ctx.Disabled" @oninput="e=>ctx.SetValue(e.Value?.ToString()??string.Empty)" /></label>;
  private async Task<string?> SaveProduct(NgGridEditOperation operation,string? id,IReadOnlyDictionary<string,string> values,CancellationToken token){
    await Task.Delay(600,token);
    if(editFail)throw new InvalidOperationException("Private storage detail");
@@ -201,6 +206,7 @@ final editableRows=<( {String id,String name,int count})>[(id:'e1',name:'Chair',
 bool editLocked=false,editFail=false;
 int writes=0,nextEditId=4;
 NgGridEditing<({String id,String name,int count})> get editor=>NgGridEditing(
+  cellEditing:true,editorBuilder:(context,editor)=>TextFormField(key:ValueKey((editor.field.key,editor.disabled)),initialValue:editor.value,enabled:!editor.disabled,keyboardType:editor.field.key=='quantity'?TextInputType.number:TextInputType.text,decoration:InputDecoration(labelText:editor.field.label),onChanged:editor.setValue),
   fields:[NgGridEditField('name','Product name',required:true),NgGridEditField('quantity','Product quantity',required:true)],
   draft:(r)=>{'name':r?.name??'','quantity':'${r?.count??0}'},readOnly:editLocked,canUpdate:(r)=>r.count<100,canDelete:(r)=>r.count<100,
   validate:(v)=>int.tryParse(v['quantity']??'')==null || int.parse(v['quantity']!)<0?'Quantity must be a nonnegative integer.':null,
@@ -271,7 +277,7 @@ Widget build(BuildContext context) => Column(crossAxisAlignment: CrossAxisAlignm
   const Text('Drafts are isolated. Quantities 100 and above are protected. Try validation, failure and retry.'),
   NgCheckBox(label:'Lock editing',value:editLocked,onChanged:(v)=>setState(()=>editLocked=v)),
   NgCheckBox(label:'Fail saves',value:editFail,onChanged:(v)=>setState(()=>editFail=v)),
-  NgDataGrid<({String id,String name,int count})>(label:'Editable inventory',items:editableRows,columns:columns,rowId:(r)=>r.id,groupBy:(r)=>r.name,editing:editor),
+  NgDataGrid<({String id,String name,int count})>(label:'Editable inventory',items:editableRows,columns:[NgDataColumn('name','Name',(r)=>r.name),NgDataColumn('quantity','Quantity',(r)=>r.count)],rowId:(r)=>r.id,groupBy:(r)=>r.name,editing:editor),
   Text('Successful writes: $writes'),
   const Text('HTTP grouped inventory'),
   const Text('Live requests to the local gallery API. Start the Blazor gallery on port 5180.'),

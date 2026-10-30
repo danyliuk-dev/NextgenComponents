@@ -1,5 +1,13 @@
 part of 'data.dart';
 
+class NgGridEditorContext {
+  final NgGridEditField field;
+  final String value;
+  final bool disabled;
+  final ValueChanged<String> setValue;
+  const NgGridEditorContext(this.field, this.value, this.disabled, this.setValue);
+}
+
 enum NgGridEditOperation { create, update, delete }
 
 class NgGridEditField {
@@ -20,7 +28,8 @@ class NgGridEditing<T> {
   commit;
   final String? Function(Map<String, String>)? validate;
   final bool Function(T)? canUpdate, canDelete;
-  final bool allowCreate, readOnly;
+  final bool allowCreate, readOnly, cellEditing;
+  final Widget Function(BuildContext, NgGridEditorContext)? editorBuilder;
   final String createText,
       updateText,
       deleteText,
@@ -37,6 +46,8 @@ class NgGridEditing<T> {
     this.validate,
     this.canUpdate,
     this.canDelete,
+    this.cellEditing = false,
+    this.editorBuilder,
     this.allowCreate = true,
     this.readOnly = false,
     this.createText = 'Create record',

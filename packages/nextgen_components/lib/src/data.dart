@@ -911,7 +911,7 @@ class _NgDataGridState<T> extends State<NgDataGrid<T>> {
   }
 
   NgGridEditOperation? editOperation;
-  String? editId, editError;
+  String? editId, editError, editCell;
   Map<String, String> draft = {};
   bool saving = false;
   int editRevision = 0;
@@ -959,6 +959,8 @@ class _NgDataGridState<T> extends State<NgDataGrid<T>> {
                 ));
   void closeEdit() {
     if (saving) return;
+    editRevision++;
+    editCell = null;
     editOperation = null;
     editId = null;
     editError = null;
@@ -982,6 +984,8 @@ class _NgDataGridState<T> extends State<NgDataGrid<T>> {
         (r) => widget.rowId(r) == widget.rowId(row as T),
       );
     setState(() {
+      editRevision++;
+      editCell = null;
       editError = null;
       try {
         draft = operation == NgGridEditOperation.delete
@@ -1039,6 +1043,41 @@ class _NgDataGridState<T> extends State<NgDataGrid<T>> {
     }
   }
 
+  NgGridEditField? cellField(String key) => widget.editing?.fields.where((f) => f.key == key).firstOrNull;
+  void beginCell(T row, String key) {
+    if (widget.editing?.cellEditing != true || cellField(key) == null || !canEditRow(row, false)) return;
+    beginEdit(NgGridEditOperation.update, row);
+    if (editOperation == NgGridEditOperation.update) setState(() => editCell = key);
+  }
+  Widget fieldEditor(NgGridEditField field) {
+    final ticket = editRevision;
+    final editor = NgGridEditorContext(field, draft[field.key] ?? '', !canCommit, (value) {
+      if (!mounted || ticket != editRevision || !canCommit || editOperation == NgGridEditOperation.delete || (editCell != null && editCell != field.key) || cellField(field.key) == null) return;
+      setState(() => draft[field.key] = value);
+    });
+    return widget.editing!.editorBuilder?.call(context, editor) ?? TextFormField(
+      key: ValueKey((editRevision, field.key)),
+      initialValue: editor.value,
+      decoration: InputDecoration(labelText: field.label, helperText: field.required ? '*' : null),
+      enabled: !editor.disabled,
+      onChanged: editor.setValue,
+    );
+  }
+  Widget gridCell(T row, NgDataColumn<T> column) {
+    final field = cellField(column.key);
+    if (editCell == column.key && editId == widget.rowId(row) && field != null) {
+      return SizedBox(width: 180, child: fieldEditor(field));
+    }
+    final content = column.cellBuilder?.call(context, row) ?? Text(column.text(row));
+    if (widget.editing?.cellEditing != true || field == null) return content;
+    return Row(mainAxisSize: MainAxisSize.min, children: [content,
+      Semantics(label: '${widget.editing!.updateText} ${column.title} ${widget.rowId(row)}', child: TextButton(
+        onPressed: canEditRow(row, false) ? () => beginCell(row, column.key) : null,
+        child: Text(widget.editing!.updateText),
+      )),
+    ]);
+  }
+
   Widget editorPanel() {
     final config = widget.editing!, operation = editOperation!;
     return Align(
@@ -1084,18 +1123,8 @@ class _NgDataGridState<T> extends State<NgDataGrid<T>> {
                 ),
               if (saving)
                 Semantics(liveRegion: true, child: Text(config.savingText)),
-              if (operation != NgGridEditOperation.delete)
-                for (final field in config.fields)
-                  TextFormField(
-                    key: ValueKey((editRevision, field.key)),
-                    initialValue: draft[field.key] ?? '',
-                    decoration: InputDecoration(
-                      labelText: field.label,
-                      helperText: field.required ? '*' : null,
-                    ),
-                    enabled: !saving && !config.readOnly,
-                    onChanged: (v) => draft[field.key] = v,
-                  ),
+              if (operation != NgGridEditOperation.delete && editCell == null)
+                for (final field in config.fields) fieldEditor(field),
               Wrap(
                 children: [
                   TextButton(
@@ -1788,8 +1817,7 @@ class _NgDataGridState<T> extends State<NgDataGrid<T>> {
                         ),
                       for (final column in widget.columns)
                         DataCell(
-                          column.cellBuilder?.call(context, row) ??
-                              Text(column.text(row)),
+                          gridCell(row, column),
                         ),
                       if (hasActions)
                         DataCell(

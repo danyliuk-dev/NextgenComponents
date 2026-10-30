@@ -1,4 +1,7 @@
+using Microsoft.AspNetCore.Components;
 namespace NextgenComponents.Blazor;
+
+public sealed record NgGridEditorContext(NgGridEditField Field, string Value, bool Disabled, Action<string> SetValue);
 
 public enum NgGridEditOperation { Create, Update, Delete }
 public record NgGridEditField(string Key,string Label,bool Required=false);
@@ -10,6 +13,8 @@ public sealed class NgGridEditing<T> {
  public Func<IReadOnlyDictionary<string,string>,string?>? Validate {get;init;}
  public Func<T,bool>? CanUpdate {get;init;}
  public Func<T,bool>? CanDelete {get;init;}
+ public bool CellEditing {get;init;}
+ public RenderFragment<NgGridEditorContext>? EditorTemplate {get;init;}
  public bool AllowCreate {get;init;}=true;
  public bool ReadOnly {get;init;}
  public string CreateText {get;init;}="Create record";

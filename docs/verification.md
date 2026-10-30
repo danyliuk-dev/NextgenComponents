@@ -963,3 +963,18 @@ Both Web implementations add a bounded group-aware range adapter. Offsets count 
 - Screenshots: [Blazor](screenshots/grouped071-blazor.png), [Flutter](screenshots/grouped071-flutter.png).
 
 Limits: 100,000 visible slots and records, fixed row height, at most 512 requested slots; response metadata covers the returned window and its ancestors. The reference server helper materializes its input and is not a database scalability implementation. Full remote export, variable-height rows, column virtualization, native Flutter and screen-reader certification remain separate work. See [the saved work plan](roadmap.md).
+
+
+## Grid cell editing and custom editors — 0.72 candidate (2026-10-30)
+
+- 1,071 Blazor checks and 302 Flutter tests passed. New coverage includes full-record drafts for cell updates, required validation, conflict/retry, permission changes and obsolete custom-editor callbacks.
+- Flutter package/gallery analysis, Blazor gallery and Flutter release Web builds passed.
+- 49 paired manual examples compile/analyze; 94 highlighted examples preserve content.
+- Visible ordinary Linux Chrome: Blazor numeric cell validation, retained draft after save failure, successful retry and cancel; Flutter numeric cell update and successful write counter.
+- Public/manual sources and generated previews synchronized with the website workspace. Local links/fragments, public-content naming and all catalog categories/icons pass.
+- Linux AppImage and Apple Silicon DMG installed/launched natively; each passed 59 offline manuals and 7,378 links/assets through its own local server. Linux used extraction mode and Wayland because FUSE 2 is absent. Native validation covers startup/content; UI interaction was checked separately in Chrome.
+- All three self-contained server payloads contain library 0.72.0 and identical offline documentation revision 2026.10.30.1; no stale compressed overlay copies.
+- Windows NSIS installed and the native app passed 59 manuals and 7,378 links/assets in the dedicated VM; installed SDK and manual index are 0.72.0. The guest continued after a host timeout and its final PASS status was collected.
+- Final publication is tracked in the website workspace `deploy/release-cell072-verification.md`. Automatic approval review requires explicit authorization for installer upload and commit/push to main. Production activation/live-new-version and authenticated download checks are not yet complete.
+
+Limits: one active field/record; full-record persistence rather than patches; explicit Save/Cancel; no batch editing, spreadsheet keyboard navigation or variable row heights. Native wrappers do not certify native Flutter controls or screen-reader behavior.
