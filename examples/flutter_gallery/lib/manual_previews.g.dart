@@ -331,6 +331,24 @@ Widget build(BuildContext context) => NgBreadcrumb(
 }
 class NgDataGridExample extends StatefulWidget { const NgDataGridExample({super.key}); @override State<NgDataGridExample> createState()=>_NgDataGridExampleState(); }
 class _NgDataGridExampleState extends State<NgDataGridExample> {
+Future<String?> saveProductBatch(List<NgGridChange> changes)async{
+  await Future<void>.delayed(const Duration(milliseconds:600));
+  if(!mounted)return 'Editor closed.';
+  if(editFail)throw StateError('Private storage detail');
+  if(editLocked)return 'Editing is locked.';
+  final next=editableRows.toList();var sequence=nextEditId;
+  for(final change in changes){
+    final index=next.indexWhere((r)=>r.id==change.id);
+    if(change.operation!=NgGridEditOperation.create && (index<0 || next[index].count>=100))return 'Record is missing or protected.';
+    if(change.operation==NgGridEditOperation.delete){next.removeAt(index);continue;}
+    final name=(change.values['name']??'').trim(),quantity=int.tryParse(change.values['quantity']??'');
+    if(name.isEmpty || quantity==null || quantity<0)return 'Name and nonnegative quantity are required.';
+    final record=(id:change.id??'e${sequence++}',name:name,count:quantity);
+    if(change.operation==NgGridEditOperation.create){next.add(record);}else{next[index]=record;}
+  }
+  if(next.map((r)=>r.name.toLowerCase()).toSet().length!=next.length)return 'Product name already exists.';
+  setState((){editableRows..clear()..addAll(next);nextEditId=sequence;writes++;});return null;
+}
 bool exportQuantity=true,exportTsv=false,exportFail=false,exportLocked=false;
 NgGridExportFile? lastExport;
 NgGridExport<({String id,String name,int count})> exportConfig(bool remote)=>NgGridExport(
@@ -351,14 +369,14 @@ void downloadExport(NgGridExportFile file){
   anchor.click();
 }
 final editableRows=<( {String id,String name,int count})>[(id:'e1',name:'Chair',count:12),(id:'e2',name:'Desk',count:24),(id:'e3',name:'Protected',count:100)];
-bool editLocked=false,editFail=false;
+bool editLocked=false,editFail=false,batchEditing=false;
 int writes=0,nextEditId=4;
 NgGridEditing<({String id,String name,int count})> get editor=>NgGridEditing(
   cellEditing:true,editorBuilder:(context,editor)=>TextFormField(key:ValueKey((editor.field.key,editor.disabled)),initialValue:editor.value,enabled:!editor.disabled,keyboardType:editor.field.key=='quantity'?TextInputType.number:TextInputType.text,decoration:InputDecoration(labelText:editor.field.label),onChanged:editor.setValue),
   fields:[NgGridEditField('name','Product name',required:true),NgGridEditField('quantity','Product quantity',required:true)],
   draft:(r)=>{'name':r?.name??'','quantity':'${r?.count??0}'},readOnly:editLocked,canUpdate:(r)=>r.count<100,canDelete:(r)=>r.count<100,
   validate:(v)=>int.tryParse(v['quantity']??'')==null || int.parse(v['quantity']!)<0?'Quantity must be a nonnegative integer.':null,
-  commit:saveProduct);
+  commit:saveProduct,commitBatch:batchEditing?saveProductBatch:null);
 Future<String?> saveProduct(NgGridEditOperation operation,String? id,Map<String,String> values)async{
   await Future<void>.delayed(const Duration(milliseconds:600));
   if(!mounted)return 'Editor closed.';
@@ -423,6 +441,7 @@ Widget build(BuildContext context) => Column(crossAxisAlignment: CrossAxisAlignm
   Text('Local selection: ${(localSelected.toList()..sort()).join(", ")}'),
   const Text('Editable inventory'),
   const Text('Drafts are isolated. Quantities 100 and above are protected. Try validation, failure and retry.'),
+  NgCheckBox(label:'Batch editing (switching discards drafts)',value:batchEditing,onChanged:(v)=>setState(()=>batchEditing=v)),
   NgCheckBox(label:'Lock editing',value:editLocked,onChanged:(v)=>setState(()=>editLocked=v)),
   NgCheckBox(label:'Fail saves',value:editFail,onChanged:(v)=>setState(()=>editFail=v)),
   NgDataGrid<({String id,String name,int count})>(label:'Editable inventory',items:editableRows,columns:[NgDataColumn('name','Name',(r)=>r.name),NgDataColumn('quantity','Quantity',(r)=>r.count)],rowId:(r)=>r.id,groupBy:(r)=>r.name,editing:editor),

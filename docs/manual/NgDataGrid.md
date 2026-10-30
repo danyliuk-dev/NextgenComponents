@@ -14,7 +14,7 @@ The documentation launcher embeds these running examples here. Choose a framewor
 
 ## Behavior and practical rules
 
-ReadData/readData enables asynchronous page loading; Items/items is used only in local mode. The request contains 1-based Page/page, PageSize/pageSize, Search/search and an ordered immutable Sorts/sorts list. Return only the requested page and Total/total after filtering, before paging. The demo simulates a remote data adapter with a delay; replace its body with your HTTP/database call. A newer request or source replacement invalidates older results and errors; Blazor also passes a cancellation token. Flutter ignores stale futures but does not abort the transport. Loading hides old rows and blocks selection. Failure shows ErrorText/errorText and RetryText/retryText without exposing exception details. Change DataVersion/dataVersion to reload page 1; keep reader identity stable. Blazor ReloadAsync reloads the current page. A shrinking total clamps the page and fetches it again. Invalid totals, duplicate IDs and oversized pages become retryable errors. MultiSort/multiSort appends clicked columns by priority; clicking again toggles direction without moving priority. Clear sorting restores source order. Local sorting is stable. Row/column IDs must be unique and nonblank. Selection remains parent-owned and page selection preserves hidden/protected IDs. CanSelect/canSelect and SelectionReadOnly/selectionReadOnly still apply. Grouped remote scrolling uses ReadGroupedRange/readGroupedRange; batch/cell editing remains open. Remote grouping, single-record editing and CSV/TSV export use the explicit adapters below. See [data workspace](../data-workspace.md).
+ReadData/readData enables asynchronous page loading; Items/items is used only in local mode. The request contains 1-based Page/page, PageSize/pageSize, Search/search and an ordered immutable Sorts/sorts list. Return only the requested page and Total/total after filtering, before paging. The demo simulates a remote data adapter with a delay; replace its body with your HTTP/database call. A newer request or source replacement invalidates older results and errors; Blazor also passes a cancellation token. Flutter ignores stale futures but does not abort the transport. Loading hides old rows and blocks selection. Failure shows ErrorText/errorText and RetryText/retryText without exposing exception details. Change DataVersion/dataVersion to reload page 1; keep reader identity stable. Blazor ReloadAsync reloads the current page. A shrinking total clamps the page and fetches it again. Invalid totals, duplicate IDs and oversized pages become retryable errors. MultiSort/multiSort appends clicked columns by priority; clicking again toggles direction without moving priority. Clear sorting restores source order. Local sorting is stable. Row/column IDs must be unique and nonblank. Selection remains parent-owned and page selection preserves hidden/protected IDs. CanSelect/canSelect and SelectionReadOnly/selectionReadOnly still apply. Grouped remote scrolling uses ReadGroupedRange/readGroupedRange; batch and cell editing use the editing configuration below. Remote grouping, single-record editing and CSV/TSV export use the explicit adapters below. See [data workspace](../data-workspace.md).
 
 ### Local grouping and paging
 
@@ -69,6 +69,9 @@ ReadGroupedRange/readGroupedRange uses a separate server contract that counts vi
 ### Cell and custom editors
 Enable CellEditing/cellEditing for field keys matching column keys. Activate the labelled Edit button in a cell, change its draft, then Save or Cancel below the table. The editable inventory supplies a custom numeric quantity input through EditorTemplate/editorBuilder. Saving validates the full record. See [Grid editing](grid-editing.md#cell-editing-and-custom-editors).
 
+### Batch editing
+Enable the Batch editing checkbox in the editable inventory, stage several changes, review or undo entries, then Save changes. CommitBatch/commitBatch receives one immutable list; the demo validates a working copy and replaces records only after the complete batch succeeds. Failure retains the queue. See [Batch editing](grid-editing.md#batch-editing).
+
 ## Blazor example
 
 ```razor
@@ -91,6 +94,7 @@ Enable CellEditing/cellEditing for field keys matching column keys. Activate the
 <p>Local selection: @string.Join(", ",localSelected.Order())</p>
 <h3>Editable inventory</h3>
 <p>Drafts are isolated. Quantities 100 and above are protected. Try a blank name, invalid quantity, a save failure and a retry.</p>
+<NgCheckBox Label="Batch editing (switching discards drafts)" @bind-Value="batchEditing"/>
 <NgCheckBox Label="Lock editing" @bind-Value="editLocked"/>
 <NgCheckBox Label="Fail saves" @bind-Value="editFail"/>
 <NgDataGrid TItem="Product" Label="Editable inventory" Items="editableRows" Columns="@(new NgDataColumn<Product>[]{new("name","Name",r=>r.Name),new("quantity","Quantity",r=>r.Count)})" RowId="r=>r.Id" Editing="Editor" GroupBy="r=>r.Name" Selectable="false"/>
@@ -126,16 +130,34 @@ Enable CellEditing/cellEditing for field keys matching column keys. Activate the
  private IReadOnlyList<Func<Product,string>> Grouping=>!grouped?[]:nested?[ProductGroup,r=>r.Count<100?"Available":"Protected"]:[ProductGroup];
  private static readonly NgGroupAggregate<Product>[] aggregates=[new("Total quantity",r=>r.Count),new("Average",r=>r.Count,"average",v=>v?.ToString("0.0")??"—")]; private HashSet<string> localSelected=[]; private string ProductGroup(Product row)=>row.Name; private string GroupCaption(string key,int count)=>$"{key}: {count} matching records";
  private List<Product> editableRows=[new("e1","Chair",12),new("e2","Desk",24),new("e3","Protected",100)];
- private bool editLocked,editFail;private int writes,nextEditId=4;
+ private bool editLocked,editFail,batchEditing;private int writes,nextEditId=4;
  private NgGridEditing<Product> Editor=>new(){
    CellEditing=true,EditorTemplate=ProductEditor,
    Fields=[new("name","Product name",true),new("quantity","Product quantity",true)],
    Draft=r=>new Dictionary<string,string>{{"name",r?.Name??""},{"quantity",r?.Count.ToString()??"0"}},
    ReadOnly=editLocked,CanUpdate=r=>r.Count<100,CanDelete=r=>r.Count<100,
    Validate=v=>!int.TryParse(v["quantity"],out var n)||n<0?"Quantity must be a nonnegative integer.":null,
-   Commit=SaveProduct
+   Commit=SaveProduct,CommitBatch=batchEditing?SaveProductBatch:null
  };
  private RenderFragment<NgGridEditorContext> ProductEditor=>ctx=>@<label class="ng-field">@ctx.Field.Label<input class="ng-input" type="@(ctx.Field.Key=="quantity"?"number":"text")" min="0" aria-label="@ctx.Field.Label" aria-required="true" value="@ctx.Value" disabled="@ctx.Disabled" @oninput="e=>ctx.SetValue(e.Value?.ToString()??string.Empty)" /></label>;
+ private async Task<string?> SaveProductBatch(IReadOnlyList<NgGridChange> changes,CancellationToken token){
+   await Task.Delay(600,token);
+   if(editFail)throw new InvalidOperationException("Private storage detail");
+   if(editLocked)return "Editing is locked.";
+   var next=editableRows.ToList();var sequence=nextEditId;
+   foreach(var change in changes){
+     var index=next.FindIndex(r=>r.Id==change.Id);
+     if(change.Operation!=NgGridEditOperation.Create && (index<0 || next[index].Count>=100))return "Record is missing or protected.";
+     if(change.Operation==NgGridEditOperation.Delete){next.RemoveAt(index);continue;}
+     var name=change.Values.GetValueOrDefault("name","").Trim();
+     if(name.Length==0 || !int.TryParse(change.Values.GetValueOrDefault("quantity"),out var quantity) || quantity<0)return "Name and nonnegative quantity are required.";
+     var record=new Product(change.Id??$"e{sequence++}",name,quantity);
+     if(change.Operation==NgGridEditOperation.Create)next.Add(record);else next[index]=record;
+   }
+   if(next.Select(r=>r.Name).Distinct(StringComparer.OrdinalIgnoreCase).Count()!=next.Count)return "Product name already exists.";
+   token.ThrowIfCancellationRequested();editableRows=next;nextEditId=sequence;writes++;
+   await InvokeAsync(StateHasChanged);return null;
+ }
  private async Task<string?> SaveProduct(NgGridEditOperation operation,string? id,IReadOnlyDictionary<string,string> values,CancellationToken token){
    await Task.Delay(600,token);
    if(editFail)throw new InvalidOperationException("Private storage detail");
@@ -183,6 +205,24 @@ import 'dart:convert';
 import 'dart:js_interop';
 import 'package:web/web.dart' as web;
 
+Future<String?> saveProductBatch(List<NgGridChange> changes)async{
+  await Future<void>.delayed(const Duration(milliseconds:600));
+  if(!mounted)return 'Editor closed.';
+  if(editFail)throw StateError('Private storage detail');
+  if(editLocked)return 'Editing is locked.';
+  final next=editableRows.toList();var sequence=nextEditId;
+  for(final change in changes){
+    final index=next.indexWhere((r)=>r.id==change.id);
+    if(change.operation!=NgGridEditOperation.create && (index<0 || next[index].count>=100))return 'Record is missing or protected.';
+    if(change.operation==NgGridEditOperation.delete){next.removeAt(index);continue;}
+    final name=(change.values['name']??'').trim(),quantity=int.tryParse(change.values['quantity']??'');
+    if(name.isEmpty || quantity==null || quantity<0)return 'Name and nonnegative quantity are required.';
+    final record=(id:change.id??'e${sequence++}',name:name,count:quantity);
+    if(change.operation==NgGridEditOperation.create){next.add(record);}else{next[index]=record;}
+  }
+  if(next.map((r)=>r.name.toLowerCase()).toSet().length!=next.length)return 'Product name already exists.';
+  setState((){editableRows..clear()..addAll(next);nextEditId=sequence;writes++;});return null;
+}
 bool exportQuantity=true,exportTsv=false,exportFail=false,exportLocked=false;
 NgGridExportFile? lastExport;
 NgGridExport<({String id,String name,int count})> exportConfig(bool remote)=>NgGridExport(
@@ -203,14 +243,14 @@ void downloadExport(NgGridExportFile file){
   anchor.click();
 }
 final editableRows=<( {String id,String name,int count})>[(id:'e1',name:'Chair',count:12),(id:'e2',name:'Desk',count:24),(id:'e3',name:'Protected',count:100)];
-bool editLocked=false,editFail=false;
+bool editLocked=false,editFail=false,batchEditing=false;
 int writes=0,nextEditId=4;
 NgGridEditing<({String id,String name,int count})> get editor=>NgGridEditing(
   cellEditing:true,editorBuilder:(context,editor)=>TextFormField(key:ValueKey((editor.field.key,editor.disabled)),initialValue:editor.value,enabled:!editor.disabled,keyboardType:editor.field.key=='quantity'?TextInputType.number:TextInputType.text,decoration:InputDecoration(labelText:editor.field.label),onChanged:editor.setValue),
   fields:[NgGridEditField('name','Product name',required:true),NgGridEditField('quantity','Product quantity',required:true)],
   draft:(r)=>{'name':r?.name??'','quantity':'${r?.count??0}'},readOnly:editLocked,canUpdate:(r)=>r.count<100,canDelete:(r)=>r.count<100,
   validate:(v)=>int.tryParse(v['quantity']??'')==null || int.parse(v['quantity']!)<0?'Quantity must be a nonnegative integer.':null,
-  commit:saveProduct);
+  commit:saveProduct,commitBatch:batchEditing?saveProductBatch:null);
 Future<String?> saveProduct(NgGridEditOperation operation,String? id,Map<String,String> values)async{
   await Future<void>.delayed(const Duration(milliseconds:600));
   if(!mounted)return 'Editor closed.';
@@ -275,6 +315,7 @@ Widget build(BuildContext context) => Column(crossAxisAlignment: CrossAxisAlignm
   Text('Local selection: ${(localSelected.toList()..sort()).join(", ")}'),
   const Text('Editable inventory'),
   const Text('Drafts are isolated. Quantities 100 and above are protected. Try validation, failure and retry.'),
+  NgCheckBox(label:'Batch editing (switching discards drafts)',value:batchEditing,onChanged:(v)=>setState(()=>batchEditing=v)),
   NgCheckBox(label:'Lock editing',value:editLocked,onChanged:(v)=>setState(()=>editLocked=v)),
   NgCheckBox(label:'Fail saves',value:editFail,onChanged:(v)=>setState(()=>editFail=v)),
   NgDataGrid<({String id,String name,int count})>(label:'Editable inventory',items:editableRows,columns:[NgDataColumn('name','Name',(r)=>r.name),NgDataColumn('quantity','Quantity',(r)=>r.count)],rowId:(r)=>r.id,groupBy:(r)=>r.name,editing:editor),

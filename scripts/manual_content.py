@@ -3786,3 +3786,48 @@ _g['notes']+='\n\n### Cell and custom editors\nEnable CellEditing/cellEditing fo
 
 _g['blazor']=_g['blazor'].replace('Items="editableRows" Columns="columns"', 'Items="editableRows" Columns="@(new NgDataColumn<Product>[]{new("name","Name",r=>r.Name),new("quantity","Quantity",r=>r.Count)})"')
 _g['dart']=_g['dart'].replace("items:editableRows,columns:columns", "items:editableRows,columns:[NgDataColumn('name','Name',(r)=>r.name),NgDataColumn('quantity','Quantity',(r)=>r.count)]")
+
+# Batch editing uses one atomic application callback; switching mode discards drafts.
+_g=D['NgDataGrid']
+_g['blazor']=_g['blazor'].replace('<NgCheckBox Label="Lock editing"', '<NgCheckBox Label="Batch editing (switching discards drafts)" @bind-Value="batchEditing"/>\n<NgCheckBox Label="Lock editing"').replace('private bool editLocked,editFail;', 'private bool editLocked,editFail,batchEditing;').replace('Commit=SaveProduct\n', 'Commit=SaveProduct,CommitBatch=batchEditing?SaveProductBatch:null\n')
+_g['blazor']=_g['blazor'].replace(' private async Task<string?> SaveProduct(', ''' private async Task<string?> SaveProductBatch(IReadOnlyList<NgGridChange> changes,CancellationToken token){
+   await Task.Delay(600,token);
+   if(editFail)throw new InvalidOperationException("Private storage detail");
+   if(editLocked)return "Editing is locked.";
+   var next=editableRows.ToList();var sequence=nextEditId;
+   foreach(var change in changes){
+     var index=next.FindIndex(r=>r.Id==change.Id);
+     if(change.Operation!=NgGridEditOperation.Create && (index<0 || next[index].Count>=100))return "Record is missing or protected.";
+     if(change.Operation==NgGridEditOperation.Delete){next.RemoveAt(index);continue;}
+     var name=change.Values.GetValueOrDefault("name","").Trim();
+     if(name.Length==0 || !int.TryParse(change.Values.GetValueOrDefault("quantity"),out var quantity) || quantity<0)return "Name and nonnegative quantity are required.";
+     var record=new Product(change.Id??$"e{sequence++}",name,quantity);
+     if(change.Operation==NgGridEditOperation.Create)next.Add(record);else next[index]=record;
+   }
+   if(next.Select(r=>r.Name).Distinct(StringComparer.OrdinalIgnoreCase).Count()!=next.Count)return "Product name already exists.";
+   token.ThrowIfCancellationRequested();editableRows=next;nextEditId=sequence;writes++;
+   await InvokeAsync(StateHasChanged);return null;
+ }
+ private async Task<string?> SaveProduct(''')
+_g['dart']=_g['dart'].replace("  NgCheckBox(label:'Lock editing'", "  NgCheckBox(label:'Batch editing (switching discards drafts)',value:batchEditing,onChanged:(v)=>setState(()=>batchEditing=v)),\n  NgCheckBox(label:'Lock editing'").replace('bool editLocked=false,editFail=false;', 'bool editLocked=false,editFail=false,batchEditing=false;').replace('commit:saveProduct);','commit:saveProduct,commitBatch:batchEditing?saveProductBatch:null);')
+_g['dart']='''Future<String?> saveProductBatch(List<NgGridChange> changes)async{
+  await Future<void>.delayed(const Duration(milliseconds:600));
+  if(!mounted)return 'Editor closed.';
+  if(editFail)throw StateError('Private storage detail');
+  if(editLocked)return 'Editing is locked.';
+  final next=editableRows.toList();var sequence=nextEditId;
+  for(final change in changes){
+    final index=next.indexWhere((r)=>r.id==change.id);
+    if(change.operation!=NgGridEditOperation.create && (index<0 || next[index].count>=100))return 'Record is missing or protected.';
+    if(change.operation==NgGridEditOperation.delete){next.removeAt(index);continue;}
+    final name=(change.values['name']??'').trim(),quantity=int.tryParse(change.values['quantity']??'');
+    if(name.isEmpty || quantity==null || quantity<0)return 'Name and nonnegative quantity are required.';
+    final record=(id:change.id??'e${sequence++}',name:name,count:quantity);
+    if(change.operation==NgGridEditOperation.create){next.add(record);}else{next[index]=record;}
+  }
+  if(next.map((r)=>r.name.toLowerCase()).toSet().length!=next.length)return 'Product name already exists.';
+  setState((){editableRows..clear()..addAll(next);nextEditId=sequence;writes++;});return null;
+}
+'''+_g['dart']
+_g['notes']+='\n\n### Batch editing\nEnable the Batch editing checkbox in the editable inventory, stage several changes, review or undo entries, then Save changes. CommitBatch/commitBatch receives one immutable list; the demo validates a working copy and replaces records only after the complete batch succeeds. Failure retains the queue. See [Batch editing](grid-editing.md#batch-editing).'
+_g['notes']=_g['notes'].replace('batch/cell editing remains open.', 'batch and cell editing use the editing configuration below.')

@@ -910,6 +910,13 @@ class _NgDataGridState<T> extends State<NgDataGrid<T>> {
     );
   }
 
+  final batchChanges = <_NgPendingChange<T>>[];
+  String? editKey;
+  T? editRecord;
+  int batchSequence = 0;
+  bool get isBatch => widget.editing?.commitBatch != null;
+  bool get canReviewBatch => mounted && !saving && editOperation == null;
+  bool get canSaveBatch => canReviewBatch && !loading && !error && widget.editing?.readOnly == false && isBatch && batchChanges.isNotEmpty;
   NgGridEditOperation? editOperation;
   String? editId, editError, editCell;
   Map<String, String> draft = {};
@@ -917,7 +924,7 @@ class _NgDataGridState<T> extends State<NgDataGrid<T>> {
   int editRevision = 0;
   bool get hasActions => widget.rowActions != null || widget.editing != null;
   bool get canCreate =>
-      mounted &&
+      mounted && !saving &&
       !loading &&
       !error &&
       editOperation == null &&
@@ -932,16 +939,17 @@ class _NgDataGridState<T> extends State<NgDataGrid<T>> {
           ) ??
           true);
   bool canEditRow(T row, bool delete) =>
-      mounted &&
+      mounted && !saving && !batchChanges.any((e)=>e.change.id==widget.rowId(row) && e.change.operation==NgGridEditOperation.delete) &&
       !loading &&
       !error &&
       editOperation == null &&
       displayRows.any(
         (r) => widget.rowId(r) == widget.rowId(row) && allowed(r, delete),
       );
-  List<T> get editRows => (isRemote ? remote : widget.items)
-      .where((r) => widget.rowId(r) == editId)
-      .toList();
+  List<T> get editRows {
+    final rows = (isRemote ? remote : widget.items).where((r) => widget.rowId(r) == editId).toList();
+    return rows.isEmpty && isRemote && editKey != null && editRecord != null ? [editRecord as T] : rows;
+  }
   bool get canCommit =>
       mounted &&
       !saving &&
@@ -961,6 +969,8 @@ class _NgDataGridState<T> extends State<NgDataGrid<T>> {
     if (saving) return;
     editRevision++;
     editCell = null;
+    editKey = null;
+    editRecord = null;
     editOperation = null;
     editId = null;
     editError = null;
@@ -971,6 +981,7 @@ class _NgDataGridState<T> extends State<NgDataGrid<T>> {
     editRevision++;
     saving = false;
     closeEdit();
+    batchChanges.clear();
   }
 
   void beginEdit(NgGridEditOperation operation, T? row) {
@@ -987,6 +998,8 @@ class _NgDataGridState<T> extends State<NgDataGrid<T>> {
       editRevision++;
       editCell = null;
       editError = null;
+      editKey = null;
+      editRecord = row;
       try {
         draft = operation == NgGridEditOperation.delete
             ? {}
@@ -995,6 +1008,9 @@ class _NgDataGridState<T> extends State<NgDataGrid<T>> {
             ? null
             : widget.rowId(row as T);
         editOperation = operation;
+        final queued = operation == NgGridEditOperation.create ? null : batchChanges.where((e)=>e.change.id==editId).firstOrNull;
+        if (queued != null) {editKey=queued.change.key;if(operation==NgGridEditOperation.update) draft=Map.of(queued.change.values);}
+
       } catch (_) {
         editError = widget.editing!.errorText;
       }
@@ -1020,6 +1036,7 @@ class _NgDataGridState<T> extends State<NgDataGrid<T>> {
       setState(() {});
       return;
     }
+    if (isBatch) {setState(()=>stageChange(operation,values));return;}
     final ticket = ++editRevision;
     setState(() => saving = true);
     try {
@@ -1041,6 +1058,79 @@ class _NgDataGridState<T> extends State<NgDataGrid<T>> {
           editError = config.errorText;
         });
     }
+  }
+
+  bool pendingAllowed(_NgPendingChange<T> entry) {
+    final config=widget.editing;
+    if(config==null || config.readOnly)return false;
+    if(entry.change.operation==NgGridEditOperation.create)return config.allowCreate;
+    final rows=(isRemote?remote:widget.items).where((r)=>widget.rowId(r)==entry.change.id).toList();
+    final row=rows.length==1?rows.single:isRemote && rows.isEmpty?entry.original:null;
+    return row!=null && allowed(row,entry.change.operation==NgGridEditOperation.delete);
+  }
+  void stageChange(NgGridEditOperation operation,Map<String,String> values) {
+    final index=batchChanges.indexWhere((e)=>e.change.key==editKey);
+    if(index<0 && batchChanges.length>=widget.editing!.maxPendingChanges){editError=widget.editing!.batchLimitText;return;}
+    final entry=_NgPendingChange(NgGridChange(editKey??'change-${++batchSequence}',operation,editId,values),editRecord);
+    if(index<0){batchChanges.add(entry);}else{batchChanges[index]=entry;}
+    closeEdit();
+  }
+  void beginQueued(String key) {
+    if(!canReviewBatch || !isBatch || loading || error)return;
+    final entry=batchChanges.where((e)=>e.change.key==key).firstOrNull;
+    if(entry==null || entry.change.operation==NgGridEditOperation.delete)return;
+    setState(() {
+      try {if(!pendingAllowed(entry)){editError=widget.editing!.batchConflictText;return;}}
+      catch(_){editError=widget.editing!.errorText;return;}
+      editRevision++;editKey=key;editRecord=entry.original;editId=entry.change.id;
+      editOperation=entry.change.operation;editCell=null;editError=null;draft=Map.of(entry.change.values);
+    });
+  }
+  void undoChange(String key){if(!canReviewBatch)return;setState((){batchChanges.removeWhere((e)=>e.change.key==key);editError=null;});}
+  void discardBatch(){if(!canReviewBatch)return;setState((){batchChanges.clear();editError=null;});}
+  Future<void> saveBatch() async {
+    if(!canSaveBatch)return;
+    final config=widget.editing!;
+    setState(() {
+      editError=null;
+      try {
+        if(batchChanges.length>config.maxPendingChanges){editError=config.batchLimitText;return;}
+        for(final entry in batchChanges){
+          if(!pendingAllowed(entry)){editError=config.batchConflictText;return;}
+          if(entry.change.operation==NgGridEditOperation.delete)continue;
+          final values=entry.change.values;
+          editError=config.fields.any((f)=>f.required && (values[f.key]??'').trim().isEmpty)?config.requiredText:config.validate?.call(values);
+          if(editError!=null)return;
+        }
+      } catch(_){editError=config.errorText;}
+    });
+    if(editError!=null)return;
+    final changes=List<NgGridChange>.unmodifiable(batchChanges.map((e)=>e.change));
+    final ticket=++editRevision;
+    setState(()=>saving=true);
+    try {
+      final message=await config.commitBatch!(changes);
+      if(!mounted || ticket!=editRevision)return;
+      setState((){saving=false;editError=message;if(message==null)batchChanges.clear();});
+      if(message==null){await reload();if(mounted)setState((){});}
+    }catch(_){if(mounted && ticket==editRevision)setState((){saving=false;editError=config.errorText;});}
+  }
+  Widget batchPanel() {
+    final config=widget.editing!;
+    String label(NgGridChange c)=>switch(c.operation){NgGridEditOperation.create=>config.createText,NgGridEditOperation.update=>config.updateText,NgGridEditOperation.delete=>config.deleteText};
+    return Semantics(container:true,label:config.pendingText,child:Padding(padding:const EdgeInsets.all(16),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
+      Text('${config.pendingText} (${batchChanges.length})',style:Theme.of(context).textTheme.titleMedium),
+      if(saving) Semantics(liveRegion:true,child:Text(config.savingText)),
+      for(final entry in batchChanges) Padding(key:ValueKey(entry.change.key),padding:const EdgeInsets.symmetric(vertical:8),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
+        Text('${label(entry.change)} ${entry.change.id??entry.change.key}'),
+        if(entry.change.operation!=NgGridEditOperation.delete) for(final field in config.fields) Text('${field.label}: ${entry.change.values[field.key]??""}'),
+        Wrap(children:[
+          if(entry.change.operation!=NgGridEditOperation.delete) TextButton(onPressed:canReviewBatch?()=>beginQueued(entry.change.key):null,child:Text(config.updateText)),
+          TextButton(onPressed:canReviewBatch?()=>undoChange(entry.change.key):null,child:Text(config.undoText)),
+        ]),
+      ])),
+      Wrap(children:[TextButton(onPressed:canSaveBatch?saveBatch:null,child:Text(config.saveBatchText)),TextButton(onPressed:canReviewBatch?discardBatch:null,child:Text(config.discardText))]),
+    ])));
   }
 
   NgGridEditField? cellField(String key) => widget.editing?.fields.where((f) => f.key == key).firstOrNull;
@@ -1130,7 +1220,7 @@ class _NgDataGridState<T> extends State<NgDataGrid<T>> {
                   TextButton(
                     onPressed: canCommit ? commitEdit : null,
                     child: Text(
-                      operation == NgGridEditOperation.delete
+                      isBatch ? config.stageText : operation == NgGridEditOperation.delete
                           ? config.deleteText
                           : config.saveText,
                     ),
@@ -1413,6 +1503,7 @@ class _NgDataGridState<T> extends State<NgDataGrid<T>> {
         oldWidget.readRange != widget.readRange ||
         oldWidget.readData != widget.readData ||
         oldWidget.readGroupedData != widget.readGroupedData ||
+        ((oldWidget.editing?.commitBatch != null) != isBatch) ||
         (oldWidget.editing != null && widget.editing == null))
       invalidateEdit();
     validateGrouping();
@@ -1877,6 +1968,7 @@ class _NgDataGridState<T> extends State<NgDataGrid<T>> {
         if (editOperation == null && editError != null)
           Semantics(liveRegion: true, child: Text(editError!)),
         if (editOperation != null && widget.editing != null) editorPanel(),
+        if (isBatch && batchChanges.isNotEmpty) batchPanel(),
         if (isRange)
           Semantics(
             liveRegion: true,

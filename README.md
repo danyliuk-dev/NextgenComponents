@@ -2,7 +2,7 @@
 
 Blazor and Flutter component libraries with a shared design-token source and a Telerik Blazor component roadmap.
 
-**Current release: 0.72.0 custom Grid editors and cell editing, 47 controls on each Web platform (53 catalogue entries including chart modes).** This is not a complete Telerik replacement or API-compatible clone. The [catalog](docs/catalog.md) tracks 139 named entries from the published Telerik Blazor index; chart variants are counted separately. See [foundation capabilities](docs/foundation.md) and [forms/date capabilities](docs/forms-and-dates.md) and [data workspace capabilities and gaps](docs/data-workspace.md) and [analytics/schedule capabilities](docs/analytics-and-schedule.md).
+**Current development version: 0.73.0 Grid batch editing, 47 controls on each Web platform (53 catalogue entries including chart modes).** This is not a complete Telerik replacement or API-compatible clone. The [catalog](docs/catalog.md) tracks 139 named entries from the published Telerik Blazor index; chart variants are counted separately. See [foundation capabilities](docs/foundation.md) and [forms/date capabilities](docs/forms-and-dates.md) and [data workspace capabilities and gaps](docs/data-workspace.md) and [analytics/schedule capabilities](docs/analytics-and-schedule.md).
 
 ## Work plan
 
@@ -138,3 +138,8 @@ Grid now supports custom field editors and single-cell editing on both Web platf
 Build both galleries after regeneration. The local documentation embeds `/preview/NgComponent` (Blazor) or `/?preview=NgComponent` (Flutter). Static Markdown readers receive links to these same examples. Previews are local, stateful examples; Reload example resets them. Modal/tooltip examples require their documented trigger. The visible Chrome smoke runner is `node scripts/manual-preview-check.mjs blazor` or `flutter`; coordinate Chrome use first. It saves runtime diagnostics and screenshots under ignored `artifacts/browser/manual-*` for visual review.
 
 Continuous remote Grid scrolling now uses a separate bounded ReadRange/readRange adapter. Both Web galleries exercise 100,000 records over HTTP, error/retry, query reset, selection retention and loaded-window export. See [Remote ranges](docs/manual/remote-ranges.md). Existing paged adapters remain backward compatible.
+
+
+## Grid batch editing (0.73.0)
+
+Blazor and Flutter Web support bounded staged create/update/delete, full-record review, individual undo, discard, and one immutable batch callback. Failed saves retain the queue; permissions and validation run again before submission. Persistence owns atomic transactions and concurrency. See [Grid editing](docs/manual/grid-editing.md#batch-editing). Release validation is in progress.

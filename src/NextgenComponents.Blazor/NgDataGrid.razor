@@ -63,8 +63,22 @@
 @if(editError is not null){<p role="alert">@editError</p>}
 @if(saving){<p role="status">@config.SavingText</p>}
 @if(operation!=NgGridEditOperation.Delete){if(editCell is null){foreach(var field in config.Fields){@FieldEditor(field)}}}
-<div class="ng-data-toolbar"><button type="button" class="ng-button ng-primary" disabled="@(!CanCommit)" @onclick="CommitEdit">@(operation==NgGridEditOperation.Delete?config.DeleteText:config.SaveText)</button>
+<div class="ng-data-toolbar"><button type="button" class="ng-button ng-primary" disabled="@(!CanCommit)" @onclick="CommitEdit">@(IsBatch?config.StageText:operation==NgGridEditOperation.Delete?config.DeleteText:config.SaveText)</button>
 <button type="button" class="ng-button" disabled="@saving" @onclick="CloseEdit">@config.CancelText</button></div>
+</section>}
+@if(IsBatch && batchChanges.Count>0 && Editing is {} batchConfig){
+<section class="ng-grid-editor" aria-label="@batchConfig.PendingText" aria-busy="@(saving?"true":"false")">
+<h3>@batchConfig.PendingText (@batchChanges.Count)</h3>
+@if(saving){<p role="status">@batchConfig.SavingText</p>}
+@foreach(var entry in batchChanges){var change=entry.Change;
+<div @key="change.Key" class="ng-grid-field">
+<strong>@ChangeLabel(change) @(change.Id??change.Key)</strong>
+@if(change.Operation!=NgGridEditOperation.Delete){<dl>@foreach(var field in batchConfig.Fields){<dt>@field.Label</dt><dd>@change.Values.GetValueOrDefault(field.Key,"")</dd>}</dl>
+<button type="button" class="ng-button" disabled="@(!CanReviewBatch)" @onclick="()=>BeginQueued(change.Key)">@batchConfig.UpdateText</button>}
+<button type="button" class="ng-button" disabled="@(!CanReviewBatch)" @onclick="()=>UndoChange(change.Key)">@batchConfig.UndoText</button>
+</div>}
+<div class="ng-data-toolbar"><button type="button" class="ng-button ng-primary" disabled="@(!CanSaveBatch)" @onclick="SaveBatch">@batchConfig.SaveBatchText</button>
+<button type="button" class="ng-button" disabled="@(!CanReviewBatch)" @onclick="DiscardBatch">@batchConfig.DiscardText</button></div>
 </section>}
 @if(IsRange){<p role="status">@LoadedWindowText: @(loadedSlotCount==0?"0":$"{rangeStart+1}–{rangeStart+loadedSlotCount}") / @total</p>}
 @if(!IsRange && (!Virtualize || IsRemote)){<NgPager Total="Total" Page="page" PageChanged="ChangePage" PageSize="size" PageSizeChanged="Resize" Sizes="PageSizes" />}
@@ -128,31 +142,38 @@
  private bool saving;
  private long editRevision;
  private CancellationTokenSource? editPending;
- private bool CanCreate=>!disposed && !loading && !error && editOperation is null && Editing is {ReadOnly:false,AllowCreate:true};
- private TItem[] CurrentEditRows=> (IsRemote?filtered:Items).Where(r=>RowId(r)==editId).ToArray();
+ private bool CanCreate=>!disposed && !saving && !loading && !error && editOperation is null && Editing is {ReadOnly:false,AllowCreate:true};
+ private TItem[] CurrentEditRows { get {
+   var rows=(IsRemote?filtered:Items).Where(r=>RowId(r)==editId).ToArray();
+   return rows.Length==0 && IsRemote && editKey is not null && editRecord is not null ? [editRecord] : rows;
+ }}
  private bool Allowed(TItem row,bool delete)=>Editing is {ReadOnly:false} c && (delete?c.CanDelete?.Invoke(row)??true:c.CanUpdate?.Invoke(row)??true);
- private bool CanEditRow(TItem row,bool delete)=>!disposed && !loading && !error && editOperation is null && DisplayRows.Any(r=>RowId(r)==RowId(row) && Allowed(r,delete));
+ private bool CanEditRow(TItem row,bool delete)=>!disposed && !saving && !batchChanges.Any(e=>e.Change.Id==RowId(row) && e.Change.Operation==NgGridEditOperation.Delete) && !loading && !error && editOperation is null && DisplayRows.Any(r=>RowId(r)==RowId(row) && Allowed(r,delete));
  private bool CanCommit=>!disposed && !saving && !loading && !error && Editing is {ReadOnly:false} && (editOperation==NgGridEditOperation.Create?Editing.AllowCreate:editOperation is not null && CurrentEditRows.Length==1 && Allowed(CurrentEditRows[0],editOperation==NgGridEditOperation.Delete));
  private void BeginEdit(NgGridEditOperation operation,TItem? row){
    if(operation==NgGridEditOperation.Create?!CanCreate:row is null || !CanEditRow(row,operation==NgGridEditOperation.Delete))return;
    if(operation!=NgGridEditOperation.Create)row=DisplayRows.First(r=>RowId(r)==RowId(row!));
-   ++editRevision;editCell=null;editError=null;
-   try{draft=operation==NgGridEditOperation.Delete?[]:new(Editing!.Draft(row));editId=operation==NgGridEditOperation.Create?null:RowId(row!);editOperation=operation;}
+   ++editRevision;editCell=null;editError=null;editRecord=row;editKey=null;
+   try{draft=operation==NgGridEditOperation.Delete?[]:new(Editing!.Draft(row));editId=operation==NgGridEditOperation.Create?null:RowId(row!);editOperation=operation;
+     var queued=operation==NgGridEditOperation.Create?null:batchChanges.FirstOrDefault(e=>e.Change.Id==editId);
+     if(queued is not null){editKey=queued.Change.Key;if(operation==NgGridEditOperation.Update)draft=new(queued.Change.Values);}
+   }
    catch{editError=Editing!.ErrorText;}
  }
- private void CloseEdit(){if(saving)return;++editRevision;editCell=null;editOperation=null;editId=null;editError=null;draft=[];}
+ private void CloseEdit(){if(saving)return;++editRevision;editCell=null;editKey=null;editRecord=default;editOperation=null;editId=null;editError=null;draft=[];}
  private async Task CommitEdit(){
    if(!CanCommit)return;
    var config=Editing!;var operation=editOperation!.Value;
    var values=new System.Collections.ObjectModel.ReadOnlyDictionary<string,string>(new Dictionary<string,string>(draft));
    try{editError=operation==NgGridEditOperation.Delete?null:config.Fields.Any(f=>f.Required && string.IsNullOrWhiteSpace(values.GetValueOrDefault(f.Key)))?config.RequiredText:config.Validate?.Invoke(values);}catch{editError=config.ErrorText;}
    if(editError is not null)return;
+   if(IsBatch){StageChange(operation,values);return;}
    saving=true;var ticket=++editRevision;using var operationPending=new CancellationTokenSource();editPending=operationPending;var token=operationPending.Token;
    try{var message=await config.Commit(operation,editId,values,token);if(disposed || ticket!=editRevision)return;editError=message;saving=false;if(message is null){CloseEdit();await ReloadAsync();}}
    catch{if(!disposed && ticket==editRevision)editError=config.ErrorText;}
    finally{if(!disposed && ticket==editRevision)saving=false;if(ReferenceEquals(editPending,operationPending))editPending=null;}
  }
- private void InvalidateEdit(){++editRevision;editPending?.Cancel();saving=false;CloseEdit();}
+ private void InvalidateEdit(){++editRevision;editPending?.Cancel();saving=false;CloseEdit();batchChanges.Clear();}
  [Parameter] public Func<NgDataRequest,CancellationToken,Task<NgDataResult<TItem>>>? ReadData{get;set;}
  [Parameter] public Func<NgGroupedDataRequest,CancellationToken,Task<NgGroupedDataResult<TItem>>>? ReadGroupedData{get;set;}
  [Parameter] public IReadOnlyList<string> RemoteGroupKeys{get;set;}=[];
@@ -234,7 +255,8 @@
    Export?.Resolve(Columns);
    if(!Equals(previousVersion,DataVersion) || previousReader!=ReaderIdentity || Export is null || Export.ReadOnly)CancelExport();
    Editing?.Check();
-   if(!Equals(previousVersion,DataVersion) || previousReader!=ReaderIdentity || Editing is null)InvalidateEdit();
+   if(!Equals(previousVersion,DataVersion) || previousReader!=ReaderIdentity || Editing is null || previousBatchMode!=IsBatch)InvalidateEdit();
+   previousBatchMode=IsBatch;
    if(GroupBy is not null && GroupSelectors.Count>0)throw new ArgumentException("Use GroupBy or GroupSelectors, not both.");
    if(Selectors.Count>8)throw new ArgumentException("At most eight group levels are supported.");
    foreach(var aggregate in GroupAggregates)aggregate.Calculate(Array.Empty<TItem>());

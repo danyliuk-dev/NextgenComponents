@@ -980,3 +980,11 @@ Limits: 100,000 visible slots and records, fixed row height, at most 512 request
 - Implementation commit: `28e76a6`; final release evidence and artifact manifest are in the website workspace `deploy/release-cell072-verification.md` and `deploy/releases-cell072.json`. Website health now derives its version from the assembly; an initial health-version mismatch triggered the planned rollback before successful final activation.
 
 Limits: one active field/record; full-record persistence rather than patches; explicit Save/Cancel; no batch editing, spreadsheet keyboard navigation or variable row heights. Native wrappers do not certify native Flutter controls or screen-reader behavior.
+
+
+## Grid batch editing — 0.73 (2026-10-30)
+
+- 1,100 Blazor checks; full Flutter suite 303 passed plus the added remote batch test (304 total tests). Immutable snapshots, required/custom validation, consolidation, create/update/delete, limits, undo/discard, permissions, missing local records, failure/retry, single flight, stale responses and off-page review are covered.
+- 49 paired manual examples compiled/analyzed; 94 highlighted examples checked. Both galleries build.
+- Ordinary visible Chrome: Blazor staged quantities 31 and 42, retained both after failure with original data unchanged, then applied both with one successful write. Flutter staged quantity 35 and applied it with one successful write.
+- Source and public manuals synchronized; native installers and production activation still pending at this checkpoint.

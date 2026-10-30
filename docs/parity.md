@@ -584,3 +584,8 @@ Variable-height rows, column virtualization, batch/cell editing and native/acces
 ## Cell editing and custom editors (0.72)
 
 Paired Blazor/Flutter Web cell editors reuse full-record validation and asynchronous persistence. Custom templates/builders receive guarded string values and disabled state. One active cell, retained drafts, explicit Save/Cancel, conflict/retry and stale-callback rejection. Full-row editing remains available. Batch edits, spreadsheet keyboard navigation and variable-height rows remain open. See [Grid editing](manual/grid-editing.md#cell-editing-and-custom-editors).
+
+
+## Batch editing (0.73)
+
+Both Web platforms provide an opt-in bounded create/update/delete queue, full-record review, per-entry undo, discard and one immutable persistence callback. Success clears and refreshes; failure retains; permissions/validation are rechecked, stale completions ignored. Off-page remote records retain their original UI permission snapshot; authorization, atomicity, concurrency and idempotency belong to the application. Public/offline release validation is in progress. Spreadsheet keyboard navigation, variable row heights, column virtualization and durable mutation queues remain separate.
