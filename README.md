@@ -2,7 +2,7 @@
 
 Blazor and Flutter component libraries with a shared design-token source and a Telerik Blazor component roadmap.
 
-**Current release: 0.74.0 Grid measured row heights, 47 controls on each Web platform (53 catalogue entries including chart modes).** This is not a complete Telerik replacement or API-compatible clone. The [catalog](docs/catalog.md) tracks 139 named entries from the published Telerik Blazor index; chart variants are counted separately. See [foundation capabilities](docs/foundation.md) and [forms/date capabilities](docs/forms-and-dates.md) and [data workspace capabilities and gaps](docs/data-workspace.md) and [analytics/schedule capabilities](docs/analytics-and-schedule.md).
+**Current release: 0.74.1 Grid measured row heights, 47 controls on each Web platform (53 catalogue entries including chart modes).** This is not a complete Telerik replacement or API-compatible clone. The [catalog](docs/catalog.md) tracks 139 named entries from the published Telerik Blazor index; chart variants are counted separately. See [foundation capabilities](docs/foundation.md) and [forms/date capabilities](docs/forms-and-dates.md) and [data workspace capabilities and gaps](docs/data-workspace.md) and [analytics/schedule capabilities](docs/analytics-and-schedule.md).
 
 ## Work plan
 
@@ -148,3 +148,8 @@ Blazor and Flutter Web support bounded staged create/update/delete, full-record 
 ## Grid variable row height (0.74.0)
 
 Blazor and Flutter Web can measure multiline local/server-page rows, group headers and inline editors while rendering a bounded window. Enable `VariableRowHeight` / `variableRowHeight` with virtualization; the row height is a minimum and estimate. Continuous range adapters and trees retain fixed heights. See [Virtual data](docs/manual/virtual-data.md#variable-row-height).
+
+
+### 0.74.1 Server interop fix
+
+Measured-row initialization is shared across asynchronous renders. Slow Server interop cannot create competing scroll observers; disposal awaits and cleans up the same controller.

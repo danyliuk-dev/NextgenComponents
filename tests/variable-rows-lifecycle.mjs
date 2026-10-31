@@ -1,0 +1,16 @@
+import assert from 'node:assert/strict';
+import {create} from '../src/NextgenComponents.Blazor/wwwroot/variable-rows.js';
+let listeners=0,removed=0,observers=0;
+const root={clientWidth:800,addEventListener(){listeners++;},removeEventListener(){removed++;}};
+const top={closest:()=>root},bottom={};
+globalThis.document={body:{}};
+globalThis.ResizeObserver=class{constructor(){observers++;}observe(){}disconnect(){}};
+globalThis.MutationObserver=class{observe(){}disconnect(){}};
+globalThis.cancelAnimationFrame=()=>{};
+const first=create(top,bottom,{}),second=create(top,bottom,{});
+assert.equal(first,second,'Concurrent interop initialization shares the controller');
+assert.equal(observers,1);assert.equal(listeners,4);
+first.dispose();second.dispose();assert.equal(removed,4);
+const replacement=create(top,bottom,{});assert.notEqual(replacement,first);assert.equal(observers,2);
+replacement.dispose();assert.equal(removed,8);
+console.log('PASS measured rows: idempotent initialization, single observer/listener set, cleanup and recreation');

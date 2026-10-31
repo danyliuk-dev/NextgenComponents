@@ -8,7 +8,7 @@ using System.Linq.Expressions;
 
 var services = new ServiceCollection().AddLogging().AddSingleton<IJSRuntime, NoBrowserJS>().AddSingleton<NavigationManager, TestNavigation>().BuildServiceProvider();
 await using var renderer = new HtmlRenderer(services, services.GetRequiredService<ILoggerFactory>());
-var count = GroupedRangeChecks.Run() + await GridBatchChecks.Run();
+var count = GroupedRangeChecks.Run() + await GridBatchChecks.Run() + await VariableRowsLifecycleChecks.Run();
 async Task Check<T>(Dictionary<string, object?> parameters, params string[] expected) where T : IComponent {
  var html = await renderer.Dispatcher.InvokeAsync(async () => (await renderer.RenderComponentAsync<T>(ParameterView.FromDictionary(parameters!))).ToHtmlString());
  foreach (var text in expected) if (!html.Contains(text)) throw new Exception($"{typeof(T).Name}: missing {text} in {html}");

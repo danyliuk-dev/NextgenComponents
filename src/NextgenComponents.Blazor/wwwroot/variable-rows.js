@@ -1,5 +1,7 @@
 // Measured local/page rows. Unknown heights use the configured minimum estimate.
+const views = new WeakMap();
 export function create(top, bottom, receiver) {
+ if(views.has(top))return views.get(top);
  const root=top.closest('.ng-table-scroll');
  let total=0,estimate=48,start=0,count=16,epoch=-1,heights=[],prefix=[0],frame=0,dead=false,pending=false,pinnedEnd=false,width=root.clientWidth;
  const rebuild=()=>{prefix=[0];for(let i=0;i<total;i++)prefix.push(prefix[i]+(heights[i]??estimate));};
@@ -48,7 +50,8 @@ export function create(top, bottom, receiver) {
    for(let row=top.nextElementSibling;row && row!==bottom;row=row.nextElementSibling)resize.observe(row);
    schedule();
   },
-  dispose(){if(dead)return;dead=true;cancelAnimationFrame(frame);resize.disconnect();removed.disconnect();root.removeEventListener('scroll',scroll);for(const event of ['wheel','pointerdown','keydown'])root.removeEventListener(event,unpin);}
+  dispose(){if(dead)return;dead=true;views.delete(top);cancelAnimationFrame(frame);resize.disconnect();removed.disconnect();root.removeEventListener('scroll',scroll);for(const event of ['wheel','pointerdown','keydown'])root.removeEventListener(event,unpin);}
  };
+ views.set(top,api);
  return api;
 }

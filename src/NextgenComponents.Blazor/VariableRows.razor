@@ -11,6 +11,7 @@
  [Parameter,EditorRequired] public RenderFragment<TItem> ChildContent {get;set;}=default!;
  private ElementReference top,bottom;
  private IJSObjectReference? module,view;
+ private Task<IJSObjectReference>? initialization;
  private DotNetObjectReference<VariableRows<TItem>>? reference;
  private string[] keys=[];
  private int start,count=16,epoch;
@@ -19,13 +20,17 @@
    var next=Items.Select((item,i)=>ItemKey?.Invoke(item)??i.ToString()).ToArray();
    if(!keys.SequenceEqual(next)){keys=next;start=0;count=16;epoch++;}
  }
+ private async Task<IJSObjectReference> InitializeAsync(){
+   module=await JS.InvokeAsync<IJSObjectReference>("import","./_content/NextgenComponents.Blazor/variable-rows.js");
+   reference??=DotNetObjectReference.Create(this);
+   return await module.InvokeAsync<IJSObjectReference>("create",top,bottom,reference);
+ }
  protected override async Task OnAfterRenderAsync(bool firstRender){
    if(disposed)return;
-   module??=await JS.InvokeAsync<IJSObjectReference>("import","./_content/NextgenComponents.Blazor/variable-rows.js");
-   if(disposed)return;
-   reference??=DotNetObjectReference.Create(this);
-   view??=await module.InvokeAsync<IJSObjectReference>("create",top,bottom,reference);
-   await view.InvokeVoidAsync("update",Items.Count,RowHeight,start,count,epoch);
+   // Rendering can re-enter while a Server interop round trip is awaiting.
+   // Share one initialization task; never install a second observer/controller.
+   view=await (initialization??=InitializeAsync());
+   if(!disposed)await view.InvokeVoidAsync("update",Items.Count,RowHeight,start,count,epoch);
  }
  [JSInvokable] public Task Window(int first,int length,int version)=>InvokeAsync(()=>{
    if(disposed || version!=epoch)return;
@@ -35,7 +40,7 @@
  });
  public async ValueTask DisposeAsync(){
    disposed=true;
-   try{if(view is not null){await view.InvokeVoidAsync("dispose");await view.DisposeAsync();}if(module is not null)await module.DisposeAsync();}
+   try{if(initialization is not null)view=await initialization;if(view is not null){await view.InvokeVoidAsync("dispose");await view.DisposeAsync();}if(module is not null)await module.DisposeAsync();}
    catch(JSDisconnectedException){}finally{reference?.Dispose();}
  }
 }
