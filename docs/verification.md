@@ -1004,3 +1004,17 @@ Opt-in automatic row measurement on paired Blazor/Flutter Web local and server-p
 - Ordinary Chrome on the local iMac: measured Blazor row heights 48–77.54px, last record R10000 reached with less than one pixel bottom gap; grouped collapse leaves only the header; shrinking restores the first records. The final public preview saved a quantity edit from 12 to 37 inside a measured row.
 - Ordinary Chrome Flutter: selected R00001, reached R10000 with Ctrl+End, resized the viewport, then shrank to 12 records; the selected first record remained checked. Native Flutter and physical screen-reader certification are not claimed.
 - Public/offline documentation and the measured Grid previews are updated. Publication and native installer completion are recorded in the coordinated website release report; they are not inferred from these source checks.
+
+
+## Grid measured row lifecycle patch — 0.74.1 (2026-10-31)
+
+The final 0.74.0 production check found competing scroll controllers during concurrent asynchronous Server renders: rows existed in the DOM but incorrect spacers left the viewport blank. Production was rolled back to website 1.0.15 / Components 0.73.0 before the repair. Patch `6f6dd49ad37f45aefc6c8ddfae11aa53babea82c` shares initialization and makes JavaScript controller creation idempotent.
+
+- 1,107 Blazor checks pass, including delayed-interop reentry and cleanup. JavaScript duplicate creation, disposal and recreation checks pass. Flutter implementation retains the 309 passing tests.
+- An isolated Chrome test delayed the module by 10 seconds while parent renders occurred. The final row remained visible after Ctrl+End.
+- Released website 1.0.17, preview and Linux/macOS/Windows installers 0.74.1, documentation revision 2026.10.31.2. Each native installer passed startup, 59 manuals and 7,380 links/assets. Matching library/SDK and hashes were verified.
+- Final production Chrome: record 10000 intersects the viewport, 12 rendered rows with 8 visible, zero bottom gap, correct top/bottom spacers. Search changes and parent rerenders preserve working scrolling. Editing quantity 12 to 41 saved once; the final row remained reachable afterward.
+- Production checks: 79 manuals, 4,465 documentation links/fragments, 262 public pages/assets, 47 component previews/icons in 8 categories. MFA downloads, Range and full SHA-256 passed for all three installers; temporary QA data removed without mail.
+- Windows QA task removed, ISO ejected, VM shut off; owner-requested persistent autologon retained. Source patch confirmed on origin/main. Exact installer manifest and evidence live in the website workspace under `deploy/releases-variable0741.json` and `artifacts/evidence/variable0741`.
+
+Continuous remote ranges still require fixed heights. Native wrappers verify installation/startup/content; they do not certify native Flutter controls.

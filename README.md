@@ -153,3 +153,5 @@ Blazor and Flutter Web can measure multiline local/server-page rows, group heade
 ### 0.74.1 Server interop fix
 
 Measured-row initialization is shared across asynchronous renders. Slow Server interop cannot create competing scroll observers; disposal awaits and cleans up the same controller.
+
+Released with website 1.0.17 and synchronized Linux, macOS and Windows installers; final production scrolling, editing, public links and MFA downloads verified.
