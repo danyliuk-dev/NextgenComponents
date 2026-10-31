@@ -2,6 +2,9 @@
 @using System.Net.Http.Json
 @inject System.Net.Http.IHttpClientFactory HttpFactory
 @inject NavigationManager Navigation
+<h3>Measured virtual rows</h3>
+<p>10,000 records with multiline descriptions. Only visible rows and a small buffer are built. Scroll to the end, search and sort.</p>
+<NgDataGrid TItem="int" Label="Measured records" Items="measuredRecords" Columns="measuredColumns" RowId="i=>i.ToString()" Virtualize="true" VariableRowHeight="true" />
 <h3>Grid export</h3>
 <p>Prepare a CSV or TSV file, inspect its row count, then download. Local export respects the current query; remote full export uses a separate bounded adapter.</p>
 <NgCheckBox Label="Export quantity column" @bind-Value="exportQuantity"/>
@@ -21,7 +24,7 @@
 <NgCheckBox Label="Batch editing (switching discards drafts)" @bind-Value="batchEditing"/>
 <NgCheckBox Label="Lock editing" @bind-Value="editLocked"/>
 <NgCheckBox Label="Fail saves" @bind-Value="editFail"/>
-<NgDataGrid TItem="Product" Label="Editable inventory" Items="editableRows" Columns="@(new NgDataColumn<Product>[]{new("name","Name",r=>r.Name),new("quantity","Quantity",r=>r.Count)})" RowId="r=>r.Id" Editing="Editor" GroupBy="r=>r.Name" Selectable="false"/>
+<NgDataGrid TItem="Product" Label="Editable inventory" Virtualize="true" VariableRowHeight="true" Items="editableRows" Columns="@(new NgDataColumn<Product>[]{new("name","Name",r=>r.Name),new("quantity","Quantity",r=>r.Count)})" RowId="r=>r.Id" Editing="Editor" GroupBy="r=>r.Name" Selectable="false"/>
 <p>Successful writes: @writes</p>
 <h3>HTTP grouped inventory</h3>
 <p>Live requests to the local gallery API. Counts and summaries are computed before server paging.</p>
@@ -38,6 +41,9 @@
 <NgDataGrid TItem="Product" ReadData="Read" Export="RemoteExport" DataVersion="version" MultiSort="true" Columns="columns" RowId="r=>r.Id" @bind-SelectedIds="selected" CanSelect="r=>r.Count<100" PageSizes="new[]{5,10,20}"/>
 <p>Requests: @requests · Latest query: @query</p>
 @code {
+ private readonly int[] measuredRecords=Enumerable.Range(1,10000).ToArray();
+ private readonly NgDataColumn<int>[] measuredColumns=[new("id","Record",i=>i),new("description","Description",i=>string.Join(" ",Enumerable.Repeat($"Record {i}. Multiline content.",i%5+1)))];
+
  private bool exportQuantity=true,exportTsv,exportFail,exportLocked;private NgGridExportFile? lastExport;
  private NgGridExport<Product> LocalExport=>new(){OnExport=ReceiveExport,ColumnKeys=exportQuantity?["name","count"]:["name"],FileName=exportTsv?"inventory.tsv":"inventory.csv",Delimiter=exportTsv?"\t":",",ReadOnly=exportLocked,ScopeText="Local export scope",Format=(key,r)=>key=="count"?r.Count.ToString(System.Globalization.CultureInfo.InvariantCulture):r.Name};
  private NgGridExport<Product> RemoteExport=>LocalExport with {ReadExportData=ReadExport,ScopeText="Remote export scope"};

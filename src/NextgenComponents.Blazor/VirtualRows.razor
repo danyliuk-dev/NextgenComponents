@@ -1,6 +1,8 @@
 @typeparam TItem
 @using Microsoft.AspNetCore.Components.Web.Virtualization
-@if(Provider is not null){
+@if(VariableHeight){
+<VariableRows TItem="TItem" Items="Items" ItemKey="ItemKey" RowHeight="RowHeight" ChildContent="ChildContent" />
+}else if(Provider is not null){
 <Virtualize @ref="providerView" ItemsProvider="Provider" Context="item" ItemSize="RowHeight" OverscanCount="3" SpacerElement="@SpacerElement">
 <ItemContent>@ChildContent(item)</ItemContent>
 <Placeholder>@if(Placeholder is not null){@Placeholder}</Placeholder>
@@ -16,6 +18,8 @@
  [Parameter] public RenderFragment? Placeholder {get;set;}
  public Task RefreshAsync()=>providerView?.RefreshDataAsync()??Task.CompletedTask;
 
+ [Parameter] public bool VariableHeight {get;set;}
+ [Parameter] public Func<TItem,string>? ItemKey {get;set;}
  [Parameter] public bool Enabled {get;set;}
  [Parameter] public float RowHeight {get;set;}=48;
  [Parameter] public string SpacerElement {get;set;}="tr";

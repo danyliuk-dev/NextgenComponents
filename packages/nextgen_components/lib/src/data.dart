@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/rendering.dart';
 import 'components.dart';
 part 'grouped_data.dart';
 part 'grid_editing.dart';
@@ -545,7 +546,7 @@ class NgDataGrid<T> extends StatefulWidget {
   final Future<NgDataRangeResult<T>> Function(NgDataRangeRequest)? readRange;
   final String loadedWindowText, selectWindowText;
   final String expandWindowGroupsText,collapseWindowGroupsText;
-  final bool virtualize;
+  final bool virtualize, variableRowHeight;
   final double rowHeight, viewportHeight;
   final NgGridExport<T>? export;
   final NgGridEditing<T>? editing;
@@ -588,6 +589,7 @@ class NgDataGrid<T> extends StatefulWidget {
     this.loadedWindowText = 'Loaded window',
     this.selectWindowText = 'Select loaded window',
     this.virtualize = false,
+    this.variableRowHeight = false,
     this.rowHeight = 48,
     this.viewportHeight = 384,
     this.items = const [],
@@ -1582,6 +1584,9 @@ class _NgDataGridState<T> extends State<NgDataGrid<T>> {
   }
 
   void validateGrouping() {
+    if (widget.variableRowHeight && (!widget.virtualize || isRange)) {
+      throw ArgumentError("variableRowHeight requires virtual local data or server pages; continuous range readers require fixed heights.");
+    }
     if (isRange) {
       _checkVirtual(true, widget.rowHeight, widget.viewportHeight);
       if (!widget.virtualize ||
@@ -1752,6 +1757,7 @@ class _NgDataGridState<T> extends State<NgDataGrid<T>> {
               child: _NgDataTable(
                 selectionColumn: selectionVisible,
                 virtualize: widget.virtualize,
+                variableRowHeight: widget.variableRowHeight,
                 rowHeight: widget.rowHeight,
                 viewportHeight: widget.viewportHeight,
                 width: c.maxWidth,
@@ -1761,7 +1767,7 @@ class _NgDataGridState<T> extends State<NgDataGrid<T>> {
                 key: ValueKey(
                   isRange
                       ? rangeEpoch
-                      : '$sortKey:$descending:$page:$search:${visible.map(widget.rowId).join(',')}',
+                      : jsonEncode([widget.variableRowHeight,sortKey,descending,page,search,entries.map((e)=>e.$1==null?['row',widget.rowId(e.$2 as T)]:['group',e.$1!.id]).toList()]),
                 ),
                 sortColumnIndex: sortIndex < 0
                     ? null

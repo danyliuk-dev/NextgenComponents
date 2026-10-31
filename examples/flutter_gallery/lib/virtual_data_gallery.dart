@@ -9,7 +9,7 @@ class VirtualDataGallery extends StatefulWidget {
 }
 
 class _VirtualDataGalleryState extends State<VirtualDataGallery> {
-  bool remote = false, grouped = false, locked = false, shortData = false;
+  bool variable = true, remote = false, grouped = false, locked = false, shortData = false;
   int reads = 0;
   Set<String> selected = {}, collapsed = {}, expanded = {}, checked = {};
   String? treeSelected;
@@ -17,12 +17,12 @@ class _VirtualDataGalleryState extends State<VirtualDataGallery> {
   List<int> get data => shortData ? records.take(12).toList() : records;
   static String id(int i) => 'R${i.toString().padLeft(5, '0')}';
   static String group(int i) => 'Block ${(i - 1) ~/ 1000 + 1}';
-  late final columns = <NgDataColumn<int>>[
+  List<NgDataColumn<int>> get columns => <NgDataColumn<int>>[
     NgDataColumn('id', 'Record', (i) => i, format: id),
     NgDataColumn(
       'name',
       'Name',
-      (i) => 'Inventory ${i.toString().padLeft(5, '0')}',
+      (i) => variable ? List.filled(i%5+1, 'Inventory ${i.toString().padLeft(5, '0')}. Multiline description.').join(' ') : 'Inventory ${i.toString().padLeft(5, '0')}',
     ),
   ];
   final trees = List.generate(
@@ -77,11 +77,12 @@ class _VirtualDataGalleryState extends State<VirtualDataGallery> {
             style: Theme.of(context).textTheme.headlineMedium,
           ),
           const Text(
-            '10,000 synthetic records. Fixed 48px rows. Selection stays with this page.',
+            '10,000 synthetic records. Switch between fixed and measured row heights. Selection stays with this page.',
           ),
           Wrap(
             spacing: 16,
             children: [
+              NgCheckBox(label:'Variable row height',value:variable,onChanged:(v)=>setState(()=>variable=v)),
               NgCheckBox(
                 label: 'Server pages',
                 value: remote,
@@ -113,6 +114,7 @@ class _VirtualDataGalleryState extends State<VirtualDataGallery> {
             rowId: id,
             columns: columns,
             virtualize: true,
+            variableRowHeight: variable,
             initialPageSize: 500,
             pageSizes: const [100, 500],
             dataVersion: shortData,

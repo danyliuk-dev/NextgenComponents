@@ -623,6 +623,15 @@ foreach(var height in new[]{float.NaN,float.PositiveInfinity,0f,39f}){
  try{await Check<NgTreeView<int>>(new(){["Virtualize"]=true,["RowHeight"]=height,["Text"]=(Func<int,string>)(i=>i.ToString())});throw new Exception("Invalid tree row accepted");}catch(ArgumentException){count++;}
 }
 await Check<NgTreeList<int>>(new(){["Virtualize"]=true,["Columns"]=new[]{new NgDataColumn<int>("id","ID",i=>i)}} ,"ng-virtual-table","height:384px");
+// Variable rows render a bounded initial window and reject incompatible readers.
+var measuredBuilds=0;
+await Check<NgDataGrid<int>>(new(){["Virtualize"]=true,["VariableRowHeight"]=true,["Items"]=Enumerable.Range(1,10000).ToArray(),["Columns"]=new[]{new NgDataColumn<int>("id","ID",i=>{measuredBuilds++;return i;})},["RowId"]=(Func<int,string>)(i=>i.ToString())},"ng-variable-table","ng-variable-spacer");
+Rule(measuredBuilds<40,"Variable Grid constructs a bounded initial window");
+foreach(var ranged in new[]{false,true}){
+ var parameters=new Dictionary<string,object?>(){["VariableRowHeight"]=true,["Virtualize"]=ranged,["Columns"]=new[]{new NgDataColumn<int>("id","ID",i=>i)},["RowId"]=(Func<int,string>)(i=>i.ToString())};
+ if(ranged)parameters["ReadRange"]=(Func<NgDataRangeRequest,CancellationToken,Task<NgDataRangeResult<int>>>)((request,token)=>Task.FromResult(new NgDataRangeResult<int>(request.StartIndex,[],0)));
+ try{await Check<NgDataGrid<int>>(parameters);throw new Exception("Incompatible variable rows accepted");}catch(ArgumentException){count++;}
+}
 Console.WriteLine($"{count} rendering and data/date-rule checks passed. Browser interaction requires the separate visual run.");
 sealed class NoBrowserJS : IJSRuntime {
  public ValueTask<TValue> InvokeAsync<TValue>(string identifier, object?[]? args) => throw new InvalidOperationException("JS must not execute in SSR");

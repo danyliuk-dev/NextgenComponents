@@ -992,3 +992,15 @@ Limits: one active field/record; full-record persistence rather than patches; ex
 - Production Chrome: quantities 32 and 43 staged together, retained after failure with original values 12/24 unchanged, then applied with one successful write. HTTP grouped fixture also loaded after interactive connection.
 - Production: 79 manuals, 4,464 documentation links/fragments, 262 public pages/assets, all 47 component previews/icons across 8 categories. Installer/account/admin routes remain authenticated. Full MFA downloads and Range requests match all three installer sizes/SHA-256; temporary QA user removed without sending email.
 - Implementation `01435364f9d6d4740cd8dca65407a15c5959d4e9` pushed to origin/main. Evidence and exact installer manifest are in the website workspace under `artifacts/evidence/batch073` and `deploy/releases-batch073.json`. QA applications stopped; Windows ISO ejected and VM returned to shut-off state. No migration or unrelated service change.
+
+
+## Grid measured variable row heights — 0.74 (2026-10-31)
+
+Opt-in automatic row measurement on paired Blazor/Flutter Web local and server-page Grid views, including group headers and inline editors. The configured row height is a minimum and estimate. A bounded rendered window uses measured heights, preserves the viewport anchor and retains end reachability. Changes to the expanded row sequence reset scrolling; caller selection survives. Continuous flat/grouped range readers reject the mode and retain fixed-height contracts.
+
+- 1,104 Blazor checks passed, including bounded initial rendering and rejection of incompatible modes.
+- All 309 Flutter tests passed. New cases cover a 10,000-record end jump with bounded cell construction, changed row content, shrink recovery, selection retention, loaded server-page boundaries, grouping/export scope and keyboard End.
+- 49 paired manual examples compile/analyze. The Flutter release gallery builds; the existing optional CupertinoIcons font warning remains.
+- Ordinary Chrome on the local iMac: measured Blazor row heights 48–77.54px, last record R10000 reached with less than one pixel bottom gap; grouped collapse leaves only the header; shrinking restores the first records. The final public preview saved a quantity edit from 12 to 37 inside a measured row.
+- Ordinary Chrome Flutter: selected R00001, reached R10000 with Ctrl+End, resized the viewport, then shrank to 12 records; the selected first record remained checked. Native Flutter and physical screen-reader certification are not claimed.
+- Public/offline documentation and the measured Grid previews are updated. Publication and native installer completion are recorded in the coordinated website release report; they are not inferred from these source checks.

@@ -3831,3 +3831,19 @@ _g['dart']='''Future<String?> saveProductBatch(List<NgGridChange> changes)async{
 '''+_g['dart']
 _g['notes']+='\n\n### Batch editing\nEnable the Batch editing checkbox in the editable inventory, stage several changes, review or undo entries, then Save changes. CommitBatch/commitBatch receives one immutable list; the demo validates a working copy and replaces records only after the complete batch succeeds. Failure retains the queue. See [Batch editing](grid-editing.md#batch-editing).'
 _g['notes']=_g['notes'].replace('batch/cell editing remains open.', 'batch and cell editing use the editing configuration below.')
+
+# Measured virtual rows for local collections and loaded server pages.
+_g=D['NgDataGrid']
+_g['blazor']=_g['blazor'].replace('<h3>Grid export</h3>','''<h3>Measured virtual rows</h3>
+<p>10,000 records with multiline descriptions. Only visible rows and a small buffer are built. Scroll to the end, search and sort.</p>
+<NgDataGrid TItem="int" Label="Measured records" Items="measuredRecords" Columns="measuredColumns" RowId="i=>i.ToString()" Virtualize="true" VariableRowHeight="true" />
+<h3>Grid export</h3>''').replace('@code {','''@code {
+ private readonly int[] measuredRecords=Enumerable.Range(1,10000).ToArray();
+ private readonly NgDataColumn<int>[] measuredColumns=[new("id","Record",i=>i),new("description","Description",i=>string.Join(" ",Enumerable.Repeat($"Record {i}. Multiline content.",i%5+1)))];
+''').replace('Label="Editable inventory"','Label="Editable inventory" Virtualize="true" VariableRowHeight="true"')
+_g['dart']='''final measuredRecords=List.generate(10000,(i)=>i+1);
+'''+_g['dart'].replace("  const Text('Grid export'),",'''  const Text('Measured virtual rows'),
+  const Text('10,000 records with multiline descriptions. Scroll to the end, search and sort.'),
+  NgDataGrid<int>(label:'Measured records',items:measuredRecords,rowId:(i)=>'$i',virtualize:true,variableRowHeight:true,columns:[NgDataColumn('id','Record',(i)=>i),NgDataColumn('description','Description',(i)=>List.filled(i%5+1,'Record $i. Multiline content.').join(' '))]),
+  const Text('Grid export'),''').replace("label:'Editable inventory',","label:'Editable inventory',virtualize:true,variableRowHeight:true,")
+_g['notes']+='\n\n### Variable row height\nEnable VariableRowHeight/variableRowHeight together with Virtualize/virtualize for automatic measurement of multiline cells, templates, group headers and cell editors. RowHeight/rowHeight is the minimum and the estimate for unmeasured rows. Only the visible window and buffer construct cells; scrolling estimates settle as rows are measured. Local and loaded server-page data are supported; continuous ReadRange/readRange and ReadGroupedRange/readGroupedRange reject this setting. Search, sort, page and expanded-record sequence changes reset the viewport. See [Measured rows](virtual-data.md#variable-row-height).'

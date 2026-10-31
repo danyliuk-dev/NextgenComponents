@@ -72,12 +72,18 @@ Enable CellEditing/cellEditing for field keys matching column keys. Activate the
 ### Batch editing
 Enable the Batch editing checkbox in the editable inventory, stage several changes, review or undo entries, then Save changes. CommitBatch/commitBatch receives one immutable list; the demo validates a working copy and replaces records only after the complete batch succeeds. Failure retains the queue. See [Batch editing](grid-editing.md#batch-editing).
 
+### Variable row height
+Enable VariableRowHeight/variableRowHeight together with Virtualize/virtualize for automatic measurement of multiline cells, templates, group headers and cell editors. RowHeight/rowHeight is the minimum and the estimate for unmeasured rows. Only the visible window and buffer construct cells; scrolling estimates settle as rows are measured. Local and loaded server-page data are supported; continuous ReadRange/readRange and ReadGroupedRange/readGroupedRange reject this setting. Search, sort, page and expanded-record sequence changes reset the viewport. See [Measured rows](virtual-data.md#variable-row-height).
+
 ## Blazor example
 
 ```razor
 @using System.Net.Http.Json
 @inject System.Net.Http.IHttpClientFactory HttpFactory
 @inject NavigationManager Navigation
+<h3>Measured virtual rows</h3>
+<p>10,000 records with multiline descriptions. Only visible rows and a small buffer are built. Scroll to the end, search and sort.</p>
+<NgDataGrid TItem="int" Label="Measured records" Items="measuredRecords" Columns="measuredColumns" RowId="i=>i.ToString()" Virtualize="true" VariableRowHeight="true" />
 <h3>Grid export</h3>
 <p>Prepare a CSV or TSV file, inspect its row count, then download. Local export respects the current query; remote full export uses a separate bounded adapter.</p>
 <NgCheckBox Label="Export quantity column" @bind-Value="exportQuantity"/>
@@ -97,7 +103,7 @@ Enable the Batch editing checkbox in the editable inventory, stage several chang
 <NgCheckBox Label="Batch editing (switching discards drafts)" @bind-Value="batchEditing"/>
 <NgCheckBox Label="Lock editing" @bind-Value="editLocked"/>
 <NgCheckBox Label="Fail saves" @bind-Value="editFail"/>
-<NgDataGrid TItem="Product" Label="Editable inventory" Items="editableRows" Columns="@(new NgDataColumn<Product>[]{new("name","Name",r=>r.Name),new("quantity","Quantity",r=>r.Count)})" RowId="r=>r.Id" Editing="Editor" GroupBy="r=>r.Name" Selectable="false"/>
+<NgDataGrid TItem="Product" Label="Editable inventory" Virtualize="true" VariableRowHeight="true" Items="editableRows" Columns="@(new NgDataColumn<Product>[]{new("name","Name",r=>r.Name),new("quantity","Quantity",r=>r.Count)})" RowId="r=>r.Id" Editing="Editor" GroupBy="r=>r.Name" Selectable="false"/>
 <p>Successful writes: @writes</p>
 <h3>HTTP grouped inventory</h3>
 <p>Live requests to the local gallery API. Counts and summaries are computed before server paging.</p>
@@ -114,6 +120,9 @@ Enable the Batch editing checkbox in the editable inventory, stage several chang
 <NgDataGrid TItem="Product" ReadData="Read" Export="RemoteExport" DataVersion="version" MultiSort="true" Columns="columns" RowId="r=>r.Id" @bind-SelectedIds="selected" CanSelect="r=>r.Count<100" PageSizes="new[]{5,10,20}"/>
 <p>Requests: @requests · Latest query: @query</p>
 @code {
+ private readonly int[] measuredRecords=Enumerable.Range(1,10000).ToArray();
+ private readonly NgDataColumn<int>[] measuredColumns=[new("id","Record",i=>i),new("description","Description",i=>string.Join(" ",Enumerable.Repeat($"Record {i}. Multiline content.",i%5+1)))];
+
  private bool exportQuantity=true,exportTsv,exportFail,exportLocked;private NgGridExportFile? lastExport;
  private NgGridExport<Product> LocalExport=>new(){OnExport=ReceiveExport,ColumnKeys=exportQuantity?["name","count"]:["name"],FileName=exportTsv?"inventory.tsv":"inventory.csv",Delimiter=exportTsv?"\t":",",ReadOnly=exportLocked,ScopeText="Local export scope",Format=(key,r)=>key=="count"?r.Count.ToString(System.Globalization.CultureInfo.InvariantCulture):r.Name};
  private NgGridExport<Product> RemoteExport=>LocalExport with {ReadExportData=ReadExport,ScopeText="Remote export scope"};
@@ -205,6 +214,7 @@ import 'dart:convert';
 import 'dart:js_interop';
 import 'package:web/web.dart' as web;
 
+final measuredRecords=List.generate(10000,(i)=>i+1);
 Future<String?> saveProductBatch(List<NgGridChange> changes)async{
   await Future<void>.delayed(const Duration(milliseconds:600));
   if(!mounted)return 'Editor closed.';
@@ -299,6 +309,9 @@ Future<NgDataResult<({String id, String name, int count})>> read(NgDataRequest r
   return NgDataResult(result.skip((request.page-1)*request.pageSize).take(request.pageSize).toList(), result.length);
 }
 Widget build(BuildContext context) => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+  const Text('Measured virtual rows'),
+  const Text('10,000 records with multiline descriptions. Scroll to the end, search and sort.'),
+  NgDataGrid<int>(label:'Measured records',items:measuredRecords,rowId:(i)=>'$i',virtualize:true,variableRowHeight:true,columns:[NgDataColumn('id','Record',(i)=>i),NgDataColumn('description','Description',(i)=>List.filled(i%5+1,'Record $i. Multiline content.').join(' '))]),
   const Text('Grid export'),
   const Text('Prepare CSV or TSV, inspect the result, then download. Remote full export uses a separate bounded adapter.'),
   NgCheckBox(label:'Export quantity column',value:exportQuantity,onChanged:(v)=>setState(()=>exportQuantity=v)),
@@ -318,7 +331,7 @@ Widget build(BuildContext context) => Column(crossAxisAlignment: CrossAxisAlignm
   NgCheckBox(label:'Batch editing (switching discards drafts)',value:batchEditing,onChanged:(v)=>setState(()=>batchEditing=v)),
   NgCheckBox(label:'Lock editing',value:editLocked,onChanged:(v)=>setState(()=>editLocked=v)),
   NgCheckBox(label:'Fail saves',value:editFail,onChanged:(v)=>setState(()=>editFail=v)),
-  NgDataGrid<({String id,String name,int count})>(label:'Editable inventory',items:editableRows,columns:[NgDataColumn('name','Name',(r)=>r.name),NgDataColumn('quantity','Quantity',(r)=>r.count)],rowId:(r)=>r.id,groupBy:(r)=>r.name,editing:editor),
+  NgDataGrid<({String id,String name,int count})>(label:'Editable inventory',virtualize:true,variableRowHeight:true,items:editableRows,columns:[NgDataColumn('name','Name',(r)=>r.name),NgDataColumn('quantity','Quantity',(r)=>r.count)],rowId:(r)=>r.id,groupBy:(r)=>r.name,editing:editor),
   Text('Successful writes: $writes'),
   const Text('HTTP grouped inventory'),
   const Text('Live requests to the local gallery API. Start the Blazor gallery on port 5180.'),
@@ -345,6 +358,7 @@ Names are case-sensitive. `?` permits null. `EditorRequired` parameters are mark
 
 | Parameter | Type | Default / requirement | Purpose |
 |---|---|---|---|
+| `VariableRowHeight` | `bool` | false | See the behavior rules and model contract above. |
 | `Virtualize` | `bool` | false | Opt-in fixed-height virtual rendering. Local Grid covers the result; remote Grid retains pages; trees cover loaded expanded nodes. See Virtual data. |
 | `RowHeight` | `float` | 48 | Fixed virtual row height, default 48 pixels; finite and at least 40. Templates must fit. |
 | `ViewportHeight` | `float` | 384 | Virtual scroll viewport height, default 384 pixels; finite and at least one row. |
@@ -407,6 +421,7 @@ Names are case-sensitive. `?` permits null. `EditorRequired` parameters are mark
 | `expandWindowGroupsText` | `String` | Localized action label for expanding group headers in the retained window. |
 | `collapseWindowGroupsText` | `String` | Localized action label for collapsing group headers in the retained window. |
 | `virtualize` | `bool` | Opt-in fixed-height virtual rendering. Local Grid covers the result; remote Grid retains pages; trees cover loaded expanded nodes. See Virtual data. |
+| `variableRowHeight` | `bool` | See the behavior rules and model contract above. |
 | `rowHeight` | `double` | Fixed virtual row height, default 48 pixels; finite and at least 40. Templates must fit. |
 | `viewportHeight` | `double` | Virtual scroll viewport height, default 384 pixels; finite and at least one row. |
 | `export` | `NgGridExport<T>?` | Optional NgGridExport configuration: query/selection scope, ordered columns, text formatting, bounded CSV/TSV delivery and a full-data remote adapter. See Grid export. |
@@ -458,6 +473,7 @@ const NgDataGrid({
     this.loadedWindowText = 'Loaded window',
     this.selectWindowText = 'Select loaded window',
     this.virtualize = false,
+    this.variableRowHeight = false,
     this.rowHeight = 48,
     this.viewportHeight = 384,
     this.items = const [],

@@ -3,10 +3,10 @@
 <div class="ng-scope gallery"><main>
 <nav><a href="/remote-range">Remote ranges</a><a href="/data">Data workspace</a><a href="/">Foundation</a></nav>
 <h1>Large data, bounded rendering</h1>
-<p>10,000 synthetic records. Fixed 48px rows; only the visible window and a small buffer are rendered. Selection remains owned by this page.</p>
-<div class="row"><NgCheckBox Label="Server pages" @bind-Value="remote"/><NgCheckBox Label="Group by thousand" @bind-Value="grouped"/><NgCheckBox Label="Lock selection" @bind-Value="locked"/><NgButton OnClick="()=>shortData=!shortData">Toggle 12 / 10,000 records</NgButton></div>
+<p>10,000 synthetic records. Switch between fixed and measured row heights; only the visible window and a small buffer are rendered. Selection remains owned by this page.</p>
+<div class="row"><NgCheckBox Label="Variable row height" @bind-Value="variable"/><NgCheckBox Label="Server pages" @bind-Value="remote"/><NgCheckBox Label="Group by thousand" @bind-Value="grouped"/><NgCheckBox Label="Lock selection" @bind-Value="locked"/><NgButton OnClick="()=>shortData=!shortData">Toggle 12 / 10,000 records</NgButton></div>
 <p role="status">Server reads: @reads. @selected.Count selected. @(remote?"Remote pages contain at most 500 records. Scroll does not fetch the next page.":"Local scrolling covers all matching records.")</p>
-<NgDataGrid @key="(remote,grouped)" TItem="int" Items="@(remote?Array.Empty<int>():Data)" ReadData="@(remote?Read:null)" RowId="Id" Columns="columns" Label="Virtual inventory" Virtualize="true" InitialPageSize="500" PageSizes="new[]{100,500}" DataVersion="shortData" @bind-SelectedIds="selected" SelectionReadOnly="locked" CanSelect="i=>i%100!=0" GroupBy="@(!remote && grouped?Group:null)" CollapsibleGroups="true" @bind-CollapsedGroups="collapsed" />
+<NgDataGrid @key="(remote,grouped)" TItem="int" Items="@(remote?Array.Empty<int>():Data)" ReadData="@(remote?Read:null)" RowId="Id" Columns="columns" Label="Virtual inventory" Virtualize="true" VariableRowHeight="variable" InitialPageSize="500" PageSizes="new[]{100,500}" DataVersion="shortData" @bind-SelectedIds="selected" SelectionReadOnly="locked" CanSelect="i=>i%100!=0" GroupBy="@(!remote && grouped?Group:null)" CollapsibleGroups="true" @bind-CollapsedGroups="collapsed" />
 <h2>TreeView</h2>
 <p>100 branches × 100 children. Expand all to make 10,100 nodes available to the viewport. Arrow keys, Home and End move across virtual windows.</p>
 <NgButton OnClick="()=>expanded=expanded.Count==0?trees.Select(n=>n.Id).ToHashSet():[]">Expand / collapse all branches</NgButton>
@@ -16,7 +16,7 @@
 <p role="status">Selected node: @treeSelected. Checked nodes: @checkedIds.Count.</p>
 </main></div>
 @code {
- private bool remote,grouped,locked,shortData;
+ private bool variable=true,remote,grouped,locked,shortData;
  private int reads;
  private static readonly int[] records=Enumerable.Range(1,10000).ToArray();
  private IReadOnlyList<int> Data=>shortData?records.Take(12).ToArray():records;
@@ -24,7 +24,7 @@
  private static string Group(int i)=>$"Block {(i-1)/1000+1}";
  private HashSet<string> selected=[],collapsed=[],expanded=[],checkedIds=[];
  private string? treeSelected;
- private readonly NgDataColumn<int>[] columns=[new("id","Record",i=>i,Format:i=>Id(i)),new("name","Name",i=>$"Inventory {i:00000}")];
+ private NgDataColumn<int>[] columns=>[new("id","Record",i=>i,Format:i=>Id(i)),new("name","Name",i=>variable?string.Join(" ",Enumerable.Repeat($"Inventory {i:00000}. Multiline description.",i%5+1)):$"Inventory {i:00000}")];
  private readonly NgDataColumn<string>[] treeColumns=[new("name","Folder",x=>x)];
  private readonly NgTreeNode<string>[] trees=Enumerable.Range(1,100).Select(i=>new NgTreeNode<string>($"B{i}",$"Branch {i:000}",Enumerable.Range(1,100).Select(j=>new NgTreeNode<string>($"B{i}-{j}",$"Item {i:000}-{j:000}")).ToArray())).ToArray();
  private async Task<NgDataResult<int>> Read(NgDataRequest request,CancellationToken token){

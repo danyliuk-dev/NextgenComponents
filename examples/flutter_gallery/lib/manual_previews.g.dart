@@ -331,6 +331,7 @@ Widget build(BuildContext context) => NgBreadcrumb(
 }
 class NgDataGridExample extends StatefulWidget { const NgDataGridExample({super.key}); @override State<NgDataGridExample> createState()=>_NgDataGridExampleState(); }
 class _NgDataGridExampleState extends State<NgDataGridExample> {
+final measuredRecords=List.generate(10000,(i)=>i+1);
 Future<String?> saveProductBatch(List<NgGridChange> changes)async{
   await Future<void>.delayed(const Duration(milliseconds:600));
   if(!mounted)return 'Editor closed.';
@@ -425,6 +426,9 @@ Future<NgDataResult<({String id, String name, int count})>> read(NgDataRequest r
   return NgDataResult(result.skip((request.page-1)*request.pageSize).take(request.pageSize).toList(), result.length);
 }
 Widget build(BuildContext context) => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+  const Text('Measured virtual rows'),
+  const Text('10,000 records with multiline descriptions. Scroll to the end, search and sort.'),
+  NgDataGrid<int>(label:'Measured records',items:measuredRecords,rowId:(i)=>'$i',virtualize:true,variableRowHeight:true,columns:[NgDataColumn('id','Record',(i)=>i),NgDataColumn('description','Description',(i)=>List.filled(i%5+1,'Record $i. Multiline content.').join(' '))]),
   const Text('Grid export'),
   const Text('Prepare CSV or TSV, inspect the result, then download. Remote full export uses a separate bounded adapter.'),
   NgCheckBox(label:'Export quantity column',value:exportQuantity,onChanged:(v)=>setState(()=>exportQuantity=v)),
@@ -444,7 +448,7 @@ Widget build(BuildContext context) => Column(crossAxisAlignment: CrossAxisAlignm
   NgCheckBox(label:'Batch editing (switching discards drafts)',value:batchEditing,onChanged:(v)=>setState(()=>batchEditing=v)),
   NgCheckBox(label:'Lock editing',value:editLocked,onChanged:(v)=>setState(()=>editLocked=v)),
   NgCheckBox(label:'Fail saves',value:editFail,onChanged:(v)=>setState(()=>editFail=v)),
-  NgDataGrid<({String id,String name,int count})>(label:'Editable inventory',items:editableRows,columns:[NgDataColumn('name','Name',(r)=>r.name),NgDataColumn('quantity','Quantity',(r)=>r.count)],rowId:(r)=>r.id,groupBy:(r)=>r.name,editing:editor),
+  NgDataGrid<({String id,String name,int count})>(label:'Editable inventory',virtualize:true,variableRowHeight:true,items:editableRows,columns:[NgDataColumn('name','Name',(r)=>r.name),NgDataColumn('quantity','Quantity',(r)=>r.count)],rowId:(r)=>r.id,groupBy:(r)=>r.name,editing:editor),
   Text('Successful writes: $writes'),
   const Text('HTTP grouped inventory'),
   const Text('Live requests to the local gallery API. Start the Blazor gallery on port 5180.'),

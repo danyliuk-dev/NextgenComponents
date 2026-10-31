@@ -231,3 +231,7 @@ textarea.ng-textarea-auto{box-sizing:border-box;line-height:1.5;resize:none}
 .ng-virtual-tree .ng-tree-row { height:var(--ng-row-height); min-height:var(--ng-row-height); box-sizing:border-box; white-space:nowrap; overflow:hidden; }
 
 .ng-virtual-table .ng-data-table thead th:has(>input[type=checkbox]) { width:48px; }
+
+.ng-variable-table { overflow-anchor:none; }
+.ng-variable-table .ng-data-table tbody td,.ng-variable-table .ng-data-table tbody th { height:auto; min-height:var(--ng-row-height); padding-block:8px; white-space:normal; overflow-wrap:anywhere; }
+.ng-variable-table .ng-data-table tbody tr.ng-variable-spacer { padding:0; border:0; min-height:0; }

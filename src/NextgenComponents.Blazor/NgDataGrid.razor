@@ -12,7 +12,7 @@
 @if(exporting){<span role="status">@export.BusyText</span><button type="button" class="ng-button" @onclick="CancelExport">@export.CancelText</button>}
 @if(exportError){<span role="alert">@export.ErrorText</span>}else if(exportReady){<span role="status">@export.ReadyText</span>}
 </div>}
-<div @key="rangeEpoch" class="ng-table-scroll @(Virtualize?"ng-virtual-table":"")" style="@VirtualStyle" tabindex="0" aria-label="@($"{Label} table scroll area")">
+<div @key="rangeEpoch" class="ng-table-scroll @(Virtualize?"ng-virtual-table":"") @(VariableRowHeight?"ng-variable-table":"")" style="@VirtualStyle" tabindex="0" aria-label="@($"{Label} table scroll area")">
 <table class="ng-data-table"><caption class="ng-sr-only">@Label</caption><thead><tr>
 @if(Selectable){<th scope="col"><input type="checkbox" aria-label="@(IsRange?SelectWindowText:Virtualize && !IsRemote?"Select results":"Select page")" checked="@(Eligible.Count>0 && Eligible.All(x=>SelectedIds.Contains(RowId(x))))" disabled="@(Eligible.Count==0 || SelectionReadOnly || !SelectedIdsChanged.HasDelegate)" aria-checked="@(Eligible.Any(x=>SelectedIds.Contains(RowId(x))) && !Eligible.All(x=>SelectedIds.Contains(RowId(x)))?"mixed":null)" @onchange="SelectPage" /></th>}
 @foreach(var column in Columns){var sort=sorts.FirstOrDefault(x=>x.Key==column.Key);<th scope="col" aria-sort="@(sort is not null?(sort.Descending?"descending":"ascending"):"none")">@if(column.Sortable){<button type="button" @onclick="()=>Sort(column.Key)">@column.Title @(sort is not null?$"{(sort.Descending?"↓":"↑")}{(MultiSort?sorts.IndexOf(sort)+1:"")}":"↕")</button>}else{@column.Title}</th>}
@@ -21,7 +21,7 @@
 @if(!loading && !error && Visible.Count==0 && (!IsRange || rangeKnown && total==0)){<tbody><tr><td colspan="@(Columns.Count+(Selectable?1:0)+(HasActions?1:0))" class="ng-empty">@if(EmptyTemplate is not null){@EmptyTemplate}else{@EmptyText}</td></tr></tbody>}
 @if(Virtualize){
 <tbody>
-<VirtualRows @ref="rangeRows" TItem="GridEntry" Provider="@(!IsRange?null:ReadRangeRows)" Enabled="Virtualize" RowHeight="RowHeight" Items="Entries" Context="entry">
+<VirtualRows @ref="rangeRows" TItem="GridEntry" Provider="@(!IsRange?null:ReadRangeRows)" Enabled="Virtualize" VariableHeight="VariableRowHeight" ItemKey="EntryKey" RowHeight="RowHeight" Items="Entries" Context="entry">
 <Placeholder><tr aria-hidden="true"><td colspan="@(Columns.Count+(Selectable?1:0)+(HasActions?1:0))" style="height:@(RowHeight)px">@(error?ErrorText:LoadingText)</td></tr></Placeholder>
 <ChildContent>
 @if(!entry.HasRow && entry.Group is null){<tr aria-hidden="true"><td colspan="@(Columns.Count+(Selectable?1:0)+(HasActions?1:0))">@ErrorText</td></tr>}
@@ -84,6 +84,8 @@
 @if(!IsRange && (!Virtualize || IsRemote)){<NgPager Total="Total" Page="page" PageChanged="ChangePage" PageSize="size" PageSizeChanged="Resize" Sizes="PageSizes" />}
 </div>
 @code {
+ [Parameter] public bool VariableRowHeight {get;set;}
+ private string EntryKey(GridEntry entry)=>entry.Group is {} group?"g:"+group.Id:"r:"+RowId(entry.Row!);
  [Parameter] public bool Virtualize {get;set;}
  [Parameter] public float RowHeight {get;set;}=48;
  [Parameter] public float ViewportHeight {get;set;}=384;
@@ -250,6 +252,7 @@
  private IReadOnlyList<TItem> Visible=>!IsRemote?(Virtualize?filtered:filtered.Skip((page-1)*size).Take(size).ToArray()):filtered;
  protected override void OnInitialized()=>size=Math.Max(1,InitialPageSize);
  protected override async Task OnParametersSetAsync(){
+   if(VariableRowHeight && (!Virtualize || IsRange))throw new ArgumentException("VariableRowHeight requires virtual local data or server pages; continuous range readers require fixed heights.");
    if(Virtualize && (!float.IsFinite(RowHeight) || RowHeight<40 || !float.IsFinite(ViewportHeight) || ViewportHeight<RowHeight))throw new ArgumentException("Virtual rows require a finite height of at least 40 and a viewport at least one row high.");
    ValidateRangeMode();
    Export?.Resolve(Columns);

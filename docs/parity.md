@@ -589,3 +589,8 @@ Paired Blazor/Flutter Web cell editors reuse full-record validation and asynchro
 ## Batch editing (0.73)
 
 Both Web platforms provide an opt-in bounded create/update/delete queue, full-record review, per-entry undo, discard and one immutable persistence callback. Success clears and refreshes; failure retains; permissions/validation are rechecked, stale completions ignored. Off-page remote records retain their original UI permission snapshot; authorization, atomicity, concurrency and idempotency belong to the application. Released with website 1.0.15 and three native installer checks on 2026-10-30. Spreadsheet keyboard navigation, variable row heights, column virtualization and durable mutation queues remain separate.
+
+
+## Grid measured variable rows — 0.74
+
+Opt-in measured heights for local records and loaded server pages on both Web platforms, including group headers and inline editors. Height estimates and cached measurements preserve a bounded rendered window and end reachability. Fixed-height continuous range readers reject variable mode; tree and column virtualization are unchanged. Full accessibility and native Flutter certification remain open. See [Virtual data](manual/virtual-data.md#variable-row-height).

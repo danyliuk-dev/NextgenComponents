@@ -1,6 +1,6 @@
 # Virtual scrolling for large data views
 
-`NgDataGrid`, `NgTreeView` and `NgTreeList` support opt-in fixed-height virtual rendering on Blazor and Flutter Web. Turn on `Virtualize` / `virtualize`, then set `RowHeight` / `rowHeight` (default 48) and `ViewportHeight` / `viewportHeight` (default 384). Heights must be finite; rows must be at least 40 pixels and the viewport at least one row high. The default nonvirtual behavior is unchanged.
+`NgDataGrid`, `NgTreeView` and `NgTreeList` support opt-in fixed-height virtual rendering; Grid also supports measured variable-height rows on Blazor and Flutter Web. Turn on `Virtualize` / `virtualize`, then set `RowHeight` / `rowHeight` (default 48) and `ViewportHeight` / `viewportHeight` (default 384). Heights must be finite; rows must be at least 40 pixels and the viewport at least one row high. The default nonvirtual behavior is unchanged.
 
 ## Data and loading boundaries
 
@@ -25,7 +25,7 @@ The modes above virtualize rendering only. Continuous remote scrolling with boun
 }
 ```
 
-The implementation uses Blazor's `Virtualize` with table-row spacers. Keep the scrolling element focusable. Rows and templates must fit the configured height; avoid multiline content, expanding editors inside cells and images without fixed dimensions. The Grid's editing panel is outside the viewport. Table columns use fixed layout in this mode and retain horizontal scrolling.
+Fixed-height mode uses Blazor's `Virtualize` with table-row spacers. Keep the scrolling element focusable. Rows and templates must fit the configured height; avoid multiline content, expanding editors inside cells and images without fixed dimensions. The Grid's editing panel is outside the viewport. Table columns use fixed layout in this mode and retain horizontal scrolling.
 
 ## Flutter
 
@@ -42,7 +42,7 @@ NgDataGrid<int>(
 )
 ```
 
-Flutter uses `ListView.builder` and constructs cell templates only for the current window and its framework cache. The selection column stays 48 pixels wide. Virtual data columns share the available width, with a minimum of 200 pixels per column and horizontal scrolling. The header stays above the scrollable body; its height is additional to `viewportHeight`. The ordinary DataTable retains its existing intrinsic sizing. Use a bounded-width parent and keep custom cells within the configured row height.
+Flutter uses a lazy `ListView` and constructs cell templates only for the current window and its framework cache. The selection column stays 48 pixels wide. Virtual data columns share the available width, with a minimum of 200 pixels per column and horizontal scrolling. The header stays above the scrollable body; its height is additional to `viewportHeight`. The ordinary DataTable retains its existing intrinsic sizing. Use a bounded-width parent and keep custom cells within the configured row height.
 
 The same three settings apply directly to TreeView and TreeList. Existing selected/checked/expanded IDs, callbacks, read-only flags, disabled records, templates, search and lazy-child adapters keep their contracts. Changing modes does not grant permission to change caller-owned state.
 
@@ -65,3 +65,16 @@ Open [Blazor virtual data](http://127.0.0.1:5180/virtual-data) or [Flutter virtu
 4. Expand all 100 tree branches. With 100 children each, 10,100 nodes are available. Use Home/End and selection, then inspect TreeList and collapse the hierarchy.
 
 The demonstrations use synthetic in-memory data and a delayed page adapter. They are not a production database benchmark. Automated tests assert bounded cell construction on 10,000 records, last-row reachability, shrink recovery, selection retention, tree keyboard traversal and the server-page boundary. See [verification](../verification.md) for actual browser observations.
+
+
+## Variable row height
+
+Set `VariableRowHeight="true"` / `variableRowHeight: true` together with virtualization on Grid. Cells, templates, group headers and inline editors are measured automatically. `RowHeight` / `rowHeight` remains the minimum row height and the estimate for rows not yet measured. Use content with a finite natural height; Flutter cells must not require an unbounded vertical `Expanded` or nested vertical scroll view. Provide explicit dimensions for embedded media where possible.
+
+This mode covers local results and the currently loaded server page, with or without grouping. Continuous `ReadRange` / `readRange` and `ReadGroupedRange` / `readGroupedRange` require fixed heights and reject the setting. Trees retain their fixed-height mode. Column virtualization remains separate.
+
+Only visible rows and a small buffer build cell templates. Height metadata grows with the number of visited rows; this is rendering virtualization, not a bound on local application data. Unmeasured records use the estimate, so the scrollbar thumb and total extent can change as new rows appear. The renderer preserves the visible anchor when measured heights change and keeps the end visible after an end jump. Width changes invalidate cached heights. Search, sort, page changes and changes in the expanded row sequence reset scrolling to the beginning; caller-owned selection is preserved. Offscreen changes are measured when those rows return to view.
+
+Selection and export continue to use logical records, not the rendered window. Group rows cannot become selected records. A cell editor keeps its application draft when scrolled out; scroll it into view again to continue editing. Whole-record and batch review panels remain outside the viewport. No full accessibility or native Flutter certification is claimed.
+
+The Grid manual's **Measured virtual rows** example and the **Variable row height** checkbox in the virtual data exercise demonstrate this mode. Verify the last of 10,000 records, filtering, sorting, grouping, server-page boundaries, shrinking to 12 records, and selection retention.

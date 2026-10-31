@@ -1,0 +1,41 @@
+@typeparam TItem
+@implements IAsyncDisposable
+@inject IJSRuntime JS
+<tr @ref="top" aria-hidden="true" class="ng-variable-spacer" style="height:0px"></tr>
+@for(var i=start;i<Math.Min(Items.Count,start+count);i++){@ChildContent(Items[i])}
+<tr @ref="bottom" aria-hidden="true" class="ng-variable-spacer" style="height:0px"></tr>
+@code {
+ [Parameter] public IReadOnlyList<TItem> Items {get;set;}=[];
+ [Parameter] public Func<TItem,string>? ItemKey {get;set;}
+ [Parameter] public float RowHeight {get;set;}=48;
+ [Parameter,EditorRequired] public RenderFragment<TItem> ChildContent {get;set;}=default!;
+ private ElementReference top,bottom;
+ private IJSObjectReference? module,view;
+ private DotNetObjectReference<VariableRows<TItem>>? reference;
+ private string[] keys=[];
+ private int start,count=16,epoch;
+ private bool disposed;
+ protected override void OnParametersSet(){
+   var next=Items.Select((item,i)=>ItemKey?.Invoke(item)??i.ToString()).ToArray();
+   if(!keys.SequenceEqual(next)){keys=next;start=0;count=16;epoch++;}
+ }
+ protected override async Task OnAfterRenderAsync(bool firstRender){
+   if(disposed)return;
+   module??=await JS.InvokeAsync<IJSObjectReference>("import","./_content/NextgenComponents.Blazor/variable-rows.js");
+   if(disposed)return;
+   reference??=DotNetObjectReference.Create(this);
+   view??=await module.InvokeAsync<IJSObjectReference>("create",top,bottom,reference);
+   await view.InvokeVoidAsync("update",Items.Count,RowHeight,start,count,epoch);
+ }
+ [JSInvokable] public Task Window(int first,int length,int version)=>InvokeAsync(()=>{
+   if(disposed || version!=epoch)return;
+   first=Math.Clamp(first,0,Math.Max(0,Items.Count-1));length=Math.Clamp(length,1,Math.Max(1,Items.Count));
+   if(start==first && count==length)return;
+   start=first;count=length;StateHasChanged();
+ });
+ public async ValueTask DisposeAsync(){
+   disposed=true;
+   try{if(view is not null){await view.InvokeVoidAsync("dispose");await view.DisposeAsync();}if(module is not null)await module.DisposeAsync();}
+   catch(JSDisconnectedException){}finally{reference?.Dispose();}
+ }
+}
